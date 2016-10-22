@@ -18,7 +18,7 @@ public class MergeStream implements DataStream {
   }
 
   @Override
-  public Type type() {
+  public Type types() {
     return null;
   }
 
