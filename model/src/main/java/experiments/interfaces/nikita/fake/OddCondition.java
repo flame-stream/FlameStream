@@ -2,7 +2,6 @@ package experiments.interfaces.nikita.fake;
 
 import experiments.interfaces.nikita.Condition;
 import experiments.interfaces.nikita.RunningCondition;
-import scala.Int;
 
 /**
  * Created by marnikitta on 19.10.16.

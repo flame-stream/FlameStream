@@ -1,7 +1,6 @@
 package experiments.interfaces.nikita.fake;
 
 import experiments.interfaces.nikita.YetAnotherStream;
-import scala.Int;
 
 import java.util.Random;
 

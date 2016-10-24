@@ -1,6 +1,5 @@
 package experiments.interfaces.nikita;
 
-import java.io.Serializable;
 import java.util.Set;
 
 /**

@@ -1,8 +1,5 @@
 package experiments.interfaces.nikita;
 
-import org.jooq.lambda.tuple.Tuple4;
-
-import java.io.Serializable;
 import java.util.function.Function;
 
 /**
