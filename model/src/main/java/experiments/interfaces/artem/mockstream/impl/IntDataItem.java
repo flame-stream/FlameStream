@@ -1,12 +1,12 @@
-package experiments.interfaces.artem.impl;
+package experiments.interfaces.artem.mockstream.impl;
 
-import experiments.interfaces.artem.DataItem;
+import experiments.interfaces.artem.mockstream.DataItem;
 
-class IntDataItem implements DataItem {
+public class IntDataItem implements DataItem {
     private Integer _data;
     private Meta _meta;
 
-    IntDataItem(Integer data) {
+    public IntDataItem(Integer data) {
         _data = data;
         _meta = new SystemTimeMeta();
     }

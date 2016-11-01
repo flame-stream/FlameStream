@@ -1,4 +1,4 @@
-package experiments.interfaces.artem;
+package experiments.interfaces.artem.mockstream;
 
 import java.util.function.Function;
 

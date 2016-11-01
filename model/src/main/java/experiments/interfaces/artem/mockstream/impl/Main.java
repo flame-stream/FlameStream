@@ -1,6 +1,6 @@
-package experiments.interfaces.artem.impl;
+package experiments.interfaces.artem.mockstream.impl;
 
-import experiments.interfaces.artem.Condition;
+import experiments.interfaces.artem.mockstream.Condition;
 
 import java.util.HashSet;
 import java.util.Random;

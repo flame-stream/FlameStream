@@ -1,6 +1,6 @@
-package experiments.interfaces.artem.impl;
+package experiments.interfaces.artem.mockstream.impl;
 
-import experiments.interfaces.artem.DataItem;
+import experiments.interfaces.artem.mockstream.DataItem;
 
 class SystemTimeMeta implements DataItem.Meta {
     private long _time;

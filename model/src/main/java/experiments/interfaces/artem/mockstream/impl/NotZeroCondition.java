@@ -1,7 +1,7 @@
-package experiments.interfaces.artem.impl;
+package experiments.interfaces.artem.mockstream.impl;
 
-import experiments.interfaces.artem.Condition;
-import experiments.interfaces.artem.DataItem;
+import experiments.interfaces.artem.mockstream.Condition;
+import experiments.interfaces.artem.mockstream.DataItem;
 
 public class NotZeroCondition implements Condition {
     private static final Integer ZERO = 0;

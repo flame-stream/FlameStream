@@ -1,6 +1,6 @@
-package experiments.interfaces.artem;
+package experiments.interfaces.artem.mockstream;
 
-import experiments.interfaces.artem.impl.MergeStream;
+import experiments.interfaces.artem.mockstream.impl.MergeStream;
 
 import java.util.Set;
 import java.util.stream.Stream;
