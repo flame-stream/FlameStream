@@ -17,6 +17,4 @@ public interface Filter<S1, S2>
 
     // Shitty naming too
     Type<S1> b2a(Type<? extends S2> to);
-
-    // Weight is not part of Filter
 }

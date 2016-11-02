@@ -1,11 +1,9 @@
 package experiments.interfaces.nikita;
 
-import java.io.Serializable;
-
 /**
  * Created by marnikitta on 19.10.16.
  */
-public interface RunningCondition<S> extends Serializable {
+public interface RunningCondition<S> {
     void update(S value);
 
     /**
