@@ -24,29 +24,44 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
 
     private final Set<RunningCondition<E_OUT>> conditions;
 
-    protected Consumer<DataItem<E_OUT>> splitConsumer = (item) -> {
+    @SuppressWarnings("WeakerAccess")
+    protected Consumer<DataItem<E_OUT>> pipeConsumer = (item) -> {
     };
 
     private YetAnotherPipeline(final Supplier<? extends Spliterator<?>> source, final int sourceFlags, final boolean parallel, final Type<E_OUT> type) {
         super(source, sourceFlags, parallel);
         this.type = type;
         this.conditions = runningConditions(type);
+        this.pipeConsumer = conditionConsumers(this.conditions);
     }
 
     private YetAnotherPipeline(final Spliterator<?> source, final int sourceFlags, final boolean parallel, final Type<E_OUT> type) {
         super(source, sourceFlags, parallel);
         this.type = type;
         this.conditions = runningConditions(type);
+        this.pipeConsumer = conditionConsumers(this.conditions);
     }
 
     private YetAnotherPipeline(final AbstractPipeline<?, DataItem<E_IN>, ?> previousStage, final int opFlags, final Type<E_OUT> type) {
         super(previousStage, opFlags);
         this.type = type;
         this.conditions = runningConditions(type);
+        this.pipeConsumer = conditionConsumers(this.conditions);
     }
 
     private Set<RunningCondition<E_OUT>> runningConditions(final Type<E_OUT> type) {
         return type.conditions().stream().map(Condition::instance).collect(java.util.stream.Collectors.toSet());
+    }
+
+    private Consumer<DataItem<E_OUT>> conditionConsumers(final Collection<RunningCondition<E_OUT>> conditions) {
+        Consumer<DataItem<E_OUT>> result = (cons) -> {
+        };
+
+        for (RunningCondition<E_OUT> condition : conditions) {
+            result = result.andThen(di -> condition.update(di.value()));
+        }
+
+        return result;
     }
 
     @Override
@@ -59,12 +74,16 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
         Objects.requireNonNull(filter);
         return new StatelessOp<E_OUT, R>(this, StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT, filter.a2b(this.type)) {
             @Override
-            Sink<DataItem<E_OUT>> opWrapSink(int flags, Sink<DataItem<R>> sink) {
+            Sink<DataItem<E_OUT>> opWrapSink(final int flags, final Sink<DataItem<R>> sink) {
                 return new Sink.ChainedReference<DataItem<E_OUT>, DataItem<R>>(sink) {
                     @Override
-                    public void accept(DataItem<E_OUT> u) {
-                        splitConsumer.accept(u.map(filter));
-                        downstream.accept(u.map(filter).incremented());
+                    public void accept(final DataItem<E_OUT> u) {
+                        final DataItem<R> result = u.map(filter).incremented();
+
+                        if (result.value() != null) {
+                            pipeConsumer.accept(result);
+                            downstream.accept(result);
+                        }
                     }
                 };
             }
@@ -72,26 +91,39 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
     }
 
     @Override
+    public YetAnotherStream<E_OUT> mergeWith(final YetAnotherStream<E_OUT> that) {
+        final Spliterator<DataItem<E_OUT>> spliterator = new MergingSpliterator<>(
+                this.spliterator(),
+                that.spliterator(),
+                Comparator.comparing(Function.identity())
+        );
+
+        return new Head<>(spliterator, StreamOpFlag.fromCharacteristics(spliterator.characteristics()), false, type);
+    }
+
+    @Override
+    public YetAnotherStream<E_OUT> split() {
+        final BlockingQueue<DataItem<E_OUT>> queue = new LinkedBlockingQueue<>();
+        final Spliterator<DataItem<E_OUT>> spliterator = new QueueSpliterator<>(queue, 1000);
+
+        pipeConsumer = pipeConsumer.andThen(queue::add);
+
+        return new Head<>(spliterator, StreamOpFlag.fromCharacteristics(spliterator.characteristics()), false, type);
+    }
+
+    @Override
+    public YetAnotherStream<List<E_OUT>> groupBy(final Grouping<E_OUT> grouping, final int window) {
+        return null;
+    }
+
+    @Override
+    public boolean isValid() {
+        return conditions.stream().anyMatch(RunningCondition::isValid);
+    }
+
+    @Override
     public <R, A> R collect(final Collector<? super E_OUT, A, R> collector) {
         return null;
-    }
-
-    @Override
-    boolean opIsStateful() {
-        return false;
-    }
-
-    @Override
-    Sink<DataItem<E_IN>> opWrapSink(final int flags, final Sink<DataItem<E_OUT>> sink) {
-        return null;
-    }
-
-    @Override
-    public YetAnotherStream<E_OUT> trySplit() {
-        BlockingQueue<DataItem<E_OUT>> queue = new LinkedBlockingQueue<>();
-        splitConsumer = splitConsumer.andThen(queue::add);
-        Spliterator<DataItem<E_OUT>> dataItemSpliterator = new QueueSpliterator<>(queue, 1000);
-        return new Head<>(dataItemSpliterator, StreamOpFlag.fromCharacteristics(dataItemSpliterator.characteristics()), false, type);
     }
 
     @Override
@@ -104,10 +136,11 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
         Objects.requireNonNull(action);
         return new StatelessOp<E_OUT, E_OUT>(this, 0, type) {
             @Override
-            Sink<DataItem<E_OUT>> opWrapSink(int flags, Sink<DataItem<E_OUT>> sink) {
+            Sink<DataItem<E_OUT>> opWrapSink(final int flags, final Sink<DataItem<E_OUT>> sink) {
                 return new Sink.ChainedReference<DataItem<E_OUT>, DataItem<E_OUT>>(sink) {
                     @Override
-                    public void accept(DataItem<E_OUT> u) {
+                    public void accept(final DataItem<E_OUT> u) {
+                        pipeConsumer.accept(u);
                         action.accept(u.value());
                         downstream.accept(u);
                     }
@@ -116,20 +149,16 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
         };
     }
 
-    @Override
-    public YetAnotherStream<E_OUT> mergeWith(final YetAnotherStream<E_OUT> that) {
-        Spliterator<DataItem<E_OUT>> spliterator = new MergingSpliterator<>(this.spliterator(), that.spliterator(), Comparator.comparing(Function.identity()));
-        return new Head<>(spliterator, StreamOpFlag.fromCharacteristics(spliterator.characteristics()), false, type);
-    }
+    // Abstract pipeline methods
 
     @Override
-    public YetAnotherStream<List<E_OUT>> groupBy(final Grouping<E_OUT> grouping, final int window) {
-        return null;
-    }
-
-    @Override
-    public boolean isValid() {
+    boolean opIsStateful() {
         return false;
+    }
+
+    @Override
+    Sink<DataItem<E_IN>> opWrapSink(final int flags, final Sink<DataItem<E_OUT>> sink) {
+        return null;
     }
 
     @Override
@@ -205,10 +234,10 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
         }
 
         @Override
-        public void forEach(Consumer<? super E_OUT> action) {
+        public void forEach(final Consumer<? super E_OUT> action) {
             if (!isParallel()) {
                 sourceStageSpliterator().forEachRemaining(dataItem -> {
-                    Head.this.splitConsumer.accept(dataItem);
+                    pipeConsumer.accept(dataItem);
                     action.accept(dataItem.value());
                 });
             } else {

@@ -17,7 +17,7 @@ public class Main {
         YetAnotherStream<String> stream1 = YetAnotherStreamSupport.stream(sp, new EmptyType<>())
                 .filter(SimpleFilter.identity());
 
-        YetAnotherStream<String> stream2 = stream1.trySplit().filter((SimpleFilter<String, String>) s -> "Second: " + s)
+        YetAnotherStream<String> stream2 = stream1.split().filter((SimpleFilter<String, String>) s -> "Second: " + s)
                 .filter(SimpleFilter.identity()).filter(SimpleFilter.identity());
         stream1 = stream1.filter((SimpleFilter<String, String>) s -> "First: " + s);
 

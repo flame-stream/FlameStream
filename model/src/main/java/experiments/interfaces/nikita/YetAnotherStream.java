@@ -19,7 +19,7 @@ public interface YetAnotherStream<S> extends BaseStream<DataItem<S>, YetAnotherS
     <T> YetAnotherStream<T> filter(Filter<S, T> filter);
 
     @Midway
-    YetAnotherStream<S> trySplit();
+    YetAnotherStream<S> split();
 
     @Terminal
     void forEach(Consumer<? super S> consumer);
