@@ -5,7 +5,7 @@ import java.util.function.Function;
 /**
  * Created by marnikitta on 02.11.16.
  */
-public interface DataItem<S> {
+public interface DataItem<S> extends Comparable<DataItem<S>> {
     S value();
 
     Meta meta();

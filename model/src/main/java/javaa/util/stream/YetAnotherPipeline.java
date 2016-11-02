@@ -1,12 +1,14 @@
 package javaa.util.stream;
 
 import experiments.interfaces.nikita.*;
+import javaa.util.MergingSpliterator;
 import javaa.util.concurrent.QueueSpliterator;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -14,7 +16,7 @@ import java.util.stream.Collector;
 /**
  * Created by marnikitta on 02.11.16.
  */
-abstract class InMemoryStream<E_IN, E_OUT>
+abstract class YetAnotherPipeline<E_IN, E_OUT>
         extends AbstractPipeline<DataItem<E_IN>, DataItem<E_OUT>, YetAnotherStream<E_OUT>>
         implements YetAnotherStream<E_OUT> {
 
@@ -25,19 +27,19 @@ abstract class InMemoryStream<E_IN, E_OUT>
     protected Consumer<DataItem<E_OUT>> splitConsumer = (item) -> {
     };
 
-    private InMemoryStream(final Supplier<? extends Spliterator<?>> source, final int sourceFlags, final boolean parallel, final Type<E_OUT> type) {
+    private YetAnotherPipeline(final Supplier<? extends Spliterator<?>> source, final int sourceFlags, final boolean parallel, final Type<E_OUT> type) {
         super(source, sourceFlags, parallel);
         this.type = type;
         this.conditions = runningConditions(type);
     }
 
-    private InMemoryStream(final Spliterator<?> source, final int sourceFlags, final boolean parallel, final Type<E_OUT> type) {
+    private YetAnotherPipeline(final Spliterator<?> source, final int sourceFlags, final boolean parallel, final Type<E_OUT> type) {
         super(source, sourceFlags, parallel);
         this.type = type;
         this.conditions = runningConditions(type);
     }
 
-    private InMemoryStream(final AbstractPipeline<?, DataItem<E_IN>, ?> previousStage, final int opFlags, final Type<E_OUT> type) {
+    private YetAnotherPipeline(final AbstractPipeline<?, DataItem<E_IN>, ?> previousStage, final int opFlags, final Type<E_OUT> type) {
         super(previousStage, opFlags);
         this.type = type;
         this.conditions = runningConditions(type);
@@ -61,6 +63,7 @@ abstract class InMemoryStream<E_IN, E_OUT>
                 return new Sink.ChainedReference<DataItem<E_OUT>, DataItem<R>>(sink) {
                     @Override
                     public void accept(DataItem<E_OUT> u) {
+                        splitConsumer.accept(u.map(filter));
                         downstream.accept(u.map(filter).incremented());
                     }
                 };
@@ -87,7 +90,7 @@ abstract class InMemoryStream<E_IN, E_OUT>
     public YetAnotherStream<E_OUT> trySplit() {
         BlockingQueue<DataItem<E_OUT>> queue = new LinkedBlockingQueue<>();
         splitConsumer = splitConsumer.andThen(queue::add);
-        Spliterator<DataItem<E_OUT>> dataItemSpliterator = new QueueSpliterator<>(queue, 100);
+        Spliterator<DataItem<E_OUT>> dataItemSpliterator = new QueueSpliterator<>(queue, 1000);
         return new Head<>(dataItemSpliterator, StreamOpFlag.fromCharacteristics(dataItemSpliterator.characteristics()), false, type);
     }
 
@@ -114,8 +117,9 @@ abstract class InMemoryStream<E_IN, E_OUT>
     }
 
     @Override
-    public YetAnotherStream<E_OUT> mergeWith(final YetAnotherStream<? extends E_OUT> that) {
-        return null;
+    public YetAnotherStream<E_OUT> mergeWith(final YetAnotherStream<E_OUT> that) {
+        Spliterator<DataItem<E_OUT>> spliterator = new MergingSpliterator<>(this.spliterator(), that.spliterator(), Comparator.comparing(Function.identity()));
+        return new Head<>(spliterator, StreamOpFlag.fromCharacteristics(spliterator.characteristics()), false, type);
     }
 
     @Override
@@ -176,7 +180,7 @@ abstract class InMemoryStream<E_IN, E_OUT>
         };
     }
 
-    static class Head<E_IN, E_OUT> extends InMemoryStream<E_IN, E_OUT> {
+    static class Head<E_IN, E_OUT> extends YetAnotherPipeline<E_IN, E_OUT> {
 
         Head(final Supplier<? extends Spliterator<?>> source,
              final int sourceFlags, final boolean parallel,
@@ -214,7 +218,7 @@ abstract class InMemoryStream<E_IN, E_OUT>
     }
 
     abstract static class StatelessOp<E_IN, E_OUT>
-            extends InMemoryStream<E_IN, E_OUT> {
+            extends YetAnotherPipeline<E_IN, E_OUT> {
 
         StatelessOp(final AbstractPipeline<?, DataItem<E_IN>, ?> upstream,
                     final int opFlags,
@@ -229,7 +233,7 @@ abstract class InMemoryStream<E_IN, E_OUT>
     }
 
     abstract static class StatefulOp<E_IN, E_OUT>
-            extends InMemoryStream<E_IN, E_OUT> {
+            extends YetAnotherPipeline<E_IN, E_OUT> {
 
         StatefulOp(final AbstractPipeline<?, DataItem<E_IN>, ?> upstream,
                    final int opFlags,

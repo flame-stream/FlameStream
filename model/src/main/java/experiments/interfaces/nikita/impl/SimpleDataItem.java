@@ -37,4 +37,9 @@ public class SimpleDataItem<S> implements DataItem<S> {
     public <R> DataItem<R> map(final Function<? super S, ? extends R> function) {
         return new SimpleDataItem<R>(function.apply(this.value), this.meta);
     }
+
+    @Override
+    public int compareTo(final DataItem<S> o) {
+        return this.meta.compareTo(o.meta());
+    }
 }

@@ -30,8 +30,8 @@ public interface YetAnotherStream<S> extends BaseStream<DataItem<S>, YetAnotherS
     @Midway
     YetAnotherStream<S> peek(Consumer<? super S> action);
 
-    @Midway
-    YetAnotherStream<S> mergeWith(YetAnotherStream<? extends S> that);
+
+    YetAnotherStream<S> mergeWith(YetAnotherStream<S> that);
 
     @Midway
     YetAnotherStream<List<S>> groupBy(Grouping<S> grouping, int window);
