@@ -1,16 +1,14 @@
 package javaa.util.stream;
 
 import experiments.interfaces.nikita.*;
+import experiments.interfaces.nikita.impl.EmptyType;
 import javaa.util.MergingSpliterator;
 import javaa.util.concurrent.QueueSpliterator;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Collector;
 
 /**
@@ -72,6 +70,11 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
     @Override
     public <R> YetAnotherStream<R> filter(final Filter<E_OUT, R> filter) {
         Objects.requireNonNull(filter);
+
+        if (!filter.isConsumed(this.type)) {
+            throw new IllegalArgumentException("Filter should accept type " + this.type);
+        }
+
         return new StatelessOp<E_OUT, R>(this, StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT, filter.a2b(this.type)) {
             @Override
             Sink<DataItem<E_OUT>> opWrapSink(final int flags, final Sink<DataItem<R>> sink) {
@@ -102,9 +105,21 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
     }
 
     @Override
+    public YetAnotherStream<E_OUT> mergeWith(final Supplier<YetAnotherStream<E_OUT>> that) {
+        Supplier<Spliterator<DataItem<E_OUT>>> spliteratorSupplier = () -> that.get().spliterator();
+        final Spliterator<DataItem<E_OUT>> spliterator = new MergingSpliterator<>(
+                this.spliterator(),
+                lazySpliterator(spliteratorSupplier),
+                Comparator.comparing(Function.identity())
+        );
+
+        return new Head<>(spliterator, StreamOpFlag.fromCharacteristics(spliterator.characteristics()), false, type);
+    }
+
+    @Override
     public YetAnotherStream<E_OUT> split() {
         final BlockingQueue<DataItem<E_OUT>> queue = new LinkedBlockingQueue<>();
-        final Spliterator<DataItem<E_OUT>> spliterator = new QueueSpliterator<>(queue, 1000);
+        final Spliterator<DataItem<E_OUT>> spliterator = new QueueSpliterator<>(queue, 10);
 
         pipeConsumer = pipeConsumer.andThen(queue::add);
 
@@ -113,7 +128,48 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
 
     @Override
     public YetAnotherStream<List<E_OUT>> groupBy(final Grouping<E_OUT> grouping, final int window) {
-        return null;
+        return new YetAnotherPipeline.StatefulOp<E_OUT, List<E_OUT>>(this, StreamOpFlag.NOT_SIZED, new EmptyType<>()) {
+
+            @Override
+            Sink<DataItem<E_OUT>> opWrapSink(final int flags, final Sink<DataItem<List<E_OUT>>> sink) {
+                Objects.requireNonNull(sink);
+
+                return new Sink.ChainedReference<DataItem<E_OUT>, DataItem<List<E_OUT>>>(sink) {
+                    private final Map<Integer, List<E_OUT>> groupingState = new HashMap<>();
+
+                    @Override
+                    public void begin(final long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
+                    public void end() {
+                        groupingState.clear();
+                        downstream.end();
+                    }
+
+                    @Override
+                    public void accept(final DataItem<E_OUT> t) {
+                        final int hash = grouping.apply(t.value());
+
+                        final List<E_OUT> hashList = groupingState.getOrDefault(grouping.apply(t.value()), new ArrayList<>());
+                        hashList.add(t.value());
+                        final List<E_OUT> result = hashList.subList(Math.max(hashList.size() - window, 0), hashList.size());
+
+                        groupingState.put(hash, result);
+
+                        downstream.accept(new DataItem<>(result, t.meta().incremented()));
+                    }
+                };
+            }
+
+            @Override
+            <P_IN> Node<DataItem<List<E_OUT>>> opEvaluateParallel(
+                    final PipelineHelper<DataItem<List<E_OUT>>> helper, final Spliterator<P_IN> spliterator,
+                    final IntFunction<DataItem<List<E_OUT>>[]> generator) {
+                throw new IllegalArgumentException();
+            }
+        };
     }
 
     @Override
@@ -123,7 +179,14 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
 
     @Override
     public <R, A> R collect(final Collector<? super E_OUT, A, R> collector) {
-        return null;
+        A container;
+        container = collector.supplier().get();
+        BiConsumer<A, ? super E_OUT> accumulator = collector.accumulator();
+        forEach(u -> accumulator.accept(container, u));
+
+        return collector.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)
+                ? (R) container
+                : collector.finisher().apply(container);
     }
 
     @Override
@@ -148,8 +211,6 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
             }
         };
     }
-
-    // Abstract pipeline methods
 
     @Override
     boolean opIsStateful() {

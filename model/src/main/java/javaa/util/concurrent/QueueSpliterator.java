@@ -20,16 +20,17 @@ public class QueueSpliterator<T> implements Spliterator<T> {
 
     @Override
     public boolean tryAdvance(final Consumer<? super T> action) {
-        try {
-            final T next = this.queue.poll(this.timeoutMills, TimeUnit.MILLISECONDS);
+//        try {
+//            final T next = this.queue.poll(this.timeoutMills, TimeUnit.MILLISECONDS);
+            final T next = this.queue.poll();
             if (next == null) {
                 return false;
             }
             action.accept(next);
             return true;
-        } catch (final InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+//        } catch (final InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
     @Override

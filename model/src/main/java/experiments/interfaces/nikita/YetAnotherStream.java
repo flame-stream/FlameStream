@@ -3,9 +3,12 @@ package experiments.interfaces.nikita;
 
 import experiments.interfaces.nikita.annotation.Midway;
 import experiments.interfaces.nikita.annotation.Terminal;
+import experiments.interfaces.nikita.impl.SimpleGrouping;
+import experiments.interfaces.nikita.impl.mapreduce.entity.StateOrUserQuery;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.BaseStream;
 import java.util.stream.Collector;
 
@@ -30,8 +33,11 @@ public interface YetAnotherStream<S> extends BaseStream<DataItem<S>, YetAnotherS
     @Midway
     YetAnotherStream<S> peek(Consumer<? super S> action);
 
-
+    @Midway
     YetAnotherStream<S> mergeWith(YetAnotherStream<S> that);
+
+    @Midway
+    YetAnotherStream<S> mergeWith(Supplier<YetAnotherStream<S>> that);
 
     @Midway
     YetAnotherStream<List<S>> groupBy(Grouping<S> grouping, int window);
