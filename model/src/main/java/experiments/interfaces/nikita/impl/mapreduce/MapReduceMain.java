@@ -20,10 +20,10 @@ import java.util.stream.Stream;
 /**
  * Created by marnikitta on 03.11.16.
  */
-public class MarReduceMain {
+public class MapReduceMain {
     public static void main(String[] args) {
         final Stream<String> queries = new Random().ints(0, 10).mapToObj(qId -> "Query#" + qId);
-        final Stream<UserQuery> userQueries = queries.map(query -> new UserQuery(UUID.randomUUID().toString(), query)).limit(10000);
+        final Stream<UserQuery> userQueries = queries.map(query -> new UserQuery(UUID.randomUUID().toString(), query)).limit((int) 1e2);
 
         final YetAnotherStream<UserQuery> mainStream = YetAnotherStreamSupport.stream(userQueries, new EmptyType<>());
         final YetAnotherStream<StateOrUserQuery> mainStreamToMerge = mainStream.filter((SimpleFilter<UserQuery, StateOrUserQuery>) StateOrUserQuery::new);

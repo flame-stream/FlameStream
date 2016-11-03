@@ -153,7 +153,7 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
 
                         final List<E_OUT> hashList = groupingState.getOrDefault(grouping.apply(t.value()), new ArrayList<>());
                         hashList.add(t.value());
-                        final List<E_OUT> result = hashList.subList(Math.max(hashList.size() - window, 0), hashList.size());
+                        final List<E_OUT> result = new ArrayList<>(hashList.subList(Math.max(hashList.size() - window, 0), hashList.size()));
 
                         groupingState.put(hash, result);
 
