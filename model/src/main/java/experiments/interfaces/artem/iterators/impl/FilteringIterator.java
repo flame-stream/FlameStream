@@ -10,6 +10,13 @@ public class FilteringIterator<T extends DataItem, R extends DataItem> implement
     private final Iterator<T> iterator;
 
     public FilteringIterator(Iterator<T> iterator, Function<T, R> filter) {
+        if (iterator == null) {
+            throw new IllegalArgumentException("iterator is null");
+        }
+        if (filter == null) {
+            throw new IllegalArgumentException("filter is null");
+        }
+
         this.iterator = iterator;
         this.filter = filter;
     }
