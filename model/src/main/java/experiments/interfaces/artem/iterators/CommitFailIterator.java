@@ -1,4 +1,4 @@
-package experiments.interfaces.artem.iterators.impl;
+package experiments.interfaces.artem.iterators;
 
 import java.util.Iterator;
 

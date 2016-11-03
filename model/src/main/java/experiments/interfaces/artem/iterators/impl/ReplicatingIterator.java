@@ -1,5 +1,6 @@
 package experiments.interfaces.artem.iterators.impl;
 
+import experiments.interfaces.artem.iterators.CommitFailIterator;
 import experiments.interfaces.artem.mockstream.DataItem;
 
 import java.util.Iterator;
