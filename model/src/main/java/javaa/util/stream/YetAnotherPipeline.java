@@ -22,7 +22,6 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
 
     private final Set<RunningCondition<E_OUT>> conditions;
 
-    @SuppressWarnings("WeakerAccess")
     protected Consumer<DataItem<E_OUT>> pipeConsumer = (item) -> {
     };
 
@@ -167,14 +166,14 @@ abstract class YetAnotherPipeline<E_IN, E_OUT>
             <P_IN> Node<DataItem<List<E_OUT>>> opEvaluateParallel(
                     final PipelineHelper<DataItem<List<E_OUT>>> helper, final Spliterator<P_IN> spliterator,
                     final IntFunction<DataItem<List<E_OUT>>[]> generator) {
-                throw new IllegalArgumentException();
+                throw new UnsupportedOperationException();
             }
         };
     }
 
     @Override
     public boolean isValid() {
-        return conditions.stream().anyMatch(RunningCondition::isValid);
+        return conditions.stream().allMatch(RunningCondition::isValid);
     }
 
     @Override
