@@ -15,6 +15,7 @@
         <guava.version>19.0</guava.version>
         <jool.version>0.9.12</jool.version>
         <joda.version>2.9.4</joda.version>
+        <junit.version>4.8.1</junit.version>
     </properties>
 
     <dependencies>
@@ -42,6 +43,11 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_2.11</artifactId>
             <version>${akka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
         </dependency>
     </dependencies>
 

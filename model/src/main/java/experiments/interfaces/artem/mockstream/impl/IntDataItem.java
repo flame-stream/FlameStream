@@ -25,4 +25,12 @@ public class IntDataItem implements DataItem {
     public <T> T data(Class<T> type) {
         return type.cast(_data);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof IntDataItem))
+            return false;
+
+        return ((IntDataItem) obj).data(Integer.class).intValue() == _data.intValue();
+    }
 }
