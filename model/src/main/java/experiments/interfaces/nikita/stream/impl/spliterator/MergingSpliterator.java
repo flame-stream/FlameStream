@@ -15,7 +15,7 @@ public class MergingSpliterator<T extends Comparable<T>> extends Spliterators.Ab
     private T s2;
 
     public MergingSpliterator(final Spliterator<T> spliterator1, final Spliterator<T> spliterator2) {
-        super(Long.MAX_VALUE, spliterator1.characteristics() & spliterator2.characteristics());
+        super(Long.MAX_VALUE, 0);
 
         this.spliterator1 = spliterator1;
         this.spliterator2 = spliterator2;

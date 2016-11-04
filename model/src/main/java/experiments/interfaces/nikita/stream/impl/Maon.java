@@ -2,6 +2,7 @@ package experiments.interfaces.nikita.stream.impl;
 
 import experiments.interfaces.nikita.stream.EmptyType;
 import experiments.interfaces.nikita.stream.YetAnotherStream;
+import experiments.interfaces.nikita.stream.impl.util.Promise;
 
 import java.util.stream.IntStream;
 
@@ -14,9 +15,14 @@ public class Maon {
                 IntStream.range(0, 10).boxed(),
                 new EmptyType<>()
         );
-        YetAnotherStream<Integer> stream1 = stream.split();
-        YetAnotherStream<Integer> stream2 = stream.mergeWith(stream1);
+        Promise<YetAnotherStream<Integer>> promise = new Promise<>();
 
-        stream2.materialize().forEach(System.out::println);
+        YetAnotherStream<Integer> stream1 = stream
+                .mergeWith(promise::get)
+                .map(i -> i * 2, new EmptyType<>());
+
+        promise.set(stream1.split());
+
+        stream1.materialize().forEach(System.out::println);
     }
 }

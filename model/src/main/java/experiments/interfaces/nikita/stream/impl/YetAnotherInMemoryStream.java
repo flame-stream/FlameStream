@@ -73,6 +73,7 @@ public class YetAnotherInMemoryStream<S> implements YetAnotherStream<S> {
     public <R> YetAnotherStream<R> map(final Function<? super S, ? extends R> mapper, final Type<R> targetType) {
         final Spliterator<DataItem<R>> spliterator = baseStream
                 .map(dataItem -> new DataItem<>((R) mapper.apply(dataItem.value()), dataItem.meta()))
+                .filter(dataItem -> dataItem.value() != null)
                 .spliterator();
         return new YetAnotherInMemoryStream<>(spliterator, targetType);
     }
