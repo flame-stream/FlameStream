@@ -21,7 +21,7 @@ public class TypeGraph {
     private Multimap<Type, Edge> outgoing = HashMultimap.create();
 
     public <S, R> void addEdge(final Type<S> from, final Type<R> to, final Filter<? super S, ? extends R> filter) {
-        final Edge<S, R> edge = new Edge<S, R>(from, to, filter);
+        final Edge<S, R> edge = new Edge<>(from, to, filter);
         nodes.add(from);
         nodes.add(to);
         edges.add(edge);
@@ -41,7 +41,7 @@ public class TypeGraph {
             final Type current = bfs.poll();
             visited.add(current);
 
-            for (Edge e: outgoing.get(current)) {
+            for (Edge e : outgoing.get(current)) {
                 if (!visited.contains(e.to())) {
                     bfs.offer(e.to());
                 }
