@@ -40,7 +40,10 @@ public class GroupingJoba extends Joba.Stub {
           oldGroup.clear();
           oldGroup.addAll(windowedGroup);
         }
-        else state.putIfAbsent(hash, new ArrayList<>()).add(windowedGroup);
+        else {
+          state.putIfAbsent(hash, new ArrayList<>());
+          state.get(hash).add(windowedGroup);
+        }
       });
       return false;
     });
@@ -55,7 +58,7 @@ public class GroupingJoba extends Joba.Stub {
 
   @Override
   public Stream<DataItem> materialize(Stream<DataItem> seed) {
-    final Stream<DataItem> input = base.materialize(seed);
+    final Spliterator<DataItem> spliterator = base.materialize(seed).spliterator();
     return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<DataItem>() {
       ListDataItem next = null;
       List<ListDataItem> replay;
@@ -70,7 +73,7 @@ public class GroupingJoba extends Joba.Stub {
           }
           else replay = null;
         }
-        return input.spliterator().tryAdvance(item -> {
+        return spliterator.tryAdvance(item -> {
           final long hash = grouping.hash(item);
           List<DataItem> group = searchBucket(hash, item, buffers).orElse(null);
           if (group != null) { // look for time collision in the current tick
@@ -82,7 +85,7 @@ public class GroupingJoba extends Joba.Stub {
             if (replayCount > 0) {
               replay = new ArrayList<>(replayCount);
               for (int i = group.size() - replayCount; i < group.size(); i++) {
-                replay.add(new ListDataItem(group.subList(window > 0 ? Math.max(0, i - window) : 0, i)));
+                replay.add(new ListDataItem(group.subList(window > 0 ? Math.max(0, i + 1 - window) : 0, i + 1), group.get(i).meta(), id()));
               }
               next = replay.get(0);
               replayIndex = 1;
@@ -91,10 +94,12 @@ public class GroupingJoba extends Joba.Stub {
           }
           else { // creating group from existing in the state
             group = new ArrayList<>(searchBucket(hash, item, state).orElse(Collections.emptyList()));
-            buffers.putIfAbsent(hash, new ArrayList<>()).add(group);
+            buffers.putIfAbsent(hash, new ArrayList<>());
+            final List<List<DataItem>> lists = buffers.get(hash);
+            lists.add(group);
             group.add(item);
           }
-          next = new ListDataItem(window > 0 ? group.subList(Math.max(0, group.size() - window), group.size()) : group);
+          next = new ListDataItem(window > 0 ? group.subList(Math.max(0, group.size() - window), group.size()) : group, item.meta(), id());
         });
       }
 

@@ -2,7 +2,9 @@ package experiments.interfaces.solar.items;
 
 import experiments.interfaces.solar.DataItem;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -10,17 +12,16 @@ import java.util.List;
  * Created by solar on 05.11.16.
  */
 public class ListDataItem extends ArrayList<DataItem> implements DataItem {
-  public ListDataItem(List<DataItem> copy) {
+  private final Meta meta;
 
-  }
-
-  public ListDataItem() {
-
+  public ListDataItem(List<DataItem> copy, Meta meta, int id) {
+    super(copy);
+    this.meta = new MetaImpl(meta, id);
   }
 
   @Override
   public Meta meta() {
-    return null;
+    return meta;
   }
 
   @Override
@@ -30,6 +31,13 @@ public class ListDataItem extends ArrayList<DataItem> implements DataItem {
 
   @Override
   public <T> T as(Class<T> type) {
-    return null;
+    if (!type.isArray())
+      throw new ClassCastException();
+    final Object array = Array.newInstance(type.getComponentType(), size());
+    for (int i = 0; i < size(); i++) {
+      Array.set(array, i, get(i).as(type.getComponentType()));
+    }
+    //noinspection unchecked
+    return (T) array;
   }
 }

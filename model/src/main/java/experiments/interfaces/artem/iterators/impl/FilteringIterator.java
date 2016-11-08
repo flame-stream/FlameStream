@@ -3,6 +3,7 @@ package experiments.interfaces.artem.iterators.impl;
 import experiments.interfaces.artem.mockstream.DataItem;
 
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class FilteringIterator<T extends DataItem, R extends DataItem> implements Iterator<R> {
@@ -10,6 +11,7 @@ public class FilteringIterator<T extends DataItem, R extends DataItem> implement
     private final Iterator<T> iterator;
 
     public FilteringIterator(Iterator<T> iterator, Function<T, R> filter) {
+        iterator = Objects.requireNonNull(iterator);
         if (iterator == null) {
             throw new IllegalArgumentException("iterator is null");
         }

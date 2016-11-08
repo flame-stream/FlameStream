@@ -46,7 +46,7 @@ import java.util.function.IntFunction;
  * {@code PipelineHelper} to access information about the pipeline such as
  * head shape, stream flags, and size, and use the helper methods
  * such as {@link #wrapAndCopyInto(Sink, Spliterator)},
- * {@link #copyInto(Sink, Spliterator)}, and {@link #wrapSink(Sink)} to execute
+ * {@link #copyInto(Sink, Spliterator)}, and {@link #wrapSink(Sink)} to materialize
  * pipeline operations.
  *
  * @param <P_OUT> type of output elements from the pipeline

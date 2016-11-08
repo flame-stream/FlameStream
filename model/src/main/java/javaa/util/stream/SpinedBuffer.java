@@ -465,7 +465,7 @@ class SpinedBuffer<E>
         /** Get the length of an array */
         protected abstract int arrayLength(T_ARR array);
 
-        /** Iterate an array with the provided consumer */
+        /** Iterate an array with the provided printer */
         protected abstract void arrayForEach(T_ARR array, int from, int to,
                                              T_CONS consumer);
 

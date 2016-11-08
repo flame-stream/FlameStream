@@ -1,10 +1,11 @@
 package experiments.interfaces.solar;
 
 import com.spbsu.commons.io.StreamTools;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeqTools;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,15 +25,40 @@ class Input {
         .map(DataItem::fromCharSeq)
         .collect(Collectors.groupingBy(di -> di.meta().tick()))
         .values().stream()
-        .map(collection -> {
-          final Stream<DataItem> stream = collection.stream();
-          stream.onClose(() -> Output.instance().commit());
-          return stream;
-        });
+        .map(Collection::stream);
   }
 
   @SuppressWarnings("UnusedParameters")
   public Stream<Stream<DataItem>> stream(DataType type) {
-    return ticks(System.in);
+    try {
+      final FastRandom random = new FastRandom();
+      final PipedInputStream pis = new PipedInputStream();
+      final PipedOutputStream pos = new PipedOutputStream(pis);
+      final String[] users = new String[]{"vasya", "petya", "kolya", "natasha"};
+      final String[] queries = new String[100500];
+      for (int i = 0; i < queries.length; i++) {
+        queries[i] = random.nextLowerCaseString(10);
+      }
+
+      new Thread() {
+        public void run() {
+          final OutputStreamWriter writer = new OutputStreamWriter(pos);
+          try {
+            for (int i = 0; i < 10000; i++) {
+              final int queryIndex = (int) Math.min(queries.length - 1, random.nextGamma(1, queries.length / 4));
+              writer.write("{\"log\": {\"user\": \"" + users[random.nextInt(users.length)] + "\", \"query\": \"" + queries[queryIndex] + "\"}}\n");
+            }
+            writer.close();
+          }
+          catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }.start();
+      return ticks(pis);
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

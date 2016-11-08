@@ -15,15 +15,15 @@ import java.io.IOException;
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class Object2JSONConversionPack<T> implements ConversionPack<T, CharSeq> {
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  private Class<T> clazz;
+public abstract class Object2JSONConversionPack<T> implements ConversionPack<T, CharSeq> {
+  static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  protected Object2JSONConversionPack(Class<T> clazz) {
-    this.clazz = clazz;
-  }
+  protected static class To<T> implements TypeConverter<T, CharSeq> {
+    private final Class<T> clazz;
 
-  private class To implements TypeConverter<T, CharSeq> {
+    protected To(Class<T> clazz) {
+      this.clazz = clazz;
+    }
     @Override
     public CharSeq convert(T userQuery) {
       try {
@@ -34,7 +34,12 @@ public class Object2JSONConversionPack<T> implements ConversionPack<T, CharSeq> 
       }
     }
   }
-  private class From implements TypeConverter<CharSeq, T> {
+  protected static class From<T> implements TypeConverter<CharSeq, T> {
+    private final Class<T> clazz;
+
+    protected From(Class<T> clazz) {
+      this.clazz = clazz;
+    }
     @Override
     public T convert(CharSeq charSeq) {
       try {
@@ -44,17 +49,5 @@ public class Object2JSONConversionPack<T> implements ConversionPack<T, CharSeq> 
         throw new RuntimeException(e);
       }
     }
-  }
-
-  @Override
-  public Class<? extends TypeConverter<T, CharSeq>> to() {
-    //noinspection unchecked
-    return To.class;
-  }
-
-  @Override
-  public Class<? extends TypeConverter<CharSeq, T>> from() {
-    //noinspection unchecked
-    return From.class;
   }
 }

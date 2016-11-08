@@ -3,6 +3,7 @@ package experiments.interfaces.solar;
 import gnu.trove.map.hash.TLongObjectHashMap;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -14,7 +15,7 @@ import java.util.function.Consumer;
 public class Output {
   private static Output instance = new Output();
   private List<Runnable> barriers = new ArrayList<>();
-  private Map<String, TLongObjectHashMap<List<List<DataItem>>>> knownStates;
+  private Map<String, TLongObjectHashMap<List<List<DataItem>>>> knownStates = new HashMap<>();
 
   public void registerCommitHandler(Runnable r) {
     barriers.add(r);

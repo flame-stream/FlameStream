@@ -1,10 +1,12 @@
 package experiments.interfaces.solar;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class SystemTime {
+public class SystemTime implements Comparable<SystemTime> {
   public static final SystemTime ZERO = new SystemTime() {
     @Override
     public boolean greater(SystemTime time) {
@@ -37,10 +39,15 @@ public class SystemTime {
   }
 
   public int tick() {
-    return (int)(globalTime / 10000);
+    return (int)(globalTime / 10000000);
   }
 
   public long global() {
     return globalTime;
+  }
+
+  @Override
+  public int compareTo(@NotNull SystemTime o) {
+    return greater(o) ? 1 : o.greater(this) ? -1 : 0;
   }
 }
