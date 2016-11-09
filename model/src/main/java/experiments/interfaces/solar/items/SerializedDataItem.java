@@ -13,9 +13,9 @@ public class SerializedDataItem implements DataItem {
   private final Meta meta;
   private final CharSeq line;
 
-  public SerializedDataItem(CharSeq line) {
-    this.meta = new MetaImpl(new SystemTime(System.currentTimeMillis()));
-    this.line = line;
+  public SerializedDataItem(CharSequence line) {
+    this.meta = new MetaImpl(new SystemTime(System.nanoTime()));
+    this.line = CharSeq.create(line);
   }
 
   @Override

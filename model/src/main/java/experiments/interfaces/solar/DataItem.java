@@ -18,7 +18,7 @@ public interface DataItem {
   @Nullable
   <T> T as(Class<T> type);
 
-  static DataItem fromCharSeq(CharSeq line) {
+  static DataItem fromCharSeq(CharSequence line) {
     return new SerializedDataItem(line);
   }
 

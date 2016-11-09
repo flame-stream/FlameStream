@@ -1,7 +1,6 @@
 package experiments.interfaces.solar.jobas;
 
 import experiments.interfaces.solar.DataItem;
-import experiments.interfaces.solar.DataType;
 import experiments.interfaces.solar.Joba;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -15,25 +14,48 @@ import java.util.stream.StreamSupport;
  */
 public class ReplicatorJoba extends Joba.Stub {
   private final static int maximumWaste = 100;
-  private final Joba base;
   private List<DataItem> buffer = new ArrayList<>(1000);
   private TIntArrayList positions = new TIntArrayList();
   private int start = 0;
+
   private Spliterator<DataItem> baseSpliterator;
   private boolean eos = false;
+  private final Thread producer;
+  private Stream<DataItem> seed;
 
-  public ReplicatorJoba(Joba base) {
+  public ReplicatorJoba(final Joba base) {
     super(base.generates());
-    this.base = base;
+    producer = new Thread(() -> {
+      baseSpliterator = base.materialize(seed).spliterator();
+      while(true) {
+        if (!baseSpliterator.tryAdvance((e) -> {
+          synchronized (ReplicatorJoba.this) {
+            buffer.add(e);
+          }
+        }))
+          break;
+        synchronized (ReplicatorJoba.this) {
+          ReplicatorJoba.this.notifyAll();
+        }
+      }
+      synchronized (ReplicatorJoba.this) {
+        eos = true;
+        ReplicatorJoba.this.notifyAll();
+      }
+    });
+
   }
 
+  private boolean started = false;
   @Override
   public synchronized Stream<DataItem> materialize(final Stream<DataItem> seed) {
-    if (baseSpliterator == null)
-      baseSpliterator = base.materialize(seed).spliterator();
-
+    if (!started) {
+      started = true;
+      this.seed = seed;
+      producer.start();
+    }
     final int index = positions.size();
-    positions.add(0);
+    positions.add(-1);
     return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<DataItem>() {
       @Override
       public boolean hasNext() {
@@ -52,15 +74,29 @@ public class ReplicatorJoba extends Joba.Stub {
 
   private synchronized boolean incrementIndex(int index) {
     final int next = positions.get(index) + 1;
-    positions.set(index, positions.get(index) + 1);
-    if (positions.min() > start + maximumWaste) { // advance buffer
-      final ArrayList<DataItem> nextBuffer = new ArrayList<>(Math.max(1000, buffer.size() - 100));
-      for (int i = maximumWaste; i < buffer.size(); i++) {
-        nextBuffer.add(buffer.get(i));
+    positions.set(index, next);
+//    if (positions.min() > start + maximumWaste) { // advance buffer
+//      final ArrayList<DataItem> nextBuffer = new ArrayList<>(Math.max(1000, buffer.size() - 100));
+//      for (int i = maximumWaste; i < buffer.size(); i++) {
+//        nextBuffer.add(buffer.get(i));
+//      }
+//      buffer = nextBuffer;
+//      start += maximumWaste;
+//    }
+    while (!eos && next - start >= buffer.size()) {
+      try {
+        wait();
       }
-      buffer = nextBuffer;
-      start += maximumWaste;
+      catch (InterruptedException ignore) {}
     }
-    return next - start < buffer.size() || (!eos && baseSpliterator.tryAdvance(buffer::add));
+    if (!eos || next - start < buffer.size())
+      return true;
+    while (positions.min() - start < buffer.size()) {
+      try {
+        wait();
+      }
+      catch (InterruptedException ignore) {}
+    }
+    return false;
   }
 }

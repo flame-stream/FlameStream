@@ -7,15 +7,17 @@ package experiments.interfaces.solar;
 @SuppressWarnings("WeakerAccess")
 public class Main {
   public static void main(String[] args) {
-    try {
-      final DataTypeCollection types = DataTypeCollection.instance();
-      final Joba joba = types.<Integer>convert(types.type("UsersLog"), types.type("Frequences"));
-      Input.instance().stream(types.type("UsersLog")).flatMap(
-          joba::materialize // recovery mechanism on exception here
-      ).forEach(Output.instance().printer());
-    }
-    catch(TypeUnreachableException ignored) {
-   }
+    final DataTypeCollection types = DataTypeCollection.instance();
+    Input.instance().stream(types.type("UsersLog")).flatMap((input) -> {
+      final Joba joba;
+      try {
+        joba = types.<Integer>convert(types.type("UsersLog"), types.type("Frequences"));
+        return joba.materialize(input).onClose(() -> Output.instance().commit()); // recovery mechanism on exception her
+      }
+      catch (TypeUnreachableException tue) {
+        throw new RuntimeException(tue);
+      }
+    }).forEach(Output.instance().printer());
   }
 
 }

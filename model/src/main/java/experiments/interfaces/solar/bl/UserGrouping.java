@@ -9,13 +9,12 @@ import java.util.List;
  * Created by solar on 05.11.16.
  */
 public class UserGrouping implements DataItem.Grouping {
-  @Override
   public long hash(DataItem item) {
-    return ((UserContainer) item.as(List.class).get(0)).user().hashCode();
+    return item.as(UserContainer.class).user().hashCode();
   }
 
   @Override
   public boolean equals(DataItem left, DataItem right) {
-    return ((UserContainer) left.as(List.class).get(0)).user().equals(((UserContainer) right.as(List.class).get(0)).user());
+    return left.as(UserContainer.class).user().equals(right.as(UserContainer.class).user());
   }
 }

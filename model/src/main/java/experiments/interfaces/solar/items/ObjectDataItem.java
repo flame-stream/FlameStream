@@ -31,8 +31,6 @@ public class ObjectDataItem implements DataItem{
 
   @Override
   public <T> T as(Class<T> type) {
-    if (!type.isAssignableFrom(clazz))
-      return null;
     //noinspection unchecked
     return (T)item;
   }

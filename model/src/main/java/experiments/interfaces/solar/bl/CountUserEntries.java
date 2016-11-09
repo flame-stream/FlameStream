@@ -7,15 +7,19 @@ import java.util.function.Function;
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class CountUserEntries implements Function<List<UserContainer>, UserCounter> {
+@UseHash(UserGrouping.class)
+public class CountUserEntries implements Function<UserContainer[], UserCounter> {
   @Override
-  public UserCounter apply(List<UserContainer> containers) {
-    final UserContainer first = containers.get(0);
-    if (containers.size() < 2)
+  public UserCounter apply(UserContainer[] containers) {
+    final UserContainer first = containers[0];
+    if (containers.length < 2)
       return new UserCounter((UserQuery) first);
-    else if (first instanceof UserQuery)
-      return new UserCounter((UserCounter) containers.get(0), (UserQuery) first);
-    else
-      return null;
+    else {
+      final UserContainer second = containers[1];
+      if (first instanceof UserCounter && second instanceof UserQuery)
+        return new UserCounter((UserCounter) first, (UserQuery) second);
+      else
+        return null;
+    }
   }
 }
