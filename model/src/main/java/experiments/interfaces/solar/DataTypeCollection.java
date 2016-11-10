@@ -36,7 +36,7 @@ public class DataTypeCollection {
   public Joba convert(DataType from, DataType to) throws TypeUnreachableException {
     if ("UsersLog".equals(from.name()) && "Frequences".equals(to.name())) {
       final DataTypeCollection types = DataTypeCollection.instance();
-      final MergeJoba merge = new MergeJoba(types.type("Merge(UsersLog, States)"), 1, new IdentityJoba(from));
+      final MergeJoba merge = new MergeJoba(types.type("Merge(UsersLog, States)"), new IdentityJoba(from));
       final GroupingJoba grouping = new GroupingJoba(merge, types.type("Group(Merge(UsersLog, States), UserHash, 2)"), new UserGrouping(), 2);
       final Joba states = new FilterJoba(grouping, types.type("UserCounter"), new CountUserEntries(), RuntimeUtils.findTypeParameters(CountUserEntries.class, Function.class)[0], UserCounter.class);
       final ReplicatorJoba result = new ReplicatorJoba(states);

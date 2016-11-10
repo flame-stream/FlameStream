@@ -1,102 +1,65 @@
 package experiments.interfaces.solar.jobas;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
+import akka.actor.UntypedActor;
+import com.spbsu.akka.ActorAdapter;
+import com.spbsu.akka.ActorContainer;
+import com.spbsu.akka.ActorMethod;
 import experiments.interfaces.solar.DataItem;
 import experiments.interfaces.solar.Joba;
-import gnu.trove.list.array.TIntArrayList;
+import experiments.interfaces.solar.items.EndOfTick;
 
 import java.util.*;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
 public class ReplicatorJoba extends Joba.Stub {
-  private final static int maximumWaste = 100;
-  private List<DataItem> buffer = new ArrayList<>(1000);
-  private TIntArrayList positions = new TIntArrayList();
-  private int start = 0;
-
-  private Spliterator<DataItem> baseSpliterator;
-  private boolean eos = false;
-  private final Thread producer;
-  private Stream<DataItem> seed;
-
   public ReplicatorJoba(final Joba base) {
-    super(base.generates());
-    producer = new Thread(() -> {
-      baseSpliterator = base.materialize(seed).spliterator();
-      while(true) {
-        if (!baseSpliterator.tryAdvance((e) -> {
-          synchronized (ReplicatorJoba.this) {
-            buffer.add(e);
-          }
-        }))
-          break;
-        synchronized (ReplicatorJoba.this) {
-          ReplicatorJoba.this.notifyAll();
-        }
-      }
-      synchronized (ReplicatorJoba.this) {
-        eos = true;
-        ReplicatorJoba.this.notifyAll();
-      }
-    });
-
+    super(base.generates(), base);
   }
 
-  private boolean started = false;
+  private List<ActorRef> sinks = new ArrayList<>();
   @Override
-  public synchronized Stream<DataItem> materialize(final Stream<DataItem> seed) {
-    if (!started) {
-      started = true;
-      this.seed = seed;
-      producer.start();
-    }
-    final int index = positions.size();
-    positions.add(-1);
-    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<DataItem>() {
-      @Override
-      public boolean hasNext() {
-        return incrementIndex(index);
-      }
-      @Override
-      public DataItem next() {
-        return elementFor(index);
-      }
-    }, Spliterator.IMMUTABLE), false);
+  public ActorRef materialize(ActorSystem at, ActorRef sink) {
+    sinks.add(sink);
+    return super.materialize(at, sink);
   }
 
-  private synchronized DataItem elementFor(int index) {
-    return buffer.get(positions.get(index) - start);
+  @Override
+  protected ActorRef actor(ActorSystem at, ActorRef sink) {
+    return at.actorOf(ActorContainer.props(ReplicatorActor.class, this));
   }
 
-  private synchronized boolean incrementIndex(int index) {
-    final int next = positions.get(index) + 1;
-    positions.set(index, next);
-//    if (positions.min() > start + maximumWaste) { // advance buffer
-//      final ArrayList<DataItem> nextBuffer = new ArrayList<>(Math.max(1000, buffer.size() - 100));
-//      for (int i = maximumWaste; i < buffer.size(); i++) {
-//        nextBuffer.add(buffer.get(i));
-//      }
-//      buffer = nextBuffer;
-//      start += maximumWaste;
-//    }
-    while (!eos && next - start >= buffer.size()) {
-      try {
-        wait();
-      }
-      catch (InterruptedException ignore) {}
+  @SuppressWarnings({"WeakerAccess", "unused"})
+  public static class ReplicatorActor extends ActorAdapter<UntypedActor> {
+    private final ReplicatorJoba padre;
+    public ReplicatorActor(ReplicatorJoba padre) {
+      this.padre = padre;
     }
-    if (!eos || next - start < buffer.size())
-      return true;
-    while (positions.min() - start < buffer.size()) {
-      try {
-        wait();
+
+    @ActorMethod
+    public void kill(EndOfTick pill) {
+      for (int i = padre.sinks.size() - 1; i >= 0; i--) {
+        padre.sinks.get(i).tell(pill, sender());
       }
-      catch (InterruptedException ignore) {}
     }
-    return false;
+
+    @ActorMethod
+    public void broadcast(DataItem di) {
+      for (ActorRef sink: padre.sinks) {
+        sink.tell(di, self());
+      }
+    }
+
+    @Override
+    protected void postStop() {
+      for (ActorRef sink: padre.sinks) {
+        sink.tell(PoisonPill.getInstance(), self());
+      }
+    }
   }
 }

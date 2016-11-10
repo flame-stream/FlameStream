@@ -1,24 +1,33 @@
 package experiments.interfaces.solar.jobas;
 
-import experiments.interfaces.solar.DataItem;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import experiments.interfaces.solar.DataType;
 import experiments.interfaces.solar.Joba;
-import experiments.interfaces.solar.items.ObjectDataItem;
-
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class IdentityJoba extends Joba.Stub {
+public class IdentityJoba implements Joba {
+  private final DataType generates;
+
   public IdentityJoba(DataType generates) {
-    super(generates);
+    this.generates = generates;
   }
 
   @Override
-  public Stream<DataItem> materialize(Stream<DataItem> input) {
-    return input;
+  public DataType generates() {
+    return generates;
+  }
+
+  @Override
+  public int id() {
+    return -1;
+  }
+
+  @Override
+  public ActorRef materialize(ActorSystem at, ActorRef sink) {
+    return sink;
   }
 }

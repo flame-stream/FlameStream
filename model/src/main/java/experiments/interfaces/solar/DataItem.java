@@ -1,8 +1,5 @@
 package experiments.interfaces.solar;
 
-import com.spbsu.commons.func.types.ConversionRepository;
-import com.spbsu.commons.func.types.SerializationRepository;
-import com.spbsu.commons.seq.CharSeq;
 import experiments.interfaces.solar.items.MetaImpl;
 import experiments.interfaces.solar.items.SerializedDataItem;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
  * Created by solar on 17.10.16.
  */
 public interface DataItem {
-
   Meta meta();
   CharSequence serializedData();
   @Nullable
