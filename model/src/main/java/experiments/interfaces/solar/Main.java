@@ -3,7 +3,7 @@ package experiments.interfaces.solar;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.spbsu.akka.SimpleAkkaSink;
-import experiments.interfaces.solar.items.EndOfTick;
+import experiments.interfaces.solar.control.EndOfTick;
 
 /**
  * Experts League
@@ -17,7 +17,7 @@ public class Main {
     Input.instance().stream(types.type("UsersLog")).flatMap((input) -> {
       final Joba joba;
       try {
-        final SimpleAkkaSink<DataItem> sink = new SimpleAkkaSink<>(DataItem.class);
+        final SimpleAkkaSink<DataItem> sink = new SimpleAkkaSink<>(DataItem.class, o -> o instanceof EndOfTick);
         joba = types.<Integer>convert(types.type("UsersLog"), types.type("Frequences"));
         final ActorRef materialize = joba.materialize(akka, sink.actor(akka));
         new Thread(() -> {
@@ -30,6 +30,7 @@ public class Main {
         throw new RuntimeException(tue);
       }
     }).forEach(Output.instance().printer());
+    akka.shutdown();
   }
 
 }

@@ -10,7 +10,8 @@ import com.spbsu.akka.ActorMethod;
 import experiments.interfaces.solar.DataItem;
 import experiments.interfaces.solar.DataType;
 import experiments.interfaces.solar.Joba;
-import experiments.interfaces.solar.items.EndOfTick;
+import experiments.interfaces.solar.control.EndOfTick;
+import experiments.interfaces.solar.control.LastItemMarker;
 
 import java.util.*;
 
@@ -68,27 +69,39 @@ public class MergeJoba extends Joba.Stub {
       this.incoming = incoming;
     }
 
-    int count = 0;
+    private int count = 0;
+    private LastItemMarker marker;
+    private boolean itemsReceived = false;
     @ActorMethod
     public void kill(EndOfTick eot) {
-      if (count == 0)
+      count++;
+      if (count == incoming) {
         sink.tell(eot, self());
-      if (sender() == self())
-        count++;
-      if (count == incoming) // all incoming have finished their jobs
-        self().tell(PoisonPill.getInstance(), self());
+        context().stop(self());
+      }
+      else if (marker == null){
+        itemsReceived = false;
+        marker = new LastItemMarker();
+        sink.tell(marker, self());
+      }
+    }
+
+    @ActorMethod
+    public void marker(LastItemMarker marker) {
+      if (marker == this.marker) {
+        if (itemsReceived) {
+          itemsReceived = false;
+          this.marker = new LastItemMarker();
+          sink.tell(this.marker, self());
+        }
+        else self().tell(new EndOfTick(), self());
+      }
     }
 
     @ActorMethod
     public void merge(DataItem di) {
+      itemsReceived = true;
       sink.tell(di, self());
-      if (count > 0)
-        count--;
-    }
-
-    @Override
-    protected void postStop() {
-      sink.tell(PoisonPill.getInstance(), self());
     }
   }
 }

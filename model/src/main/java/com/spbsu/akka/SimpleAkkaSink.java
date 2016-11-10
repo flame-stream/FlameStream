@@ -3,7 +3,7 @@ package com.spbsu.akka;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.UntypedActor;
-import experiments.interfaces.solar.items.EndOfTick;
+import com.spbsu.commons.filters.Filter;
 
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -21,9 +21,11 @@ public class SimpleAkkaSink<T> {
   private final LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<>();
   private ActorRef actorRef;
   private final Class<T> clazz;
+  private final Filter<Object> eosFilter;
 
-  public SimpleAkkaSink(Class<T> clazz) {
+  public SimpleAkkaSink(Class<T> clazz, Filter<Object> eosFilter) {
     this.clazz = clazz;
+    this.eosFilter = eosFilter;
   }
 
   public Stream<T> stream() {
@@ -33,7 +35,7 @@ public class SimpleAkkaSink<T> {
   public ActorRef actor(ActorSystem akka) {
     if (actorRef != null)
       return actorRef;
-    return actorRef = akka.actorOf(ActorContainer.props(SinkActor.class, queue));
+    return actorRef = akka.actorOf(ActorContainer.props(SinkActor.class, queue, eosFilter));
   }
 
   public class Iter<T> implements Iterator<T> {
@@ -81,13 +83,17 @@ public class SimpleAkkaSink<T> {
 
   public static class SinkActor extends ActorAdapter<UntypedActor> {
     private final LinkedBlockingQueue<Object> queue;
+    private final Filter<Object> eosFilter;
 
-    public SinkActor(LinkedBlockingQueue<Object> queue) {
+    public SinkActor(LinkedBlockingQueue<Object> queue, Filter<Object> eosFilter) {
       this.queue = queue;
+      this.eosFilter = eosFilter;
     }
 
     @ActorMethod
     public void append(Object di) {
+      if(eosFilter.accept(di))
+        context().stop(self());
       queue.add(di);
     }
 

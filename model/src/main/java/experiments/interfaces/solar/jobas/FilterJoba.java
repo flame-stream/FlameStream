@@ -10,7 +10,8 @@ import com.spbsu.akka.ActorMethod;
 import experiments.interfaces.solar.DataItem;
 import experiments.interfaces.solar.DataType;
 import experiments.interfaces.solar.Joba;
-import experiments.interfaces.solar.items.EndOfTick;
+import experiments.interfaces.solar.control.Control;
+import experiments.interfaces.solar.control.EndOfTick;
 import experiments.interfaces.solar.items.ObjectDataItem;
 
 import java.util.function.Function;
@@ -55,13 +56,10 @@ public class FilterJoba extends Joba.Stub {
     }
 
     @ActorMethod
-    public void kill(EndOfTick eot) {
+    public void control(Control eot) {
       sink.tell(eot, sender());
-    }
-
-    @Override
-    protected void postStop() {
-      sink.tell(PoisonPill.getInstance(), self());
+      if (eot instanceof EndOfTick)
+        context().stop(self());
     }
   }
 }
