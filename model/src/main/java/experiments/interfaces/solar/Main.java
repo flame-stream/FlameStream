@@ -3,7 +3,10 @@ package experiments.interfaces.solar;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.spbsu.akka.SimpleAkkaSink;
+import experiments.interfaces.solar.bl.UserCounter;
+import experiments.interfaces.solar.bl.UserMaxCountCondition;
 import experiments.interfaces.solar.control.EndOfTick;
+import experiments.interfaces.solar.jobas.IndicatorJoba;
 
 /**
  * Experts League
@@ -14,11 +17,13 @@ public class Main {
   public static void main(String[] args) {
     final DataTypeCollection types = DataTypeCollection.instance();
     final ActorSystem akka = ActorSystem.create();
+    final int maxUserCount = 5000;
+    final Condition<UserCounter> condition = new UserMaxCountCondition(maxUserCount);
     Input.instance().stream(types.type("UsersLog")).flatMap((input) -> {
       final Joba joba;
       try {
         final SimpleAkkaSink<DataItem> sink = new SimpleAkkaSink<>(DataItem.class, o -> o instanceof EndOfTick);
-        joba = types.<Integer>convert(types.type("UsersLog"), types.type("Frequences"));
+        joba = new IndicatorJoba(types.<Integer>convert(types.type("UsersLog"), types.type("Frequences")), condition);
         final ActorRef materialize = joba.materialize(akka, sink.actor(akka));
         new Thread(() -> {
           input.forEach(di -> materialize.tell(di, ActorRef.noSender()));

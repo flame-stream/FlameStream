@@ -18,12 +18,4 @@ import javax.rmi.CORBA.StubDelegate;
 })
 public interface UserContainer {
   String user();
-
-  class UserContainerCondition implements Condition {
-
-    @Override
-    public boolean update(DataItem item) {
-      return false;
-    }
-  }
 }

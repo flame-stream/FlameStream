@@ -4,6 +4,6 @@ package experiments.interfaces.solar;
  * Experts League
  * Created by solar on 17.10.16.
  */
-public interface Condition {
-  boolean update(DataItem item);
+public interface Condition<T> {
+  boolean update(T item);
 }

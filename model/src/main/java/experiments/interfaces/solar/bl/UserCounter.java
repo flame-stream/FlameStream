@@ -28,4 +28,8 @@ public class UserCounter implements UserContainer {
   public String user() {
     return user;
   }
+
+  public int count() {
+    return count;
+  }
 }
