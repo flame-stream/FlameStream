@@ -9,106 +9,92 @@ import com.spbsu.akka.ActorMethod;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataStreamsContext;
 import com.spbsu.datastream.core.DataType;
-import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.item.ListDataItem;
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 import com.spbsu.datastream.core.state.GroupingState;
-import gnu.trove.map.hash.TLongObjectHashMap;
+import com.spbsu.datastream.core.state.StateRepository;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.Comparator;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public class NewGroupingJoba extends Joba.Stub {
+  private final StateRepository stateRepository = DataStreamsContext.stateRepository;
+
   private final DataItem.Grouping grouping;
+
   private final int window;
-  private final GroupingState state;
 
   public NewGroupingJoba(Joba base, DataType generates, DataItem.Grouping grouping, int window) {
     super(generates, base);
     this.grouping = grouping;
     this.window = window;
-    state = DataStreamsContext.stateRepository.load(generates);
-  }
-
-  private Optional<List<DataItem>> searchBucket(long hash, DataItem item, TLongObjectHashMap<List<List<DataItem>>> through) {
-    return Stream.of(through.get(hash))
-            .flatMap(state -> state != null ? state.stream() : Stream.empty())
-            .filter(bucket -> bucket.isEmpty() || grouping.equals(bucket.get(0), item)).findAny();
   }
 
   @Override
   protected ActorRef actor(ActorSystem at, ActorRef sink) {
-    return at.actorOf(ActorContainer.props(GroupingActor.class, this, state, sink));
+    return at.actorOf(ActorContainer.props(GroupingActor.class, this, sink));
   }
 
   @SuppressWarnings({"WeakerAccess", "unused"})
   public static class GroupingActor extends ActorAdapter<UntypedActor> {
-    private final TLongObjectHashMap<List<List<DataItem>>> state;
-    private final TLongObjectHashMap<List<List<DataItem>>> buffers = new TLongObjectHashMap<>();
+
+    private final GroupingState buffer = new GroupingState();
     private final ActorRef sink;
     private final NewGroupingJoba padre;
     boolean eos = false;
 
-    public GroupingActor(NewGroupingJoba padre, TLongObjectHashMap<List<List<DataItem>>> state, ActorRef sink) {
+    public GroupingActor(NewGroupingJoba padre, ActorRef sink) {
       this.padre = padre;
-      this.state = state;
       this.sink = sink;
     }
 
     @ActorMethod
     public void group(DataItem item) {
       final long hash = padre.grouping.hash(item);
-      List<DataItem> group = padre.searchBucket(hash, item, buffers).orElse(null);
       final int window = padre.window;
       final int jobaId = padre.id();
+
+      final GroupingState.Bucket group = buffer.searchBucket(hash, item, padre.grouping).orElse(null);
+
       if (group != null) { // look for time collision in the current tick
-        int replayCount = 0;
-        while (replayCount < group.size() && group.get(group.size() - replayCount - 1).meta().compareTo(item.meta()) > 0) {
-          replayCount++;
-        }
-        group.add(group.size() - replayCount, item);
-        if (replayCount > 0) {
-          for (int i = group.size() - replayCount; i < group.size(); i++) {
-            sink.tell(new ListDataItem(group.subList(window > 0 ? Math.max(0, i + 1 - window) : 0, i + 1), group.get(i).meta()), self());
-          }
-          return;
+        int expectedPosition = -(Collections.binarySearch(group, item, Comparator.comparing(DataItem::meta)) + 1);
+
+        group.add(expectedPosition, item);
+        for (int i = expectedPosition; i < group.size(); i++) {
+          sink.tell(new ListDataItem(group.subList(Math.max(0, i - window), i + 1), group.get(i).meta()), self());
         }
       } else { // creating group from existing in the state
-        group = new ArrayList<>(padre.searchBucket(hash, item, state).orElse(Collections.emptyList()));
-        buffers.putIfAbsent(hash, new ArrayList<>());
-        final List<List<DataItem>> lists = buffers.get(hash);
-        lists.add(group);
-        group.add(item);
+        final GroupingState state = padre.stateRepository.load(padre.generates().name());
+        final GroupingState.Bucket stateBucket = state.searchBucket(hash, item, padre.grouping)
+                .map(GroupingState.Bucket::new)
+                .orElse(new GroupingState.Bucket());
+
+        stateBucket.add(item);
+        buffer.putBucket(hash, stateBucket);
+        sink.tell(new ListDataItem(stateBucket.subList(Math.max(0, stateBucket.size() - window), stateBucket.size()), item.meta()), self());
       }
-      sink.tell(new ListDataItem(window > 0 ? group.subList(Math.max(0, group.size() - window), group.size()) : group, item.meta()), self());
     }
 
     @ActorMethod
     public void control(Control eot) {
       sink.tell(eot, sender());
+
       if (eot instanceof EndOfTick) {
-        synchronized (state) {
-          buffers.forEachEntry((hash, bucket) -> {
-            bucket.forEach(group -> {
-              final int window = padre.window;
-              final List<DataItem> windowedGroup = group.subList(window > 0 ? Math.max(0, group.size() - window) : 0, group.size());
-              final List<DataItem> oldGroup = padre.searchBucket(hash, group.get(0), state).orElse(null);
-              if (oldGroup != null) {
-                oldGroup.clear();
-                oldGroup.addAll(windowedGroup);
-              } else {
-                state.putIfAbsent(hash, new ArrayList<>());
-                state.get(hash).add(windowedGroup);
-              }
-            });
-            return true;
+        padre.stateRepository.update(padre.generates().name(), stateOpt -> {
+          final GroupingState state = stateOpt.orElse(new GroupingState());
+
+          buffer.forEach((bucket, hash) -> {
+            final int window = padre.window;
+
+            final GroupingState.Bucket windowedGroup = new GroupingState.Bucket(bucket.subList(Math.max(0, bucket.size() - window), bucket.size()));
+            final Optional<GroupingState.Bucket> oldGroup = state.searchBucket(hash, bucket.get(0), padre.grouping);
+
+            state.putBucket(hash, windowedGroup);
           });
-          Output.instance().save(padre.generates(), state);
-        }
+          return state;
+        });
 
         context().stop(self());
       }
