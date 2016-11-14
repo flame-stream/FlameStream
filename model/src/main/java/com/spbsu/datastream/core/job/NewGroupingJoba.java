@@ -56,12 +56,14 @@ public class NewGroupingJoba extends Joba.Stub {
       final int window = padre.window;
       final int jobaId = padre.id();
 
-      final GroupingState.Bucket group = buffer.searchBucket(hash, item, padre.grouping).orElse(null);
+      final Optional<GroupingState.Bucket> bucketOpt = buffer.searchBucket(hash, item, padre.grouping);
 
-      if (group != null) { // look for time collision in the current tick
+      if (bucketOpt.isPresent()) { // look for time collision in the current tick
+        final GroupingState.Bucket group = bucketOpt.get();
         int expectedPosition = -(Collections.binarySearch(group, item, Comparator.comparing(DataItem::meta)) + 1);
 
         group.add(expectedPosition, item);
+
         for (int i = expectedPosition; i < group.size(); i++) {
           sink.tell(new ListDataItem(group.subList(Math.max(0, i - window), i + 1), group.get(i).meta()), self());
         }
@@ -91,7 +93,12 @@ public class NewGroupingJoba extends Joba.Stub {
             final GroupingState.Bucket windowedGroup = new GroupingState.Bucket(bucket.subList(Math.max(0, bucket.size() - window), bucket.size()));
             final Optional<GroupingState.Bucket> oldGroup = state.searchBucket(hash, bucket.get(0), padre.grouping);
 
-            state.putBucket(hash, windowedGroup);
+            if (oldGroup.isPresent()) {
+              oldGroup.get().clear();
+              oldGroup.get().addAll(windowedGroup);
+            } else {
+              state.putBucket(hash, windowedGroup);
+            }
           });
           return state;
         });
