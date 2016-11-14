@@ -3,7 +3,6 @@ package experiments.interfaces.solar.items;
 import com.spbsu.commons.seq.CharSeq;
 import experiments.interfaces.solar.DataItem;
 import experiments.interfaces.solar.DataTypeCollection;
-import experiments.interfaces.solar.SystemTime;
 
 /**
  * Experts League
@@ -14,7 +13,7 @@ public class SerializedDataItem implements DataItem {
   private final CharSeq line;
 
   public SerializedDataItem(CharSequence line) {
-    this.meta = new MetaImpl(new SystemTime(System.nanoTime()));
+    this.meta = new MetaImpl(System.nanoTime());
     this.line = CharSeq.create(line);
   }
 

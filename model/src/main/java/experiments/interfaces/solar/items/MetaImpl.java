@@ -1,31 +1,52 @@
 package experiments.interfaces.solar.items;
 
 import experiments.interfaces.solar.DataItem;
-import experiments.interfaces.solar.SystemTime;
 
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
 public class MetaImpl implements DataItem.Meta<MetaImpl> {
-  private final SystemTime time;
+  public static final MetaImpl ZERO = new MetaImpl() {
+    @Override
+    public int compareTo(final MetaImpl o) {
+      return -1;
+    }
+  };
 
-  public MetaImpl(SystemTime time) {
-    this.time = time;
+  public static final MetaImpl INFINITY = new MetaImpl() {
+    @Override
+    public int compareTo(final MetaImpl o) {
+      return 1;
+    }
+  };
+
+  private final long globalTime;
+  private final int localTime;
+
+  private static volatile int currentLocalTime = 0;
+
+  private MetaImpl() {
+    globalTime = -1;
+    localTime = currentLocalTime++;
   }
 
-  @Override
+  public MetaImpl(long globalTime) {
+    this.globalTime = globalTime;
+    localTime = currentLocalTime++;
+  }
+
   public int tick() {
-    return time.tick();
+    return (int) (globalTime / 10000000);
   }
 
   @Override
   public MetaImpl advance() {
-    return new MetaImpl(this.time);
+    return new MetaImpl(globalTime);
   }
 
   @Override
   public int compareTo(final MetaImpl o) {
-    return this.time.compareTo(o.time);
+    return globalTime == o.globalTime ? Integer.compare(localTime, o.localTime) : Long.compare(globalTime, o.globalTime);
   }
 }
