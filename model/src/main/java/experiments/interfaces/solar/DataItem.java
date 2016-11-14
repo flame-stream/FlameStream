@@ -1,6 +1,5 @@
 package experiments.interfaces.solar;
 
-import experiments.interfaces.solar.items.MetaImpl;
 import experiments.interfaces.solar.items.SerializedDataItem;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,7 +9,9 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface DataItem {
   Meta meta();
+
   CharSequence serializedData();
+
   @Nullable
   <T> T as(Class<T> type);
 
@@ -18,17 +19,15 @@ public interface DataItem {
     return new SerializedDataItem(line);
   }
 
-  interface Meta {
-    SystemTime time();
+  interface Meta<T extends Meta> extends Comparable<T> {
     int tick();
 
-    static Meta advance(Meta meta, int id) {
-      return new MetaImpl(meta, id);
-    }
+    T advance();
   }
 
   interface Grouping {
     long hash(DataItem item);
+
     boolean equals(DataItem left, DataItem right);
   }
 }

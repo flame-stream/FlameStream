@@ -2,7 +2,6 @@ package experiments.interfaces.solar.jobas;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
 import com.spbsu.akka.ActorAdapter;
 import com.spbsu.akka.ActorContainer;
@@ -52,7 +51,7 @@ public class FilterJoba extends Joba.Stub {
       //noinspection unchecked
       final Object result = padre.func.apply(di.as(padre.blInput));
       if (result != null)
-        sink.tell(new ObjectDataItem(result, padre.blOutput, DataItem.Meta.advance(di.meta(), padre.id())), self());
+        sink.tell(new ObjectDataItem(result, padre.blOutput, di.meta()), self());
     }
 
     @ActorMethod

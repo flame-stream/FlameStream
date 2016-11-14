@@ -2,7 +2,6 @@ package experiments.interfaces.solar.jobas;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
 import com.spbsu.akka.ActorAdapter;
 import com.spbsu.akka.ActorContainer;
@@ -40,8 +39,8 @@ public class GroupingJoba extends Joba.Stub {
 
   private Optional<List<DataItem>> searchBucket(long hash, DataItem item, TLongObjectHashMap<List<List<DataItem>>> through) {
     return Stream.of(through.get(hash))
-        .flatMap(state -> state != null ? state.stream() : Stream.empty())
-        .filter(bucket -> bucket.isEmpty() || grouping.equals(bucket.get(0), item)).findAny();
+            .flatMap(state -> state != null ? state.stream() : Stream.empty())
+            .filter(bucket -> bucket.isEmpty() || grouping.equals(bucket.get(0), item)).findAny();
   }
 
   @Override
@@ -71,25 +70,24 @@ public class GroupingJoba extends Joba.Stub {
       final int jobaId = padre.id();
       if (group != null) { // look for time collision in the current tick
         int replayCount = 0;
-        while (replayCount < group.size() && group.get(group.size() - replayCount - 1).meta().time().greater(item.meta().time())) {
+        while (replayCount < group.size() && group.get(group.size() - replayCount - 1).meta().compareTo(item.meta()) > 0) {
           replayCount++;
         }
         group.add(group.size() - replayCount, item);
         if (replayCount > 0) {
           for (int i = group.size() - replayCount; i < group.size(); i++) {
-            sink.tell(new ListDataItem(group.subList(window > 0 ? Math.max(0, i + 1 - window) : 0, i + 1), group.get(i).meta(), jobaId), self());
+            sink.tell(new ListDataItem(group.subList(window > 0 ? Math.max(0, i + 1 - window) : 0, i + 1), group.get(i).meta()), self());
           }
           return;
         }
-      }
-      else { // creating group from existing in the state
+      } else { // creating group from existing in the state
         group = new ArrayList<>(padre.searchBucket(hash, item, state).orElse(Collections.emptyList()));
         buffers.putIfAbsent(hash, new ArrayList<>());
         final List<List<DataItem>> lists = buffers.get(hash);
         lists.add(group);
         group.add(item);
       }
-      sink.tell(new ListDataItem(window > 0 ? group.subList(Math.max(0, group.size() - window), group.size()) : group, item.meta(), jobaId), self());
+      sink.tell(new ListDataItem(window > 0 ? group.subList(Math.max(0, group.size() - window), group.size()) : group, item.meta()), self());
     }
 
     @ActorMethod
@@ -105,8 +103,7 @@ public class GroupingJoba extends Joba.Stub {
               if (oldGroup != null) {
                 oldGroup.clear();
                 oldGroup.addAll(windowedGroup);
-              }
-              else {
+              } else {
                 state.putIfAbsent(hash, new ArrayList<>());
                 state.get(hash).add(windowedGroup);
               }

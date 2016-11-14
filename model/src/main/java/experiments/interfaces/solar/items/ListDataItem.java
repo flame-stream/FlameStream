@@ -14,9 +14,9 @@ import java.util.List;
 public class ListDataItem extends ArrayList<DataItem> implements DataItem {
   private final Meta meta;
 
-  public ListDataItem(List<DataItem> copy, Meta meta, int id) {
+  public ListDataItem(List<DataItem> copy, Meta meta) {
     super(copy);
-    this.meta = new MetaImpl(meta, id);
+    this.meta = meta.advance();
   }
 
   @Override
