@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 /**
@@ -15,7 +16,7 @@ import java.util.stream.Stream;
  */
 public class GroupingState extends TLongObjectHashMap<List<GroupingState.Bucket>> {
 
-  private Optional<Bucket> searchBucket(long hash, DataItem item) {
+  private Optional<Bucket> searchBucket(long hash, DataItem item, DataItem.Grouping grouping) {
     return Stream.of(get(hash))
             .flatMap(state -> state != null ? state.stream() : Stream.empty())
             .filter(bucket -> bucket.isEmpty() || grouping.equals(bucket.get(0), item)).findAny();
