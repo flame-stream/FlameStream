@@ -8,6 +8,7 @@ import com.spbsu.commons.filters.Filter;
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -18,7 +19,7 @@ import java.util.stream.StreamSupport;
  */
 public class SimpleAkkaSink<T> {
   private static final String EOS_MARKER = "End of stream";
-  private final LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<>();
+  private final BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
   private ActorRef actorRef;
   private final Class<T> clazz;
   private final Filter<Object> eosFilter;
