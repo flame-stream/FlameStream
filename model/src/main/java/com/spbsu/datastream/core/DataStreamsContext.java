@@ -19,7 +19,7 @@ public class DataStreamsContext {
           CharSeq.class
   );
 
-  public static final DataTypeCollection typeCollection = new DataTypeCollection() ;
+  public static final DataTypeCollection typeCollection = new DataTypeCollection();
 
   public static final Input input = new Input();
 
