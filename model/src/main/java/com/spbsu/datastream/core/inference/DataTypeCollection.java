@@ -4,8 +4,8 @@ import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.TypeUnreachableException;
 import com.spbsu.datastream.core.job.*;
-import com.spbsu.datastream.example.bl.CountUserEntries;
-import com.spbsu.datastream.example.bl.UserCounter;
+import com.spbsu.datastream.example.bl.counter.CountUserEntries;
+import com.spbsu.datastream.example.bl.counter.UserCounter;
 import com.spbsu.datastream.example.bl.UserGrouping;
 import org.jetbrains.annotations.Nullable;
 

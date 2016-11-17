@@ -1,4 +1,6 @@
-package com.spbsu.datastream.example.bl;
+package com.spbsu.datastream.example.bl.counter;
+
+import com.spbsu.datastream.example.bl.*;
 
 import java.util.function.Function;
 

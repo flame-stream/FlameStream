@@ -1,6 +1,7 @@
-package com.spbsu.datastream.example.bl;
+package com.spbsu.datastream.example.bl.counter;
 
 import com.spbsu.datastream.core.Condition;
+import com.spbsu.datastream.example.bl.counter.UserCounter;
 
 /**
  * Created by Artem on 12.11.2016.

@@ -12,15 +12,15 @@ import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.job.IndicatorJoba;
 import com.spbsu.datastream.core.job.Joba;
 import com.spbsu.datastream.core.job.control.EndOfTick;
-import com.spbsu.datastream.example.bl.UserCounter;
-import com.spbsu.datastream.example.bl.UserMaxCountCondition;
+import com.spbsu.datastream.example.bl.counter.UserCounter;
+import com.spbsu.datastream.example.bl.counter.UserMaxCountCondition;
 
 /**
  * Experts League
  * Created by solar on 27.10.16.
  */
 @SuppressWarnings("WeakerAccess")
-public class Main {
+public class RunUserCounter {
   public static void main(String[] args) {
     final DataTypeCollection types = DataStreamsContext.typeCollection;
     final ActorSystem akka = ActorSystem.create();

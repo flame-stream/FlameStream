@@ -2,6 +2,7 @@ package com.spbsu.datastream.example.bl;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.spbsu.datastream.example.bl.counter.UserCounter;
 
 /**
  * Experts League

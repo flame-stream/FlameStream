@@ -2,7 +2,7 @@ package com.spbsu.datastream.example.bl.io;
 
 import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.seq.CharSeq;
-import com.spbsu.datastream.example.bl.UserCounter;
+import com.spbsu.datastream.example.bl.counter.UserCounter;
 
 /**
  * Experts League
