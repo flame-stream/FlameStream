@@ -2,7 +2,7 @@ package com.spbsu.datastream.core.inference;
 
 import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.datastream.core.DataType;
-import com.spbsu.datastream.core.TypeUnreachableException;
+import com.spbsu.datastream.core.exceptions.TypeUnreachableException;
 import com.spbsu.datastream.core.job.*;
 import com.spbsu.datastream.example.bl.counter.CountUserEntries;
 import com.spbsu.datastream.example.bl.counter.UserCounter;

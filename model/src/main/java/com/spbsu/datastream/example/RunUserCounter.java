@@ -6,7 +6,7 @@ import com.spbsu.akka.SimpleAkkaSink;
 import com.spbsu.datastream.core.Condition;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataStreamsContext;
-import com.spbsu.datastream.core.TypeUnreachableException;
+import com.spbsu.datastream.core.exceptions.TypeUnreachableException;
 import com.spbsu.datastream.core.inference.DataTypeCollection;
 import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.job.IndicatorJoba;

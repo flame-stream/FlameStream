@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core;
+package com.spbsu.datastream.core.exceptions;
 
 /**
  * Experts League

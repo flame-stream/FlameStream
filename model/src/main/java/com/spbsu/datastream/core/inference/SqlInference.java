@@ -1,13 +1,24 @@
 package com.spbsu.datastream.core.inference;
 
-import com.spbsu.commons.system.RuntimeUtils;
+import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
-import com.spbsu.datastream.core.TypeNotSupportedException;
-import com.spbsu.datastream.core.job.*;
-import com.spbsu.datastream.example.bl.UserContainer;
-import com.spbsu.datastream.example.bl.UserGrouping;
-import com.spbsu.datastream.example.bl.sql.SelectUserEntries;
-import com.spbsu.datastream.example.bl.sql.UserSelector;
+import com.spbsu.datastream.core.exceptions.InvalidQueryException;
+import com.spbsu.datastream.core.exceptions.UnsupportedQueryException;
+import com.spbsu.datastream.core.job.FilterJoba;
+import com.spbsu.datastream.core.job.IdentityJoba;
+import com.spbsu.datastream.core.job.Joba;
+import com.spbsu.datastream.core.job.ReplicatorJoba;
+import com.spbsu.datastream.example.bl.sql.SqlWhereEqualsToFilter;
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.StringValue;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
@@ -21,18 +32,55 @@ public class SqlInference {
     return new DataType.Stub(name);
   }
 
-  @SuppressWarnings("UnusedParameters")
-  public <T>Joba select(DataType sourceDataType, Function<T, T> whereFilter) throws TypeNotSupportedException {
-    if ("UsersLog".equals(sourceDataType.name())) {
-      final MergeJoba merge = new MergeJoba(type("Merge(UsersLog, States(Select))"), new IdentityJoba(sourceDataType));
-      final FilterJoba selectJoba = new FilterJoba(merge, type("Select"), whereFilter, UserContainer.class, UserContainer.class);
-      final GroupingJoba grouping = new GroupingJoba(selectJoba, type("Group(Merge(UsersLog, States(Select)), UserHash, 2)"), new UserGrouping(), 2);
-      final FilterJoba states = new FilterJoba(grouping, type("UserSelector"), new SelectUserEntries(), RuntimeUtils.findTypeParameters(SelectUserEntries.class, Function.class)[0], UserSelector.class);
-      final ReplicatorJoba result = new ReplicatorJoba(states);
-      merge.add(result);
-      return result;
-    } else {
-      throw new TypeNotSupportedException();
+  public Joba query(String query, Class dataClass) throws InvalidQueryException, UnsupportedQueryException {
+    try {
+      final Joba result;
+      final Statement sqlStatement = CCJSqlParserUtil.parse(query);
+      if (sqlStatement instanceof Select) {
+        final Select select = (Select) sqlStatement;
+        if (select.getSelectBody() instanceof PlainSelect) {
+          final PlainSelect selectBody = (PlainSelect) select.getSelectBody();
+          result = processPlainSelect(selectBody, dataClass);
+          return result;
+        }
+      }
+      throw new UnsupportedQueryException();
+    } catch (JSQLParserException jpe) {
+      throw new InvalidQueryException(jpe);
     }
+  }
+
+  private Joba processPlainSelect(PlainSelect select, Class dataClass) throws UnsupportedQueryException {
+    final Joba result;
+    if (select.getFromItem() instanceof Table) {
+      final Table table = (Table) select.getFromItem();
+      final DataType sourceDataType = type(table.getName());
+      final Function<DataItem, DataItem> whereFilter = whereFilter(select.getWhere());
+      result = selectJoba(sourceDataType, whereFilter, dataClass);
+      return result;
+    }
+    throw new UnsupportedQueryException();
+  }
+
+  private Function<DataItem, DataItem> whereFilter(Expression where) throws UnsupportedQueryException {
+    final Function<DataItem, DataItem> whereFilter;
+    if (where instanceof EqualsTo) {
+      final EqualsTo equalsTo = (EqualsTo) where;
+      if (equalsTo.getLeftExpression() instanceof Column) {
+        final Column column = (Column) equalsTo.getLeftExpression();
+        if (equalsTo.getRightExpression() instanceof StringValue) {
+          final StringValue stringValue = (StringValue) equalsTo.getRightExpression();
+          whereFilter = new SqlWhereEqualsToFilter<>(column.getColumnName(), stringValue.getValue());
+          return whereFilter;
+        }
+      }
+    }
+    throw new UnsupportedQueryException();
+  }
+
+  private Joba selectJoba(DataType sourceDataType, Function<DataItem, DataItem> whereFilter, Class dataClass) {
+    final String filterJobaGeneratesTypeName = String.format("Filter(%s, %s)", sourceDataType.name(), whereFilter);
+    final FilterJoba filterJoba = new FilterJoba(new IdentityJoba(sourceDataType), type(filterJobaGeneratesTypeName), whereFilter, dataClass, dataClass);
+    return new ReplicatorJoba(filterJoba);
   }
 }
