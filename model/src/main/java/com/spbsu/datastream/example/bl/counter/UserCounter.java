@@ -1,6 +1,8 @@
-package com.spbsu.datastream.example.bl;
+package com.spbsu.datastream.example.bl.counter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.spbsu.datastream.example.bl.UserContainer;
+import com.spbsu.datastream.example.bl.UserQuery;
 
 /**
  * Experts League

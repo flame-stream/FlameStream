@@ -5,6 +5,7 @@ import com.spbsu.commons.func.types.SerializationRepository;
 import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.datastream.core.inference.DataTypeCollection;
+import com.spbsu.datastream.core.inference.SqlInference;
 import com.spbsu.datastream.core.io.Input;
 import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.state.StateRepository;
@@ -20,6 +21,8 @@ public class DataStreamsContext {
   );
 
   public static final DataTypeCollection typeCollection = new DataTypeCollection();
+
+  public static final SqlInference sqlInference = new SqlInference();
 
   public static final Input input = new Input();
 
