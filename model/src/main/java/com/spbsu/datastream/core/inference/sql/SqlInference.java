@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.inference;
+package com.spbsu.datastream.core.inference.sql;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;

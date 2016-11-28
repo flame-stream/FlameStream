@@ -5,7 +5,10 @@ import com.spbsu.commons.func.types.SerializationRepository;
 import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.datastream.core.inference.DataTypeCollection;
-import com.spbsu.datastream.core.inference.SqlInference;
+import com.spbsu.datastream.core.inference.JobaBuilder;
+import com.spbsu.datastream.core.inference.SimpleBuilder;
+import com.spbsu.datastream.core.inference.TypeCollection;
+import com.spbsu.datastream.core.inference.sql.SqlInference;
 import com.spbsu.datastream.core.io.Input;
 import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.state.StateRepository;
@@ -20,7 +23,9 @@ public class DataStreamsContext {
           CharSeq.class
   );
 
-  public static final DataTypeCollection typeCollection = new DataTypeCollection();
+  public static final TypeCollection typeCollection = new DataTypeCollection();
+
+  public static final JobaBuilder jobaBuilder = new SimpleBuilder();
 
   public static final SqlInference sqlInference = new SqlInference();
 
@@ -30,4 +35,3 @@ public class DataStreamsContext {
 
   public static final StateRepository stateRepository = new StateRepository();
 }
-

@@ -7,7 +7,7 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataStreamsContext;
 import com.spbsu.datastream.core.exceptions.InvalidQueryException;
 import com.spbsu.datastream.core.exceptions.UnsupportedQueryException;
-import com.spbsu.datastream.core.inference.SqlInference;
+import com.spbsu.datastream.core.inference.sql.SqlInference;
 import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.job.Joba;
 import com.spbsu.datastream.core.job.control.EndOfTick;

@@ -1,5 +1,8 @@
 package com.spbsu.datastream.core;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -39,6 +42,26 @@ public interface DataType {
 
     public Stub(String name) {
       this.name = name;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) return true;
+
+      if (o == null || getClass() != o.getClass()) return false;
+
+      Stub stub = (Stub) o;
+
+      return new EqualsBuilder()
+              .append(name, stub.name)
+              .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder(17, 37)
+              .append(name)
+              .toHashCode();
     }
   }
 }

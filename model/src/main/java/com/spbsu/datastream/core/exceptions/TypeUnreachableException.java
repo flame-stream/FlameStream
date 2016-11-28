@@ -4,7 +4,7 @@ package com.spbsu.datastream.core.exceptions;
  * Experts League
  * Created by solar on 27.10.16.
  */
-public class TypeUnreachableException extends Exception {
+public class TypeUnreachableException extends RuntimeException {
   public TypeUnreachableException() {
   }
 
