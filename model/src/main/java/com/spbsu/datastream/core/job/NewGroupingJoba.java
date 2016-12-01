@@ -96,6 +96,7 @@ public class NewGroupingJoba extends Joba.Stub {
             final int window = padre.window;
 
             final GroupingState.Bucket windowedGroup = new GroupingState.Bucket(bucket.subList(Math.max(0, bucket.size() - window), bucket.size()));
+            System.err.println(windowedGroup);
             final Optional<GroupingState.Bucket> oldGroup = state.searchBucket(hash, bucket.get(0), padre.grouping);
 
             if (oldGroup.isPresent()) {
