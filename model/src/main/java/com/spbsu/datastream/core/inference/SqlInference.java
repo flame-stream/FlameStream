@@ -21,18 +21,18 @@ public class SqlInference {
     return new DataType.Stub(name);
   }
 
-  @SuppressWarnings("UnusedParameters")
-  public <T>Joba select(DataType sourceDataType, Function<T, T> whereFilter) throws TypeNotSupportedException {
-    if ("UsersLog".equals(sourceDataType.name())) {
-      final MergeJoba merge = new MergeJoba(type("Merge(UsersLog, States(Select))"), new IdentityJoba(sourceDataType));
-      final FilterJoba selectJoba = new FilterJoba(merge, type("Select"), whereFilter, UserContainer.class, UserContainer.class);
-      final GroupingJoba grouping = new GroupingJoba(selectJoba, type("Group(Merge(UsersLog, States(Select)), UserHash, 2)"), new UserGrouping(), 2);
-      final FilterJoba states = new FilterJoba(grouping, type("UserSelector"), new SelectUserEntries(), RuntimeUtils.findTypeParameters(SelectUserEntries.class, Function.class)[0], UserSelector.class);
-      final ReplicatorJoba result = new ReplicatorJoba(states);
-      merge.add(result);
-      return result;
-    } else {
-      throw new TypeNotSupportedException();
-    }
-  }
+//  @SuppressWarnings("UnusedParameters")
+//  public <T>Joba select(DataType sourceDataType, Function<T, T> whereFilter) throws TypeNotSupportedException {
+//    if ("UsersLog".equals(sourceDataType.name())) {
+//      final MergeJoba merge = new MergeJoba(type("Merge(UsersLog, States(Select))"), new IdentityJoba(sourceDataType));
+//      final FilterJoba selectJoba = new FilterJoba(merge, type("Select"), whereFilter, UserContainer.class, UserContainer.class);
+//      final GroupingJoba grouping = new GroupingJoba(selectJoba, type("Group(Merge(UsersLog, States(Select)), UserHash, 2)"), new UserGrouping(), 2);
+//      final FilterJoba states = new FilterJoba(grouping, type("UserSelector"), new SelectUserEntries(), RuntimeUtils.findTypeParameters(SelectUserEntries.class, Function.class)[0], UserSelector.class);
+//      final ReplicatorJoba result = new ReplicatorJoba(states);
+//      merge.add(result);
+//      return result;
+//    } else {
+//      throw new TypeNotSupportedException();
+//    }
+//  }
 }

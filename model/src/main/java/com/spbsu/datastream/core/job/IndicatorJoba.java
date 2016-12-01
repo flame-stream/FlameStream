@@ -8,6 +8,7 @@ import com.spbsu.akka.ActorContainer;
 import com.spbsu.akka.ActorMethod;
 import com.spbsu.datastream.core.Condition;
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.job.control.ConditionFails;
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
@@ -20,56 +21,39 @@ import java.util.List;
  * Created by Artem on 12.11.2016.
  */
 public class IndicatorJoba extends Joba.Stub {
-  private final List<Condition> conditions = new ArrayList<>();
+  private Sink sink;
+  private boolean stateIsOk;
 
-  public IndicatorJoba(Joba base, Condition... conditions) {
-    super(base.generates(), base);
+  private final List<Condition> conditions = new ArrayList<>();
+  public IndicatorJoba(Sink sink, Condition... conditions) {
+    super(null);
     this.conditions.addAll(Arrays.asList(conditions));
+    this.sink = sink;
   }
 
   @Override
-  protected ActorRef actor(ActorSystem at, ActorRef sink) {
-    return at.actorOf(ActorContainer.props(IndicatorActor.class, this, sink));
+  public void accept(DataItem item) {
+    if (stateIsOk) {
+      for (Condition c : conditions) {
+        //noinspection unchecked
+        stateIsOk = c.update(item.as(c.getClass().getGenericSuperclass().getClass()));
+      }
+      if (stateIsOk) {
+        sink.accept(item);
+      }
+    }
   }
 
-  @SuppressWarnings("WeakerAccess")
-  public static class IndicatorActor extends ActorAdapter<UntypedActor> {
-    private final IndicatorJoba padre;
-    private final ActorRef sink;
-    private boolean stateIsOk;
-
-    public IndicatorActor(IndicatorJoba padre, ActorRef sink) {
-      this.padre = padre;
-      this.sink = sink;
-      stateIsOk = true;
-    }
-
-    @ActorMethod
-    public void checkItem(DataItem di) {
+  @Override
+  public void accept(Control control) {
+    if (control instanceof EndOfTick) {
       if (stateIsOk) {
-        for (Condition c : padre.conditions) {
-          //noinspection unchecked
-          stateIsOk = c.update(di.as(c.getClass().getGenericSuperclass().getClass()));
-        }
-        if (stateIsOk) {
-          sink.tell(di, self());
-        }
-      }
-    }
-
-    @ActorMethod
-    public void control(Control eot) {
-      if (eot instanceof EndOfTick) {
-        if (stateIsOk) {
-          sink.tell(eot, sender());
-        }
-        else {
-          sink.tell(new ConditionFails(), sender());
-        }
-        context().stop(self());
+        sink.accept(control);
       } else {
-        sink.tell(eot, sender());
-      }
+        sink.accept(new ConditionFails());
+      };
+    } else {
+      sink.accept(control);
     }
   }
 }

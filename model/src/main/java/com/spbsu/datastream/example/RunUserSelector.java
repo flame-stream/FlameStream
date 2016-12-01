@@ -18,29 +18,29 @@ import com.spbsu.datastream.example.bl.sql.UserFilterByName;
  */
 @SuppressWarnings("WeakerAccess")
 public class RunUserSelector {
-  public static void main(String[] args) {
-    final SqlInference sqlInference = DataStreamsContext.sqlInference;
-    final ActorSystem akka = ActorSystem.create();
-
-    DataStreamsContext.input.stream(sqlInference.type("UsersLog")).flatMap((input) -> {
-      final Joba joba;
-      try {
-        final SimpleAkkaSink<DataItem> sink = new SimpleAkkaSink<>(DataItem.class, EndOfTick.class::isInstance);
-        joba = sqlInference.select(sqlInference.type("UsersLog"), new UserFilterByName("petya"));
-        final ActorRef materialize = joba.materialize(akka, sink.actor(akka));
-        new Thread(() -> {
-          input.forEach(di -> {
-            materialize.tell(di, ActorRef.noSender());
-            Thread.yield();
-          });
-          materialize.tell(new EndOfTick(), ActorRef.noSender());
-        }).start();
-        return sink.stream().onClose(() -> Output.instance().commit());
-      } catch (TypeNotSupportedException tnse) {
-        throw new RuntimeException(tnse);
-      }
-    }).forEach(Output.instance().printer());
-    akka.shutdown();
-  }
+//  public static void main(String[] args) {
+//    final SqlInference sqlInference = DataStreamsContext.sqlInference;
+//    final ActorSystem akka = ActorSystem.create();
+//
+//    DataStreamsContext.input.stream(sqlInference.type("UsersLog")).flatMap((input) -> {
+//      final Joba joba;
+//      try {
+//        final SimpleAkkaSink<DataItem> sink = new SimpleAkkaSink<>(DataItem.class, EndOfTick.class::isInstance);
+//        joba = sqlInference.select(sqlInference.type("UsersLog"), new UserFilterByName("petya"));
+//        final ActorRef materialize = joba.materialize(akka, sink.actor(akka));
+//        new Thread(() -> {
+//          input.forEach(di -> {
+//            materialize.tell(di, ActorRef.noSender());
+//            Thread.yield();
+//          });
+//          materialize.tell(new EndOfTick(), ActorRef.noSender());
+//        }).start();
+//        return sink.stream().onClose(() -> Output.instance().commit());
+//      } catch (TypeNotSupportedException tnse) {
+//        throw new RuntimeException(tnse);
+//      }
+//    }).forEach(Output.instance().printer());
+//    akka.shutdown();
+//  }
 
 }

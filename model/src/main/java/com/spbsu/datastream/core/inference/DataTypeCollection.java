@@ -1,7 +1,10 @@
 package com.spbsu.datastream.core.inference;
 
+import akka.actor.ActorSystem;
 import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.datastream.core.DataType;
+import com.spbsu.datastream.core.MergeActor;
+import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.TypeUnreachableException;
 import com.spbsu.datastream.core.job.*;
 import com.spbsu.datastream.example.bl.counter.CountUserEntries;
@@ -22,13 +25,14 @@ public class DataTypeCollection {
   }
 
   public Joba convert(DataType from, DataType to) throws TypeUnreachableException {
-    if ("UsersLog".equals(from.name()) && "Frequencies".equals(to.name())) {
-      final MergeJoba merge = new MergeJoba(type("Merge(UsersLog, States)"), new IdentityJoba(from));
-      final GroupingJoba grouping = new GroupingJoba(merge, type("Group(Merge(UsersLog, States), UserHash, 2)"), new UserGrouping(), 2);
-      final Joba states = new FilterJoba(grouping, type("UserCounter"), new CountUserEntries(), RuntimeUtils.findTypeParameters(CountUserEntries.class, Function.class)[0], UserCounter.class);
-      final ReplicatorJoba result = new ReplicatorJoba(states);
-      merge.add(result);
-      return result;
-    } else throw new TypeUnreachableException();
+//    if ("UsersLog".equals(from.name()) && "Frequencies".equals(to.name())) {
+//      final MergeJoba merge = new MergeJoba(type("Merge(UsersLog, States)"), new IdentityJoba(from));
+//      final GroupingJoba grouping = new GroupingJoba(merge, type("Group(Merge(UsersLog, States), UserHash, 2)"), new UserGrouping(), 2);
+//      final Joba states = new FilterJoba(grouping, type("UserCounter"), new CountUserEntries(), RuntimeUtils.findTypeParameters(CountUserEntries.class, Function.class)[0], UserCounter.class);
+//      final ReplicatorJoba result = new ReplicatorJoba(states);
+//      merge.add(result);
+//      return result;
+//    } else throw new TypeUnreachableException();
+    return null;
   }
 }
