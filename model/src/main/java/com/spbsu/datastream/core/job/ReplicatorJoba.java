@@ -1,16 +1,12 @@
 package com.spbsu.datastream.core.job;
 
-import akka.actor.ActorRef;
-import akka.actor.UntypedActor;
-import com.spbsu.akka.ActorAdapter;
-import com.spbsu.akka.ActorMethod;
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.job.control.Control;
-import com.spbsu.datastream.core.job.control.EndOfTick;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**

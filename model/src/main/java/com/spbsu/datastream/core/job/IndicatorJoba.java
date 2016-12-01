@@ -29,6 +29,7 @@ public class IndicatorJoba extends Joba.Stub {
     super(generates);
     this.sink = sink;
     this.blClass = blClass;
+    stateIsOk = true;
     for (Condition condition : conditions) {
       if (condition instanceof FailCondition) {
         failConditions.add((FailCondition) condition);

@@ -1,21 +1,23 @@
 package com.spbsu.datastream.example;
 
-import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.Props;
 import com.spbsu.akka.ActorContainer;
 import com.spbsu.commons.system.RuntimeUtils;
-import com.spbsu.datastream.core.*;
+import com.spbsu.datastream.core.DataStreamsContext;
+import com.spbsu.datastream.core.MergeActor;
+import com.spbsu.datastream.core.Sink;
+import com.spbsu.datastream.core.StreamSink;
 import com.spbsu.datastream.core.inference.DataTypeCollection;
-import com.spbsu.datastream.core.inference.TypeCollection;
 import com.spbsu.datastream.core.io.Output;
-import com.spbsu.datastream.core.job.*;
+import com.spbsu.datastream.core.job.ActorSink;
+import com.spbsu.datastream.core.job.FilterJoba;
+import com.spbsu.datastream.core.job.GroupingJoba;
+import com.spbsu.datastream.core.job.ReplicatorJoba;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 import com.spbsu.datastream.example.bl.UserGrouping;
 import com.spbsu.datastream.example.bl.counter.CountUserEntries;
 import com.spbsu.datastream.example.bl.counter.UserCounter;
-import org.apache.commons.math3.analysis.function.Sin;
 
 import java.util.function.Function;
 
@@ -31,14 +33,14 @@ public class SinkTest {
       //joba = types.<Integer>convert(types.type("UsersLog"), types.type("Group(UserLog, 2)"), sink);
       Sink joba = makeJoba(akka, sink, types);
       new Thread(() -> {
-        input.forEach((di) -> {
-          joba.accept(di);
-          //Thread.yield();
-        });
+        //Thread.yield();
+        input.forEach(joba::accept);
         joba.accept(new EndOfTick());
       }).start();
       return sink.stream().onClose(() -> Output.instance().commit());
     }).forEach(Output.instance().printer());
+
+    akka.shutdown();
   }
 
   public static Sink makeJoba(ActorSystem actorSystem, Sink sink, DataTypeCollection types) {
