@@ -10,7 +10,8 @@ import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Experts League
