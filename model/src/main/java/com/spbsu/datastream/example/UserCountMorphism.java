@@ -5,6 +5,7 @@ import com.spbsu.datastream.core.DataStreamsContext;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.inference.DataTypeCollection;
 import com.spbsu.datastream.core.inference.Morphism;
+import com.spbsu.datastream.core.inference.TypeCollection;
 import com.spbsu.datastream.core.job.*;
 import com.spbsu.datastream.example.bl.UserGrouping;
 import com.spbsu.datastream.example.bl.counter.CountUserEntries;
@@ -16,7 +17,7 @@ import java.util.function.Function;
  * Created by marnikitta on 28.11.16.
  */
 public class UserCountMorphism implements Morphism {
-  private final DataTypeCollection collection = DataStreamsContext.typeCollection;
+  private final TypeCollection collection = DataStreamsContext.typeCollection;
 
   @Override
   public DataType consumes() {
