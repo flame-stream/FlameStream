@@ -24,39 +24,39 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("WeakerAccess")
 public class RunUserCounter {
-  @Inject
-  final TypeCollection types = DataStreamsContext.typeCollection;
-
-  @Inject
-  final JobaBuilder builder = DataStreamsContext.jobaBuilder;
-
-  public static void main(String[] args) {
-    new RunUserCounter().run();
-  }
-
-  public void run() {
-    types.addMorphism(new UserCountMorphism());
-    ((SimpleBuilder) builder).index();
-
-    final ActorSystem akka = ActorSystem.create();
-    Stream<Stream<DataItem>> input = DataStreamsContext.input.stream(types.forName("UsersLog"));
-
-    input.flatMap((tickStream) -> {
-      final Joba joba = builder.build(types.forName("UsersLog"), types.forName("Frequencies"));
-
-      final SimpleAkkaSink<DataItem> sink = new SimpleAkkaSink<>(DataItem.class, EndOfTick.class::isInstance);
-
-      final ActorRef materialize = joba.materialize(akka, sink.actor(akka));
-      new Thread(() -> {
-        tickStream.forEach(di -> {
-          materialize.tell(di, ActorRef.noSender());
-          Thread.yield();
-        });
-        materialize.tell(new EndOfTick(), ActorRef.noSender());
-      }).start();
-      return sink.stream().onClose(() -> Output.instance().commit());
-    }).forEach(Output.instance().printer());
-
-    akka.shutdown();
-  }
+//  @Inject
+//  final TypeCollection types = DataStreamsContext.typeCollection;
+//
+//  @Inject
+//  final JobaBuilder builder = DataStreamsContext.jobaBuilder;
+//
+//  public static void main(String[] args) {
+//    new RunUserCounter().run();
+//  }
+//
+//  public void run() {
+//    types.addMorphism(new UserCountMorphism());
+//    ((SimpleBuilder) builder).index();
+//
+//    final ActorSystem akka = ActorSystem.create();
+//    Stream<Stream<DataItem>> input = DataStreamsContext.input.stream(types.forName("UsersLog"));
+//
+//    input.flatMap((tickStream) -> {
+//      final Joba joba = builder.build(types.forName("UsersLog"), types.forName("Frequencies"));
+//
+//      final SimpleAkkaSink<DataItem> sink = new SimpleAkkaSink<>(DataItem.class, EndOfTick.class::isInstance);
+//
+//      final ActorRef materialize = joba.materialize(akka, sink.actor(akka));
+//      new Thread(() -> {
+//        tickStream.forEach(di -> {
+//          materialize.tell(di, ActorRef.noSender());
+//          Thread.yield();
+//        });
+//        materialize.tell(new EndOfTick(), ActorRef.noSender());
+//      }).start();
+//      return sink.stream().onClose(() -> Output.instance().commit());
+//    }).forEach(Output.instance().printer());
+//
+//    akka.shutdown();
+//  }
 }

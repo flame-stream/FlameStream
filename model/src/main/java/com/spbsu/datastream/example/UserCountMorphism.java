@@ -35,7 +35,7 @@ public class UserCountMorphism implements Morphism {
     final GroupingJoba grouping = new GroupingJoba(merge, collection.forName("Group(Merge(UsersLog, States), UserHash, 2)"), new UserGrouping(), 2);
     final Joba states = new FilterJoba(grouping, collection.forName("UserCounter"), new CountUserEntries(), RuntimeUtils.findTypeParameters(CountUserEntries.class, Function.class)[0], UserCounter.class);
     final ReplicatorJoba result = new ReplicatorJoba(states);
-    merge.add(result);
+    //merge.add(result);
     return result;
   }
 }

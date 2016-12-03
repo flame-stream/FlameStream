@@ -46,13 +46,14 @@ public class DataTypeCollection implements TypeCollection {
   }
 
   public Joba convert(DataType from, DataType to) throws TypeUnreachableException {
-    if ("UsersLog".equals(from.name()) && "Frequencies".equals(to.name())) {
-      final MergeJoba merge = new MergeJoba(forName("Merge(UsersLog, States)"), new IdentityJoba(from));
-      final GroupingJoba grouping = new GroupingJoba(merge, forName("Group(Merge(UsersLog, States), UserHash, 2)"), new UserGrouping(), 2);
-      final Joba states = new FilterJoba(grouping, forName("UserCounter"), new CountUserEntries(), RuntimeUtils.findTypeParameters(CountUserEntries.class, Function.class)[0], UserCounter.class);
-      final ReplicatorJoba result = new ReplicatorJoba(states);
-      merge.add(result);
-      return result;
-    } else throw new TypeUnreachableException();
+//    if ("UsersLog".equals(from.name()) && "Frequencies".equals(to.name())) {
+//      final MergeJoba merge = new MergeJoba(forName("Merge(UsersLog, States)"), new IdentityJoba(from));
+//      final GroupingJoba grouping = new GroupingJoba(merge, forName("Group(Merge(UsersLog, States), UserHash, 2)"), new UserGrouping(), 2);
+//      final Joba states = new FilterJoba(grouping, forName("UserCounter"), new CountUserEntries(), RuntimeUtils.findTypeParameters(CountUserEntries.class, Function.class)[0], UserCounter.class);
+//      final ReplicatorJoba result = new ReplicatorJoba(states);
+//      merge.add(result);
+//      return result;
+//    } else throw new TypeUnreachableException();
+    return null;
   }
 }
