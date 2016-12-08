@@ -46,7 +46,7 @@ public class SinkTest {
   public static Sink makeJoba(ActorSystem actorSystem, Sink sink, DataTypeCollection types) {
     final ReplicatorJoba replicator = new ReplicatorJoba(sink);
     final FilterJoba states = new FilterJoba(replicator, null, new CountUserEntries(), RuntimeUtils.findTypeParameters(CountUserEntries.class, Function.class)[0], UserCounter.class);
-    final GroupingJoba grouping = new GroupingJoba(states, types.forName("Group(Merge(UsersLog, States), UserHash, 2)"), new UserGrouping(), 2);
+    final GroupingJoba grouping = new GroupingJoba(states, types.type("Group(Merge(UsersLog, States), UserHash, 2)"), new UserGrouping(), 2);
     ActorRef mergeActor = actorSystem.actorOf(ActorContainer.props(MergeActor.class, grouping, 2));
     ActorSink mergeSink = new ActorSink(mergeActor);
     replicator.add(mergeSink);

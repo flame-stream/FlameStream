@@ -18,7 +18,7 @@ import java.util.function.Function;
 public class DataTypeCollection implements TypeCollection {
   private final Map<String, DataType> types = new HashMap<>();
 
-  public DataType forName(String name) throws NoSuchElementException {
+  public DataType type(String name) throws NoSuchElementException {
     return new DataType.Stub(name);
   }
 

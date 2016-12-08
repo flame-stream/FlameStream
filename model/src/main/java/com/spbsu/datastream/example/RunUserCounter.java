@@ -36,10 +36,10 @@ public class RunUserCounter {
 //    ((SimpleBuilder) builder).index();
 //
 //    final ActorSystem akka = ActorSystem.create();
-//    Stream<Stream<DataItem>> input = DataStreamsContext.input.stream(types.forName("UsersLog"));
+//    Stream<Stream<DataItem>> input = DataStreamsContext.input.stream(types.type("UsersLog"));
 //
 //    input.flatMap((tickStream) -> {
-//      final Joba joba = builder.build(types.forName("UsersLog"), types.forName("Frequencies"));
+//      final Joba joba = builder.build(types.type("UsersLog"), types.type("Frequencies"));
 //
 //      final SimpleAkkaSink<DataItem> sink = new SimpleAkkaSink<>(DataItem.class, EndOfTick.class::isInstance);
 //

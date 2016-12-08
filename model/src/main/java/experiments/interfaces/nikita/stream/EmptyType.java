@@ -9,7 +9,7 @@ import java.util.Set;
 public class EmptyType<S> implements Type<S> {
     @Override
     public String name() {
-        return "empty-forName";
+        return "empty-type";
     }
 
     @Override
