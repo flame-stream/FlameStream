@@ -2,8 +2,10 @@ package com.spbsu.datastream.core.job;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.job.Joba;
+import com.spbsu.datastream.core.job.control.Control;
 
 /**
  * Experts League
@@ -27,7 +29,12 @@ public class IdentityJoba implements Joba {
   }
 
   @Override
-  public ActorRef materialize(ActorSystem at, ActorRef sink) {
-    return sink;
+  public void accept(DataItem item) {
+
+  }
+
+  @Override
+  public void accept(Control control) {
+
   }
 }

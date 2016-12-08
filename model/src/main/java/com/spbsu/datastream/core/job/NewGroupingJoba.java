@@ -27,14 +27,19 @@ public class NewGroupingJoba extends Joba.Stub {
   private final int window;
 
   public NewGroupingJoba(Joba base, DataType generates, DataItem.Grouping grouping, int window) {
-    super(generates, base);
+    super(generates);
     this.grouping = grouping;
     this.window = window;
   }
 
   @Override
-  protected ActorRef actor(ActorSystem at, ActorRef sink) {
-    return at.actorOf(ActorContainer.props(GroupingActor.class, this, sink));
+  public void accept(DataItem item) {
+
+  }
+
+  @Override
+  public void accept(Control control) {
+
   }
 
   @SuppressWarnings({"WeakerAccess", "unused"})

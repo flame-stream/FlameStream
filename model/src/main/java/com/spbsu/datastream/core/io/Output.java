@@ -19,6 +19,7 @@ public class Output {
   private static Output instance = new Output();
   private List<Runnable> barriers = new ArrayList<>();
   private Map<String, TLongObjectHashMap<List<List<DataItem>>>> knownStates = new HashMap<>();
+  private boolean done = false;
 
   public void registerCommitHandler(Runnable r) {
     barriers.add(r);
@@ -30,6 +31,9 @@ public class Output {
 
   public void commit() {
     barriers.forEach(Runnable::run);
+    if (done) {
+      System.exit(0);
+    }
   }
 
   public static synchronized Output instance() {
@@ -50,6 +54,10 @@ public class Output {
       });
       return true;
     });
+  }
+
+  public void done() {
+    done = true;
   }
 
   public TLongObjectHashMap<List<List<DataItem>>> load(DataType type) {

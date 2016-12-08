@@ -2,14 +2,16 @@ package com.spbsu.datastream.example;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import com.spbsu.akka.SimpleAkkaSink;
-import com.spbsu.datastream.core.DataItem;
+import com.spbsu.akka.ActorContainer;
 import com.spbsu.datastream.core.DataStreamsContext;
+import com.spbsu.datastream.core.MergeActor;
+import com.spbsu.datastream.core.Sink;
+import com.spbsu.datastream.core.StreamSink;
 import com.spbsu.datastream.core.exceptions.InvalidQueryException;
 import com.spbsu.datastream.core.exceptions.UnsupportedQueryException;
 import com.spbsu.datastream.core.inference.sql.SqlInference;
 import com.spbsu.datastream.core.io.Output;
-import com.spbsu.datastream.core.job.Joba;
+import com.spbsu.datastream.core.job.ActorSink;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 import com.spbsu.datastream.example.bl.UserContainer;
 
@@ -23,23 +25,21 @@ public class RunSqlQuery {
     final ActorSystem akka = ActorSystem.create();
 
     DataStreamsContext.input.stream(sqlInference.type("UsersLog")).flatMap((input) -> {
-      final Joba joba;
+      final StreamSink streamSink = new StreamSink();
       try {
-        final SimpleAkkaSink<DataItem> sink = new SimpleAkkaSink<>(DataItem.class, EndOfTick.class::isInstance);
-        joba = sqlInference.query("SELECT * FROM UsersLog WHERE user = 'petya'", UserContainer.class);
-        final ActorRef materialize = joba.materialize(akka, sink.actor(akka));
+        Sink queryJoba = sqlInference.query("SELECT * FROM UsersLog WHERE user = 'petya' LIMIT 5", streamSink, UserContainer.class);
+        ActorRef mergeActor = akka.actorOf(ActorContainer.props(MergeActor.class, queryJoba, 1));
+        ActorSink actorSink = new ActorSink(mergeActor);
         new Thread(() -> {
-          input.forEach(di -> {
-            materialize.tell(di, ActorRef.noSender());
-            Thread.yield();
-          });
-          materialize.tell(new EndOfTick(), ActorRef.noSender());
+          input.forEach(actorSink::accept);
+          actorSink.accept(new EndOfTick());
         }).start();
-        return sink.stream().onClose(() -> Output.instance().commit());
+        return streamSink.stream().onClose(() -> Output.instance().commit());
       } catch (InvalidQueryException | UnsupportedQueryException e) {
         throw new RuntimeException(e);
       }
     }).forEach(Output.instance().printer());
+
     akka.shutdown();
   }
 

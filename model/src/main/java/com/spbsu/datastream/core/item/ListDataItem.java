@@ -25,7 +25,9 @@ public class ListDataItem extends ArrayList<DataItem> implements DataItem {
 
   @Override
   public CharSequence serializedData() {
-    return null;
+    StringBuilder builder = new StringBuilder();
+    forEach((item) -> builder.append(item.serializedData()));
+    return builder.toString();
   }
 
   @Override
