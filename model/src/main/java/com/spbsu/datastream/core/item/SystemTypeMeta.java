@@ -41,7 +41,7 @@ public class SystemTypeMeta implements DataItem.Meta<SystemTypeMeta> {
   }
 
   @Override
-  public SystemTypeMeta advance() {
+  public SystemTypeMeta advanced() {
     return new SystemTypeMeta(globalTime);
   }
 

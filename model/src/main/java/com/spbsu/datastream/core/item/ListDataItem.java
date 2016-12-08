@@ -15,7 +15,7 @@ public class ListDataItem extends ArrayList<DataItem> implements DataItem {
 
   public ListDataItem(List<DataItem> copy, Meta meta) {
     super(copy);
-    this.meta = meta.advance();
+    this.meta = meta;
   }
 
   @Override

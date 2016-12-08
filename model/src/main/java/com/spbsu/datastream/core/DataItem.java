@@ -17,7 +17,7 @@ public interface DataItem {
   interface Meta<T extends Meta> extends Comparable<T> {
     int tick();
 
-    T advance();
+    T advanced();
   }
 
   interface Grouping {

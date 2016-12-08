@@ -8,9 +8,9 @@ import com.spbsu.akka.ActorContainer;
 import com.spbsu.akka.ActorMethod;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
+import com.spbsu.datastream.core.item.ObjectDataItem;
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
-import com.spbsu.datastream.core.item.ObjectDataItem;
 
 import java.util.function.Function;
 
@@ -50,7 +50,7 @@ public class FilterJoba extends Joba.Stub {
       //noinspection unchecked
       final Object result = padre.func.apply(di.as(padre.blInput));
       if (result != null)
-        sink.tell(new ObjectDataItem(result, padre.blOutput, di.meta()), self());
+        sink.tell(new ObjectDataItem(result, padre.blOutput, di.meta().advanced()), self());
     }
 
     @ActorMethod

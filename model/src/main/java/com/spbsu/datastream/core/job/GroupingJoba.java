@@ -75,7 +75,7 @@ public class GroupingJoba extends Joba.Stub {
         group.add(group.size() - replayCount, item);
         if (replayCount > 0) {
           for (int i = group.size() - replayCount; i < group.size(); i++) {
-            sink.tell(new ListDataItem(group.subList(window > 0 ? Math.max(0, i + 1 - window) : 0, i + 1), group.get(i).meta()), self());
+            sink.tell(new ListDataItem(group.subList(window > 0 ? Math.max(0, i + 1 - window) : 0, i + 1), group.get(i).meta().advanced()), self());
           }
           return;
         }
@@ -86,7 +86,7 @@ public class GroupingJoba extends Joba.Stub {
         lists.add(group);
         group.add(item);
       }
-      sink.tell(new ListDataItem(window > 0 ? group.subList(Math.max(0, group.size() - window), group.size()) : group, item.meta()), self());
+      sink.tell(new ListDataItem(window > 0 ? group.subList(Math.max(0, group.size() - window), group.size()) : group, item.meta().advanced()), self());
     }
 
     @ActorMethod
