@@ -1,4 +1,4 @@
-package com.spbsu.datastream.example;
+package com.spbsu.datastream.example.qcount;
 
 //import akka.actor.ActorRef;
 //import akka.actor.ActorSystem;

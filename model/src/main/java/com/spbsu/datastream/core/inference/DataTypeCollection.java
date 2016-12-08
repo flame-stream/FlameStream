@@ -21,11 +21,6 @@ public class DataTypeCollection implements TypeCollection {
   }
 
   @Override
-  public PolymorphicMorphism polyMorphism(String name) throws NoSuchElementException {
-    return null;
-  }
-
-  @Override
   public void addType(final DataType type) {
     types.put(type.name(), type);
   }

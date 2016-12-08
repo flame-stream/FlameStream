@@ -13,8 +13,6 @@ public interface TypeCollection {
 
   Morphism template(String name) throws NoSuchElementException;
 
-  PolymorphicMorphism polyMorphism(String name) throws NoSuchElementException;
-
   void addType(DataType type);
 
   Collection<DataType> loadTypes();
