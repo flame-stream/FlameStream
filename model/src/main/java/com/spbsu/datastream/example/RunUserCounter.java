@@ -1,19 +1,17 @@
 package com.spbsu.datastream.example;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import com.spbsu.akka.SimpleAkkaSink;
-import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.DataStreamsContext;
-import com.spbsu.datastream.core.inference.JobaBuilder;
-import com.spbsu.datastream.core.inference.SimpleBuilder;
-import com.spbsu.datastream.core.inference.TypeCollection;
-import com.spbsu.datastream.core.io.Output;
-import com.spbsu.datastream.core.job.Joba;
-import com.spbsu.datastream.core.job.control.EndOfTick;
-
-import javax.inject.Inject;
-import java.util.stream.Stream;
+//import akka.actor.ActorRef;
+//import akka.actor.ActorSystem;
+//import com.spbsu.akka.SimpleAkkaSink;
+//import com.spbsu.datastream.core.DataItem;
+//import com.spbsu.datastream.core.DataStreamsContext;
+//import com.spbsu.datastream.core.inference.TypeCollection;
+//import com.spbsu.datastream.core.io.Output;
+//import com.spbsu.datastream.core.job.Joba;
+//import com.spbsu.datastream.core.job.control.EndOfTick;
+//
+//import javax.inject.Inject;
+//import java.util.stream.Stream;
 
 /**
  * Experts League
