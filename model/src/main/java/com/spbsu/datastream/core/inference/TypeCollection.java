@@ -11,11 +11,7 @@ import java.util.NoSuchElementException;
 public interface TypeCollection {
   DataType forName(String name) throws NoSuchElementException;
 
-  void addMorphism(Morphism m);
-
   void addType(DataType type);
-
-  Collection<Morphism> loadMorphisms();
 
   Collection<DataType> loadTypes();
 }

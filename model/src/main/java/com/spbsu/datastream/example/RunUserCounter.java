@@ -35,9 +35,6 @@ public class RunUserCounter {
   }
 
   public void run() {
-    types.addMorphism(new UserCountMorphism());
-    ((SimpleBuilder) builder).index();
-
     final ActorSystem akka = ActorSystem.create();
     Stream<Stream<DataItem>> input = DataStreamsContext.input.stream(types.forName("UsersLog"));
 
