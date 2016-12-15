@@ -1,12 +1,11 @@
 package com.spbsu.datastream.example.bl.counter;
 
-import com.spbsu.datastream.core.condition.ConditionEmptyState;
-import com.spbsu.datastream.core.condition.FailCondition;
+import com.spbsu.datastream.core.Condition;
 
 /**
  * Created by Artem on 12.11.2016.
  */
-public class UserMaxCountCondition implements FailCondition<UserCounter, ConditionEmptyState> {
+public class UserMaxCountCondition implements Condition<UserCounter> {
   private int maxUserCount;
 
   public UserMaxCountCondition(int maxUserCount) {
@@ -14,12 +13,17 @@ public class UserMaxCountCondition implements FailCondition<UserCounter, Conditi
   }
 
   @Override
-  public boolean taskFail(UserCounter item, ConditionEmptyState state) {
-    return item.count() > maxUserCount;
+  public boolean update(UserCounter item) {
+    return item.count() <= maxUserCount;
   }
 
   @Override
-  public Class<ConditionEmptyState> conditionState() {
-    return ConditionEmptyState.class;
+  public boolean isFinished() {
+    return false;
+  }
+
+  @Override
+  public Condition create() {
+    return new UserMaxCountCondition(maxUserCount);
   }
 }

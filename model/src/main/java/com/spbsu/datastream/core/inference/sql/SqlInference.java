@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.inference.sql;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.Sink;
-import com.spbsu.datastream.core.condition.Condition;
+import com.spbsu.datastream.core.Condition;
 import com.spbsu.datastream.core.exceptions.InvalidQueryException;
 import com.spbsu.datastream.core.exceptions.UnsupportedQueryException;
 import com.spbsu.datastream.core.job.*;

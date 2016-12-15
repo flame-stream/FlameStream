@@ -1,15 +1,11 @@
 package com.spbsu.datastream.core.job;
 
-import com.spbsu.commons.util.Pair;
+import com.spbsu.datastream.core.Condition;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.Sink;
-import com.spbsu.datastream.core.condition.Condition;
-import com.spbsu.datastream.core.condition.ConditionState;
-import com.spbsu.datastream.core.condition.DoneCondition;
-import com.spbsu.datastream.core.condition.FailCondition;
 import com.spbsu.datastream.core.io.Output;
-import com.spbsu.datastream.core.job.control.ConditionFails;
+import com.spbsu.datastream.core.job.control.ConditionTriggered;
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 
@@ -22,42 +18,30 @@ import java.util.List;
 public class IndicatorJoba extends Joba.Stub {
   private Sink sink;
   private final Class blClass;
-  private final List<Pair<FailCondition, ConditionState>> failConditions = new ArrayList<>();
-  private final List<Pair<DoneCondition, ConditionState>> doneConditions = new ArrayList<>();
-  private boolean taskFail;
-  private boolean taskDone;
+  private final List<Condition> conditions = new ArrayList<>();
+  private Condition triggeredCondition;
 
   public IndicatorJoba(Sink sink, DataType generates, Class blClass, Condition... conditions) {
     super(generates);
     this.sink = sink;
     this.blClass = blClass;
-    try {
-      for (Condition condition : conditions) {
-        if (condition instanceof FailCondition) {
-          //noinspection unchecked
-          failConditions.add(new Pair(condition, condition.conditionState().newInstance()));
-        } else if (condition instanceof DoneCondition) {
-          //noinspection unchecked
-          doneConditions.add(new Pair(condition, condition.conditionState().newInstance()));
-        }
-      }
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new RuntimeException(e);
+    for (Condition condition : conditions) {
+      this.conditions.add((Condition) condition.create());
     }
   }
 
   @Override
   public void accept(DataItem item) {
-    if (!taskFail && !taskDone) {
-      for (Pair<FailCondition, ConditionState> pair : failConditions) {
+    if (triggeredCondition == null) {
+      for (Condition condition : conditions) {
         //noinspection unchecked
-        taskFail = pair.first.taskFail(item.as(blClass), pair.second);
-      }
-      if (!taskFail) {
-        for (Pair<DoneCondition, ConditionState> pair : doneConditions) {
-          //noinspection unchecked
-          taskDone = pair.first.taskDone(item.as(blClass), pair.second);
+        boolean update = condition.update(item.as(blClass));
+        if (!update) {
+          triggeredCondition = condition;
+          break;
         }
+      }
+      if (triggeredCondition == null) {
         sink.accept(item);
       }
     }
@@ -66,14 +50,13 @@ public class IndicatorJoba extends Joba.Stub {
   @Override
   public void accept(Control control) {
     if (control instanceof EndOfTick) {
-      if (!taskFail) {
-        if (taskDone) {
-          Output.instance().done();
-        }
+      if (triggeredCondition == null) {
         sink.accept(control);
-      }
-      else {
-        sink.accept(new ConditionFails());
+      } else if (triggeredCondition.isFinished()) {
+        Output.instance().done();
+        sink.accept(control);
+      } else {
+        sink.accept(new ConditionTriggered(triggeredCondition));
       }
     } else {
       sink.accept(control);

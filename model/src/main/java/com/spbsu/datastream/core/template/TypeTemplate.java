@@ -1,7 +1,7 @@
 package com.spbsu.datastream.core.template;
 
 import com.spbsu.datastream.core.DataType;
-import com.spbsu.datastream.core.condition.Condition;
+import com.spbsu.datastream.core.Condition;
 
 import java.util.Set;
 import java.util.function.Function;

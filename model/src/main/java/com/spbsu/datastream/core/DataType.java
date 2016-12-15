@@ -1,6 +1,5 @@
 package com.spbsu.datastream.core;
 
-import com.spbsu.datastream.core.condition.Condition;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
