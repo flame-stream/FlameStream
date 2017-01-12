@@ -20,7 +20,7 @@ public class SqlLimitCondition<T> implements Condition<T> {
   }
 
   @Override
-  public boolean isFinished() {
+  public boolean success() {
     return true;
   }
 

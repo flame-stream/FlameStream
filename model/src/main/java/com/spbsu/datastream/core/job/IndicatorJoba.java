@@ -4,7 +4,6 @@ import com.spbsu.datastream.core.Condition;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.Sink;
-import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.job.control.ConditionTriggered;
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
@@ -51,9 +50,6 @@ public class IndicatorJoba extends Joba.Stub {
   public void accept(Control control) {
     if (control instanceof EndOfTick) {
       if (triggeredCondition == null) {
-        sink.accept(control);
-      } else if (triggeredCondition.isFinished()) {
-        Output.instance().done();
         sink.accept(control);
       } else {
         sink.accept(new ConditionTriggered(triggeredCondition));

@@ -9,7 +9,6 @@ import com.spbsu.datastream.core.MergeActor;
 import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.StreamSink;
 import com.spbsu.datastream.core.inference.DataTypeCollection;
-import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.job.ActorSink;
 import com.spbsu.datastream.core.job.FilterJoba;
 import com.spbsu.datastream.core.job.GroupingJoba;
@@ -37,8 +36,8 @@ public class SinkTest {
         input.forEach(joba::accept);
         joba.accept(new EndOfTick());
       }).start();
-      return sink.stream().onClose(() -> Output.instance().commit());
-    }).forEach(Output.instance().printer());
+      return sink.stream().onClose(DataStreamsContext.output::commit);
+    }).forEach(DataStreamsContext.output.processor());
 
     akka.shutdown();
   }

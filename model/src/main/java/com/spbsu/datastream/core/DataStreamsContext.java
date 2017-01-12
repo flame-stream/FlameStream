@@ -8,7 +8,9 @@ import com.spbsu.datastream.core.inference.DataTypeCollection;
 import com.spbsu.datastream.core.inference.TypeCollection;
 import com.spbsu.datastream.core.inference.sql.SqlInference;
 import com.spbsu.datastream.core.io.Input;
+import com.spbsu.datastream.core.io.InputProcessor;
 import com.spbsu.datastream.core.io.Output;
+import com.spbsu.datastream.core.io.OutputProcessor;
 import com.spbsu.datastream.core.state.StateRepository;
 import com.spbsu.datastream.example.bl.UserQuery;
 
@@ -25,9 +27,9 @@ public class DataStreamsContext {
 
   public static final SqlInference sqlInference = new SqlInference();
 
-  public static final Input input = new Input();
+  public static final Input input = new InputProcessor();
 
-  public static final Output output = new Output();
+  public static final Output output = new OutputProcessor();
 
   public static final StateRepository stateRepository = new StateRepository();
 }

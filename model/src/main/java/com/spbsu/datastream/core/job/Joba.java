@@ -1,10 +1,8 @@
 package com.spbsu.datastream.core.job;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
+import com.spbsu.datastream.core.DataStreamsContext;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.Sink;
-import com.spbsu.datastream.core.io.Output;
 
 /**
  * Experts League
@@ -20,7 +18,7 @@ public interface Joba extends Sink {
 
     protected Stub(DataType generates) {
       this.generates = generates;
-      this.id = Output.instance().registerJoba(this);
+      this.id = DataStreamsContext.output.registerJoba(this);
     }
 
     @Override

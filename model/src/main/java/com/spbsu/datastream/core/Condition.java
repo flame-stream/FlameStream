@@ -8,5 +8,5 @@ import com.spbsu.commons.func.Factory;
 public interface Condition<T> extends Factory<Condition> {
   boolean update(T item);
 
-  boolean isFinished();
+  boolean success();
 }

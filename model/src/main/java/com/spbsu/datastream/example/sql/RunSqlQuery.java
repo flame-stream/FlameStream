@@ -10,7 +10,6 @@ import com.spbsu.datastream.core.StreamSink;
 import com.spbsu.datastream.core.exceptions.InvalidQueryException;
 import com.spbsu.datastream.core.exceptions.UnsupportedQueryException;
 import com.spbsu.datastream.core.inference.sql.SqlInference;
-import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.job.ActorSink;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 import com.spbsu.datastream.example.bl.UserContainer;
@@ -34,11 +33,11 @@ public class RunSqlQuery {
           input.forEach(actorSink::accept);
           actorSink.accept(new EndOfTick());
         }).start();
-        return streamSink.stream().onClose(() -> Output.instance().commit());
+        return streamSink.stream().onClose(DataStreamsContext.output::commit);
       } catch (InvalidQueryException | UnsupportedQueryException e) {
         throw new RuntimeException(e);
       }
-    }).forEach(Output.instance().printer());
+    }).forEach(DataStreamsContext.output.processor());
 
     akka.shutdown();
   }

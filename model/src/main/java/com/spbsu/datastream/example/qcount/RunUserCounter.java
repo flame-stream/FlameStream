@@ -6,7 +6,7 @@ package com.spbsu.datastream.example.qcount;
 //import com.spbsu.datastream.core.DataItem;
 //import com.spbsu.datastream.core.DataStreamsContext;
 //import com.spbsu.datastream.core.inference.TypeCollection;
-//import com.spbsu.datastream.core.io.Output;
+//import com.spbsu.datastream.core.io.OutputProcessor;
 //import com.spbsu.datastream.core.job.Joba;
 //import com.spbsu.datastream.core.job.control.EndOfTick;
 //
@@ -49,8 +49,8 @@ public class RunUserCounter {
 //        });
 //        materialize.tell(new EndOfTick(), ActorRef.noSender());
 //      }).start();
-//      return sink.stream().onClose(() -> Output.instance().commit());
-//    }).forEach(Output.instance().printer());
+//      return sink.stream().onClose(() -> OutputProcessor.instance().commit());
+//    }).forEach(OutputProcessor.instance().processor());
 //
 //    akka.shutdown();
 //  }

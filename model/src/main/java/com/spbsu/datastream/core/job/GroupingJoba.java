@@ -1,15 +1,9 @@
 package com.spbsu.datastream.core.job;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.UntypedActor;
-import com.spbsu.akka.ActorAdapter;
-import com.spbsu.akka.ActorContainer;
-import com.spbsu.akka.ActorMethod;
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.DataStreamsContext;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.Sink;
-import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 import com.spbsu.datastream.core.item.ListDataItem;
@@ -20,8 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-
-import static akka.actor.TypedActor.self;
 
 /**
  * Experts League
@@ -39,7 +31,7 @@ public class GroupingJoba extends Joba.Stub {
     this.sink = sink;
     this.grouping = grouping;
     this.window = window;
-    state = Output.instance().load(generates);
+    state = DataStreamsContext.output.load(generates);
   }
 
   private Optional<List<DataItem>> searchBucket(long hash, DataItem item, TLongObjectHashMap<List<List<DataItem>>> through) {
@@ -91,7 +83,7 @@ public class GroupingJoba extends Joba.Stub {
           });
           return true;
         });
-        Output.instance().save(generates(), state);
+        DataStreamsContext.output.save(generates(), state);
       }
     }
   }

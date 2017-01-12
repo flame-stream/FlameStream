@@ -17,7 +17,7 @@ public class HasValueField implements Condition {
   }
 
   @Override
-  public boolean isFinished() {
+  public boolean success() {
     return false;
   }
 }

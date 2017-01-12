@@ -18,7 +18,7 @@ public class UserMaxCountCondition implements Condition<UserCounter> {
   }
 
   @Override
-  public boolean isFinished() {
+  public boolean success() {
     return false;
   }
 

@@ -14,7 +14,7 @@ public class StreamSink implements Sink{
   private static final String EOS_MARKER = "End of stream";
   private final BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
 
-  public Stream<DataItem> stream() {
+  public Stream<Object> stream() {
     return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new StreamSink.Iter(), Spliterator.IMMUTABLE), false);
   }
 
@@ -25,13 +25,14 @@ public class StreamSink implements Sink{
 
   @Override
   public void accept(Control control) {
+    queue.add(control);
     if(control instanceof EndOfTick) {
       queue.add(EOS_MARKER);
     }
   }
 
-  public class Iter implements Iterator<DataItem> {
-    private DataItem next;
+  private class Iter implements Iterator<Object> {
+    private Object next;
     private boolean eos = false;
 
     @Override
@@ -43,7 +44,7 @@ public class StreamSink implements Sink{
       try {
 
         final Object take = queue.take();
-        if (!DataItem.class.isAssignableFrom(take.getClass())) {
+        if (!DataItem.class.isAssignableFrom(take.getClass()) && !Control.class.isAssignableFrom(take.getClass())) {
           if (EOS_MARKER.equals(take))
             eos = true;
           else
@@ -51,7 +52,7 @@ public class StreamSink implements Sink{
         }
         else
           //noinspection unchecked
-          next = (DataItem) take;
+          next = take;
       }
       catch (InterruptedException e) {
         throw new RuntimeException(e);
@@ -61,7 +62,7 @@ public class StreamSink implements Sink{
     }
 
     @Override
-    public DataItem next() {
+    public Object next() {
       try {
         if (!hasNext())
           return null;
