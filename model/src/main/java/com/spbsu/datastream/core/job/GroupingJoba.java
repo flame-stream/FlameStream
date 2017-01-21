@@ -66,7 +66,6 @@ public class GroupingJoba extends Joba.Stub {
   }
 
   public void accept(Control eot) {
-    sink.accept(eot);
     if (eot instanceof EndOfTick) {
       synchronized (state) {
         buffers.forEachEntry((hash, bucket) -> {
@@ -86,6 +85,7 @@ public class GroupingJoba extends Joba.Stub {
         DataStreamsContext.output.save(generates(), state);
       }
     }
+    sink.accept(eot);
   }
 
 }
