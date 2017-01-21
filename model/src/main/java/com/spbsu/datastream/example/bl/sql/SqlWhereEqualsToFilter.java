@@ -1,12 +1,13 @@
 package com.spbsu.datastream.example.bl.sql;
 
+import com.spbsu.datastream.core.Filter;
+
 import java.lang.reflect.Field;
-import java.util.function.Function;
 
 /**
  * Created by Artem on 23.11.2016.
  */
-public class SqlWhereEqualsToFilter<T> implements Function<T, T> {
+public class SqlWhereEqualsToFilter<T> implements Filter<T, T> {
   private final String fieldName;
   private final Object fieldValue;
 
@@ -33,5 +34,10 @@ public class SqlWhereEqualsToFilter<T> implements Function<T, T> {
   @Override
   public String toString() {
     return String.format("(%s = %s)", fieldName, fieldValue);
+  }
+
+  @Override
+  public boolean processOutputByElement() {
+    return false;
   }
 }

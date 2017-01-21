@@ -1,12 +1,10 @@
 package com.spbsu.datastream.core.inference.sql;
 
-import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.DataType;
-import com.spbsu.datastream.core.Sink;
-import com.spbsu.datastream.core.Condition;
+import com.spbsu.datastream.core.*;
 import com.spbsu.datastream.core.exceptions.InvalidQueryException;
 import com.spbsu.datastream.core.exceptions.UnsupportedQueryException;
-import com.spbsu.datastream.core.job.*;
+import com.spbsu.datastream.core.job.FilterJoba;
+import com.spbsu.datastream.core.job.IndicatorJoba;
 import com.spbsu.datastream.example.bl.sql.SqlLimitCondition;
 import com.spbsu.datastream.example.bl.sql.SqlWhereEqualsToFilter;
 import net.sf.jsqlparser.JSQLParserException;
@@ -21,8 +19,6 @@ import net.sf.jsqlparser.statement.select.Limit;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.function.Function;
 
 /**
  * Created by Artem on 15.11.2016.
@@ -56,7 +52,7 @@ public class SqlInference {
     if (select.getFromItem() instanceof Table) {
       final Table table = (Table) select.getFromItem();
       final DataType sourceDataType = type(table.getName());
-      final Function<DataItem, DataItem> whereFilter = whereFilter(select.getWhere());
+      final Filter<DataItem, DataItem> whereFilter = whereFilter(select.getWhere());
       final Condition limitCondition = limitCondition(select.getLimit());
       selectJoba = selectJoba(sourceDataType, whereFilter, limitCondition, sink, blClass);
       return selectJoba;
@@ -64,12 +60,12 @@ public class SqlInference {
     throw new UnsupportedQueryException();
   }
 
-  private Function<DataItem, DataItem> whereFilter(Expression where) throws UnsupportedQueryException {
+  private Filter<DataItem, DataItem> whereFilter(Expression where) throws UnsupportedQueryException {
     if (where == null) {
       return null;
     }
 
-    final Function<DataItem, DataItem> whereFilter;
+    final Filter<DataItem, DataItem> whereFilter;
     if (where instanceof EqualsTo) {
       final EqualsTo equalsTo = (EqualsTo) where;
       if (equalsTo.getLeftExpression() instanceof Column) {
@@ -92,7 +88,7 @@ public class SqlInference {
 
   }
 
-  private Sink selectJoba(DataType sourceDataType, Function<DataItem, DataItem> whereFilter, Condition topCondition, Sink sink, Class blClass) {
+  private Sink selectJoba(DataType sourceDataType, Filter<DataItem, DataItem> whereFilter, Condition topCondition, Sink sink, Class blClass) {
     Sink selectJoba = sink;
     String generatesTypeName = sourceDataType.name();
     if (topCondition != null) {

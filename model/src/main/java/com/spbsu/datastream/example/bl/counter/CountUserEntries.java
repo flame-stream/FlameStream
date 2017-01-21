@@ -1,15 +1,17 @@
 package com.spbsu.datastream.example.bl.counter;
 
-import com.spbsu.datastream.example.bl.*;
-
-import java.util.function.Function;
+import com.spbsu.datastream.core.Filter;
+import com.spbsu.datastream.example.bl.UseHash;
+import com.spbsu.datastream.example.bl.UserContainer;
+import com.spbsu.datastream.example.bl.UserGrouping;
+import com.spbsu.datastream.example.bl.UserQuery;
 
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
 @UseHash(UserGrouping.class)
-public class CountUserEntries implements Function<UserContainer[], UserCounter> {
+public class CountUserEntries implements Filter<UserContainer[], UserCounter> {
   @Override
   public UserCounter apply(UserContainer[] containers) {
     final UserContainer first = containers[0];
@@ -22,5 +24,10 @@ public class CountUserEntries implements Function<UserContainer[], UserCounter> 
       else
         return null;
     }
+  }
+
+  @Override
+  public boolean processOutputByElement() {
+    return false;
   }
 }
