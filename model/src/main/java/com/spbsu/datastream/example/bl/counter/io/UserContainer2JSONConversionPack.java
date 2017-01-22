@@ -1,9 +1,9 @@
-package com.spbsu.datastream.example.bl.io;
+package com.spbsu.datastream.example.bl.counter.io;
 
 import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.seq.CharSeq;
-import com.spbsu.datastream.example.bl.UserContainer;
-import com.spbsu.datastream.example.bl.counter.UserCounter;
+import com.spbsu.datastream.example.bl.counter.UserContainer;
+import com.spbsu.datastream.example.bl.io.Object2JSONConversionPack;
 
 /**
  * Experts League

@@ -1,10 +1,6 @@
 package com.spbsu.datastream.example.bl.counter;
 
 import com.spbsu.datastream.core.Filter;
-import com.spbsu.datastream.example.bl.UseHash;
-import com.spbsu.datastream.example.bl.UserContainer;
-import com.spbsu.datastream.example.bl.UserGrouping;
-import com.spbsu.datastream.example.bl.UserQuery;
 
 /**
  * Experts League

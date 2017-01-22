@@ -1,4 +1,4 @@
-package com.spbsu.datastream.example;
+package com.spbsu.datastream.example.startup;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -14,14 +14,14 @@ import com.spbsu.datastream.core.job.FilterJoba;
 import com.spbsu.datastream.core.job.GroupingJoba;
 import com.spbsu.datastream.core.job.ReplicatorJoba;
 import com.spbsu.datastream.core.job.control.EndOfTick;
-import com.spbsu.datastream.example.bl.UserGrouping;
 import com.spbsu.datastream.example.bl.counter.CountUserEntries;
 import com.spbsu.datastream.example.bl.counter.UserCounter;
+import com.spbsu.datastream.example.bl.counter.UserGrouping;
 
 import java.util.function.Function;
 
 
-public class SinkTest {
+public class RunUserCounter {
   public static void main(String[] args) {
     final DataTypeCollection types = (DataTypeCollection) DataStreamsContext.typeCollection;
     final ActorSystem akka = ActorSystem.create();

@@ -1,4 +1,4 @@
-package com.spbsu.datastream.example.sql;
+package com.spbsu.datastream.example.startup;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -12,7 +12,7 @@ import com.spbsu.datastream.core.exceptions.UnsupportedQueryException;
 import com.spbsu.datastream.core.inference.sql.SqlInference;
 import com.spbsu.datastream.core.job.ActorSink;
 import com.spbsu.datastream.core.job.control.EndOfTick;
-import com.spbsu.datastream.example.bl.UserContainer;
+import com.spbsu.datastream.example.bl.counter.UserContainer;
 
 /**
  * Created by Artem on 15.11.2016.

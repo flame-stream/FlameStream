@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class InputProcessor implements Input {
+public class UserLogInput implements Input {
 
   private Stream<Stream<DataItem>> ticks(InputStream is) {
     return CharSeqTools.lines(new InputStreamReader(is, StreamTools.UTF), false)

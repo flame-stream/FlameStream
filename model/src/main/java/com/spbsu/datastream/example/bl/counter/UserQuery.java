@@ -1,4 +1,4 @@
-package com.spbsu.datastream.example.bl;
+package com.spbsu.datastream.example.bl.counter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
