@@ -14,8 +14,9 @@ import java.util.stream.StreamSupport;
  * Date: 14.01.2017
  */
 public class IteratorInput<T> implements Input {
-  private Iterator<T> iterator;
-  private Class<T> clazz;
+  private final Iterator<T> iterator;
+  private final Class<T> clazz;
+  private boolean hasNextStream = true;
 
   public IteratorInput(Iterator<T> iterator, Class<T> clazz) {
     this.iterator = iterator;
@@ -25,34 +26,49 @@ public class IteratorInput<T> implements Input {
   @SuppressWarnings("UnusedParameters")
   public Stream<Stream<DataItem>> stream(DataType type) {
     return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<Stream<DataItem>>() {
-      List<DataItem> next;
-
       @Override
       public boolean hasNext() {
-        next = nextItems();
-        return !next.isEmpty();
+        return hasNextStream;
       }
 
       @Override
       public Stream<DataItem> next() {
-        return next.stream();
+        return nextInnerStream();
       }
     }, Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.SORTED), false);
   }
 
-  private List<DataItem> nextItems() {
-    List<DataItem> dataItems = new ArrayList<>();
-    int currentTick = -1;
-    while (iterator.hasNext()) {
-      T next = iterator.next();
-      DataItem dataItem = new ObjectDataItem(next, clazz, new SystemTypeMeta(System.nanoTime()));
-      dataItems.add(dataItem);
-      if (currentTick == -1) {
-        currentTick = dataItem.meta().tick();
-      } else if (currentTick != dataItem.meta().tick()) {
-        break;
+  private Stream<DataItem> nextInnerStream() {
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<DataItem>() {
+      DataItem nextDataItem;
+      boolean nextTickStart;
+      int currentTick = -1;
+
+      @Override
+      public boolean hasNext() {
+        if (!nextTickStart) {
+          if (iterator.hasNext()) {
+            T next = iterator.next();
+            nextDataItem = new ObjectDataItem(next, clazz, new SystemTypeMeta(System.nanoTime()));
+            if (currentTick == -1) {
+              currentTick = nextDataItem.meta().tick();
+            } else if (currentTick != nextDataItem.meta().tick()) {
+              nextTickStart = true;
+            }
+            return true;
+          } else {
+            hasNextStream = false;
+            return false;
+          }
+        } else {
+          return false;
+        }
       }
-    }
-    return dataItems;
+
+      @Override
+      public DataItem next() {
+        return nextDataItem;
+      }
+    }, Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.SORTED), false);
   }
 }
