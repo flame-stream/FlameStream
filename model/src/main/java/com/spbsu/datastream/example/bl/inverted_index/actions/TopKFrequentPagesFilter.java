@@ -1,23 +1,19 @@
 package com.spbsu.datastream.example.bl.inverted_index.actions;
 
-import com.spbsu.datastream.core.Filter;
 import com.spbsu.datastream.example.bl.inverted_index.WordIndex;
+
+import java.util.function.Function;
 
 /**
  * Author: Artem
  * Date: 23.01.2017
  */
-public class TopKFrequentPagesFilter implements Filter<WordIndex, WordIndex> {
+public class TopKFrequentPagesFilter implements Function<WordIndex, WordIndex> {
 
   private final int k;
 
   public TopKFrequentPagesFilter(int k) {
     this.k = k;
-  }
-
-  @Override
-  public boolean processOutputByElement() {
-    return false;
   }
 
   @Override

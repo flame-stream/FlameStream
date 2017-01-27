@@ -1,7 +1,6 @@
 package com.spbsu.datastream.example.bl.inverted_index.actions;
 
 import com.spbsu.commons.text.lexical.WordsTokenizer;
-import com.spbsu.datastream.core.Filter;
 import com.spbsu.datastream.example.bl.inverted_index.WordContainer;
 import com.spbsu.datastream.example.bl.inverted_index.WordIndex;
 import com.spbsu.datastream.example.bl.inverted_index.WordPage;
@@ -11,15 +10,17 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Author: Artem
  * Date: 22.01.2017
  */
-public class PageToWordsFilter implements Filter<WordContainer, List<WordContainer>> {
+public class PageToWordsFilter implements Function<WordContainer, Stream<WordContainer>> {
 
   @Override
-  public List<WordContainer> apply(WordContainer container) {
+  public Stream<WordContainer> apply(WordContainer container) {
     if (container instanceof WikiPage) {
       final WikiPage wikiPage = (WikiPage) container;
       final TObjectIntHashMap<String> wordCount = new TObjectIntHashMap<>();
@@ -44,17 +45,12 @@ public class PageToWordsFilter implements Filter<WordContainer, List<WordContain
         iterator.advance();
         words.add(new WordPage(wikiPage.id(), iterator.key(), (double) iterator.value() / (double) totalWordCount));
       }
-      return words;
+      return words.stream();
     } else if (container instanceof WordIndex) {
       final List<WordContainer> wrapper = new ArrayList<>();
       wrapper.add(container);
-      return wrapper;
+      return wrapper.stream();
     }
     return null;
-  }
-
-  @Override
-  public boolean processOutputByElement() {
-    return true;
   }
 }

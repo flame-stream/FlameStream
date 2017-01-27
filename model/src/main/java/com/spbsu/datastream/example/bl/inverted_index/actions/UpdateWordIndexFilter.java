@@ -1,15 +1,16 @@
 package com.spbsu.datastream.example.bl.inverted_index.actions;
 
-import com.spbsu.datastream.core.Filter;
 import com.spbsu.datastream.example.bl.inverted_index.WordContainer;
 import com.spbsu.datastream.example.bl.inverted_index.WordIndex;
 import com.spbsu.datastream.example.bl.inverted_index.WordPage;
+
+import java.util.function.Function;
 
 /**
  * Author: Artem
  * Date: 22.01.2017
  */
-public class UpdateWordIndexFilter implements Filter<WordContainer[], WordIndex> {
+public class UpdateWordIndexFilter implements Function<WordContainer[], WordIndex> {
 
   @Override
   public WordIndex apply(WordContainer[] containers) {
@@ -23,10 +24,5 @@ public class UpdateWordIndexFilter implements Filter<WordContainer[], WordIndex>
       else
         return null;
     }
-  }
-
-  @Override
-  public boolean processOutputByElement() {
-    return false;
   }
 }

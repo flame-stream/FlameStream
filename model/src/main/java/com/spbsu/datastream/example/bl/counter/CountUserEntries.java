@@ -1,13 +1,13 @@
 package com.spbsu.datastream.example.bl.counter;
 
-import com.spbsu.datastream.core.Filter;
+import java.util.function.Function;
 
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
 @UseHash(UserGrouping.class)
-public class CountUserEntries implements Filter<UserContainer[], UserCounter> {
+public class CountUserEntries implements Function<UserContainer[], UserCounter> {
   @Override
   public UserCounter apply(UserContainer[] containers) {
     final UserContainer first = containers[0];
@@ -20,10 +20,5 @@ public class CountUserEntries implements Filter<UserContainer[], UserCounter> {
       else
         return null;
     }
-  }
-
-  @Override
-  public boolean processOutputByElement() {
-    return false;
   }
 }
