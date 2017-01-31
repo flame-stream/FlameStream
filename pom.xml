@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
 
-    <groupId>com</groupId>
-    <artifactId>datastreams</artifactId>
+    <groupId>com.spbsu.datastreams</groupId>
+    <artifactId>datastreams-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -96,7 +96,11 @@
     </dependencies>
 
     <modules>
-        <module>model</module>
+        <module>core</module>
+        <module>commons</module>
+        <module>experiments</module>
+        <module>example</module>
+        <module>sql</module>
     </modules>
 
     <build>
