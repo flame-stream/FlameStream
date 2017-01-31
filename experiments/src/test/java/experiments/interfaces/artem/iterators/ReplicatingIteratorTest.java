@@ -1,4 +1,4 @@
-package experiments.interfaces.artem.iterators.test;
+package experiments.interfaces.artem.iterators;
 
 import experiments.interfaces.artem.iterators.CommitFailIterator;
 import experiments.interfaces.artem.iterators.impl.ReplicatingIterator;

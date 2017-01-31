@@ -2,15 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <packaging>pom</packaging>
-
-    <groupId>com.spbsu.datastreams</groupId>
-    <artifactId>datastreams-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
     <properties>
-        <akka.version>2.4.11</akka.version>
+        <akka.version>2.4.16</akka.version>
         <lang3.version>3.4</lang3.version>
         <guava.version>19.0</guava.version>
         <jool.version>0.9.12</jool.version>
@@ -21,7 +14,33 @@
         <sqlparser.version>0.9.6</sqlparser.version>
     </properties>
 
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.spbsu.datastreams</groupId>
+    <artifactId>datastreams-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>core</module>
+        <module>commons</module>
+        <module>experiments</module>
+        <module>example</module>
+        <module>sql</module>
+    </modules>
+
     <dependencies>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor_2.11</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-cluster_2.11</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -32,6 +51,7 @@
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
+
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
@@ -52,21 +72,7 @@
             <artifactId>commons-lang3</artifactId>
             <version>${lang3.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_2.11</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>${testng.version}</version>
-        </dependency>
+
         <dependency>
             <groupId>com.spbsu</groupId>
             <artifactId>commons</artifactId>
@@ -82,6 +88,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>com.github.jsqlparser</groupId>
             <artifactId>jsqlparser</artifactId>
@@ -93,15 +100,20 @@
             <version>1</version>
         </dependency>
 
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
-    <modules>
-        <module>core</module>
-        <module>commons</module>
-        <module>experiments</module>
-        <module>example</module>
-        <module>sql</module>
-    </modules>
 
     <build>
         <plugins>
@@ -118,11 +130,6 @@
     </build>
 
     <repositories>
-        <repository>
-            <id>typesafe</id>
-            <name>Typesafe Repository</name>
-            <url>http://repo.typesafe.com/typesafe/releases/</url>
-        </repository>
         <repository>
             <id>jsqlparser-snapshots</id>
             <snapshots>
