@@ -9,19 +9,19 @@ import java.util.stream.Stream;
  * Created by marnikitta on 12.10.16.
  */
 public interface YetAnotherStream<S> {
-    Type<S> type();
+  Type<S> type();
 
-    boolean isValid();
+  boolean isValid();
 
-    Stream<S> materialize();
+  Stream<S> materialize();
 
-    YetAnotherStream<S> split();
+  YetAnotherStream<S> split();
 
-    <R> YetAnotherStream<R> map(Function<? super S, ? extends R> mapper, Type<R> targetType);
+  <R> YetAnotherStream<R> map(Function<? super S, ? extends R> mapper, Type<R> targetType);
 
-    YetAnotherStream<S> mergeWith(YetAnotherStream<S> that);
+  YetAnotherStream<S> mergeWith(YetAnotherStream<S> that);
 
-    YetAnotherStream<S> mergeWith(Supplier<YetAnotherStream<S>> that);
+  YetAnotherStream<S> mergeWith(Supplier<YetAnotherStream<S>> that);
 
-    YetAnotherStream<List<S>> groupBy(Grouping<S> grouping, int window);
+  YetAnotherStream<List<S>> groupBy(Grouping<S> grouping, int window);
 }

@@ -72,7 +72,7 @@ public abstract class ActorAdapter<A extends Actor> {
 //      return context().actorOf(PersistentActorContainer.props(adapter, args));
 //    }
 //    else {
-      return context().actorOf(ActorContainer.props(adapter, args));
+    return context().actorOf(ActorContainer.props(adapter, args));
 //    }
   }
 }

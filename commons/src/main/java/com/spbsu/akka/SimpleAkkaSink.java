@@ -57,12 +57,10 @@ public class SimpleAkkaSink<T> {
             eos = true;
           else
             return hasNext();
-        }
-        else
+        } else
           //noinspection unchecked
           next = (T) take;
-      }
-      catch (InterruptedException e) {
+      } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
 
@@ -75,8 +73,7 @@ public class SimpleAkkaSink<T> {
         if (!hasNext())
           return null;
         return next;
-      }
-      finally {
+      } finally {
         next = null;
       }
     }
@@ -93,7 +90,7 @@ public class SimpleAkkaSink<T> {
 
     @ActorMethod
     public void append(Object di) {
-      if(eosFilter.accept(di))
+      if (eosFilter.accept(di))
         context().stop(self());
       queue.add(di);
     }

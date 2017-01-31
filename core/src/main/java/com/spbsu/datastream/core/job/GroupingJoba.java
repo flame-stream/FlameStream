@@ -4,9 +4,9 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataStreamsContext;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.Sink;
+import com.spbsu.datastream.core.dataitem.ListDataItem;
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
-import com.spbsu.datastream.core.item.ListDataItem;
 import gnu.trove.map.hash.TLongObjectHashMap;
 
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import java.util.stream.Stream;
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class GroupingJoba extends Joba.Stub {
+public class GroupingJoba extends Joba.AbstractJoba {
   private final DataItem.Grouping grouping;
   private final int window;
   private final TLongObjectHashMap<List<List<DataItem>>> state;

@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Created by Artem on 12.11.2016.
  */
-public class IndicatorJoba extends Joba.Stub {
+public class IndicatorJoba extends Joba.AbstractJoba {
   private Sink sink;
   private final Class blClass;
   private final List<Condition> conditions = new ArrayList<>();

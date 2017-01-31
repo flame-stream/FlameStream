@@ -1,36 +1,33 @@
 package com.spbsu.datastream.core.job;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.UntypedActor;
-import com.spbsu.akka.ActorAdapter;
-import com.spbsu.akka.ActorContainer;
-import com.spbsu.akka.ActorMethod;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.job.control.Control;
-import com.spbsu.datastream.core.job.control.EndOfTick;
-import com.spbsu.datastream.core.job.control.LastItemMarker;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class MergeJoba extends Joba.Stub {
+public class MergeJoba extends Joba.AbstractJoba {
   private final List<Joba> jobas = new ArrayList<>();
-//
+
+  //
   public MergeJoba(DataType generates, Joba... jobas) {
     this(generates, Arrays.asList(jobas));
   }
-//
+
+  //
   public MergeJoba(DataType generates, Collection<Joba> jobas) {
     super(generates);
     this.jobas.addAll(jobas);
   }
 
-//  public void add(Joba oneMore) {
+  //  public void add(Joba oneMore) {
 //    jobas.add(oneMore);
 //  }
 //
@@ -41,7 +38,8 @@ public class MergeJoba extends Joba.Stub {
   public void accept(DataItem item) {
 
   }
-//
+
+  //
 //  @Override
   public void accept(Control control) {
 

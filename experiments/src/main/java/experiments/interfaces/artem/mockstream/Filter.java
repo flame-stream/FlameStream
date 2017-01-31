@@ -8,8 +8,11 @@ import java.util.function.Function;
  */
 public interface Filter extends Function<CharSequence, CharSequence> {
   boolean accepts(DataStream.Type input);
+
   boolean generates(DataStream.Type output);
+
   DataStream.Type outputType(DataStream.Type input);
+
   DataStream.Type inputType(DataStream.Type output);
 
   double weight();

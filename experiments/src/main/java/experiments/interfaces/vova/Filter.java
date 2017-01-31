@@ -8,10 +8,16 @@ import java.util.function.Function;
  */
 public interface Filter extends Function<CharSequence, CharSequence> {
   boolean accepts(Type input);
+
   boolean generates(Type output);
+
   Type outputType(Type input);
+
   Type inputType(Type output);
+
   void commit();
+
   void fail();
+
   double weight();
 }

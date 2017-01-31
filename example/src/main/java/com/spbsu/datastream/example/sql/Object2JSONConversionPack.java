@@ -22,28 +22,29 @@ public abstract class Object2JSONConversionPack<T> implements ConversionPack<T, 
     protected To(Class<T> clazz) {
       this.clazz = clazz;
     }
+
     @Override
     public CharSeq convert(T userQuery) {
       try {
         return CharSeq.create(OBJECT_MAPPER.writeValueAsString(userQuery));
-      }
-      catch (JsonProcessingException e) {
+      } catch (JsonProcessingException e) {
         throw new RuntimeException(e);
       }
     }
   }
+
   protected static class From<T> implements TypeConverter<CharSeq, T> {
     private final Class<T> clazz;
 
     protected From(Class<T> clazz) {
       this.clazz = clazz;
     }
+
     @Override
     public T convert(CharSeq charSeq) {
       try {
         return OBJECT_MAPPER.readValue(new CharSeqReader(charSeq), clazz);
-      }
-      catch (IOException e) {
+      } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }

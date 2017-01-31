@@ -1,8 +1,6 @@
-package com.spbsu.datastream.core.job;
+package com.spbsu.datastream.core;
 
 import akka.actor.ActorRef;
-import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.job.control.Control;
 
 public class ActorSink implements Sink {

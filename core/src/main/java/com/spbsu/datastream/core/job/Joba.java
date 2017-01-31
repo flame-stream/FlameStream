@@ -10,13 +10,14 @@ import com.spbsu.datastream.core.Sink;
  */
 public interface Joba extends Sink {
   DataType generates();
+
   int id();
 
-  abstract class Stub implements Joba {
+  abstract class AbstractJoba implements Joba {
     private final DataType generates;
     private final int id;
 
-    protected Stub(DataType generates) {
+    protected AbstractJoba(DataType generates) {
       this.generates = generates;
       this.id = DataStreamsContext.output.registerJoba(this);
     }

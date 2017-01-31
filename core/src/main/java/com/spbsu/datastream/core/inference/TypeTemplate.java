@@ -1,7 +1,7 @@
-package com.spbsu.datastream.core.inference.template;
+package com.spbsu.datastream.core.inference;
 
-import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.Condition;
+import com.spbsu.datastream.core.DataType;
 
 import java.util.Set;
 import java.util.function.Function;

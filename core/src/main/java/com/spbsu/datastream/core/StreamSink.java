@@ -1,4 +1,5 @@
 package com.spbsu.datastream.core;
+
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 
@@ -10,7 +11,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class StreamSink implements Sink{
+public class StreamSink implements Sink {
   private static final String EOS_MARKER = "End of stream";
   private final BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
 
@@ -26,7 +27,7 @@ public class StreamSink implements Sink{
   @Override
   public void accept(Control control) {
     queue.add(control);
-    if(control instanceof EndOfTick) {
+    if (control instanceof EndOfTick) {
       queue.add(EOS_MARKER);
     }
   }
@@ -49,12 +50,10 @@ public class StreamSink implements Sink{
             eos = true;
           else
             return hasNext();
-        }
-        else
+        } else
           //noinspection unchecked
           next = take;
-      }
-      catch (InterruptedException e) {
+      } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
 
@@ -67,8 +66,7 @@ public class StreamSink implements Sink{
         if (!hasNext())
           return null;
         return next;
-      }
-      finally {
+      } finally {
         next = null;
       }
     }

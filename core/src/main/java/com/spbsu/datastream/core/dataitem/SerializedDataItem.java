@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.item;
+package com.spbsu.datastream.core.dataitem;
 
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.datastream.core.DataItem;

@@ -10,7 +10,7 @@ import java.util.Set;
  * @param <S> support of the type
  */
 public interface Type<S> {
-    String name();
+  String name();
 
-    Set<Condition<S>> conditions();
+  Set<Condition<S>> conditions();
 }

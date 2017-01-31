@@ -12,7 +12,9 @@ public class UserCounter implements UserContainer {
   @JsonProperty
   private int count;
 
-  public UserCounter() {}
+  public UserCounter() {
+  }
+
   public UserCounter(UserQuery userQuery) {
     user = userQuery.user();
     count = 1;

@@ -13,6 +13,7 @@ public interface DataStream extends Stream<DataItem> {
   Type types();
 
   boolean isValid();
+
   double alpha();
 
   Set<Condition> violated();
@@ -20,12 +21,14 @@ public interface DataStream extends Stream<DataItem> {
   static DataStream merge(DataStream... streams) {
     return new MergeStream(streams);
   }
+
   static DataStream group(DataStream input, DataItem.Grouping hash) {
     return null;
   }
 
   interface Type {
     String name();
+
     Set<Class<? extends Condition>> conditions();
   }
 }

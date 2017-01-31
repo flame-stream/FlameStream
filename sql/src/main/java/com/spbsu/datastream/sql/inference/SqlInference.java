@@ -1,12 +1,15 @@
 package com.spbsu.datastream.sql.inference;
 
-import com.spbsu.datastream.core.*;
-import com.spbsu.datastream.sql.exceptions.InvalidQueryException;
-import com.spbsu.datastream.sql.exceptions.UnsupportedQueryException;
+import com.spbsu.datastream.core.Condition;
+import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.DataType;
+import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.job.FilterJoba;
 import com.spbsu.datastream.core.job.IndicatorJoba;
 import com.spbsu.datastream.sql.SqlLimitCondition;
 import com.spbsu.datastream.sql.SqlWhereEqualsToFilter;
+import com.spbsu.datastream.sql.exceptions.InvalidQueryException;
+import com.spbsu.datastream.sql.exceptions.UnsupportedQueryException;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.StringValue;

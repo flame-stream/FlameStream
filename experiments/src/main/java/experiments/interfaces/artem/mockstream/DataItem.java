@@ -6,7 +6,9 @@ package experiments.interfaces.artem.mockstream;
  */
 public interface DataItem {
   Meta meta();
+
   CharSequence serializedData();
+
   <T> T data(Class<T> type); //Add class to cast
 
   interface Meta {
@@ -15,6 +17,7 @@ public interface DataItem {
 
   interface Grouping {
     long hash(DataItem item);
+
     boolean equals(DataItem left, DataItem right);
   }
 }

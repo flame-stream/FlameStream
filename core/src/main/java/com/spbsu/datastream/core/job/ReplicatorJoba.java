@@ -13,7 +13,7 @@ import java.util.List;
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class ReplicatorJoba extends Joba.Stub {
+public class ReplicatorJoba extends Joba.AbstractJoba {
   public ReplicatorJoba(Sink... lists) {
     this(Arrays.asList(lists));
   }
@@ -23,7 +23,7 @@ public class ReplicatorJoba extends Joba.Stub {
     this.sinks.addAll(sinks);
   }
 
-  public void add(Sink sink){
+  public void add(Sink sink) {
     sinks.add(sink);
   }
 
@@ -31,14 +31,14 @@ public class ReplicatorJoba extends Joba.Stub {
 
   @Override
   public void accept(DataItem item) {
-    for (Sink sink: sinks) {
+    for (Sink sink : sinks) {
       sink.accept(item);
     }
   }
 
   @Override
   public void accept(Control control) {
-    for (Sink sink: sinks) {
+    for (Sink sink : sinks) {
       sink.accept(control);
     }
   }

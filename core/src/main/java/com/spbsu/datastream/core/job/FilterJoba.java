@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.job;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.Sink;
-import com.spbsu.datastream.core.item.ObjectDataItem;
+import com.spbsu.datastream.core.dataitem.ObjectDataItem;
 import com.spbsu.datastream.core.job.control.Control;
 
 import java.util.function.Function;
@@ -13,7 +13,7 @@ import java.util.stream.Stream;
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class FilterJoba extends Joba.Stub {
+public class FilterJoba extends Joba.AbstractJoba {
   private final Function func;
   private final Class blInput;
   private final Class blOutput;
@@ -34,7 +34,7 @@ public class FilterJoba extends Joba.Stub {
     if (result != null)
       if (result instanceof Stream) {
         //noinspection unchecked
-        ((Stream)result).forEach(streamItem -> sink.accept(new ObjectDataItem(streamItem, blOutput, item.meta())));
+        ((Stream) result).forEach(streamItem -> sink.accept(new ObjectDataItem(streamItem, blOutput, item.meta())));
       } else {
         sink.accept(new ObjectDataItem(result, blOutput, item.meta()));
       }

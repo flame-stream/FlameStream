@@ -8,14 +8,10 @@ import com.spbsu.commons.func.types.SerializationRepository;
 import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.system.RuntimeUtils;
-import com.spbsu.datastream.core.DataStreamsContext;
-import com.spbsu.datastream.core.MergeActor;
-import com.spbsu.datastream.core.Sink;
-import com.spbsu.datastream.core.StreamSink;
-import com.spbsu.datastream.core.inference.DataTypeCollection;
-import com.spbsu.datastream.core.job.ActorSink;
+import com.spbsu.datastream.core.*;
 import com.spbsu.datastream.core.job.FilterJoba;
 import com.spbsu.datastream.core.job.GroupingJoba;
+import com.spbsu.datastream.core.job.MergeActor;
 import com.spbsu.datastream.core.job.ReplicatorJoba;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 

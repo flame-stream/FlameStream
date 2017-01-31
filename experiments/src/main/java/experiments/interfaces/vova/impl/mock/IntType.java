@@ -11,15 +11,15 @@ import java.util.Set;
  */
 public class IntType implements Type {
 
-    @Override
-    public String name() {
-        return "int";
-    }
+  @Override
+  public String name() {
+    return "int";
+  }
 
-    @Override
-    public Set<Class<? extends Condition>> conditions() {
-        Set<Class<? extends Condition>> s = new HashSet<>();
-        s.add(IntCondition.class);
-        return s;
-    }
+  @Override
+  public Set<Class<? extends Condition>> conditions() {
+    Set<Class<? extends Condition>> s = new HashSet<>();
+    s.add(IntCondition.class);
+    return s;
+  }
 }

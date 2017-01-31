@@ -2,13 +2,11 @@ package com.spbsu.datastream.core;
 
 import com.spbsu.commons.func.types.SerializationRepository;
 import com.spbsu.commons.seq.CharSeq;
-import com.spbsu.datastream.core.inference.DataTypeCollection;
 import com.spbsu.datastream.core.inference.TypeCollection;
 import com.spbsu.datastream.core.io.Input;
 import com.spbsu.datastream.core.io.Output;
 import com.spbsu.datastream.core.io.OutputProcessor;
 import com.spbsu.datastream.core.io.UserLogInput;
-import com.spbsu.datastream.core.state.StateRepository;
 
 /**
  * Created by marnikitta on 14.11.16.
@@ -21,6 +19,4 @@ public class DataStreamsContext {
   public static final Input input = new UserLogInput();
 
   public static final Output output = new OutputProcessor();
-
-  public static final StateRepository stateRepository = new StateRepository();
 }

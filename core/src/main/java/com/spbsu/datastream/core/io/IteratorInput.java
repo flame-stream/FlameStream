@@ -2,10 +2,12 @@ package com.spbsu.datastream.core.io;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
-import com.spbsu.datastream.core.item.ObjectDataItem;
-import com.spbsu.datastream.core.item.SystemTypeMeta;
+import com.spbsu.datastream.core.dataitem.ObjectDataItem;
+import com.spbsu.datastream.core.dataitem.SystemTypeMeta;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 

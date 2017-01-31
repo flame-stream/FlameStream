@@ -6,15 +6,21 @@ package experiments.interfaces.vova;
  */
 public interface DataItem {
   Meta meta();
+
   CharSequence serializedData();
+
   void setSerializedData(CharSequence data);
 //  <T> T data(Class<T> type); //Add class to cast
 
   interface Meta {
     long time(); //It is more convenient to work with integers...
+
     boolean commit();
+
     boolean fail();
+
     boolean good();
+
     void makeBad();
   }
 

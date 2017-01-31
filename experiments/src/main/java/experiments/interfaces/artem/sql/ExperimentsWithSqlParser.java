@@ -36,15 +36,15 @@ public class ExperimentsWithSqlParser {
     Select selectStatement = (Select) statement;
     PlainSelect selectBody = (PlainSelect) selectStatement.getSelectBody();
     List<SelectItem> selectItems = selectBody.getSelectItems();
-    Table selectFrom = (Table)selectBody.getFromItem();
+    Table selectFrom = (Table) selectBody.getFromItem();
     EqualsTo where = (EqualsTo) selectBody.getWhere();
     Column whereColumn = (Column) where.getLeftExpression();
 
     SubSelect subSelect = (SubSelect) where.getRightExpression();
     PlainSelect subSelectBody = (PlainSelect) subSelect.getSelectBody();
     List<SelectItem> subSelectItems = subSelectBody.getSelectItems();
-    Table subSelectFrom = (Table)subSelectBody.getFromItem();
-    ComparisonOperator subSelectWhere = (ComparisonOperator)subSelectBody.getWhere();
+    Table subSelectFrom = (Table) subSelectBody.getFromItem();
+    ComparisonOperator subSelectWhere = (ComparisonOperator) subSelectBody.getWhere();
     Column subSelectWhereColumn = (Column) subSelectWhere.getLeftExpression();
     LongValue subSelectWhereValue = (LongValue) subSelectWhere.getRightExpression();
 

@@ -17,7 +17,8 @@ public class UserQuery implements UserContainer {
     this.query = query;
   }
 
-  public  UserQuery() {}
+  public UserQuery() {
+  }
 
   @Override
   public String user() {

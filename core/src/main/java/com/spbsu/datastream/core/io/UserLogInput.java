@@ -5,7 +5,7 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
-import com.spbsu.datastream.core.item.SerializedDataItem;
+import com.spbsu.datastream.core.dataitem.SerializedDataItem;
 
 import java.io.*;
 import java.util.Collection;
@@ -22,7 +22,6 @@ public class UserLogInput implements Input {
     return CharSeqTools.lines(new InputStreamReader(is, StreamTools.UTF), false)
             .map(SerializedDataItem::new)
             .map(DataItem.class::cast)
-//        .map(DataItem::fromCharSeq)
             .collect(Collectors.groupingBy(di -> di.meta().tick()))
             .values().stream()
             .map(Collection::stream);

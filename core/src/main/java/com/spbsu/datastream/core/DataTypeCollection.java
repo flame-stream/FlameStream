@@ -1,6 +1,7 @@
-package com.spbsu.datastream.core.inference;
+package com.spbsu.datastream.core;
 
-import com.spbsu.datastream.core.DataType;
+import com.spbsu.datastream.core.inference.Morphism;
+import com.spbsu.datastream.core.inference.TypeCollection;
 
 import java.util.*;
 

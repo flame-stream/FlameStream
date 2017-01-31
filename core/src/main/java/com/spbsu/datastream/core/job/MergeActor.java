@@ -1,15 +1,15 @@
-package com.spbsu.datastream.core;
+package com.spbsu.datastream.core.job;
 
 
 import akka.actor.UntypedActor;
 import com.spbsu.akka.ActorAdapter;
 import com.spbsu.akka.ActorMethod;
-import com.spbsu.datastream.core.job.Joba;
-import com.spbsu.datastream.core.job.control.Control;
+import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 import com.spbsu.datastream.core.job.control.LastItemMarker;
 
-public class MergeActor extends ActorAdapter<UntypedActor>{
+public class MergeActor extends ActorAdapter<UntypedActor> {
   private final Sink sink;
   private final int incoming;
 
@@ -28,8 +28,7 @@ public class MergeActor extends ActorAdapter<UntypedActor>{
     if (count == incoming) {
       sink.accept(eot);
       context().stop(self());
-    }
-    else if (marker == null){
+    } else if (marker == null) {
       itemsReceived = false;
       marker = new LastItemMarker();
       sink.accept(marker);
@@ -43,8 +42,7 @@ public class MergeActor extends ActorAdapter<UntypedActor>{
         itemsReceived = false;
         this.marker = new LastItemMarker();
         sink.accept(this.marker);
-      }
-      else self().tell(new EndOfTick(), self());
+      } else self().tell(new EndOfTick(), self());
     }
   }
 

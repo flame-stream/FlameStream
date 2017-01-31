@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.item;
+package com.spbsu.datastream.core.dataitem;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataStreamsContext;
@@ -7,7 +7,7 @@ import com.spbsu.datastream.core.DataStreamsContext;
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class ObjectDataItem implements DataItem{
+public class ObjectDataItem implements DataItem {
   private final Object item;
   private final Class clazz;
   private final Meta meta;
@@ -32,6 +32,6 @@ public class ObjectDataItem implements DataItem{
   @Override
   public <T> T as(Class<T> type) {
     //noinspection unchecked
-    return (T)item;
+    return (T) item;
   }
 }

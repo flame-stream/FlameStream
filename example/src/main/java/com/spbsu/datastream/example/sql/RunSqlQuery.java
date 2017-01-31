@@ -3,16 +3,16 @@ package com.spbsu.datastream.example.sql;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.spbsu.akka.ActorContainer;
+import com.spbsu.datastream.core.ActorSink;
 import com.spbsu.datastream.core.DataStreamsContext;
-import com.spbsu.datastream.core.MergeActor;
 import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.StreamSink;
+import com.spbsu.datastream.core.job.MergeActor;
+import com.spbsu.datastream.core.job.control.EndOfTick;
+import com.spbsu.datastream.example.usercounter.UserContainer;
 import com.spbsu.datastream.sql.exceptions.InvalidQueryException;
 import com.spbsu.datastream.sql.exceptions.UnsupportedQueryException;
 import com.spbsu.datastream.sql.inference.SqlInference;
-import com.spbsu.datastream.core.job.ActorSink;
-import com.spbsu.datastream.core.job.control.EndOfTick;
-import com.spbsu.datastream.example.usercounter.UserContainer;
 
 /**
  * Created by Artem on 15.11.2016.
