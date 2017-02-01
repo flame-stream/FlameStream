@@ -7,6 +7,7 @@ import com.spbsu.datastream.core.ActorSink;
 import com.spbsu.datastream.core.DataStreamsContext;
 import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.StreamSink;
+import com.spbsu.datastream.core.io.UserLogInput;
 import com.spbsu.datastream.core.job.MergeActor;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 import com.spbsu.datastream.example.usercounter.UserContainer;
@@ -24,7 +25,7 @@ public class RunSqlQuery {
 
     final ActorSystem akka = ActorSystem.create();
 
-    DataStreamsContext.input.stream(sqlInference.type("UsersLog")).flatMap((input) -> {
+    new UserLogInput().stream(sqlInference.type("UsersLog")).flatMap((input) -> {
       final StreamSink streamSink = new StreamSink();
       try {
         Sink queryJoba = sqlInference.query("SELECT * FROM UsersLog WHERE user = 'petya' LIMIT 5", streamSink, UserContainer.class);

@@ -1,6 +1,7 @@
 package experiments.interfaces.nikita.akka;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 
@@ -13,9 +14,13 @@ public class Main {
   public static void main(String[] args) {
     ActorSystem system = ActorSystem.create();
 
-    ActorRef echo = system.actorOf(Props.create(EchoActor.class));
-    ActorRef simple = system.actorOf(Props.create(SimpleActor.class, echo));
+    ActorRef storyTeller = system.actorOf(Props.create(StoryTeller.class));
 
-    new Random().ints().limit(100).forEach(i -> simple.tell(i, null));
+    system.actorOf(SimpleActor.props(storyTeller), "simple");
+
+    ActorSelection ref = system.actorSelection("akka://default/user/simple");
+    new Random().ints().limit(100).mapToObj(Integer::toString).map(SimpleActor.Message::new)
+            .forEach(i -> ref.tell(i, null));
+
   }
 }

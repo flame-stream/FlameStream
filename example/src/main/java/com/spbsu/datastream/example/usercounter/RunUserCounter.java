@@ -9,6 +9,7 @@ import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.datastream.core.*;
+import com.spbsu.datastream.core.io.UserLogInput;
 import com.spbsu.datastream.core.job.FilterJoba;
 import com.spbsu.datastream.core.job.GroupingJoba;
 import com.spbsu.datastream.core.job.MergeActor;
@@ -29,7 +30,7 @@ public class RunUserCounter {
     final ActorSystem akka = ActorSystem.create();
     final int maxUserCount = 5000;
 
-    DataStreamsContext.input.stream(/*"ypes.type("UsersLog")*/ null).flatMap((input) -> {
+    new UserLogInput().stream(/*"ypes.type("UsersLog")*/ null).flatMap((input) -> {
       StreamSink sink = new StreamSink();
       //joba = types.<Integer>convert(types.type("UsersLog"), types.type("Group(UserLog, 2)"), sink);
       Sink joba = makeJoba(akka, sink, types);

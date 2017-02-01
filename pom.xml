@@ -27,6 +27,7 @@
         <module>experiments</module>
         <module>example</module>
         <module>sql</module>
+        <module>cluster-test</module>
     </modules>
 
     <dependencies>
@@ -38,6 +39,11 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-cluster_2.11</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-cluster-metrics_2.11</artifactId>
             <version>${akka.version}</version>
         </dependency>
 

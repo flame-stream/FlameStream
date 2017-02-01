@@ -10,18 +10,6 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.spbsu.datastreams</groupId>
-            <artifactId>datastreams-commons</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.spbsu.datastreams</groupId>
-            <artifactId>datastreams-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
 
-    <artifactId>datastreams-experiments</artifactId>
+    <artifactId>datastreams-cluster-test</artifactId>
 </project>

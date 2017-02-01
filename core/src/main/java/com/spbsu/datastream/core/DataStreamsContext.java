@@ -16,7 +16,5 @@ public class DataStreamsContext {
 
   public static final TypeCollection typeCollection = new DataTypeCollection();
 
-  public static final Input input = new UserLogInput();
-
   public static final Output output = new OutputProcessor();
 }
