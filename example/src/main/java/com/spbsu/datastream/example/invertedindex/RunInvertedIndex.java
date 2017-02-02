@@ -13,11 +13,10 @@ import com.spbsu.datastream.core.io.IteratorInput;
 import com.spbsu.datastream.core.job.FilterJoba;
 import com.spbsu.datastream.core.job.GroupingJoba;
 import com.spbsu.datastream.core.job.MergeActor;
-import com.spbsu.datastream.core.job.ReplicatorJoba;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 import com.spbsu.datastream.example.invertedindex.actions.WikiPageGrouping;
-import com.spbsu.datastream.example.invertedindex.actions.UpdateWikiPageStateFilter;
-import com.spbsu.datastream.example.invertedindex.actions.WordOutputFilter;
+import com.spbsu.datastream.example.invertedindex.actions.ProcessWordOutputFilter;
+import com.spbsu.datastream.example.invertedindex.actions.WikiPageToPositionStateFilter;
 import com.spbsu.datastream.example.invertedindex.io.WikiPageIterator;
 
 import java.io.File;
@@ -66,13 +65,10 @@ public class RunInvertedIndex {
   }
 
   private static Sink makeJoba(ActorSystem actorSystem, Sink sink, DataTypeCollection types) {
-    final ReplicatorJoba replicator = new ReplicatorJoba(sink);
-    final Sink wordIndexFilter = new FilterJoba(replicator, null, new UpdateWikiPageStateFilter(), WikiPageContainer[].class, WikiPageContainer.class);
-    final Sink pageGrouping = new GroupingJoba(wordIndexFilter, types.type("<type name>"), new WikiPageGrouping(), 2);
-    final Sink pageToWordsFilter = new FilterJoba(pageGrouping, null, new WordOutputFilter(), WikiPageContainer.class, WikiPageContainer.class);
-    final ActorRef mergeActor = actorSystem.actorOf(ActorContainer.props(MergeActor.class, pageToWordsFilter, 2));
-    final ActorSink mergeSink = new ActorSink(mergeActor);
-    replicator.add(mergeSink);
-    return mergeSink;
+    final Sink outputFilter = new FilterJoba(sink, null, new ProcessWordOutputFilter(), WikiPagePositionState[].class, WordOutput.class);
+    final Sink positionStateGrouping = new GroupingJoba(outputFilter, types.type("<type name>"), new WikiPageGrouping(), 2);
+    final Sink pageToPositionState = new FilterJoba(positionStateGrouping, null, new WikiPageToPositionStateFilter(), WikiPage.class, WikiPagePositionState.class);
+    final ActorRef mergeActor = actorSystem.actorOf(ActorContainer.props(MergeActor.class, pageToPositionState, 1));
+    return new ActorSink(mergeActor);
   }
 }

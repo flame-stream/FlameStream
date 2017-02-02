@@ -8,12 +8,12 @@ import gnu.trove.set.TIntSet;
  * Author: Artem
  * Date: 31.01.2017
  */
-public class WikiPageState implements WikiPageContainer {
+public class WikiPagePositionState implements WikiPageContainer {
   @JsonProperty
   private final int pageId;
   private final TIntObjectMap<TIntSet> positionMap;
 
-  public WikiPageState(WikiPage wikiPage, TIntObjectMap<TIntSet> positionMap) {
+  public WikiPagePositionState(WikiPage wikiPage, TIntObjectMap<TIntSet> positionMap) {
     pageId = wikiPage.pageId();
     this.positionMap = positionMap;
   }
