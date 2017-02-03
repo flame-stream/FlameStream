@@ -15,10 +15,12 @@ import com.spbsu.datastream.core.job.GroupingJoba;
 import com.spbsu.datastream.core.job.MergeActor;
 import com.spbsu.datastream.core.job.ReplicatorJoba;
 import com.spbsu.datastream.core.job.control.EndOfTick;
-import com.spbsu.datastream.example.invertedindex.actions.WikiPageGrouping;
-import com.spbsu.datastream.example.invertedindex.actions.UpdateWikiPageStateFilter;
-import com.spbsu.datastream.example.invertedindex.actions.WordOutputFilter;
-import com.spbsu.datastream.example.invertedindex.io.WikiPageIterator;
+import com.spbsu.datastream.example.invertedindex.actions.PageToWordsFilter;
+import com.spbsu.datastream.example.invertedindex.actions.TopKFrequentPagesFilter;
+import com.spbsu.datastream.example.invertedindex.actions.UpdateWordIndexFilter;
+import com.spbsu.datastream.example.invertedindex.actions.WordGrouping;
+import com.spbsu.datastream.example.invertedindex.wiki.WikiPage;
+import com.spbsu.datastream.example.invertedindex.wiki.WikiPageIterator;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,7 +37,7 @@ public class RunInvertedIndex {
   public static void main(String[] args) throws FileNotFoundException {
     DataStreamsContext.serializatonRepository = new SerializationRepository<>(
             new TypeConvertersCollection(ConversionRepository.ROOT,
-                    WikiPageContainer.class.getPackage().getName() + ".io"),
+                    WordContainer.class.getPackage().getName() + ".io"),
             CharSeq.class
     );
     final ActorSystem akka = ActorSystem.create();
@@ -67,9 +69,10 @@ public class RunInvertedIndex {
 
   private static Sink makeJoba(ActorSystem actorSystem, Sink sink, DataTypeCollection types) {
     final ReplicatorJoba replicator = new ReplicatorJoba(sink);
-    final Sink wordIndexFilter = new FilterJoba(replicator, null, new UpdateWikiPageStateFilter(), WikiPageContainer[].class, WikiPageContainer.class);
-    final Sink pageGrouping = new GroupingJoba(wordIndexFilter, types.type("<type name>"), new WikiPageGrouping(), 2);
-    final Sink pageToWordsFilter = new FilterJoba(pageGrouping, null, new WordOutputFilter(), WikiPageContainer.class, WikiPageContainer.class);
+    final Sink topKFilter = new FilterJoba(replicator, null, new TopKFrequentPagesFilter(5), WordIndex.class, WordIndex.class);
+    final Sink wordIndexFilter = new FilterJoba(topKFilter, null, new UpdateWordIndexFilter(), WordContainer[].class, WordIndex.class);
+    final Sink grouping = new GroupingJoba(wordIndexFilter, types.type("<type name>"), new WordGrouping(), 2);
+    final Sink pageToWordsFilter = new FilterJoba(grouping, null, new PageToWordsFilter(), WordContainer.class, WordContainer.class);
     final ActorRef mergeActor = actorSystem.actorOf(ActorContainer.props(MergeActor.class, pageToWordsFilter, 2));
     final ActorSink mergeSink = new ActorSink(mergeActor);
     replicator.add(mergeSink);

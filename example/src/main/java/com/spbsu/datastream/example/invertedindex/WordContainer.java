@@ -9,9 +9,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = WikiPageState.class, name = "state"),
-        @JsonSubTypes.Type(value = WordOutput.class, name = "output")
+        @JsonSubTypes.Type(value = WordPage.class, name = "wordpage"),
+        @JsonSubTypes.Type(value = WordIndex.class, name = "index")
 })
-public interface WikiPageContainer {
-  int pageId();
+public interface WordContainer {
+  String word();
 }

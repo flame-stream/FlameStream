@@ -1,22 +1,22 @@
 package com.spbsu.datastream.example.invertedindex.actions;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.example.invertedindex.WikiPageContainer;
+import com.spbsu.datastream.example.invertedindex.WordContainer;
 
 /**
  * Author: Artem
- * Date: 31.01.2017
+ * Date: 18.01.2017
  */
-public class WikiPageGrouping implements DataItem.Grouping {
+public class WordGrouping implements DataItem.Grouping {
   @Override
   public long hash(DataItem item) {
     //noinspection ConstantConditions
-    return item.as(WikiPageContainer.class).pageId();
+    return item.as(WordContainer.class).word().hashCode();
   }
 
   @Override
   public boolean equals(DataItem left, DataItem right) {
     //noinspection ConstantConditions
-    return left.as(WikiPageContainer.class).pageId() == right.as(WikiPageContainer.class).pageId();
+    return left.as(WordContainer.class).word().equals(right.as(WordContainer.class).word());
   }
 }
