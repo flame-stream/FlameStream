@@ -1,0 +1,14 @@
+package experiments.interfaces.nikita.stream;
+
+/**
+ * Created by marnikitta on 19.10.16.
+ */
+public interface RunningCondition<S> {
+  void update(S value);
+
+  /**
+   * Once invalid
+   * Always invalid
+   */
+  boolean isValid();
+}

@@ -1,0 +1,74 @@
+package com.spbsu.datastream.example.invertedindex;
+
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import com.spbsu.akka.ActorContainer;
+import com.spbsu.commons.func.types.ConversionRepository;
+import com.spbsu.commons.func.types.SerializationRepository;
+import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
+import com.spbsu.commons.seq.CharSeq;
+import com.spbsu.datastream.core.*;
+import com.spbsu.datastream.core.io.Input;
+import com.spbsu.datastream.core.io.IteratorInput;
+import com.spbsu.datastream.core.job.FilterJoba;
+import com.spbsu.datastream.core.job.GroupingJoba;
+import com.spbsu.datastream.core.job.MergeActor;
+import com.spbsu.datastream.core.job.control.EndOfTick;
+import com.spbsu.datastream.example.invertedindex.actions.WikiPageGrouping;
+import com.spbsu.datastream.example.invertedindex.actions.ProcessWordOutputFilter;
+import com.spbsu.datastream.example.invertedindex.actions.WikiPageToPositionStateFilter;
+import com.spbsu.datastream.example.invertedindex.io.WikiPageIterator;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Iterator;
+
+/**
+ * Author: Artem
+ * Date: 14.01.2017
+ */
+public class RunInvertedIndex {
+  public static void main(String[] args) throws FileNotFoundException {
+    DataStreamsContext.serializatonRepository = new SerializationRepository<>(
+            new TypeConvertersCollection(ConversionRepository.ROOT,
+                    WikiPageContainer.class.getPackage().getName() + ".io"),
+            CharSeq.class
+    );
+    final ActorSystem akka = ActorSystem.create();
+    final DataTypeCollection types = (DataTypeCollection) DataStreamsContext.typeCollection;
+
+    final ClassLoader classLoader = RunInvertedIndex.class.getClassLoader();
+    final URL fileUrl = classLoader.getResource("wikipedia/small_dump_example.xml");
+    if (fileUrl == null) {
+      throw new RuntimeException("Dump URL is null");
+    }
+
+    final File dumpFile = new File(fileUrl.getFile());
+    final InputStream inputStream = new FileInputStream(dumpFile);
+    final Iterator<WikiPage> wikiPageIterator = new WikiPageIterator(inputStream);
+    final Input iteratorInput = new IteratorInput<>(wikiPageIterator, WikiPage.class);
+
+    iteratorInput.stream(null).flatMap((input) -> {
+      final StreamSink sink = new StreamSink();
+      final Sink joba = makeJoba(akka, sink, types);
+      new Thread(() -> {
+        input.forEach(joba::accept);
+        joba.accept(new EndOfTick());
+      }).start();
+      return sink.stream().onClose(DataStreamsContext.output::commit);
+    }).forEach(DataStreamsContext.output.processor());
+
+    akka.shutdown();
+  }
+
+  private static Sink makeJoba(ActorSystem actorSystem, Sink sink, DataTypeCollection types) {
+    final Sink outputFilter = new FilterJoba(sink, null, new ProcessWordOutputFilter(), WikiPagePositionState[].class, WordOutput.class);
+    final Sink positionStateGrouping = new GroupingJoba(outputFilter, types.type("<type name>"), new WikiPageGrouping(), 2);
+    final Sink pageToPositionState = new FilterJoba(positionStateGrouping, null, new WikiPageToPositionStateFilter(), WikiPage.class, WikiPagePositionState.class);
+    final ActorRef mergeActor = actorSystem.actorOf(ActorContainer.props(MergeActor.class, pageToPositionState, 1));
+    return new ActorSink(mergeActor);
+  }
+}
