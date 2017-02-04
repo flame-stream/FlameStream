@@ -1,7 +1,6 @@
 package experiments.interfaces.nikita.akka.cluster.front;
 
 import akka.actor.ActorSystem;
-import akka.actor.Props;
 import akka.cluster.Cluster;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -24,11 +23,9 @@ public class FrontEndApp {
   private static void start(String port) {
     final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + port)
             .withFallback(ConfigFactory.parseString("akka.cluster.roles = [frontend]"))
-            .withFallback(ConfigFactory.load());
+            .withFallback(ConfigFactory.load("cluster"));
     final ActorSystem system = ActorSystem.create("System", config);
     final Cluster cluster = Cluster.get(system);
-
-//    system.actorOf(Props.create(FrontRegistrationService.class));
 
 
     //Graceful System shutdownHook

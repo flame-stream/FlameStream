@@ -1,14 +1,10 @@
 package experiments.interfaces.nikita.akka.cluster.worker;
 
-import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.cluster.Cluster;
-import akka.cluster.sharding.ClusterSharding;
-import akka.cluster.sharding.ClusterShardingSettings;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import experiments.interfaces.nikita.akka.cluster.MyMessageExtractor;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
@@ -28,13 +24,10 @@ public class WorkerApp {
   private static void start(String port) {
     final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + port)
             .withFallback(ConfigFactory.parseString("akka.cluster.roles = [worker]"))
-            .withFallback(ConfigFactory.load());
+            .withFallback(ConfigFactory.load("cluster"));
     final ActorSystem system = ActorSystem.create("System", config);
 
-    final ClusterShardingSettings settings = ClusterShardingSettings.create(system).withRole("worker");
-    final ActorRef shardRegion = ClusterSharding.get(system)
-            .start("Counter", Props.create(Uppercaser.class), settings, new MyMessageExtractor());
-
+    system.actorOf(Props.create(Uppercaser.class), "uppercaser");
 
     //Graceful System shutdownHook
     Cluster.get(system).registerOnMemberRemoved(() -> {

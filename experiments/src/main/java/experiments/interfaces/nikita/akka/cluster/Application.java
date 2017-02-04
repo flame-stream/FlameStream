@@ -1,5 +1,6 @@
 package experiments.interfaces.nikita.akka.cluster;
 
+import akka.actor.Address;
 import experiments.interfaces.nikita.akka.cluster.front.FrontEndApp;
 import experiments.interfaces.nikita.akka.cluster.master.MasterApp;
 import experiments.interfaces.nikita.akka.cluster.worker.WorkerApp;
