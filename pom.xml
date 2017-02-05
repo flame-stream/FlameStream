@@ -23,6 +23,7 @@
 
     <modules>
         <module>core</module>
+        <module>new-core</module>
         <module>commons</module>
         <module>experiments</module>
         <module>example</module>
