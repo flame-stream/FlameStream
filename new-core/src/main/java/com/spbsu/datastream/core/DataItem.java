@@ -1,6 +1,6 @@
 package com.spbsu.datastream.core;
 
-import org.jetbrains.annotations.Nullable;
+import com.spbsu.commons.func.types.SerializationRepository;
 
 /**
  * Experts League
@@ -9,18 +9,9 @@ import org.jetbrains.annotations.Nullable;
 public interface DataItem<T> {
   Meta meta();
 
-  CharSequence serializedData();
+  T payload();
 
-  @Nullable
-  T as(Class<T> type);
-
-  interface Meta<T extends Meta> extends Comparable<T> {
+  interface Meta<T> extends Comparable<T> {
     int tick();
-
-    /***
-     * @return new instance of Meta = this + little bit
-     */
-    T advanced();
   }
-
 }
