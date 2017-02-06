@@ -1,6 +1,4 @@
-package com.spbsu.datastream.example.invertedindex.wiki;
-
-import com.spbsu.datastream.example.invertedindex.WordContainer;
+package com.spbsu.datastream.example.invertedindex.models;
 
 /**
  * Author: Artem
@@ -32,5 +30,9 @@ public class WikiPage implements WordContainer {
   @Override
   public String word() {
     return null;
+  }
+
+  public String titleAndText() {
+    return title + "\n" + text;
   }
 }

@@ -1,7 +1,7 @@
 package com.spbsu.datastream.example.invertedindex.actions;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.example.invertedindex.WordContainer;
+import com.spbsu.datastream.example.invertedindex.models.WordContainer;
 
 /**
  * Author: Artem

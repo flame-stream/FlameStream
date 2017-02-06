@@ -1,4 +1,4 @@
-package com.spbsu.datastream.example.invertedindex;
+package com.spbsu.datastream.example.invertedindex.models;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -9,8 +9,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = WordPage.class, name = "wordpage"),
-        @JsonSubTypes.Type(value = WordIndex.class, name = "index")
+        @JsonSubTypes.Type(value = WordOutput.class, name = "diff"),
+        @JsonSubTypes.Type(value = WordIndex.class, name = "state")
 })
 public interface WordContainer {
   String word();
