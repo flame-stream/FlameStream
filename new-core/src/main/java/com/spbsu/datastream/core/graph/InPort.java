@@ -1,37 +1,32 @@
 package com.spbsu.datastream.core.graph;
 
-import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by marnikitta on 2/6/17.
  */
 public final class InPort {
-  private static int counter;
-
-  private final int id;
+  private final static ThreadLocalRandom rd = ThreadLocalRandom.current();
+  private final long id;
 
   public InPort() {
-    this.id = counter++;
+    this.id = System.currentTimeMillis() << 5 + rd.nextInt(1 << 5);
   }
 
-  public InPort(final int id) {
+  public InPort(final long id) {
     this.id = id;
   }
 
-  public int id() {
+  public long id() {
     return id;
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    final InPort inPort = (InPort) o;
-    return id == inPort.id;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(id);
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("InPort{");
+    sb.append("id=").append(id);
+    sb.append('}');
+    return sb.toString();
   }
 }
+

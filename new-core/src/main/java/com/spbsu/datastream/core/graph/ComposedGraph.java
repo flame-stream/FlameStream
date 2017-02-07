@@ -31,29 +31,17 @@ public class ComposedGraph implements Graph {
 
     this.parts = new HashSet<>(graphs);
 
-    final Map<InPort, OutPort> mergedUpstreams = graphs.stream().map(Graph::upstreams)
-            .map(Map::entrySet).flatMap(Collection::stream)
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    this.downstreams = new HashMap<>(wires);
+    this.upstreams = wires.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
-    wires.forEach((from, to) -> mergedUpstreams.put(to, from));
-    this.upstreams = mergedUpstreams;
+    this.inPorts = graphs.stream().map(Graph::inPorts)
+            .flatMap(Set::stream).filter(wires::containsValue)
+            .collect(Collectors.toSet());
 
-    final Map<OutPort, InPort> mergedDownstreams = graphs.stream().map(Graph::downstreams)
-            .map(Map::entrySet).flatMap(Collection::stream)
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-    wires.forEach(mergedDownstreams::put);
-    this.downstreams = mergedDownstreams;
-
-    final Set<InPort> cleanedInPorts = graphs.stream().map(Graph::inPorts)
-            .flatMap(Set::stream).collect(Collectors.toSet());
-    cleanedInPorts.removeAll(wires.values());
-    this.inPorts = cleanedInPorts;
-
-    final Set<OutPort> cleanedOutPorts = graphs.stream().map(Graph::outPorts)
-            .flatMap(Set::stream).collect(Collectors.toSet());
-    cleanedOutPorts.removeAll(wires.keySet());
-    this.outPorts = cleanedOutPorts;
+    this.outPorts = graphs.stream().map(Graph::outPorts)
+            .flatMap(Set::stream).filter(wires::containsKey)
+            .collect(Collectors.toSet());
   }
 
   private static void assertCorrectWires(final Set<Graph> graphs,
@@ -93,5 +81,32 @@ public class ComposedGraph implements Graph {
   @Override
   public Map<InPort, OutPort> upstreams() {
     return this.upstreams;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final ComposedGraph that = (ComposedGraph) o;
+    return Objects.equals(upstreams, that.upstreams) &&
+            Objects.equals(downstreams, that.downstreams) &&
+            Objects.equals(inPorts, that.inPorts) &&
+            Objects.equals(outPorts, that.outPorts) &&
+            Objects.equals(parts, that.parts);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(upstreams, downstreams, inPorts, outPorts, parts);
+  }
+
+  @Override
+  public String toString() {
+    return "ComposedGraph{" + "upstreams=" + upstreams +
+            ", downstreams=" + downstreams +
+            ", inPorts=" + inPorts +
+            ", outPorts=" + outPorts +
+            ", parts=" + parts +
+            '}';
   }
 }

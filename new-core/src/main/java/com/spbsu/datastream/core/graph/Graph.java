@@ -1,6 +1,5 @@
 package com.spbsu.datastream.core.graph;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -10,21 +9,13 @@ import java.util.Set;
  * inspired by akka-stream
  */
 public interface Graph {
-  default Set<InPort> inPorts() {
-    return Collections.emptySet();
-  }
+  Set<InPort> inPorts();
 
-  default Set<OutPort> outPorts() {
-    return Collections.emptySet();
-  }
+  Set<OutPort> outPorts();
 
-  default Map<OutPort, InPort> downstreams() {
-    return Collections.emptyMap();
-  }
+  Map<OutPort, InPort> downstreams();
 
-  default Map<InPort, OutPort> upstreams() {
-    return Collections.emptyMap();
-  }
+  Map<InPort, OutPort> upstreams();
 
   /**
    * Fuses this Graph to `that` Graph by wiring together `from` and `to`,

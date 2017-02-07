@@ -1,24 +1,20 @@
 package com.spbsu.datastream.core.graph;
 
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by marnikitta on 2/6/17.
  */
 public final class OutPort {
-  private static int counter;
-
-  private final int id;
+  private final static ThreadLocalRandom rd = ThreadLocalRandom.current();
+  private final long id;
 
   public OutPort() {
-    this.id = counter++;
+    this.id = System.currentTimeMillis() << 5 + rd.nextInt(1 << 5);
   }
 
-  public OutPort(final int id) {
-    this.id = id;
-  }
-
-  public int id() {
+  public long id() {
     return id;
   }
 
@@ -33,5 +29,13 @@ public final class OutPort {
   @Override
   public int hashCode() {
     return Objects.hash(id);
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("OutPort{");
+    sb.append("id=").append(id);
+    sb.append('}');
+    return sb.toString();
   }
 }

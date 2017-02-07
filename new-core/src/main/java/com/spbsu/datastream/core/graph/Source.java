@@ -1,13 +1,12 @@
 package com.spbsu.datastream.core.graph;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Created by marnikitta on 2/6/17.
  */
-public abstract class Source implements Graph {
+public abstract class Source<T> extends AtomicGraph {
   private final OutPort outPort = new OutPort();
 
   @Override
@@ -18,15 +17,5 @@ public abstract class Source implements Graph {
   @Override
   public Set<OutPort> outPorts() {
     return Collections.singleton(this.outPort);
-  }
-
-  @Override
-  public Map<OutPort, InPort> downstreams() {
-    return Collections.emptyMap();
-  }
-
-  @Override
-  public Map<InPort, OutPort> upstreams() {
-    return Collections.emptyMap();
   }
 }
