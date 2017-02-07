@@ -30,6 +30,9 @@ public abstract class FanOut extends AtomicGraph {
     return Collections.unmodifiableSet(outPorts);
   }
 
+  public InPort inPort() {
+    return inPort;
+  }
 
   @Override
   public boolean equals(final Object o) {

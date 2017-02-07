@@ -1,21 +1,20 @@
 package com.spbsu.datastream.core.graph;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * Created by marnikitta on 2/7/17.
  */
-public class Rehasher<T> implements Graph {
+public final class Rehash<T> extends AtomicGraph {
   private final InPort inPort = new InPort();
   private final OutPort outPort = new OutPort();
 
   private final Hash<T> hash;
   private final int buckets;
 
-  public Rehasher(final Hash<T> hash, final int buckets) {
+  public Rehash(final Hash<T> hash, final int buckets) {
     this.hash = hash;
     this.buckets = buckets;
   }
@@ -30,16 +29,6 @@ public class Rehasher<T> implements Graph {
     return Collections.singleton(outPort);
   }
 
-  @Override
-  public Map<OutPort, InPort> downstreams() {
-    return Collections.emptyMap();
-  }
-
-  @Override
-  public Map<InPort, OutPort> upstreams() {
-    return Collections.emptyMap();
-  }
-
   public Hash<T> grouping() {
     return hash;
   }
@@ -52,11 +41,11 @@ public class Rehasher<T> implements Graph {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final Rehasher<?> rehasher = (Rehasher<?>) o;
-    return buckets == rehasher.buckets &&
-            Objects.equals(inPort, rehasher.inPort) &&
-            Objects.equals(outPort, rehasher.outPort) &&
-            Objects.equals(hash, rehasher.hash);
+    final Rehash<?> rehash = (Rehash<?>) o;
+    return buckets == rehash.buckets &&
+            Objects.equals(inPort, rehash.inPort) &&
+            Objects.equals(outPort, rehash.outPort) &&
+            Objects.equals(hash, rehash.hash);
   }
 
   @Override
@@ -66,7 +55,7 @@ public class Rehasher<T> implements Graph {
 
   @Override
   public String toString() {
-    return "Rehasher{" + "inPort=" + inPort +
+    return "Rehash{" + "inPort=" + inPort +
             ", outPort=" + outPort +
             ", hash=" + hash +
             ", buckets=" + buckets +

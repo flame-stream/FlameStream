@@ -29,6 +29,10 @@ public abstract class FanIn extends AtomicGraph {
     return Collections.singleton(outPort);
   }
 
+  public OutPort outPort() {
+    return outPort;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;

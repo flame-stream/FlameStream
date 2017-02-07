@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 /**
  * Created by marnikitta on 2/6/17.
  */
-public class ComposedGraph implements Graph {
+public final class ComposedGraph implements Graph {
   private final Map<InPort, OutPort> upstreams;
   private final Map<OutPort, InPort> downstreams;
 
@@ -36,20 +36,20 @@ public class ComposedGraph implements Graph {
             .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
     this.inPorts = graphs.stream().map(Graph::inPorts)
-            .flatMap(Set::stream).filter(wires::containsValue)
+            .flatMap(Set::stream).filter(port -> !upstreams.containsKey(port))
             .collect(Collectors.toSet());
 
     this.outPorts = graphs.stream().map(Graph::outPorts)
-            .flatMap(Set::stream).filter(wires::containsKey)
+            .flatMap(Set::stream).filter(port -> !downstreams.containsKey(port))
             .collect(Collectors.toSet());
   }
 
-  private static void assertCorrectWires(final Set<Graph> graphs,
-                                         final Map<OutPort, InPort> wires) {
+  public static void assertCorrectWires(final Set<? extends Graph> graphs,
+                                        final Map<OutPort, InPort> wires) {
     wires.forEach((from, to) -> assertCorrectWire(graphs, from, to));
   }
 
-  private static void assertCorrectWire(final Set<Graph> graphs, final OutPort from, final InPort to) {
+  public static void assertCorrectWire(final Set<? extends Graph> graphs, final OutPort from, final InPort to) {
     if (!graphs.stream().anyMatch(graph -> graph.outPorts().contains(from))) {
       throw new WiringException();
     }

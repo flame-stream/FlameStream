@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public class StatefulFilter<T, R, S> extends Processor {
+public final class StatefulFilter<T, R, S> extends Processor {
   private final StatefulFunction<T, R, S> statefulFunction;
 
   public StatefulFilter(final StatefulFunction<T, R, S> statefulFunction) {

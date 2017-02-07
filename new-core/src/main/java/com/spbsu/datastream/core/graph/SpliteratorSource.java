@@ -6,7 +6,7 @@ import java.util.Spliterator;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public class SpliteratorSource<T> extends Source<T> {
+public final class SpliteratorSource<T> extends Source<T> {
   private final Spliterator<T> spliterator;
 
   public SpliteratorSource(final Spliterator<T> spliterator) {

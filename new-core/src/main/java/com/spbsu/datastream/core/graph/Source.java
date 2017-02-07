@@ -18,4 +18,8 @@ public abstract class Source<T> extends AtomicGraph {
   public Set<OutPort> outPorts() {
     return Collections.singleton(this.outPort);
   }
+
+  public OutPort outPort() {
+    return outPort;
+  }
 }

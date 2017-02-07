@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public class ConsumerSink<T> extends Sink {
+public final class ConsumerSink<T> extends Sink<T> {
   private final Consumer<T> consumer;
 
   public ConsumerSink(final Consumer<T> consumer) {

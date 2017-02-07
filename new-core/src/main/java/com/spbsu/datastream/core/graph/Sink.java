@@ -6,7 +6,7 @@ import java.util.Set;
 /**
  * Created by marnikitta on 2/6/17.
  */
-public abstract class Sink extends AtomicGraph {
+public abstract class Sink<T> extends AtomicGraph {
   private final InPort inPort = new InPort();
 
   @Override
@@ -17,5 +17,9 @@ public abstract class Sink extends AtomicGraph {
   @Override
   public Set<OutPort> outPorts() {
     return Collections.emptySet();
+  }
+
+  public InPort inPort() {
+    return inPort;
   }
 }
