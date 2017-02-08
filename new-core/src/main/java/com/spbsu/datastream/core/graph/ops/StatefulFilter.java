@@ -1,7 +1,8 @@
-package com.spbsu.datastream.core.graph.impl;
+package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.graph.Processor;
 import com.spbsu.datastream.core.graph.StatefulGraph;
+import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
 import java.util.Objects;
 
@@ -44,5 +45,10 @@ public final class StatefulFilter<T, R, S> extends Processor implements Stateful
   public String toString() {
     return "StatefulFilter{" + "statefulFunction=" + statefulFunction +
             ", " + super.toString() + '}';
+  }
+
+  @Override
+  public GraphStageLogic logic() {
+    return null;
   }
 }

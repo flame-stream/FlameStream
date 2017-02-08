@@ -1,6 +1,7 @@
-package com.spbsu.datastream.core.graph.impl;
+package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.graph.Source;
+import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
 import java.util.Objects;
 import java.util.Spliterator;
@@ -32,5 +33,10 @@ public final class SpliteratorSource<T> extends Source<T> {
   public String toString() {
     return "SpliteratorSource{" + "spliterator=" + spliterator +
             '}';
+  }
+
+  @Override
+  public GraphStageLogic logic() {
+    return null;
   }
 }

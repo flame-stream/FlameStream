@@ -1,6 +1,6 @@
 package com.spbsu.datastream.core.materializer.cluster;
 
-import com.spbsu.datastream.core.graph.FlattenedGraph;
+import com.spbsu.datastream.core.graph.FlatGraph;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Source;
 import com.spbsu.datastream.core.materializer.MaterializationException;
@@ -24,9 +24,9 @@ public class ClusterMaterializer implements Materializer {
   public void materialize(final Graph graph) {
     assertClosed(graph);
 
-    final FlattenedGraph flattenedGraph = FlattenedGraph.flattened(graph);
+    final FlatGraph flatGraph = FlatGraph.flattened(graph);
 
-    final List<Source> sources = flattenedGraph.subGraphs().stream()
+    final List<Source> sources = flatGraph.subGraphs().stream()
             .filter(Source.class::isInstance).map(Source.class::cast)
             .collect(Collectors.toList());
   }

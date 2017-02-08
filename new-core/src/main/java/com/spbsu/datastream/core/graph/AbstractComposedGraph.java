@@ -7,13 +7,13 @@ import java.util.stream.Collectors;
  * Created by marnikitta on 2/8/17.
  */
 public abstract class AbstractComposedGraph<T extends Graph> implements ComposedGraph<T> {
-  protected final Map<InPort, OutPort> upstreams;
-  protected final Map<OutPort, InPort> downstreams;
+  private final Map<InPort, OutPort> upstreams;
+  private final Map<OutPort, InPort> downstreams;
 
-  protected final Set<InPort> inPorts;
-  protected final Set<OutPort> outPorts;
+  private final List<InPort> inPorts;
+  private final List<OutPort> outPorts;
 
-  protected final Set<T> subGraphs;
+  private final Set<T> subGraphs;
 
   protected AbstractComposedGraph(final Set<T> graph) {
     this(graph, Collections.emptyMap());
@@ -36,12 +36,12 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
             .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
     this.inPorts = graphs.stream().map(Graph::inPorts)
-            .flatMap(Set::stream).filter(port -> !upstreams.containsKey(port))
-            .collect(Collectors.toSet());
+            .flatMap(Collection::stream).filter(port -> !upstreams.containsKey(port))
+            .collect(Collectors.toList());
 
     this.outPorts = graphs.stream().map(Graph::outPorts)
-            .flatMap(Set::stream).filter(port -> !downstreams.containsKey(port))
-            .collect(Collectors.toSet());
+            .flatMap(List::stream).filter(port -> !downstreams.containsKey(port))
+            .collect(Collectors.toList());
   }
 
 
@@ -50,13 +50,13 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
   }
 
   @Override
-  public Set<InPort> inPorts() {
-    return this.inPorts;
+  public List<InPort> inPorts() {
+    return Collections.unmodifiableList(inPorts);
   }
 
   @Override
-  public Set<OutPort> outPorts() {
-    return this.outPorts;
+  public List<OutPort> outPorts() {
+    return Collections.unmodifiableList(outPorts);
   }
 
   @Override

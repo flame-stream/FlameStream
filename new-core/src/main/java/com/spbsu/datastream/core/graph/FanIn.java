@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -10,23 +11,23 @@ import java.util.stream.Stream;
  * Created by marnikitta on 2/7/17.
  */
 public abstract class FanIn implements AtomicGraph {
-  private final Set<InPort> inPorts;
+  private final List<InPort> inPorts;
   private final OutPort outPort;
 
   public FanIn(final int shape) {
     this.inPorts = Stream.generate(InPort::new)
-            .limit(shape).collect(Collectors.toSet());
+            .limit(shape).collect(Collectors.toList());
     this.outPort = new OutPort();
   }
 
   @Override
-  public Set<InPort> inPorts() {
-    return Collections.unmodifiableSet(inPorts);
+  public List<InPort> inPorts() {
+    return Collections.unmodifiableList(inPorts);
   }
 
   @Override
-  public Set<OutPort> outPorts() {
-    return Collections.singleton(outPort);
+  public List<OutPort> outPorts() {
+    return Collections.singletonList(outPort);
   }
 
   public OutPort outPort() {

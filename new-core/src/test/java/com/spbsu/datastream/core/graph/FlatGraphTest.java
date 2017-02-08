@@ -1,29 +1,32 @@
 package com.spbsu.datastream.core.graph;
 
 import com.google.common.collect.Sets;
-import com.spbsu.datastream.core.graph.impl.*;
+import com.spbsu.datastream.core.graph.ops.*;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Created by marnikitta on 2/7/17.
  */
-public class FlattenedGraphTest {
+public class FlatGraphTest {
 
   @Test
   public void atomicFlattening() {
     final Identity identity = new Identity();
-    final FlattenedGraph flattenedGraph = FlattenedGraph.flattened(identity);
+    final FlatGraph flatGraph = FlatGraph.flattened(identity);
 
-    Assert.assertEquals(flattenedGraph.upstreams(), Collections.emptyMap());
-    Assert.assertEquals(flattenedGraph.downstreams(), Collections.emptyMap());
-    Assert.assertEquals(flattenedGraph.inPorts(), identity.inPorts());
-    Assert.assertEquals(flattenedGraph.outPorts(), identity.outPorts());
-    Assert.assertEquals(flattenedGraph.subGraphs(), Collections.singleton(identity));
+    Assert.assertEquals(flatGraph.upstreams(), Collections.emptyMap());
+    Assert.assertEquals(flatGraph.downstreams(), Collections.emptyMap());
+    Assert.assertEquals(new HashSet<>(flatGraph.inPorts()), new HashSet<>(identity.inPorts()));
+    Assert.assertEquals(new HashSet<>(flatGraph.outPorts()), new HashSet<>(identity.outPorts()));
+    Assert.assertEquals(flatGraph.subGraphs(), Collections.singleton(identity));
   }
 
   @Test
@@ -36,40 +39,38 @@ public class FlattenedGraphTest {
             identity.inPort())
             .fuse(filter1, identity.outPort(), filter1.inPort());
 
-    final FlattenedGraph flattenedGraph = FlattenedGraph.flattened(fused);
+    final FlatGraph flatGraph = FlatGraph.flattened(fused);
 
-    Assert.assertEquals(flattenedGraph.subGraphs(), Sets.newHashSet(filter, filter1, identity));
-    Assert.assertEquals(flattenedGraph.inPorts(), filter.inPorts());
-    Assert.assertEquals(flattenedGraph.outPorts(), filter1.outPorts());
+    Assert.assertEquals(flatGraph.subGraphs(), Sets.newHashSet(filter, filter1, identity));
+    Assert.assertEquals(new HashSet<>(flatGraph.inPorts()), new HashSet<>(filter.inPorts()));
+    Assert.assertEquals(new HashSet<>(flatGraph.outPorts()), new HashSet<>(filter1.outPorts()));
 
     final Map<OutPort, InPort> expectedDownstreams = new HashMap<>();
     expectedDownstreams.put(filter.outPort(), identity.inPort());
     expectedDownstreams.put(identity.outPort(), filter1.inPort());
-    Assert.assertEquals(flattenedGraph.downstreams(), expectedDownstreams);
+    Assert.assertEquals(flatGraph.downstreams(), expectedDownstreams);
 
     final Map<InPort, OutPort> expectedUpstreams = new HashMap<>();
     expectedUpstreams.put(filter1.inPort(), identity.outPort());
     expectedUpstreams.put(identity.inPort(), filter.outPort());
-    Assert.assertEquals(flattenedGraph.upstreams(), expectedUpstreams);
+    Assert.assertEquals(flatGraph.upstreams(), expectedUpstreams);
   }
 
   @Test
   public void complex() {
     final Source<Integer> source = new SpliteratorSource<>(Stream.generate(() -> 1).spliterator());
     final Broadcast broadcast = new Broadcast(2);
-    final List<OutPort> bOuts = new ArrayList<>(broadcast.outPorts());
     final StatelessFilter<Integer, Integer> f0 = new StatelessFilter<>(i -> i + 1);
     final StatelessFilter<Integer, Integer> f1 = new StatelessFilter<>(i -> i + 2);
     final Merge merge = new Merge(2);
-    final List<InPort> mIns = new ArrayList<>(merge.inPorts());
     final Sink sink = new ConsumerSink<>(System.out::println);
 
-    final Graph superGraph = source.fuse(broadcast, source.outPort(), broadcast.inPort()).fuse(f0, bOuts.get(0), f0.inPort())
-            .fuse(merge, f0.outPort(), mIns.get(0)).fuse(sink, merge.outPort(), sink.inPort())
+    final Graph superGraph = source.fuse(broadcast, source.outPort(), broadcast.inPort()).fuse(f0, broadcast.outPorts().get(0), f0.inPort())
+            .fuse(merge, f0.outPort(), merge.inPorts().get(0)).fuse(sink, merge.outPort(), sink.inPort())
             .compose(f1)
-            .wire(bOuts.get(1), f1.inPort()).wire(f1.outPort(), mIns.get(1));
+            .wire(broadcast.outPorts().get(1), f1.inPort()).wire(f1.outPort(), merge.inPorts().get(1));
 
-    final FlattenedGraph flattened = FlattenedGraph.flattened(superGraph);
+    final FlatGraph flattened = FlatGraph.flattened(superGraph);
 
     Assert.assertEquals(flattened.inPorts(), Collections.emptySet());
     Assert.assertEquals(flattened.outPorts(), Collections.emptySet());
@@ -77,10 +78,10 @@ public class FlattenedGraphTest {
 
     final Map<OutPort, InPort> dowstreams = new HashMap<>();
     dowstreams.put(source.outPort(), broadcast.inPort());
-    dowstreams.put(bOuts.get(0), f0.inPort());
-    dowstreams.put(bOuts.get(1), f1.inPort());
-    dowstreams.put(f0.outPort(), mIns.get(0));
-    dowstreams.put(f1.outPort(), mIns.get(1));
+    dowstreams.put(broadcast.outPorts().get(0), f0.inPort());
+    dowstreams.put(broadcast.outPorts().get(1), f1.inPort());
+    dowstreams.put(f0.outPort(), merge.inPorts().get(0));
+    dowstreams.put(f1.outPort(), merge.inPorts().get(1));
     dowstreams.put(merge.outPort(), sink.inPort());
 
     Assert.assertEquals(flattened.downstreams(), dowstreams);

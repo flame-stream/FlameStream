@@ -1,6 +1,6 @@
 package com.spbsu.datastream.core.graph;
 
-import com.spbsu.datastream.core.graph.impl.Hash;
+import com.spbsu.datastream.core.graph.ops.Hash;
 
 /**
  * Created by marnikitta on 2/8/17.

@@ -1,6 +1,7 @@
-package com.spbsu.datastream.core.graph.impl;
+package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.graph.Processor;
+import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -37,6 +38,11 @@ public class StatelessFilter<T, R> extends Processor {
   public String toString() {
     return "StatelessFilter{" + "function=" + function +
             ", " + super.toString() + '}';
+  }
+
+  @Override
+  public GraphStageLogic logic() {
+    return null;
   }
 }
 

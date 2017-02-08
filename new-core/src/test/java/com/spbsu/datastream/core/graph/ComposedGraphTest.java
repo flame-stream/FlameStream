@@ -5,12 +5,13 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.Collections;
+import java.util.HashSet;
 
 /**
  * Created by marnikitta on 2/7/17.
  */
 @SuppressWarnings("unchecked")
-public class ComposedGraphImplTest {
+public class ComposedGraphTest {
 
   @Test
   public void correctWiring() {
@@ -24,8 +25,8 @@ public class ComposedGraphImplTest {
 
     final ComposedGraph<Graph> fused = (ComposedGraph<Graph>) composed.wire(pr1.outPort(), pr2.inPort());
 
-    Assert.assertEquals(fused.outPorts(), pr2.outPorts());
-    Assert.assertEquals(fused.inPorts(), pr1.inPorts());
+    Assert.assertEquals(new HashSet<>(fused.outPorts()), new HashSet<>(pr2.outPorts()));
+    Assert.assertEquals(new HashSet<>(fused.inPorts()), new HashSet<>(pr1.inPorts()));
 
     Assert.assertEquals(fused.downstreams(), Collections.singletonMap(pr1.outPort(), pr2.inPort()));
     Assert.assertEquals(fused.upstreams(), Collections.singletonMap(pr2.inPort(), pr1.outPort()));

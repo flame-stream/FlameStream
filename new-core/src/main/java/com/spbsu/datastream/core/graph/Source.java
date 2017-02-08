@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -10,13 +11,13 @@ public abstract class Source<T> implements AtomicGraph {
   private final OutPort outPort = new OutPort();
 
   @Override
-  public Set<InPort> inPorts() {
-    return Collections.emptySet();
+  public List<InPort> inPorts() {
+    return Collections.emptyList();
   }
 
   @Override
-  public Set<OutPort> outPorts() {
-    return Collections.singleton(this.outPort);
+  public List<OutPort> outPorts() {
+    return Collections.singletonList(this.outPort);
   }
 
   public OutPort outPort() {
