@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.graph;
+package com.spbsu.datastream.core.graph.impl;
 
 import java.util.Objects;
 

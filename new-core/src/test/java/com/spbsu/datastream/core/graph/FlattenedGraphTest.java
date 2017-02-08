@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph;
 
 import com.google.common.collect.Sets;
+import com.spbsu.datastream.core.graph.impl.*;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -22,7 +23,7 @@ public class FlattenedGraphTest {
     Assert.assertEquals(flattenedGraph.downstreams(), Collections.emptyMap());
     Assert.assertEquals(flattenedGraph.inPorts(), identity.inPorts());
     Assert.assertEquals(flattenedGraph.outPorts(), identity.outPorts());
-    Assert.assertEquals(flattenedGraph.parts(), Collections.singleton(identity));
+    Assert.assertEquals(flattenedGraph.subGraphs(), Collections.singleton(identity));
   }
 
   @Test
@@ -37,7 +38,7 @@ public class FlattenedGraphTest {
 
     final FlattenedGraph flattenedGraph = FlattenedGraph.flattened(fused);
 
-    Assert.assertEquals(flattenedGraph.parts(), Sets.newHashSet(filter, filter1, identity));
+    Assert.assertEquals(flattenedGraph.subGraphs(), Sets.newHashSet(filter, filter1, identity));
     Assert.assertEquals(flattenedGraph.inPorts(), filter.inPorts());
     Assert.assertEquals(flattenedGraph.outPorts(), filter1.outPorts());
 
@@ -72,7 +73,7 @@ public class FlattenedGraphTest {
 
     Assert.assertEquals(flattened.inPorts(), Collections.emptySet());
     Assert.assertEquals(flattened.outPorts(), Collections.emptySet());
-    Assert.assertEquals(flattened.parts(), Sets.newHashSet(source, broadcast, f0, f1, merge, sink));
+    Assert.assertEquals(flattened.subGraphs(), Sets.newHashSet(source, broadcast, f0, f1, merge, sink));
 
     final Map<OutPort, InPort> dowstreams = new HashMap<>();
     dowstreams.put(source.outPort(), broadcast.inPort());
@@ -85,5 +86,7 @@ public class FlattenedGraphTest {
     Assert.assertEquals(flattened.downstreams(), dowstreams);
     Assert.assertEquals(flattened.upstreams(), dowstreams.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)));
+
+    System.out.println(superGraph);
   }
 }

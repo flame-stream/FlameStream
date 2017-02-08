@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public abstract class FanOut extends AtomicGraph {
+public abstract class FanOut implements AtomicGraph {
   private final InPort inPort;
   private final Set<OutPort> outPorts;
 

@@ -13,10 +13,6 @@ public interface Graph {
 
   Set<OutPort> outPorts();
 
-  Map<OutPort, InPort> downstreams();
-
-  Map<InPort, OutPort> upstreams();
-
   /**
    * Fuses this Graph to `that` Graph by wiring together `from` and `to`,
    *
@@ -41,7 +37,7 @@ public interface Graph {
     final HashSet<Graph> graphs = new HashSet<>();
     graphs.add(this);
     graphs.add(that);
-    return new ComposedGraph(graphs);
+    return new ComposedGraphImpl(graphs);
   }
 
   /**
@@ -53,7 +49,7 @@ public interface Graph {
    * @return a new Graph with the ports wired
    */
   default Graph wire(final OutPort from, final InPort to) {
-    return new ComposedGraph(this, from, to);
+    return new ComposedGraphImpl(this, from, to);
   }
 
   default boolean isSource() {
@@ -66,5 +62,9 @@ public interface Graph {
 
   default boolean isFlow() {
     return inPorts().size() == 1 && outPorts().size() == 1;
+  }
+
+  default boolean isClosed() {
+    return inPorts().isEmpty() && outPorts().isEmpty();
   }
 }

@@ -1,4 +1,8 @@
-package com.spbsu.datastream.core.graph;
+package com.spbsu.datastream.core.graph.impl;
+
+import com.spbsu.datastream.core.graph.InPort;
+import com.spbsu.datastream.core.graph.LogicalGraph;
+import com.spbsu.datastream.core.graph.OutPort;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -7,7 +11,7 @@ import java.util.Set;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class Rehash<T> extends AtomicGraph {
+public final class Rehash<T> implements LogicalGraph {
   private final InPort inPort = new InPort();
   private final OutPort outPort = new OutPort();
 

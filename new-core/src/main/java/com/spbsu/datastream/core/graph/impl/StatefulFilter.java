@@ -1,19 +1,29 @@
-package com.spbsu.datastream.core.graph;
+package com.spbsu.datastream.core.graph.impl;
+
+import com.spbsu.datastream.core.graph.Processor;
+import com.spbsu.datastream.core.graph.StatefulGraph;
 
 import java.util.Objects;
 
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class StatefulFilter<T, R, S> extends Processor {
+public final class StatefulFilter<T, R, S> extends Processor implements StatefulGraph<T> {
   private final StatefulFunction<T, R, S> statefulFunction;
+  private final Hash<T> hash;
 
-  public StatefulFilter(final StatefulFunction<T, R, S> statefulFunction) {
+  public StatefulFilter(final StatefulFunction<T, R, S> statefulFunction, final Hash<T> hash) {
     this.statefulFunction = statefulFunction;
+    this.hash = hash;
   }
 
   public StatefulFunction<T, R, S> statefulFunction() {
     return statefulFunction;
+  }
+
+  @Override
+  public Hash<T> hash() {
+    return hash;
   }
 
   @Override

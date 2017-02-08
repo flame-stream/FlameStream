@@ -6,7 +6,7 @@ import java.util.Set;
 /**
  * Created by marnikitta on 2/6/17.
  */
-public abstract class Source<T> extends AtomicGraph {
+public abstract class Source<T> implements AtomicGraph {
   private final OutPort outPort = new OutPort();
 
   @Override

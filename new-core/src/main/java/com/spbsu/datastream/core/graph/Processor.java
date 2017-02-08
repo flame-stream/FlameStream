@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public abstract class Processor extends AtomicGraph {
+public abstract class Processor implements AtomicGraph {
   private final InPort inPort = new InPort();
   private final OutPort outPort = new OutPort();
 

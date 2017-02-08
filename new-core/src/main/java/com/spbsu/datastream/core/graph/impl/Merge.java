@@ -1,4 +1,6 @@
-package com.spbsu.datastream.core.graph;
+package com.spbsu.datastream.core.graph.impl;
+
+import com.spbsu.datastream.core.graph.FanIn;
 
 /**
  * Created by marnikitta on 2/7/17.

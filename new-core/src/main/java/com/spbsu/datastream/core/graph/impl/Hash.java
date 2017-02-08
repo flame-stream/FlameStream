@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.graph;
+package com.spbsu.datastream.core.graph.impl;
 
 /**
  * Created by marnikitta on 2/7/17.
