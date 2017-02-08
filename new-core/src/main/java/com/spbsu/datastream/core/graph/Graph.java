@@ -67,5 +67,11 @@ public interface Graph {
     return inPorts().isEmpty() && outPorts().isEmpty();
   }
 
+  /**
+   * Creates deepCopy of graph
+   * Order of inputs/outputs is preserved
+   *
+   * @return copy of this Graph with new ports
+   */
   Graph deepCopy();
 }

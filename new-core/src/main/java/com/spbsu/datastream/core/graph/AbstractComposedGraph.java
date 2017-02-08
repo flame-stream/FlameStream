@@ -114,13 +114,15 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
             '}';
   }
 
-  protected static <T extends Graph> Map<InPort, InPort> inPortsMapping(final List<T> graphs, final List<T> graphsCopy) {
+  protected static <T extends Graph> Map<InPort, InPort> inPortsMapping(final List<T> graphs,
+                                                                        final List<T> graphsCopy) {
     return Seq.zip(graphs.stream().map(Graph::inPorts).flatMap(Collection::stream),
             graphsCopy.stream().map(Graph::inPorts).flatMap(Collection::stream))
             .collect(Collectors.toMap(Tuple2::v1, Tuple2::v2));
   }
 
-  protected static <T extends Graph> Map<OutPort, OutPort> outPortsMapping(final List<T> graphs, final List<T> graphsCopy) {
+  protected static <T extends Graph> Map<OutPort, OutPort> outPortsMapping(final List<T> graphs,
+                                                                           final List<T> graphsCopy) {
     return Seq.zip(graphs.stream().map(Graph::outPorts).flatMap(Collection::stream),
             graphsCopy.stream().map(Graph::outPorts).flatMap(Collection::stream))
             .collect(Collectors.toMap(Tuple2::v1, Tuple2::v2));
@@ -129,13 +131,15 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
   protected static <T extends Graph> Map<InPort, OutPort> mappedUpstreams(final Map<InPort, OutPort> upstreams,
                                                                           final Map<InPort, InPort> inPortsMapping,
                                                                           final Map<OutPort, OutPort> outPortsMapping) {
-    return upstreams.entrySet().stream().collect(Collectors.toMap(inPortsMapping::get, outPortsMapping::get));
+    return upstreams.entrySet().stream()
+            .collect(Collectors.toMap((e) -> inPortsMapping.get(e.getKey()), (e) -> outPortsMapping.get(e.getValue())));
   }
 
   protected static <T extends Graph> Map<OutPort, InPort> mappedDownstreams(final Map<OutPort, InPort> downstreams,
                                                                             final Map<InPort, InPort> inPortsMapping,
                                                                             final Map<OutPort, OutPort> outPortsMapping) {
-    return downstreams.entrySet().stream().collect(Collectors.toMap(outPortsMapping::get, inPortsMapping::get));
+    return downstreams.entrySet().stream()
+            .collect(Collectors.toMap((e) -> outPortsMapping.get(e.getKey()), (e) -> inPortsMapping.get(e.getValue())));
   }
 
   protected static List<InPort> mappedInPorts(final List<InPort> inPorts,

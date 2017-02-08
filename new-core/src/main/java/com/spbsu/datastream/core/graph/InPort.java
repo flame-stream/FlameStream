@@ -8,13 +8,15 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class InPort {
   private final static ThreadLocalRandom rd = ThreadLocalRandom.current();
   private final long id;
+  private final String name;
 
   public InPort() {
-    this.id = System.currentTimeMillis() << 5 + rd.nextInt(1 << 5);
+    this("NoName");
   }
 
-  public InPort(final long id) {
-    this.id = id;
+  public InPort(final String name) {
+    this.name = name;
+    this.id = System.currentTimeMillis() << 3 + rd.nextInt(1 << 3);
   }
 
   public long id() {
@@ -23,10 +25,13 @@ public final class InPort {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("InPort{");
-    sb.append("id=").append(id);
-    sb.append('}');
-    return sb.toString();
+    if (name.equals("NoName")) {
+      return "InPort{" + "id='" + id + '\'' +
+              '}';
+    } else {
+      return "InPort{" + "name='" + name + '\'' +
+              '}';
+    }
   }
 }
 

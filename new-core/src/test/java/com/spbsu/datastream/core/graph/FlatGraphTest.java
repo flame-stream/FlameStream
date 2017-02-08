@@ -87,7 +87,5 @@ public class FlatGraphTest {
     Assert.assertEquals(flattened.downstreams(), dowstreams);
     Assert.assertEquals(flattened.upstreams(), dowstreams.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)));
-
-    System.out.println(superGraph);
   }
 }
