@@ -1,8 +1,6 @@
 package com.spbsu.datastream.core.graph;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -12,6 +10,14 @@ public final class FlatGraph extends AbstractComposedGraph<AtomicGraph> {
   private FlatGraph(final Set<AtomicGraph> subGraphs,
                     final Map<OutPort, InPort> wires) {
     super(subGraphs, wires);
+  }
+
+  public FlatGraph(final Map<InPort, OutPort> upstreams,
+                   final Map<OutPort, InPort> downstreams,
+                   final List<InPort> inPorts,
+                   final List<OutPort> outPorts,
+                   final Set<AtomicGraph> subGraphs) {
+    super(upstreams, downstreams, inPorts, outPorts, subGraphs);
   }
 
   public static FlatGraph flattened(final Graph graph) {
@@ -46,5 +52,21 @@ public final class FlatGraph extends AbstractComposedGraph<AtomicGraph> {
             ", outPorts=" + outPorts() +
             ", subGraphs=" + subGraphs() +
             '}';
+  }
+
+  @Override
+  public Graph deepCopy() {
+    final List<AtomicGraph> subGraphs = new ArrayList<>(subGraphs());
+    final List<AtomicGraph> subGraphsCopy = subGraphs.stream().map(Graph::deepCopy)
+            .map(AtomicGraph.class::cast)
+            .collect(Collectors.toList());
+    final Map<InPort, InPort> inPortsMapping = inPortsMapping(subGraphs, subGraphsCopy);
+    final Map<OutPort, OutPort> outPortsMapping = outPortsMapping(subGraphs, subGraphsCopy);
+
+    final Map<InPort, OutPort> upstreams = mappedUpstreams(upstreams(), inPortsMapping, outPortsMapping);
+    final Map<OutPort, InPort> downstreams = mappedDownstreams(downstreams(), inPortsMapping, outPortsMapping);
+    final List<InPort> inPorts = mappedInPorts(inPorts(), inPortsMapping);
+    final List<OutPort> outPorts = mappedOutPorts(outPorts(), outPortsMapping);
+    return new FlatGraph(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy));
   }
 }

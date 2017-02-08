@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.graph.FanIn;
+import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
 /**
@@ -19,5 +20,10 @@ public final class Merge extends FanIn {
   @Override
   public GraphStageLogic logic() {
     return null;
+  }
+
+  @Override
+  public Graph deepCopy() {
+    return new Merge(inPorts().size());
   }
 }

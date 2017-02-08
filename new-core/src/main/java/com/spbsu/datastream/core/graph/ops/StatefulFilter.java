@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Processor;
 import com.spbsu.datastream.core.graph.StatefulGraph;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
@@ -50,5 +51,10 @@ public final class StatefulFilter<T, R, S> extends Processor implements Stateful
   @Override
   public GraphStageLogic logic() {
     return null;
+  }
+
+  @Override
+  public Graph deepCopy() {
+    return new StatefulFilter<>(statefulFunction, hash);
   }
 }

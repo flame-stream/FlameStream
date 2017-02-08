@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Processor;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
@@ -43,6 +44,11 @@ public class StatelessFilter<T, R> extends Processor {
   @Override
   public GraphStageLogic logic() {
     return null;
+  }
+
+  @Override
+  public Graph deepCopy() {
+    return new StatelessFilter<>(function);
   }
 }
 

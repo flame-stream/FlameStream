@@ -2,8 +2,6 @@ package com.spbsu.datastream.core.graph;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by marnikitta on 2/5/17.
@@ -68,4 +66,6 @@ public interface Graph {
   default boolean isClosed() {
     return inPorts().isEmpty() && outPorts().isEmpty();
   }
+
+  Graph deepCopy();
 }

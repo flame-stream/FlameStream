@@ -10,4 +10,9 @@ public final class Identity extends Processor {
   public GraphStageLogic logic() {
     return null;
   }
+
+  @Override
+  public Graph deepCopy() {
+    return new Identity();
+  }
 }

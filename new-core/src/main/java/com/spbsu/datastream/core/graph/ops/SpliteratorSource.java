@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Source;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
@@ -38,5 +39,10 @@ public final class SpliteratorSource<T> extends Source<T> {
   @Override
   public GraphStageLogic logic() {
     return null;
+  }
+
+  @Override
+  public Graph deepCopy() {
+    return new SpliteratorSource<>(spliterator);
   }
 }

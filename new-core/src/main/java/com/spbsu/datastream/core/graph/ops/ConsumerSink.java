@@ -1,8 +1,8 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Sink;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
-import com.spbsu.datastream.core.materializer.ShardConcierge;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -33,5 +33,10 @@ public final class ConsumerSink<T> extends Sink<T> {
   @Override
   public GraphStageLogic logic() {
     return null;
+  }
+
+  @Override
+  public Graph deepCopy() {
+    return new ConsumerSink<>(consumer);
   }
 }
