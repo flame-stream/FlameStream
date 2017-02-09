@@ -5,9 +5,9 @@ package com.spbsu.datastream.example.invertedindex.models;
  * Date: 17.01.2017
  */
 public class WikiPage implements WordContainer {
-  private int id;
-  private String title;
-  private String text;
+  private final int id;
+  private final String title;
+  private final String text;
 
   public WikiPage(int id, String title, String text) {
     this.id = id;

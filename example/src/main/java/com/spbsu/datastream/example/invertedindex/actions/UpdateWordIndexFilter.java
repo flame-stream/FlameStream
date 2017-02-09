@@ -1,14 +1,10 @@
 package com.spbsu.datastream.example.invertedindex.actions;
 
-import com.spbsu.datastream.example.invertedindex.models.WordContainer;
-import com.spbsu.datastream.example.invertedindex.models.WordIndex;
-import com.spbsu.datastream.example.invertedindex.models.WordOutput;
-import com.spbsu.datastream.example.invertedindex.models.WordPagePosition;
+import com.spbsu.datastream.example.invertedindex.models.*;
 import com.spbsu.datastream.example.invertedindex.utils.PagePositionLong;
-import gnu.trove.list.TLongList;
-import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -35,76 +31,43 @@ public class UpdateWordIndexFilter implements Function<WordContainer[], Stream<W
   }
 
   private Stream<WordContainer> createOutputStream(WordPagePosition wordPagePosition) {
+    final long first = wordPagePosition.positions()[0];
+    final long[] compressedPositions = new long[1];
+    compressedPositions[0] = PagePositionLong.setRange(first, wordPagePosition.positions().length);
+
     final List<WordContainer> output = new ArrayList<>();
-    output.add(new WordOutput(wordPagePosition.word(), wordPagePosition.positions(), WordOutput.ActionType.ADD));
-    output.add(new WordIndex(wordPagePosition.word(), wordPagePosition.positions()));
+    output.add(new WordIndex(wordPagePosition.word(), compressedPositions));
+    output.add(new WordAddOutput(wordPagePosition.word(), wordPagePosition.positions()));
     return output.stream();
   }
 
   private Stream<WordContainer> createOutputStream(WordIndex wordIndex, WordPagePosition wordPagePosition) {
-    final int pageId = PagePositionLong.pageId(wordPagePosition.positions().get(0));
-    final TLongList removePagePositionList = new TLongArrayList();
-    final long initPagePosition = PagePositionLong.createPagePosition(pageId, 0, 0);
-    final int initSearchIndex = -wordIndex.positions().binarySearch(initPagePosition) - 1;
-    int finalIndex = initSearchIndex;
-    for (int i = initSearchIndex; i < wordIndex.positions().size(); i++) {
-      final long pagePosition = wordIndex.positions().get(i);
-      if (PagePositionLong.pageId(pagePosition) == pageId) {
-        final int position = PagePositionLong.position(pagePosition);
-        final long initVersionPagePosition = PagePositionLong.createPagePosition(pageId, position, 0);
-        final int searchResultIndex = -wordPagePosition.positions().binarySearch(initVersionPagePosition) - 1;
-        if (searchResultIndex >= 0 && searchResultIndex < wordPagePosition.positions().size()) {
-          final long nearestPagePosition = wordPagePosition.positions().get(searchResultIndex);
-          if (PagePositionLong.position(nearestPagePosition) != position) {
-            removePagePositionList.add(pagePosition);
-          }
-        } else {
-          removePagePositionList.add(pagePosition);
-        }
-
-      } else {
-        break;
-      }
-      finalIndex++;
-    }
-
-    final TLongList addPagePositionList = new TLongArrayList();
-    wordPagePosition.positions().forEach(pagePosition -> {
-      final int position = PagePositionLong.position(pagePosition);
-      final long initVersionPagePosition = PagePositionLong.createPagePosition(pageId, position, 0);
-      final int searchResultIndex = -wordIndex.positions().binarySearch(initVersionPagePosition) - 1;
-      if (searchResultIndex >= 0 && searchResultIndex < wordIndex.positions().size()) {
-        final long nearestPagePosition = wordIndex.positions().get(searchResultIndex);
-        if (PagePositionLong.position(nearestPagePosition) != position) {
-          addPagePositionList.add(pagePosition);
-        }
-      } else {
-        addPagePositionList.add(pagePosition);
-      }
-      return true;
-    });
-
-    final TLongList positions = new TLongArrayList();
-    positions.addAll(wordIndex.positions());
+    final long first = wordPagePosition.positions()[0];
+    final int pageId = PagePositionLong.pageId(first);
+    final long newValue = PagePositionLong.setRange(first, wordPagePosition.positions().length);
+    final long[] indexPositions = wordIndex.positions();
+    final long positionForSearch = PagePositionLong.createPagePosition(pageId, 0, 0);
+    final int nearestPositionIndex = -Arrays.binarySearch(indexPositions, positionForSearch) - 1;
+    final boolean updateNotInsert = nearestPositionIndex < indexPositions.length && PagePositionLong.pageId(indexPositions[nearestPositionIndex]) == pageId;
     final List<WordContainer> output = new ArrayList<>();
-    if (!removePagePositionList.isEmpty()) {
-      positions.remove(initSearchIndex, finalIndex - initSearchIndex);
-      positions.addAll(wordPagePosition.positions());
-      positions.sort();
-      output.add(new WordOutput(wordIndex.word(), removePagePositionList, WordOutput.ActionType.REMOVE));
+    if (updateNotInsert) {
+      final long[] updatedPositions = new long[indexPositions.length];
+      System.arraycopy(indexPositions, 0, updatedPositions, 0, indexPositions.length);
+      updatedPositions[nearestPositionIndex] = newValue;
+      output.add(new WordIndex(wordIndex.word(), updatedPositions));
+
+      final long nearestPosition = indexPositions[nearestPositionIndex];
+      final int range = PagePositionLong.range(nearestPosition);
+      final long positionWithoutRange = PagePositionLong.setRange(nearestPosition, 0);
+      output.add(new WordRemoveOutput(wordIndex.word(), positionWithoutRange, range));
+    } else {
+      final long[] updatedPositions = new long[indexPositions.length + 1];
+      System.arraycopy(indexPositions, 0, updatedPositions, 0, nearestPositionIndex);
+      System.arraycopy(indexPositions, nearestPositionIndex, updatedPositions, nearestPositionIndex + 1, indexPositions.length - nearestPositionIndex);
+      updatedPositions[nearestPositionIndex] = newValue;
+      output.add(new WordIndex(wordIndex.word(), updatedPositions));
     }
-    if (!addPagePositionList.isEmpty()) {
-      if (removePagePositionList.isEmpty()) {
-        if (addPagePositionList.get(0) < positions.get(positions.size() - 1)) {
-          positions.addAll(addPagePositionList);
-          positions.sort();
-        } else {
-          positions.addAll(addPagePositionList);
-        }
-      }
-      output.add(new WordOutput(wordIndex.word(), addPagePositionList, WordOutput.ActionType.ADD));
-    }
-    output.add(new WordIndex(wordIndex.word(), positions));
+    output.add(new WordAddOutput(wordIndex.word(), wordPagePosition.positions()));
     return output.stream();
   }
 }

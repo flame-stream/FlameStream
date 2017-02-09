@@ -9,7 +9,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = WordOutput.class, name = "diff"),
+        @JsonSubTypes.Type(value = WordAddOutput.class, name = "add"),
+        @JsonSubTypes.Type(value = WordRemoveOutput.class, name = "remove"),
         @JsonSubTypes.Type(value = WordIndex.class, name = "state")
 })
 public interface WordContainer {

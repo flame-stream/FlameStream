@@ -1,16 +1,14 @@
 package com.spbsu.datastream.example.invertedindex.models;
 
-import gnu.trove.list.TLongList;
-
 /**
  * Author: Artem
  * Date: 22.01.2017
  */
 public class WordPagePosition implements WordContainer {
   private final String word;
-  private final TLongList positions;
+  private final long[] positions;
 
-  public WordPagePosition(String word, TLongList positions) {
+  public WordPagePosition(String word, long[] positions) {
     this.word = word;
     this.positions = positions;
   }
@@ -19,7 +17,7 @@ public class WordPagePosition implements WordContainer {
     return word;
   }
 
-  public TLongList positions() {
+  public long[] positions() {
     return positions;
   }
 }

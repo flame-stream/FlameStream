@@ -22,6 +22,7 @@ import java.util.stream.Stream;
  * Date: 22.01.2017
  */
 public class PageToWordPositionsFilter implements Function<WordContainer, Stream<WordContainer>> {
+
   @Override
   public Stream<WordContainer> apply(WordContainer container) {
     if (container instanceof WikiPage) {
@@ -43,7 +44,7 @@ public class PageToWordPositionsFilter implements Function<WordContainer, Stream
         }
         position++;
       }
-      wordPositions.forEach((word, list) -> wordPagePositions.add(new WordPagePosition(word, list)));
+      wordPositions.forEach((word, list) -> wordPagePositions.add(new WordPagePosition(word, list.toArray())));
       return wordPagePositions.stream();
     } else if (container instanceof WordIndex) {
       final List<WordContainer> wrapper = new ArrayList<>();
