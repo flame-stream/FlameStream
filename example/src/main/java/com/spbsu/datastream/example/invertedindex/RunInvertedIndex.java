@@ -13,11 +13,14 @@ import com.spbsu.datastream.core.io.IteratorInput;
 import com.spbsu.datastream.core.job.FilterJoba;
 import com.spbsu.datastream.core.job.GroupingJoba;
 import com.spbsu.datastream.core.job.MergeActor;
+import com.spbsu.datastream.core.job.ReplicatorJoba;
 import com.spbsu.datastream.core.job.control.EndOfTick;
-import com.spbsu.datastream.example.invertedindex.actions.WikiPageGrouping;
-import com.spbsu.datastream.example.invertedindex.actions.ProcessWordOutputFilter;
-import com.spbsu.datastream.example.invertedindex.actions.WikiPageToPositionStateFilter;
+import com.spbsu.datastream.example.invertedindex.actions.PageToWordPositionsFilter;
+import com.spbsu.datastream.example.invertedindex.actions.UpdateWordIndexFilter;
+import com.spbsu.datastream.example.invertedindex.actions.WordGrouping;
 import com.spbsu.datastream.example.invertedindex.io.WikiPageIterator;
+import com.spbsu.datastream.example.invertedindex.models.WikiPage;
+import com.spbsu.datastream.example.invertedindex.models.WordContainer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +37,7 @@ public class RunInvertedIndex {
   public static void main(String[] args) throws FileNotFoundException {
     DataStreamsContext.serializatonRepository = new SerializationRepository<>(
             new TypeConvertersCollection(ConversionRepository.ROOT,
-                    WikiPageContainer.class.getPackage().getName() + ".io"),
+                    RunInvertedIndex.class.getPackage().getName() + ".io"),
             CharSeq.class
     );
     final ActorSystem akka = ActorSystem.create();
@@ -65,10 +68,13 @@ public class RunInvertedIndex {
   }
 
   private static Sink makeJoba(ActorSystem actorSystem, Sink sink, DataTypeCollection types) {
-    final Sink outputFilter = new FilterJoba(sink, null, new ProcessWordOutputFilter(), WikiPagePositionState[].class, WordOutput.class);
-    final Sink positionStateGrouping = new GroupingJoba(outputFilter, types.type("<type name>"), new WikiPageGrouping(), 2);
-    final Sink pageToPositionState = new FilterJoba(positionStateGrouping, null, new WikiPageToPositionStateFilter(), WikiPage.class, WikiPagePositionState.class);
-    final ActorRef mergeActor = actorSystem.actorOf(ActorContainer.props(MergeActor.class, pageToPositionState, 1));
-    return new ActorSink(mergeActor);
+    final ReplicatorJoba replicator = new ReplicatorJoba(sink);
+    final Sink wordIndexFilter = new FilterJoba(replicator, null, new UpdateWordIndexFilter(), WordContainer[].class, WordContainer.class);
+    final Sink grouping = new GroupingJoba(wordIndexFilter, types.type("<type name>"), new WordGrouping(), 2);
+    final Sink pageToWordsFilter = new FilterJoba(grouping, null, new PageToWordPositionsFilter(), WordContainer.class, WordContainer.class);
+    final ActorRef mergeActor = actorSystem.actorOf(ActorContainer.props(MergeActor.class, pageToWordsFilter, 2));
+    final ActorSink mergeSink = new ActorSink(mergeActor);
+    replicator.add(mergeSink);
+    return mergeSink;
   }
 }

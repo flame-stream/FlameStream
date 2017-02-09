@@ -1,13 +1,13 @@
-package com.spbsu.datastream.example.invertedindex;
+package com.spbsu.datastream.example.invertedindex.models;
 
 /**
  * Author: Artem
  * Date: 17.01.2017
  */
-public class WikiPage implements WikiPageContainer {
-  private final int id;
-  private final String title;
-  private final String text;
+public class WikiPage implements WordContainer {
+  private int id;
+  private String title;
+  private String text;
 
   public WikiPage(int id, String title, String text) {
     this.id = id;
@@ -15,8 +15,7 @@ public class WikiPage implements WikiPageContainer {
     this.text = text;
   }
 
-  @Override
-  public int pageId() {
+  public int id() {
     return id;
   }
 
@@ -28,7 +27,12 @@ public class WikiPage implements WikiPageContainer {
     return title;
   }
 
-  public String textAndTitle() {
+  @Override
+  public String word() {
+    return null;
+  }
+
+  public String titleAndText() {
     return title + "\n" + text;
   }
 }

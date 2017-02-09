@@ -1,6 +1,6 @@
 package com.spbsu.datastream.example.invertedindex.io;
 
-import com.spbsu.datastream.example.invertedindex.WikiPage;
+import com.spbsu.datastream.example.invertedindex.models.WikiPage;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
