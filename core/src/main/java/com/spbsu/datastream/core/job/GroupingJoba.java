@@ -63,7 +63,7 @@ public class GroupingJoba extends Joba.AbstractJoba {
     if (eot instanceof EndOfTick) {
       synchronized (state) {
         buffers.forEach((hash, group) -> {
-          final List<DataItem> windowedGroup = group.subList(window > 0 ? Math.max(0, group.size() - window) : 0, group.size());
+          final List<DataItem> windowedGroup = group.subList(window > 0 ? Math.max(0, group.size() - window + 1) : 0, group.size());
           if (!windowedGroup.isEmpty()) {
             final List<DataItem> oldGroup = state.get(hash, group.get(0)).orElse(null);
             if (oldGroup != null) {
