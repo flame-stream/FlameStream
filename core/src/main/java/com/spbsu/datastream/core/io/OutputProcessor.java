@@ -4,12 +4,13 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.job.Joba;
 import com.spbsu.datastream.core.job.control.ConditionTriggered;
-import gnu.trove.map.hash.TLongObjectHashMap;
+import com.spbsu.datastream.core.job.grouping_storage.GroupingStorage;
+import gnu.trove.map.hash.THashMap;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -18,7 +19,7 @@ import java.util.function.Consumer;
  */
 public class OutputProcessor implements Output {
   private List<Runnable> barriers = new ArrayList<>();
-  private Map<String, TLongObjectHashMap<List<List<DataItem>>>> knownStates = new HashMap<>();
+  private Map<String, GroupingStorage> knownStates = new THashMap<>();
 
   public void registerCommitHandler(Runnable r) {
     barriers.add(r);
@@ -32,31 +33,28 @@ public class OutputProcessor implements Output {
     barriers.forEach(Runnable::run);
   }
 
-  public void save(DataType type, TLongObjectHashMap<List<List<DataItem>>> state) {
+  public void save(DataType type, GroupingStorage state) {
     knownStates.put(type.name(), state);
     System.out.println("Saving state for [" + type.name() + "]:");
-    state.forEachEntry((i, dataItems) -> {
-      dataItems.forEach(new Consumer<List<DataItem>>() {
-        int slot = 0;
-
-        @Override
-        public void accept(List<DataItem> dataItem) {
-          System.out.println("\t" + i + ":" + slot + " " + dataItem);
-          slot++;
-        }
-      });
+    state.forEach((i, dataItems) -> {
+      System.out.println("\t" + i + ": " + dataItems);
       return true;
     });
   }
 
-  public TLongObjectHashMap<List<List<DataItem>>> load(DataType type) {
-    return knownStates.getOrDefault(type.name(), new TLongObjectHashMap<>());
+  public Optional<GroupingStorage> load(DataType type) {
+    final GroupingStorage storage = knownStates.get(type.name());
+    if (storage != null) {
+      return Optional.of(storage);
+    } else {
+      return Optional.empty();
+    }
   }
 
-  volatile int jobaid = 0;
+  private volatile int jobaId = 0;
 
   public int registerJoba(Joba joba) {
-    return jobaid++;
+    return jobaId++;
   }
 
   private void processItem(Object item) {
