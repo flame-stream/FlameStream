@@ -1,10 +1,10 @@
 package com.spbsu.datastream.core.job.grouping_storage;
 
 import com.spbsu.datastream.core.DataItem;
-import gnu.trove.procedure.TLongObjectProcedure;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * User: Artem
@@ -12,7 +12,7 @@ import java.util.Optional;
  * Time: 12:16
  */
 public interface GroupingStorage {
-  Optional<List<DataItem>> get(long hash, DataItem item);
+  Optional<List<DataItem>> get(DataItem item);
   void put(List<DataItem> dataItems);
-  void forEach(TLongObjectProcedure<List<DataItem>> procedure);
+  void forEach(Consumer<List<DataItem>> procedure);
 }

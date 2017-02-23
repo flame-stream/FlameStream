@@ -20,7 +20,6 @@ import java.util.List;
  */
 public class GroupingJoba extends Joba.AbstractJoba {
   private final Sink sink;
-  private final DataItem.Grouping grouping;
   private final int window;
   private final GroupingStorage state;
   private final GroupingStorage buffers;
@@ -28,7 +27,6 @@ public class GroupingJoba extends Joba.AbstractJoba {
   public GroupingJoba(Sink sink, DataType generates, DataItem.Grouping grouping, int window) {
     super(generates);
     this.sink = sink;
-    this.grouping = grouping;
     this.window = window;
 
     buffers = new LazyGroupingStorage(grouping);
@@ -36,8 +34,7 @@ public class GroupingJoba extends Joba.AbstractJoba {
   }
 
   public void accept(DataItem item) {
-    final long hash = grouping.hash(item);
-    List<DataItem> group = buffers.get(hash, item).orElse(null);
+    List<DataItem> group = buffers.get(item).orElse(null);
     if (group != null) { // look for time collision in the current tick
       int replayCount = 0;
       //noinspection unchecked
@@ -52,7 +49,7 @@ public class GroupingJoba extends Joba.AbstractJoba {
         return;
       }
     } else { // creating group from existing in the state
-      group = new ArrayList<>(state.get(hash, item).orElse(Collections.emptyList()));
+      group = new ArrayList<>(state.get(item).orElse(Collections.emptyList()));
       group.add(item);
       buffers.put(group);
     }
@@ -62,10 +59,10 @@ public class GroupingJoba extends Joba.AbstractJoba {
   public void accept(Control eot) {
     if (eot instanceof EndOfTick) {
       synchronized (state) {
-        buffers.forEach((hash, group) -> {
+        buffers.forEach(group -> {
           final List<DataItem> windowedGroup = group.subList(window > 0 ? Math.max(0, group.size() - window + 1) : 0, group.size());
           if (!windowedGroup.isEmpty()) {
-            final List<DataItem> oldGroup = state.get(hash, group.get(0)).orElse(null);
+            final List<DataItem> oldGroup = state.get(group.get(0)).orElse(null);
             if (oldGroup != null) {
               oldGroup.clear();
               oldGroup.addAll(windowedGroup);
@@ -73,7 +70,6 @@ public class GroupingJoba extends Joba.AbstractJoba {
               state.put(windowedGroup);
             }
           }
-          return true;
         });
         DataStreamsContext.output.save(generates(), state);
       }

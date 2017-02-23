@@ -36,10 +36,7 @@ public class OutputProcessor implements Output {
   public void save(DataType type, GroupingStorage state) {
     knownStates.put(type.name(), state);
     System.out.println("Saving state for [" + type.name() + "]:");
-    state.forEach((i, dataItems) -> {
-      System.out.println("\t" + i + ": " + dataItems);
-      return true;
-    });
+    state.forEach(System.out::println);
   }
 
   public Optional<GroupingStorage> load(DataType type) {

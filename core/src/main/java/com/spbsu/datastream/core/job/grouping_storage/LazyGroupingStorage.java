@@ -2,12 +2,12 @@ package com.spbsu.datastream.core.job.grouping_storage;
 
 import com.spbsu.datastream.core.DataItem;
 import gnu.trove.map.hash.TLongObjectHashMap;
-import gnu.trove.procedure.TLongObjectProcedure;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -23,12 +23,14 @@ public class LazyGroupingStorage implements GroupingStorage {
     this.grouping = grouping;
   }
 
-  public Optional<List<DataItem>> get(long hash, DataItem item) {
-    if (buffers.get(hash) == null)
+  public Optional<List<DataItem>> get(DataItem item) {
+    final long hash = grouping.hash(item);
+    final Object obj = buffers.get(hash);
+    if (obj == null)
       return Optional.empty();
 
-    final List<?> list = (List<?>) buffers.get(hash);
-    if (list.getClass().getGenericSuperclass() instanceof List) {
+    final List<?> list = (List<?>) obj;
+    if (list.get(0) instanceof List) {
       //noinspection unchecked
       final List<List<DataItem>> container = (List<List<DataItem>>) list;
       return searchBucket(item, container);
@@ -45,10 +47,11 @@ public class LazyGroupingStorage implements GroupingStorage {
 
     final DataItem dataItem = dataItems.get(0);
     final long hash = grouping.hash(dataItem);
-    if (buffers.get(hash) == null) {
+    final Object obj = buffers.get(hash);
+    if (obj == null) {
       buffers.put(hash, dataItems);
     } else {
-      final List<?> list = (List<?>) buffers.get(hash);
+      final List<?> list = (List<?>) obj;
       if (list.get(0) instanceof List) {
         //noinspection unchecked
         final List<List<DataItem>> buckets = (List<List<DataItem>>) list;
@@ -75,16 +78,16 @@ public class LazyGroupingStorage implements GroupingStorage {
     }
   }
 
-  public void forEach(TLongObjectProcedure<List<DataItem>> procedure) {
-    buffers.forEachEntry((hash, obj) -> {
+  public void forEach(Consumer<List<DataItem>> consumer) {
+    buffers.forEachValue(obj -> {
       final List<?> list = (List<?>) obj;
       if (list.get(0) instanceof List) {
         //noinspection unchecked
         final List<List<DataItem>> buckets = (List<List<DataItem>>) list;
-        buckets.forEach(dataItems -> procedure.execute(hash, dataItems));
+        buckets.forEach(consumer);
       } else {
         //noinspection unchecked
-        procedure.execute(hash, (List<DataItem>) list);
+        consumer.accept((List<DataItem>) list);
       }
       return true;
     });
