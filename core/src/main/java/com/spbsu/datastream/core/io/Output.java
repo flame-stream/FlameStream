@@ -1,11 +1,10 @@
 package com.spbsu.datastream.core.io;
 
-import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataType;
 import com.spbsu.datastream.core.job.Joba;
-import gnu.trove.map.hash.TLongObjectHashMap;
+import com.spbsu.datastream.core.job.grouping_storage.GroupingStorage;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -18,9 +17,9 @@ public interface Output {
 
   void registerCommitHandler(Runnable r);
 
-  void save(DataType type, TLongObjectHashMap<List<List<DataItem>>> state);
+  void save(DataType type, GroupingStorage state);
 
-  TLongObjectHashMap<List<List<DataItem>>> load(DataType type);
+  Optional<GroupingStorage> load(DataType type);
 
   int registerJoba(Joba joba);
 }

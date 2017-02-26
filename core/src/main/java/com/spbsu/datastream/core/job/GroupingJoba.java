@@ -7,44 +7,37 @@ import com.spbsu.datastream.core.Sink;
 import com.spbsu.datastream.core.dataitem.ListDataItem;
 import com.spbsu.datastream.core.job.control.Control;
 import com.spbsu.datastream.core.job.control.EndOfTick;
-import gnu.trove.map.hash.TLongObjectHashMap;
+import com.spbsu.datastream.core.job.grouping_storage.GroupingStorage;
+import com.spbsu.datastream.core.job.grouping_storage.LazyGroupingStorage;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
 public class GroupingJoba extends Joba.AbstractJoba {
-  private final DataItem.Grouping grouping;
-  private final int window;
-  private final TLongObjectHashMap<List<List<DataItem>>> state;
-  private final TLongObjectHashMap<List<List<DataItem>>> buffers = new TLongObjectHashMap<>();
   private final Sink sink;
+  private final int window;
+  private final GroupingStorage state;
+  private final GroupingStorage buffers;
 
   public GroupingJoba(Sink sink, DataType generates, DataItem.Grouping grouping, int window) {
     super(generates);
     this.sink = sink;
-    this.grouping = grouping;
     this.window = window;
-    state = DataStreamsContext.output.load(generates);
-  }
 
-  private Optional<List<DataItem>> searchBucket(long hash, DataItem item, TLongObjectHashMap<List<List<DataItem>>> through) {
-    return Stream.of(through.get(hash))
-            .flatMap(state -> state != null ? state.stream() : Stream.empty())
-            .filter(bucket -> bucket.isEmpty() || grouping.equals(bucket.get(0), item)).findAny();
+    buffers = new LazyGroupingStorage(grouping);
+    state = DataStreamsContext.output.load(generates).orElse(new LazyGroupingStorage(grouping));
   }
 
   public void accept(DataItem item) {
-    final long hash = grouping.hash(item);
-    List<DataItem> group = searchBucket(hash, item, buffers).orElse(null);
+    List<DataItem> group = buffers.get(item).orElse(null);
     if (group != null) { // look for time collision in the current tick
       int replayCount = 0;
+      //noinspection unchecked
       while (replayCount < group.size() && group.get(group.size() - replayCount - 1).meta().compareTo(item.meta()) > 0) {
         replayCount++;
       }
@@ -56,11 +49,9 @@ public class GroupingJoba extends Joba.AbstractJoba {
         return;
       }
     } else { // creating group from existing in the state
-      group = new ArrayList<>(searchBucket(hash, item, state).orElse(Collections.emptyList()));
-      buffers.putIfAbsent(hash, new ArrayList<>());
-      final List<List<DataItem>> lists = buffers.get(hash);
-      lists.add(group);
+      group = new ArrayList<>(state.get(item).orElse(Collections.emptyList()));
       group.add(item);
+      buffers.put(group);
     }
     sink.accept(new ListDataItem(window > 0 ? group.subList(Math.max(0, group.size() - window), group.size()) : group, item.meta()));
   }
@@ -68,24 +59,21 @@ public class GroupingJoba extends Joba.AbstractJoba {
   public void accept(Control eot) {
     if (eot instanceof EndOfTick) {
       synchronized (state) {
-        buffers.forEachEntry((hash, bucket) -> {
-          bucket.forEach(group -> {
-            final List<DataItem> windowedGroup = group.subList(window > 0 ? Math.max(0, group.size() - window) : 0, group.size());
-            final List<DataItem> oldGroup = searchBucket(hash, group.get(0), state).orElse(null);
+        buffers.forEach(group -> {
+          final List<DataItem> windowedGroup = group.subList(window > 0 ? Math.max(0, group.size() - window + 1) : 0, group.size());
+          if (!windowedGroup.isEmpty()) {
+            final List<DataItem> oldGroup = state.get(group.get(0)).orElse(null);
             if (oldGroup != null) {
               oldGroup.clear();
               oldGroup.addAll(windowedGroup);
             } else {
-              state.putIfAbsent(hash, new ArrayList<>());
-              state.get(hash).add(windowedGroup);
+              state.put(windowedGroup);
             }
-          });
-          return true;
+          }
         });
         DataStreamsContext.output.save(generates(), state);
       }
     }
     sink.accept(eot);
   }
-
 }
