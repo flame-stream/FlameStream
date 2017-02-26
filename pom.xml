@@ -3,6 +3,8 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <properties>
+        <slf4j.version>1.7.24</slf4j.version>
+        <logback.version>1.2.1</logback.version>
         <akka.version>2.4.16</akka.version>
         <lang3.version>3.4</lang3.version>
         <guava.version>19.0</guava.version>
@@ -12,6 +14,8 @@
         <jackson.version>2.8.4</jackson.version>
         <testng.version>6.9.13.6</testng.version>
         <sqlparser.version>0.9.6</sqlparser.version>
+        <zookeeper.version>3.4.9</zookeeper.version>
+        <hadoop-commons.version>2.7.3</hadoop-commons.version>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
@@ -23,7 +27,6 @@
 
     <modules>
         <module>core</module>
-        <module>new-core</module>
         <module>commons</module>
         <module>experiments</module>
         <module>example</module>
@@ -31,52 +34,24 @@
     </modules>
 
     <dependencies>
+        <!--Logging-->
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_2.11</artifactId>
-            <version>${akka.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster_2.11</artifactId>
-            <version>${akka.version}</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-tools_2.11</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-sharding_2.11</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-metrics_2.11</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-persistence_2.11</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-stream_2.11</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.iq80.leveldb</groupId>
-            <artifactId>leveldb</artifactId>
-            <version>0.7</version>
-        </dependency>
-        <dependency>
-            <groupId>org.fusesource.leveldbjni</groupId>
-            <artifactId>leveldbjni-all</artifactId>
-            <version>1.8</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
         </dependency>
 
+        <!--Serialization-->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -88,6 +63,7 @@
             <version>${jackson.version}</version>
         </dependency>
 
+        <!--Utils-->
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
@@ -109,6 +85,7 @@
             <version>${lang3.version}</version>
         </dependency>
 
+        <!--Commons-->
         <dependency>
             <groupId>com.spbsu</groupId>
             <artifactId>commons</artifactId>
@@ -124,18 +101,25 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
         <dependency>
-            <groupId>com.github.jsqlparser</groupId>
-            <artifactId>jsqlparser</artifactId>
-            <version>${sqlparser.version}</version>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <version>${hadoop-commons.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
         <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <version>1</version>
         </dependency>
 
+        <!--Testing-->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -153,6 +137,28 @@
 
     <build>
         <plugins>
+            <!--<plugin>-->
+            <!--<groupId>org.apache.maven.plugins</groupId>-->
+            <!--<artifactId>maven-enforcer-plugin</artifactId>-->
+            <!--<version>1.4.1</version>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<id>enforce-versions</id>-->
+            <!--<goals>-->
+            <!--<goal>enforce</goal>-->
+            <!--</goals>-->
+            <!--<configuration>-->
+            <!--<rules>-->
+            <!--<dependencyConvergence/>-->
+            <!--</rules>-->
+            <!--</configuration>-->
+            <!--</execution>-->
+            <!--</executions>-->
+            <!--</plugin>-->
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

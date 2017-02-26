@@ -19,5 +19,10 @@
             <artifactId>datastreams-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+            <version>${sqlparser.version}</version>
+        </dependency>
     </dependencies>
 </project>

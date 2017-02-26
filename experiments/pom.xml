@@ -7,8 +7,15 @@
         <groupId>com.spbsu.datastreams</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
+    <packaging>pom</packaging>
+
+    <artifactId>datastreams-experiments</artifactId>
 
     <modelVersion>4.0.0</modelVersion>
+
+    <modules>
+        <module>new-core</module>
+    </modules>
 
     <dependencies>
         <dependency>
@@ -21,7 +28,24 @@
             <artifactId>datastreams-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.spbsu.datastreams</groupId>
+            <artifactId>datastreams-sql</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!--ZooKeeper-->
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+            <version>${zookeeper.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
-    <artifactId>datastreams-experiments</artifactId>
 </project>
