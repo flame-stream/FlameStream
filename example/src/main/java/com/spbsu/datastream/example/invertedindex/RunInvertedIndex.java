@@ -51,8 +51,8 @@ public class RunInvertedIndex {
 
     final File dumpFile = new File(fileUrl.getFile());
     final InputStream inputStream = new FileInputStream(dumpFile);
-    final Iterator<WikiPage> wikiPageIterator = new WikiPageIterator(inputStream);
-    final Input iteratorInput = new IteratorInput<>(wikiPageIterator, WikiPage.class);
+    final Iterator<WikiPage> wikiForiaPageIterator = new WikiPageIterator(inputStream);
+    final Input iteratorInput = new IteratorInput<>(wikiForiaPageIterator, WikiPage.class);
 
     iteratorInput.stream(null).flatMap((input) -> {
       final StreamSink sink = new StreamSink();
