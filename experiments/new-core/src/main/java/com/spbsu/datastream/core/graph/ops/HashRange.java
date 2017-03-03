@@ -32,10 +32,8 @@ public class HashRange {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("HashRange{");
-    sb.append("from=").append(from);
-    sb.append(", to=").append(to);
-    sb.append('}');
-    return sb.toString();
+    return "HashRange{" + "from=" + from +
+            ", to=" + to +
+            '}';
   }
 }

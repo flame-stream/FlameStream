@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Grouping extends Processor {
+public class Grouping<T> extends Processor {
   private final Hash hash;
   private final int window;
 
@@ -23,12 +23,12 @@ public class Grouping extends Processor {
 
   @Override
   public GraphStageLogic logic() {
-    return new GraphStageLogic() {
+    return new GraphStageLogic<T, List>() {
       private final GroupingStorage state = new LazyGroupingStorage(hash);
       private final GroupingStorage buffers = new LazyGroupingStorage(hash);
 
       @Override
-      public void onPush(final InPort inPort, final DataItem item) {
+      public void onPush(final InPort inPort, final DataItem<T> item) {
         List<DataItem> group = buffers.get(item).orElse(null);
         if (group != null) { // look for time collision in the current tick
           int replayCount = 0;

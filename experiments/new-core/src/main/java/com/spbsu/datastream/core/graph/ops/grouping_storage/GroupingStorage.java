@@ -13,8 +13,6 @@ import java.util.function.Consumer;
  */
 public interface GroupingStorage {
   Optional<List<DataItem>> get(DataItem item);
-
   void put(List<DataItem> dataItems);
-
   void forEach(Consumer<List<DataItem>> procedure);
 }

@@ -25,7 +25,7 @@ public class LazyGroupingStorage implements GroupingStorage {
   }
 
   public Optional<List<DataItem>> get(DataItem item) {
-    final long hash = grouping.hash(item);
+    final long hash = grouping.hash(item.payload());
     final Object obj = buffers.get(hash);
     if (obj == null)
       return Optional.empty();
@@ -47,7 +47,7 @@ public class LazyGroupingStorage implements GroupingStorage {
     }
 
     final DataItem dataItem = dataItems.get(0);
-    final long hash = grouping.hash(dataItem);
+    final long hash = grouping.hash(dataItem.payload());
     final Object obj = buffers.get(hash);
     if (obj == null) {
       buffers.put(hash, dataItems);
@@ -66,7 +66,7 @@ public class LazyGroupingStorage implements GroupingStorage {
       } else {
         //noinspection unchecked
         final List<DataItem> group = (List<DataItem>) list;
-        if (grouping.equals(group.get(0), dataItem)) {
+        if (grouping.equals(group.get(0), dataItem.payload())) {
           group.clear();
           group.addAll(dataItems);
         } else {

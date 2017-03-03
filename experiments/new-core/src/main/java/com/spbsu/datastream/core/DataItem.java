@@ -1,7 +1,5 @@
 package com.spbsu.datastream.core;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Objects;
 
 /**
@@ -31,7 +29,7 @@ public final class DataItem<T> implements Comparable<DataItem> {
   }
 
   @Override
-  public int compareTo(@NotNull final DataItem o) {
+  public int compareTo(final DataItem o) {
     return this.meta.compareTo(o.meta);
   }
 
@@ -51,10 +49,8 @@ public final class DataItem<T> implements Comparable<DataItem> {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("DataItem{");
-    sb.append("meta=").append(meta);
-    sb.append(", payload=").append(payload);
-    sb.append('}');
-    return sb.toString();
+    return "DataItem{" + "meta=" + meta +
+            ", payload=" + payload +
+            '}';
   }
 }

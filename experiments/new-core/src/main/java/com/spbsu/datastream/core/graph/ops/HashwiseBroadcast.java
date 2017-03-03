@@ -8,24 +8,24 @@ import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
 @SuppressWarnings("unchecked")
-public class HashwiseBroadcast extends FanOut {
-  private final Hash hash;
+public class HashwiseBroadcast<T> extends FanOut {
+  private final Hash<T> hash;
 
-  public HashwiseBroadcast(final int partitions, final Hash hash) {
+  public HashwiseBroadcast(final int partitions, final Hash<T> hash) {
     super(partitions);
     this.hash = hash;
   }
 
-  public Hash hash() {
+  public Hash<T> hash() {
     return hash;
   }
 
   @Override
   public GraphStageLogic logic() {
-    return new GraphStageLogic() {
+    return new GraphStageLogic<T, T>() {
       @Override
-      public void onPush(final InPort inPort, final DataItem item) {
-        OutPort out = outPorts().get(hash.hash(item.payload()) % outPorts().size());
+      public void onPush(final InPort inPort, final DataItem<T> item) {
+        final OutPort out = outPorts().get(hash.hash(item.payload()) % outPorts().size());
         push(out, item);
       }
     };

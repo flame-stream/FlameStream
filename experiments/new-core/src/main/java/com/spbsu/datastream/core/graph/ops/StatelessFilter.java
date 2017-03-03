@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Processor;
@@ -45,10 +46,10 @@ public class StatelessFilter<T, R> extends Processor {
 
   @Override
   public GraphStageLogic logic() {
-    return new GraphStageLogic() {
+    return new GraphStageLogic<T, R>() {
       @Override
-      public void onPush(final InPort inPort, final DataItem item) {
-
+      public void onPush(final InPort inPort, final DataItem<T> item) {
+        push(outPort(), new DataItem<>(new Meta(item.meta(), hashCode()), function.apply(item.payload())));
       }
     };
   }

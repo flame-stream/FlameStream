@@ -9,7 +9,7 @@ import com.spbsu.datastream.core.materializer.GraphStageLogic;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class Merge extends FanIn {
+public final class Merge<T> extends FanIn {
   public Merge(final int n) {
     super(n);
   }
@@ -21,9 +21,9 @@ public final class Merge extends FanIn {
 
   @Override
   public GraphStageLogic logic() {
-    return new GraphStageLogic() {
+    return new GraphStageLogic<T, T>() {
       @Override
-      public void onPush(final InPort inPort, final DataItem item) {
+      public void onPush(final InPort inPort, final DataItem<T> item) {
         push(outPort(), item);
       }
     };

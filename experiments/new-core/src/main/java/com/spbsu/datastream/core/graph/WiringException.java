@@ -1,7 +1,5 @@
 package com.spbsu.datastream.core.graph;
 
-import org.jetbrains.annotations.NonNls;
-
 /**
  * Created by marnikitta on 2/6/17.
  */
@@ -10,7 +8,7 @@ public class WiringException extends RuntimeException {
     super();
   }
 
-  public WiringException(@NonNls final String message) {
+  public WiringException(final String message) {
     super(message);
   }
 
@@ -22,7 +20,8 @@ public class WiringException extends RuntimeException {
     super(cause);
   }
 
-  protected WiringException(final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
+  protected WiringException(final String message, final Throwable cause, final boolean enableSuppression,
+                            final boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
   }
 }

@@ -58,12 +58,12 @@ public class FlatGraphTest {
 
   @Test
   public void complex() {
-    final Source<Integer> source = new SpliteratorSource<>(Stream.generate(() -> 1).spliterator());
+    final Source source = new SpliteratorSource(Stream.empty().spliterator());
     final Broadcast broadcast = new Broadcast(2);
     final StatelessFilter<Integer, Integer> f0 = new StatelessFilter<>(i -> i + 1);
     final StatelessFilter<Integer, Integer> f1 = new StatelessFilter<>(i -> i + 2);
     final Merge merge = new Merge(2);
-    final Sink sink = new ConsumerSink<>(System.out::println);
+    final Sink sink = new ConsumerSink(System.out::println);
 
     final Graph superGraph = source.fuse(broadcast, source.outPort(), broadcast.inPort()).fuse(f0, broadcast.outPorts().get(0), f0.inPort())
             .fuse(merge, f0.outPort(), merge.inPorts().get(0)).fuse(sink, merge.outPort(), sink.inPort())
@@ -76,16 +76,16 @@ public class FlatGraphTest {
     Assert.assertEquals(flattened.outPorts(), Collections.emptySet());
     Assert.assertEquals(flattened.subGraphs(), Sets.newHashSet(source, broadcast, f0, f1, merge, sink));
 
-    final Map<OutPort, InPort> dowstreams = new HashMap<>();
-    dowstreams.put(source.outPort(), broadcast.inPort());
-    dowstreams.put(broadcast.outPorts().get(0), f0.inPort());
-    dowstreams.put(broadcast.outPorts().get(1), f1.inPort());
-    dowstreams.put(f0.outPort(), merge.inPorts().get(0));
-    dowstreams.put(f1.outPort(), merge.inPorts().get(1));
-    dowstreams.put(merge.outPort(), sink.inPort());
+    final Map<OutPort, InPort> downstreams = new HashMap<>();
+    downstreams.put(source.outPort(), broadcast.inPort());
+    downstreams.put(broadcast.outPorts().get(0), f0.inPort());
+    downstreams.put(broadcast.outPorts().get(1), f1.inPort());
+    downstreams.put(f0.outPort(), merge.inPorts().get(0));
+    downstreams.put(f1.outPort(), merge.inPorts().get(1));
+    downstreams.put(merge.outPort(), sink.inPort());
 
-    Assert.assertEquals(flattened.downstreams(), dowstreams);
-    Assert.assertEquals(flattened.upstreams(), dowstreams.entrySet().stream()
+    Assert.assertEquals(flattened.downstreams(), downstreams);
+    Assert.assertEquals(flattened.upstreams(), downstreams.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)));
   }
 }

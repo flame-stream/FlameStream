@@ -10,7 +10,7 @@ import com.spbsu.datastream.core.materializer.GraphStageLogic;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class Broadcast extends FanOut {
+public final class Broadcast<T> extends FanOut {
   public Broadcast(final int shape) {
     super(shape);
   }
@@ -22,9 +22,9 @@ public final class Broadcast extends FanOut {
 
   @Override
   public GraphStageLogic logic() {
-    return new GraphStageLogic() {
+    return new GraphStageLogic<T, T>() {
       @Override
-      public void onPush(final InPort inPort, final DataItem item) {
+      public void onPush(final InPort inPort, final DataItem<T> item) {
         for (OutPort out : outPorts()) {
           push(out, item);
         }

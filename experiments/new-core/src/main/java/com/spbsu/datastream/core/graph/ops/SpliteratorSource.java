@@ -11,10 +11,10 @@ import java.util.Spliterator;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class SpliteratorSource extends Source {
-  private final Spliterator<DataItem> spliterator;
+public final class SpliteratorSource<T> extends Source {
+  private final Spliterator<DataItem<T>> spliterator;
 
-  public SpliteratorSource(final Spliterator<DataItem> spliterator) {
+  public SpliteratorSource(final Spliterator<DataItem<T>> spliterator) {
     this.spliterator = spliterator;
   }
 
@@ -22,7 +22,7 @@ public final class SpliteratorSource extends Source {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SpliteratorSource that = (SpliteratorSource) o;
+    final SpliteratorSource<?> that = (SpliteratorSource<?>) o;
     return Objects.equals(spliterator, that.spliterator);
   }
 
@@ -39,9 +39,9 @@ public final class SpliteratorSource extends Source {
 
   @Override
   public GraphStageLogic logic() {
-    return new GraphStageLogic() {
+    return new GraphStageLogic<Object, T>() {
       @Override
-      public <E> void onStart() {
+      public void onStart() {
         spliterator.forEachRemaining(item -> push(outPort(), item));
       }
     };
@@ -49,6 +49,6 @@ public final class SpliteratorSource extends Source {
 
   @Override
   public Graph deepCopy() {
-    return new SpliteratorSource(spliterator);
+    return new SpliteratorSource<>(spliterator);
   }
 }
