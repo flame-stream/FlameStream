@@ -7,7 +7,7 @@ import akka.actor.Props;
  * Created by marnikitta on 2/8/17.
  */
 public interface ShardConcierge {
-  ActorRef portLocator();
+  PortLocator portLocator();
 
-  ActorRef actorFor(Props props);
+  ActorRef actorFor(Props props, String name);
 }

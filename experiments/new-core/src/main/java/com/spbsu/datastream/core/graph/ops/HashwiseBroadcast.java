@@ -7,17 +7,17 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
-public final class Broadcast extends FanOut {
-  public Broadcast(final int shape) {
-    super(shape);
+@SuppressWarnings("unchecked")
+public class HashwiseBroadcast extends FanOut {
+  private final Hash hash;
+
+  public HashwiseBroadcast(final int partitions, final Hash hash) {
+    super(partitions);
+    this.hash = hash;
   }
 
-  @Override
-  public String toString() {
-    return "Broadcast{" + super.toString() + '}';
+  public Hash hash() {
+    return hash;
   }
 
   @Override
@@ -25,15 +25,14 @@ public final class Broadcast extends FanOut {
     return new GraphStageLogic() {
       @Override
       public void onPush(final InPort inPort, final DataItem item) {
-        for (OutPort out : outPorts()) {
-          push(out, item);
-        }
+        OutPort out = outPorts().get(hash.hash(item.payload()) % outPorts().size());
+        push(out, item);
       }
     };
   }
 
   @Override
   public Graph deepCopy() {
-    return new Broadcast(outPorts().size());
+    return new HashwiseBroadcast(outPorts().size(), hash);
   }
 }

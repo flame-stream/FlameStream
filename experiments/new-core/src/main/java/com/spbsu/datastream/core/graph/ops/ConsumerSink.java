@@ -1,6 +1,8 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.Graph;
+import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Sink;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
@@ -10,10 +12,10 @@ import java.util.function.Consumer;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class ConsumerSink<T> extends Sink<T> {
-  private final Consumer<T> consumer;
+public final class ConsumerSink extends Sink {
+  private final Consumer<DataItem> consumer;
 
-  public ConsumerSink(final Consumer<T> consumer) {
+  public ConsumerSink(final Consumer<DataItem> consumer) {
     this.consumer = consumer;
   }
 
@@ -21,7 +23,7 @@ public final class ConsumerSink<T> extends Sink<T> {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final ConsumerSink<?> that = (ConsumerSink<?>) o;
+    final ConsumerSink that = (ConsumerSink) o;
     return Objects.equals(consumer, that.consumer);
   }
 
@@ -32,11 +34,15 @@ public final class ConsumerSink<T> extends Sink<T> {
 
   @Override
   public GraphStageLogic logic() {
-    return null;
+    return new GraphStageLogic() {
+      public void onPush(final InPort inPort, final DataItem item) {
+        consumer.accept(item);
+      }
+    };
   }
 
   @Override
   public Graph deepCopy() {
-    return new ConsumerSink<>(consumer);
+    return new ConsumerSink(consumer);
   }
 }

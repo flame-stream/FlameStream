@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Processor;
-import com.spbsu.datastream.core.graph.StatefulGraph;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
 import java.util.Objects;
@@ -10,7 +9,7 @@ import java.util.Objects;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class StatefulFilter<T, R, S> extends Processor implements StatefulGraph<T> {
+public final class StatefulFilter<T, R, S extends State> extends Processor {
   private final StatefulFunction<T, R, S> statefulFunction;
   private final Hash<T> hash;
 
@@ -23,7 +22,6 @@ public final class StatefulFilter<T, R, S> extends Processor implements Stateful
     return statefulFunction;
   }
 
-  @Override
   public Hash<T> hash() {
     return hash;
   }

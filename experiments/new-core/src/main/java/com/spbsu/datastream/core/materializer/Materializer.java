@@ -1,10 +1,7 @@
 package com.spbsu.datastream.core.materializer;
 
-import com.spbsu.datastream.core.graph.Graph;
+import com.spbsu.datastream.core.graph.ShardMappedGraph;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
 public interface Materializer {
-  void materialize(Graph graph);
+  void materialize(ShardMappedGraph graph);
 }

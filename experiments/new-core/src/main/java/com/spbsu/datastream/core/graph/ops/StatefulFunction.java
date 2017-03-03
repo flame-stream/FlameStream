@@ -1,23 +1,25 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.DataItem;
+
 import java.util.Objects;
 
 /**
  * Created by marnikitta on 2/7/17.
  */
-public interface StatefulFunction<T, R, S> {
-  StatefulFilterResult<R, S> process(S oldState, T value);
+public interface StatefulFunction<T, R, S extends State> {
+  StatefulFilterResult<R, S> process(S oldState, DataItem<T> item);
 
   class StatefulFilterResult<R, S> {
-    private final R out;
+    private final DataItem<R> out;
     private final S newState;
 
-    public StatefulFilterResult(final R out, final S newState) {
+    public StatefulFilterResult(final DataItem<R> out, final S newState) {
       this.out = out;
       this.newState = newState;
     }
 
-    public R out() {
+    public DataItem<R> out() {
       return out;
     }
 

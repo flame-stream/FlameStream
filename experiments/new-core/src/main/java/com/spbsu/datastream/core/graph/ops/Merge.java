@@ -1,7 +1,9 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.FanIn;
 import com.spbsu.datastream.core.graph.Graph;
+import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
 /**
@@ -19,7 +21,12 @@ public final class Merge extends FanIn {
 
   @Override
   public GraphStageLogic logic() {
-    return null;
+    return new GraphStageLogic() {
+      @Override
+      public void onPush(final InPort inPort, final DataItem item) {
+        push(outPort(), item);
+      }
+    };
   }
 
   @Override

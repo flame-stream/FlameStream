@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Source;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
@@ -10,10 +11,10 @@ import java.util.Spliterator;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class SpliteratorSource<T> extends Source<T> {
-  private final Spliterator<T> spliterator;
+public final class SpliteratorSource extends Source {
+  private final Spliterator<DataItem> spliterator;
 
-  public SpliteratorSource(final Spliterator<T> spliterator) {
+  public SpliteratorSource(final Spliterator<DataItem> spliterator) {
     this.spliterator = spliterator;
   }
 
@@ -21,7 +22,7 @@ public final class SpliteratorSource<T> extends Source<T> {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SpliteratorSource<?> that = (SpliteratorSource<?>) o;
+    final SpliteratorSource that = (SpliteratorSource) o;
     return Objects.equals(spliterator, that.spliterator);
   }
 
@@ -38,11 +39,16 @@ public final class SpliteratorSource<T> extends Source<T> {
 
   @Override
   public GraphStageLogic logic() {
-    return null;
+    return new GraphStageLogic() {
+      @Override
+      public <E> void onStart() {
+        spliterator.forEachRemaining(item -> push(outPort(), item));
+      }
+    };
   }
 
   @Override
   public Graph deepCopy() {
-    return new SpliteratorSource<>(spliterator);
+    return new SpliteratorSource(spliterator);
   }
 }

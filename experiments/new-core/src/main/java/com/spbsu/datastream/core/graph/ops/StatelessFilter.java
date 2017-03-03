@@ -1,6 +1,8 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.Graph;
+import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Processor;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
 
@@ -43,7 +45,12 @@ public class StatelessFilter<T, R> extends Processor {
 
   @Override
   public GraphStageLogic logic() {
-    return null;
+    return new GraphStageLogic() {
+      @Override
+      public void onPush(final InPort inPort, final DataItem item) {
+
+      }
+    };
   }
 
   @Override
