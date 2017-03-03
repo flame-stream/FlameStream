@@ -8,6 +8,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class InPort {
   private final static ThreadLocalRandom rd = ThreadLocalRandom.current();
+
   private final long id;
   private final String name;
 
@@ -17,7 +18,7 @@ public final class InPort {
 
   public InPort(final String name) {
     this.name = name;
-    this.id = System.currentTimeMillis() << 3 + rd.nextInt(1 << 3);
+    this.id = rd.nextLong();
   }
 
   public long id() {

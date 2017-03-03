@@ -26,12 +26,12 @@ public class DeepCopyTest {
 
   @Test
   public void complex() {
-    final SpliteratorSource<Integer> source = new SpliteratorSource<>(Stream.generate(() -> 1).spliterator());
+    final SpliteratorSource<Integer> source = new SpliteratorSource(Stream.generate(() -> 1).spliterator());
     final Broadcast broadcast = new Broadcast(2);
     final StatelessFilter<Integer, Integer> f0 = new StatelessFilter<>(i -> i + 1);
     final StatelessFilter<Integer, Integer> f1 = new StatelessFilter<>(i -> i + 2);
     final Merge merge = new Merge(2);
-    final ConsumerSink sink = new ConsumerSink<>(System.out::println);
+    final ConsumerSink sink = new ConsumerSink(System.out::println);
 
     final Graph superGraph = source.fuse(broadcast, source.outPort(), broadcast.inPort()).fuse(f0, broadcast.outPorts().get(0), f0.inPort())
             .fuse(merge, f0.outPort(), merge.inPorts().get(0)).fuse(sink, merge.outPort(), sink.inPort())

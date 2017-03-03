@@ -16,7 +16,7 @@ public final class OutPort {
   }
 
   public OutPort(final String name) {
-    this.id = System.currentTimeMillis() << 3 + rd.nextInt(1 << 3);
+    this.id = rd.nextLong();
     this.name = name;
   }
 
@@ -28,13 +28,14 @@ public final class OutPort {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final OutPort outPort = (OutPort) o;
-    return id == outPort.id;
+    final OutPort port = (OutPort) o;
+    return id == port.id &&
+            Objects.equals(name, port.name);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);
+    return Objects.hash(id, name);
   }
 
   @Override

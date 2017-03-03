@@ -160,11 +160,11 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
   @SuppressWarnings("SimplifyStreamApiCallChains")
   private static void assertCorrectWire(final Set<? extends Graph> graphs, final OutPort from, final InPort to) {
     if (!graphs.stream().anyMatch(graph -> graph.outPorts().contains(from))) {
-      throw new WiringException();
+      throw new WiringException("Out ports of " + graphs + " hasn't got " + from);
     }
 
     if (!graphs.stream().anyMatch(graph -> graph.inPorts().contains(to))) {
-      throw new WiringException();
+      throw new WiringException("In ports of " + graphs + " hasn't got " + to);
     }
   }
 }
