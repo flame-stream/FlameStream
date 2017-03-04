@@ -18,18 +18,22 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
 
   private final Set<T> subGraphs;
 
-  AbstractComposedGraph(final Set<T> graph) {
+  protected AbstractComposedGraph(final AbstractComposedGraph<T> that) {
+    this(that.upstreams, that.downstreams, that.inPorts, that.outPorts, that.subGraphs);
+  }
+
+  protected AbstractComposedGraph(final Set<T> graph) {
     this(graph, Collections.emptyMap());
   }
 
-  AbstractComposedGraph(final T graph,
-                        final OutPort from,
-                        final InPort to) {
+  protected AbstractComposedGraph(final T graph,
+                                  final OutPort from,
+                                  final InPort to) {
     this(Collections.singleton(graph), Collections.singletonMap(from, to));
   }
 
-  AbstractComposedGraph(final Set<T> graphs,
-                        final Map<OutPort, InPort> wires) {
+  protected AbstractComposedGraph(final Set<T> graphs,
+                                  final Map<OutPort, InPort> wires) {
     assertCorrectWires(graphs, wires);
 
     this.subGraphs = new HashSet<>(graphs);
@@ -50,11 +54,11 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
   /**
    * Only for deep copying
    */
-  AbstractComposedGraph(final Map<InPort, OutPort> upstreams,
-                        final Map<OutPort, InPort> downstreams,
-                        final List<InPort> inPorts,
-                        final List<OutPort> outPorts,
-                        final Set<T> subGraphs) {
+  protected AbstractComposedGraph(final Map<InPort, OutPort> upstreams,
+                                  final Map<OutPort, InPort> downstreams,
+                                  final List<InPort> inPorts,
+                                  final List<OutPort> outPorts,
+                                  final Set<T> subGraphs) {
     this.upstreams = upstreams;
     this.downstreams = downstreams;
     this.inPorts = inPorts;

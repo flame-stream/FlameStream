@@ -17,6 +17,7 @@ final class ComposedGraphImpl extends AbstractComposedGraph<Graph> {
     super(graph, from, to);
   }
 
+  //for deep copy only
   private ComposedGraphImpl(final Map<InPort, OutPort> upstreams,
                             final Map<OutPort, InPort> downstreams,
                             final List<InPort> inPorts,
@@ -47,5 +48,6 @@ final class ComposedGraphImpl extends AbstractComposedGraph<Graph> {
     final List<InPort> inPorts = mappedInPorts(inPorts(), inPortsMapping);
     final List<OutPort> outPorts = mappedOutPorts(outPorts(), outPortsMapping);
     return new ComposedGraphImpl(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy));
+
   }
 }

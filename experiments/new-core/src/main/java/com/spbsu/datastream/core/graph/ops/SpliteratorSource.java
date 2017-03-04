@@ -11,7 +11,7 @@ import java.util.Spliterator;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class SpliteratorSource<T> extends Source {
+public final class SpliteratorSource<T> extends Source<T> {
   private final Spliterator<DataItem<T>> spliterator;
 
   public SpliteratorSource(final Spliterator<DataItem<T>> spliterator) {

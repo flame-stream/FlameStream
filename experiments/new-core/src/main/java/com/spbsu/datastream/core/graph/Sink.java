@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Created by marnikitta on 2/6/17.
  */
-public abstract class Sink implements AtomicGraph {
+public abstract class Sink<T> implements AtomicGraph {
   private final InPort inPort = new InPort();
 
   @Override

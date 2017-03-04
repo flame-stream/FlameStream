@@ -6,19 +6,8 @@ import java.util.stream.Collectors;
 public class ShardMappedGraph extends AbstractComposedGraph<AtomicGraph> {
   private final String nodeId;
 
-  ShardMappedGraph(final Set<AtomicGraph> graph, final String nodeId) {
-    super(graph);
-    this.nodeId = nodeId;
-  }
-
-  ShardMappedGraph(final AtomicGraph graph, final OutPort from, final InPort to, final String nodeId) {
-    super(graph, from, to);
-    this.nodeId = nodeId;
-  }
-
-  ShardMappedGraph(final Set<AtomicGraph> graphs,
-                   final Map<OutPort, InPort> wires, final String nodeId) {
-    super(graphs, wires);
+  public ShardMappedGraph(final FlatGraph flatGraph, final String nodeId) {
+    super(flatGraph);
     this.nodeId = nodeId;
   }
 

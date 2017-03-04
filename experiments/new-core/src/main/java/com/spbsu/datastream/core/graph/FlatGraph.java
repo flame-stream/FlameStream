@@ -12,11 +12,12 @@ public final class FlatGraph extends AbstractComposedGraph<AtomicGraph> {
     super(subGraphs, wires);
   }
 
-  public FlatGraph(final Map<InPort, OutPort> upstreams,
-                   final Map<OutPort, InPort> downstreams,
-                   final List<InPort> inPorts,
-                   final List<OutPort> outPorts,
-                   final Set<AtomicGraph> subGraphs) {
+  //for deep copy only
+  private FlatGraph(final Map<InPort, OutPort> upstreams,
+                    final Map<OutPort, InPort> downstreams,
+                    final List<InPort> inPorts,
+                    final List<OutPort> outPorts,
+                    final Set<AtomicGraph> subGraphs) {
     super(upstreams, downstreams, inPorts, outPorts, subGraphs);
   }
 

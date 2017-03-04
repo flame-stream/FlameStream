@@ -2,10 +2,14 @@ package com.spbsu.datastream.core.materializer;
 
 import com.spbsu.datastream.core.graph.OutPort;
 
-import java.util.function.Consumer;
+import java.util.Optional;
 
+@FunctionalInterface
 public interface PortLocator {
-  Consumer<Object> portSink(OutPort port);
+  Optional<DataSink> sinkForPort(OutPort port);
 
-  void registerPort(OutPort port, Consumer<Object> consumer);
+  default PortLocator compose(PortLocator locator) {
+    return port -> sinkForPort(port)
+            .map(Optional::of).orElseGet(() -> locator.sinkForPort(port));
+  }
 }

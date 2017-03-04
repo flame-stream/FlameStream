@@ -12,10 +12,10 @@ import java.util.function.Consumer;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class ConsumerSink extends Sink {
-  private final Consumer<DataItem> consumer;
+public final class ConsumerSink<T> extends Sink<T> {
+  private final Consumer<DataItem<T>> consumer;
 
-  public ConsumerSink(final Consumer<DataItem> consumer) {
+  public ConsumerSink(final Consumer<DataItem<T>> consumer) {
     this.consumer = consumer;
   }
 
@@ -23,7 +23,7 @@ public final class ConsumerSink extends Sink {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final ConsumerSink that = (ConsumerSink) o;
+    final ConsumerSink<?> that = (ConsumerSink<?>) o;
     return Objects.equals(consumer, that.consumer);
   }
 
@@ -34,8 +34,8 @@ public final class ConsumerSink extends Sink {
 
   @Override
   public GraphStageLogic logic() {
-    return new GraphStageLogic() {
-      public void onPush(final InPort inPort, final DataItem item) {
+    return new GraphStageLogic<T, Object>() {
+      public void onPush(final InPort inPort, final DataItem<T> item) {
         consumer.accept(item);
       }
     };
@@ -43,6 +43,6 @@ public final class ConsumerSink extends Sink {
 
   @Override
   public Graph deepCopy() {
-    return new ConsumerSink(consumer);
+    return new ConsumerSink<>(consumer);
   }
 }

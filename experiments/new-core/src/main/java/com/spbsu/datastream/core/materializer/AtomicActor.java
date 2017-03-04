@@ -5,6 +5,7 @@ import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.DataItem;
+import scala.Option;
 
 public class AtomicActor extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(getContext().system(), getSelf());
@@ -21,18 +22,28 @@ public class AtomicActor extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
-    LOG.info("Atomic actor is starting {}", logic);
-    super.preStart();
-    logic.onStart();
+    LOG.info("Starting...");
+  }
+
+  @Override
+  public void preRestart(final Throwable reason, final Option<Object> message) {
+    LOG.warning("Restarting, reason: {}, message: {}", reason, message);
   }
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    if (message instanceof AddressedMessage) {
+    LOG.debug("Recived {}", message);
+
+    if (message instanceof TickGraphManagerApi.Start) {
+      logic.onStart();
+    } else if (message instanceof AddressedMessage) {
       final AddressedMessage m = (AddressedMessage) message;
       if (m.payload() instanceof DataItem) {
+        //noinspection unchecked
         logic.onPush(m.port(), ((DataItem) m.payload()));
       }
+    } else {
+      unhandled(message);
     }
   }
 }

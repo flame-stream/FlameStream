@@ -8,7 +8,7 @@ import com.spbsu.datastream.core.graph.OutPort;
  * Created by marnikitta on 2/8/17.
  */
 public abstract class GraphStageLogic<T, R> {
-  private ShardConcierge context;
+  private TickContext context;
 
   public void onStart() {
   }
@@ -17,16 +17,20 @@ public abstract class GraphStageLogic<T, R> {
   }
 
   final protected void push(final OutPort out, final DataItem<R> result) {
-    context.portLocator().portSink(out).accept(result);
+    context.portLocator().sinkForPort(out).orElseThrow(RuntimeException::new).accept(result);
   }
 
   final protected void panic(final Exception e) {
     // TODO: 3/3/17
   }
 
-
   //package local, its important
-  void injectConcierge(final ShardConcierge context) {
+  void injectConcierge(final TickContext context) {
     this.context = context;
+  }
+
+  @Override
+  public String toString() {
+    return getClass().getName();
   }
 }

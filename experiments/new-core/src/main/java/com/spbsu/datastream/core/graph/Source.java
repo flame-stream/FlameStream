@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Created by marnikitta on 2/6/17.
  */
-public abstract class Source implements AtomicGraph {
+public abstract class Source<T> implements AtomicGraph {
   private final OutPort outPort = new OutPort();
 
   @Override
