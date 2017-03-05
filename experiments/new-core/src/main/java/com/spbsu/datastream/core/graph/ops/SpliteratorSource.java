@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Source;
 import com.spbsu.datastream.core.materializer.GraphStageLogic;
@@ -12,9 +13,9 @@ import java.util.Spliterator;
  * Created by marnikitta on 2/7/17.
  */
 public final class SpliteratorSource<T> extends Source<T> {
-  private final Spliterator<DataItem<T>> spliterator;
+  private final Spliterator<T> spliterator;
 
-  public SpliteratorSource(final Spliterator<DataItem<T>> spliterator) {
+  public SpliteratorSource(final Spliterator<T> spliterator) {
     this.spliterator = spliterator;
   }
 
@@ -38,11 +39,11 @@ public final class SpliteratorSource<T> extends Source<T> {
   }
 
   @Override
-  public GraphStageLogic logic() {
-    return new GraphStageLogic<Object, T>() {
+  public GraphStageLogic<Void, T> logic() {
+    return new GraphStageLogic<Void, T>() {
       @Override
       public void onStart() {
-        spliterator.forEachRemaining(item -> push(outPort(), item));
+        spliterator.forEachRemaining(item -> push(outPort(), new DataItem<>(Meta.now(), item)));
       }
     };
   }

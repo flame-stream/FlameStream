@@ -47,8 +47,8 @@ public final class StatefulFilter<T, R, S extends State> extends Processor {
   }
 
   @Override
-  public GraphStageLogic logic() {
-    return null;
+  public GraphStageLogic<T, R> logic() {
+    throw new UnsupportedOperationException();
   }
 
   @Override

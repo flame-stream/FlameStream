@@ -1,8 +1,6 @@
 package com.spbsu.datastream.core.test;
 
 import akka.actor.ActorSystem;
-import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.graph.FlatGraph;
 import com.spbsu.datastream.core.graph.ShardMappedGraph;
 import com.spbsu.datastream.core.graph.Sink;
@@ -14,6 +12,7 @@ import com.spbsu.datastream.core.materializer.RemotePortLocator;
 import com.spbsu.datastream.core.materializer.TickContext;
 import com.spbsu.datastream.core.materializer.TickGraphManager;
 
+import java.util.Spliterator;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -21,8 +20,8 @@ public class Main {
   public static void main(final String... args) throws Exception {
     ActorSystem system = ActorSystem.create();
 
-    Stream<DataItem<String>> stream = Stream.generate(() -> UUID.randomUUID().toString()).map(str -> new DataItem<>(new Meta(1), str)).limit(100);
-    Source<String> source = new SpliteratorSource<>(stream.spliterator());
+    Spliterator<String> spliterator = Stream.generate(UUID::randomUUID).map(UUID::toString).limit(100).spliterator();
+    Source<String> source = new SpliteratorSource<>(spliterator);
     Sink<String> sink = new ConsumerSink<>(System.out::println);
     FlatGraph graph = FlatGraph.flattened(source.fuse(sink, source.outPort(), sink.inPort()));
     ShardMappedGraph mapped = new ShardMappedGraph(graph, "abacaba");

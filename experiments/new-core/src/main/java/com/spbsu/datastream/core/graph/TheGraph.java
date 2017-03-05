@@ -8,10 +8,6 @@ public class TheGraph extends AbstractComposedGraph<ShardMappedGraph> {
     super(graph);
   }
 
-  TheGraph(final ShardMappedGraph graph, final OutPort from, final InPort to) {
-    super(graph, from, to);
-  }
-
   TheGraph(final Set<ShardMappedGraph> graphs,
            final Map<OutPort, InPort> wires) {
     super(graphs, wires);

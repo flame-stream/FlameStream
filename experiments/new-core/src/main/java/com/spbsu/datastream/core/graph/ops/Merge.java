@@ -20,7 +20,7 @@ public final class Merge<T> extends FanIn {
   }
 
   @Override
-  public GraphStageLogic logic() {
+  public GraphStageLogic<T, T> logic() {
     return new GraphStageLogic<T, T>() {
       @Override
       public void onPush(final InPort inPort, final DataItem<T> item) {

@@ -14,6 +14,10 @@ public final class Meta implements Comparable<Meta> {
   private final long time;
   private final List<Integer> stagesHashes;
 
+  public static Meta now() {
+    return new Meta(System.currentTimeMillis());
+  }
+
   private Meta() {
     this.time = -1;
     this.stagesHashes = Collections.emptyList();

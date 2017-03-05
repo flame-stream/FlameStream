@@ -50,7 +50,7 @@ public class TickGraphManager extends UntypedActor {
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    LOG.debug("Recived: {}", message);
+    LOG.debug("Received: {}", message);
   }
 
   private void registerInnerPorts(final Map<InPort, ActorRef> portMappings, final Map<InPort, OutPort> upstreams) {

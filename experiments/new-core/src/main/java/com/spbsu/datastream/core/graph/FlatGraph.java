@@ -68,6 +68,7 @@ public final class FlatGraph extends AbstractComposedGraph<AtomicGraph> {
     final Map<OutPort, InPort> downstreams = mappedDownstreams(downstreams(), inPortsMapping, outPortsMapping);
     final List<InPort> inPorts = mappedInPorts(inPorts(), inPortsMapping);
     final List<OutPort> outPorts = mappedOutPorts(outPorts(), outPortsMapping);
+
     return new FlatGraph(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy));
   }
 }

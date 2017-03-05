@@ -47,7 +47,7 @@ final class ComposedGraphImpl extends AbstractComposedGraph<Graph> {
     final Map<OutPort, InPort> downstreams = mappedDownstreams(downstreams(), inPortsMapping, outPortsMapping);
     final List<InPort> inPorts = mappedInPorts(inPorts(), inPortsMapping);
     final List<OutPort> outPorts = mappedOutPorts(outPorts(), outPortsMapping);
-    return new ComposedGraphImpl(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy));
 
+    return new ComposedGraphImpl(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy));
   }
 }

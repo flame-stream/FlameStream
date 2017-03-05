@@ -22,6 +22,7 @@ public abstract class GraphStageLogic<T, R> {
 
   final protected void panic(final Exception e) {
     // TODO: 3/3/17
+    throw new RuntimeException(e);
   }
 
   //package local, its important

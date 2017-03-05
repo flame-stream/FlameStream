@@ -45,7 +45,7 @@ public class StatelessFilter<T, R> extends Processor {
   }
 
   @Override
-  public GraphStageLogic logic() {
+  public GraphStageLogic<T, R> logic() {
     return new GraphStageLogic<T, R>() {
       @Override
       public void onPush(final InPort inPort, final DataItem<T> item) {

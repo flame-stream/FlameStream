@@ -33,8 +33,8 @@ public final class ConsumerSink<T> extends Sink<T> {
   }
 
   @Override
-  public GraphStageLogic logic() {
-    return new GraphStageLogic<T, Object>() {
+  public GraphStageLogic<T, Void> logic() {
+    return new GraphStageLogic<T, Void>() {
       public void onPush(final InPort inPort, final DataItem<T> item) {
         consumer.accept(item);
       }

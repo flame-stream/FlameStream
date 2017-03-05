@@ -22,7 +22,7 @@ public class Grouping<T> extends Processor {
   }
 
   @Override
-  public GraphStageLogic logic() {
+  public GraphStageLogic<T, List> logic() {
     return new GraphStageLogic<T, List>() {
       private final GroupingStorage state = new LazyGroupingStorage(hash);
       private final GroupingStorage buffers = new LazyGroupingStorage(hash);

@@ -21,7 +21,7 @@ public class HashwiseBroadcast<T> extends FanOut {
   }
 
   @Override
-  public GraphStageLogic logic() {
+  public GraphStageLogic<T, T> logic() {
     return new GraphStageLogic<T, T>() {
       @Override
       public void onPush(final InPort inPort, final DataItem<T> item) {
