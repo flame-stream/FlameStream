@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <properties>
         <slf4j.version>1.7.24</slf4j.version>
@@ -12,7 +12,7 @@
         <joda.version>2.9.4</joda.version>
         <junit.version>4.8.1</junit.version>
         <jackson.version>2.8.4</jackson.version>
-        <testng.version>6.9.13.6</testng.version>
+        <testng.version>6.10</testng.version>
         <sqlparser.version>0.9.6</sqlparser.version>
         <zookeeper.version>3.4.9</zookeeper.version>
         <hadoop-commons.version>2.7.3</hadoop-commons.version>
@@ -27,6 +27,7 @@
 
     <modules>
         <module>core</module>
+        <module>new-core</module>
         <module>commons</module>
         <module>experiments</module>
         <module>example</module>
