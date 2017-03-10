@@ -1,4 +1,4 @@
-package experiments.nikita.zookeeper;
+package com.spbsu.datastream.core.application;
 
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;

@@ -1,29 +1,28 @@
 package com.spbsu.datastream.core.graph;
 
-import com.spbsu.datastream.core.materializer.Node;
-
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ShardMappedGraph extends AbstractComposedGraph<AtomicGraph> {
-  private final Node node;
+  private final InetSocketAddress address;
 
-  public ShardMappedGraph(final FlatGraph flatGraph, final Node node) {
+  public ShardMappedGraph(final FlatGraph flatGraph, final InetSocketAddress address) {
     super(flatGraph);
-    this.node = node;
+    this.address = address;
   }
 
   //For deep copy only
   private ShardMappedGraph(
           final Map<InPort, OutPort> upstreams,
           final Map<OutPort, InPort> downstreams, final List<InPort> inPorts,
-          final List<OutPort> outPorts, final Set<AtomicGraph> subGraphs, final Node node) {
+          final List<OutPort> outPorts, final Set<AtomicGraph> subGraphs, final InetSocketAddress address) {
     super(upstreams, downstreams, inPorts, outPorts, subGraphs);
-    this.node = node;
+    this.address = address;
   }
 
-  public Node node() {
-    return node;
+  public InetSocketAddress address() {
+    return address;
   }
 
   @Override
@@ -39,7 +38,7 @@ public class ShardMappedGraph extends AbstractComposedGraph<AtomicGraph> {
     final Map<OutPort, InPort> downstreams = mappedDownstreams(downstreams(), inPortsMapping, outPortsMapping);
     final List<InPort> inPorts = mappedInPorts(inPorts(), inPortsMapping);
     final List<OutPort> outPorts = mappedOutPorts(outPorts(), outPortsMapping);
-    return new ShardMappedGraph(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy), this.node);
+    return new ShardMappedGraph(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy), this.address);
   }
 
   @Override
@@ -48,18 +47,18 @@ public class ShardMappedGraph extends AbstractComposedGraph<AtomicGraph> {
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
     final ShardMappedGraph that = (ShardMappedGraph) o;
-    return Objects.equals(node, that.node);
+    return Objects.equals(address, that.address);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), node);
+    return Objects.hash(super.hashCode(), address);
   }
 
   @Override
   public String toString() {
     return "ShardMappedGraph{" +
-            "node=" + node() +
+            "address=" + address() +
             ", upstreams=" + upstreams() +
             ", downstreams=" + downstreams() +
             ", inPorts=" + inPorts() +

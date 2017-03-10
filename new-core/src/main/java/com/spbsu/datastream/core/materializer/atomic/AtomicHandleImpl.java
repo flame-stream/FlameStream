@@ -2,7 +2,11 @@ package com.spbsu.datastream.core.materializer.atomic;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.OutPort;
+import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.materializer.locator.PortLocator;
+
+import java.net.InetSocketAddress;
+import java.util.List;
 
 public class AtomicHandleImpl implements AtomicHandle {
   private final PortLocator portLocator;
@@ -14,6 +18,16 @@ public class AtomicHandleImpl implements AtomicHandle {
   @Override
   public void push(final OutPort out, final DataItem result) {
     portLocator.sinkForPort(out).orElseThrow(RuntimeException::new).accept(result);
+  }
+
+  @Override
+  public List<InetSocketAddress> workers() {
+    return null;
+  }
+
+  @Override
+  public void deploy(final TheGraph graph) {
+
   }
 
   @Override

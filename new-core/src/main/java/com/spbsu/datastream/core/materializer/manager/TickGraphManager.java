@@ -44,6 +44,8 @@ public class TickGraphManager extends UntypedActor {
 
     final Map<AtomicGraph, ActorRef> inMapping = initializeAtomics(graph.subGraphs());
     registerInnerPorts(flatKey(inMapping), graph.upstreams());
+
+    context().actorOf(TickStatusWatcher.props(context.zookeeper(), context.tick(), self()), "status-watcher");
   }
 
   @Override
