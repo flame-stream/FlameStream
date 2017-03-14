@@ -5,13 +5,16 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.graph.OutPort;
-import com.spbsu.datastream.core.graph.ShardMappedGraph;
-import com.spbsu.datastream.core.materializer.AddressingSink;
+import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.materializer.TickContext;
+import com.spbsu.datastream.core.materializer.TickContextImpl;
 import com.spbsu.datastream.core.materializer.atomic.AtomicActor;
+import com.spbsu.datastream.core.materializer.atomic.AtomicHandleImpl;
+import com.spbsu.datastream.core.materializer.routing.ForkRouter;
+import com.spbsu.datastream.core.materializer.routing.LocalRouter;
 import scala.Option;
 
 import java.util.HashMap;
@@ -26,26 +29,28 @@ import static com.spbsu.datastream.core.materializer.manager.TickGraphManagerApi
 public class TickGraphManager extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
 
-  private final TickContext context;
-  private final ShardMappedGraph graph;
+  private final TheGraph graph;
 
-  private TickGraphManager(final TickContext context, final ShardMappedGraph graph) {
-    this.context = context;
+  private TickContext tickContext;
+
+  private TickGraphManager(final ActorRef remoteRouter, final HashRange range, final TheGraph graph) {
     this.graph = graph;
+
+    final ActorRef router = context().actorOf(ForkRouter.props(range, remoteRouter));
+    this.tickContext = new TickContextImpl(graph.downstreams(), router);
+
+    final Map<AtomicGraph, ActorRef> inMapping = initializeAtomics(graph.subGraphs(), tickContext);
+    final ActorRef localRouter = localRouter(flatKey(inMapping));
+    tickContext.forkRouter().tell(localRouter, self());
   }
 
-  public static Props props(final TickContext context, final ShardMappedGraph graph) {
-    return Props.create(TickGraphManager.class, context, graph);
+  public static Props props(final ActorRef remoteRouter, final TheGraph graph) {
+    return Props.create(TickGraphManager.class, graph);
   }
 
   @Override
   public void preStart() throws Exception {
     LOG.info("Starting...");
-
-    final Map<AtomicGraph, ActorRef> inMapping = initializeAtomics(graph.subGraphs());
-    registerInnerPorts(flatKey(inMapping), graph.upstreams());
-
-    context().actorOf(TickStatusWatcher.props(context.zookeeper(), context.tick(), self()), "status-watcher");
   }
 
   @Override
@@ -65,11 +70,8 @@ public class TickGraphManager extends UntypedActor {
   }
 
 
-  private void registerInnerPorts(final Map<InPort, ActorRef> portMappings, final Map<InPort, OutPort> upstreams) {
-    portMappings.forEach((inPort, actorRef) -> {
-      final OutPort out = upstreams.get(inPort);
-      context.localLocator().registerPort(out, new AddressingSink(actorRef, inPort));
-    });
+  private ActorRef localRouter(final Map<InPort, ActorRef> portMappings) {
+    return context().actorOf(LocalRouter.props(portMappings), "localRouter");
   }
 
   private Map<InPort, ActorRef> flatKey(final Map<AtomicGraph, ActorRef> map) {
@@ -82,12 +84,13 @@ public class TickGraphManager extends UntypedActor {
     return result;
   }
 
-  private Map<AtomicGraph, ActorRef> initializeAtomics(final Set<? extends AtomicGraph> atomicGraph) {
-    return atomicGraph.stream().collect(Collectors.toMap(Function.identity(), this::actorForAtomic));
+  private Map<AtomicGraph, ActorRef> initializeAtomics(final Set<? extends AtomicGraph> atomicGraphs,
+                                                       final TickContext context) {
+    return atomicGraphs.stream().collect(Collectors.toMap(Function.identity(), a -> actorForAtomic(a, context)));
   }
 
-  private ActorRef actorForAtomic(final AtomicGraph atomic) {
+  private ActorRef actorForAtomic(final AtomicGraph atomic, final TickContext context) {
     LOG.info("Creating actor for atomic {}", atomic);
-    return context().actorOf(AtomicActor.props(atomic, context.handle()), UUID.randomUUID().toString());
+    return context().actorOf(AtomicActor.props(atomic, new AtomicHandleImpl(context)), UUID.randomUUID().toString());
   }
 }

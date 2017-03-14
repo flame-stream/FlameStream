@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.graph.ops;
+package com.spbsu.datastream.core;
 
 import java.util.Objects;
 

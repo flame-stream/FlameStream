@@ -3,12 +3,16 @@ package com.spbsu.datastream.core.graph;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class TheGraph extends AbstractComposedGraph<ShardMappedGraph> {
-  TheGraph(final Set<ShardMappedGraph> graph) {
+public class TheGraph extends AbstractComposedGraph<AtomicGraph> {
+  public TheGraph(final FlatGraph flatGraph) {
+    super(flatGraph);
+  }
+
+  TheGraph(final Set<AtomicGraph> graph) {
     super(graph);
   }
 
-  TheGraph(final Set<ShardMappedGraph> graphs,
+  TheGraph(final Set<AtomicGraph> graphs,
            final Map<OutPort, InPort> wires) {
     super(graphs, wires);
   }
@@ -18,15 +22,15 @@ public class TheGraph extends AbstractComposedGraph<ShardMappedGraph> {
           final Map<InPort, OutPort> upstreams,
           final Map<OutPort, InPort> downstreams, final List<InPort> inPorts,
           final List<OutPort> outPorts,
-          final Set<ShardMappedGraph> subGraphs) {
+          final Set<AtomicGraph> subGraphs) {
     super(upstreams, downstreams, inPorts, outPorts, subGraphs);
   }
 
   @Override
   public Graph deepCopy() {
-    final List<ShardMappedGraph> subGraphs = new ArrayList<>(subGraphs());
-    final List<ShardMappedGraph> subGraphsCopy = subGraphs.stream().map(Graph::deepCopy)
-            .map(ShardMappedGraph.class::cast)
+    final List<AtomicGraph> subGraphs = new ArrayList<>(subGraphs());
+    final List<AtomicGraph> subGraphsCopy = subGraphs.stream().map(Graph::deepCopy)
+            .map(AtomicGraph.class::cast)
             .collect(Collectors.toList());
     final Map<InPort, InPort> inPortsMapping = inPortsMapping(subGraphs, subGraphsCopy);
     final Map<OutPort, OutPort> outPortsMapping = outPortsMapping(subGraphs, subGraphsCopy);

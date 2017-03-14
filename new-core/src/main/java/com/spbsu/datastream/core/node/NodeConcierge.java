@@ -25,18 +25,14 @@ public class NodeConcierge extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
+    amaAlive();
+  }
+
+  private void amaAlive() throws Exception {
     final String path = "/member/" + address.getHostString() + ":" + address.getPort();
     final String data = "worker";
     final List<ACL> acl = ZKUtil.parseACLs("world:anyone:r");
     zooKeeper.create(path, data.getBytes(), acl, CreateMode.EPHEMERAL);
-  }
-
-  public void connecting(final Object message) {
-
-  }
-
-  public void connected(final Object message) {
-
   }
 
   @Override

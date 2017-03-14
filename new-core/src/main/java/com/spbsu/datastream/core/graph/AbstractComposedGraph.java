@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 /**
  * Created by marnikitta on 2/8/17.
  */
-@SuppressWarnings("ALL")
 public abstract class AbstractComposedGraph<T extends Graph> implements ComposedGraph<T> {
   private final Map<InPort, OutPort> upstreams;
   private final Map<OutPort, InPort> downstreams;
@@ -19,22 +18,22 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
 
   private final Set<T> subGraphs;
 
-  protected AbstractComposedGraph(final AbstractComposedGraph<T> that) {
+  AbstractComposedGraph(final AbstractComposedGraph<T> that) {
     this(that.upstreams, that.downstreams, that.inPorts, that.outPorts, that.subGraphs);
   }
 
-  protected AbstractComposedGraph(final Set<T> graph) {
+  AbstractComposedGraph(final Set<T> graph) {
     this(graph, Collections.emptyMap());
   }
 
-  protected AbstractComposedGraph(final T graph,
-                                  final OutPort from,
-                                  final InPort to) {
+  AbstractComposedGraph(final T graph,
+                        final OutPort from,
+                        final InPort to) {
     this(Collections.singleton(graph), Collections.singletonMap(from, to));
   }
 
-  protected AbstractComposedGraph(final Set<T> graphs,
-                                  final Map<OutPort, InPort> wires) {
+  AbstractComposedGraph(final Set<T> graphs,
+                        final Map<OutPort, InPort> wires) {
     assertCorrectWires(graphs, wires);
 
     this.subGraphs = new HashSet<>(graphs);
@@ -55,11 +54,11 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
   /**
    * Only for deep copying
    */
-  protected AbstractComposedGraph(final Map<InPort, OutPort> upstreams,
-                                  final Map<OutPort, InPort> downstreams,
-                                  final List<InPort> inPorts,
-                                  final List<OutPort> outPorts,
-                                  final Set<T> subGraphs) {
+  AbstractComposedGraph(final Map<InPort, OutPort> upstreams,
+                        final Map<OutPort, InPort> downstreams,
+                        final List<InPort> inPorts,
+                        final List<OutPort> outPorts,
+                        final Set<T> subGraphs) {
     this.upstreams = upstreams;
     this.downstreams = downstreams;
     this.inPorts = inPorts;
@@ -67,41 +66,41 @@ public abstract class AbstractComposedGraph<T extends Graph> implements Composed
     this.subGraphs = subGraphs;
   }
 
-  protected static <T extends Graph> Map<InPort, InPort> inPortsMapping(final List<T> graphs,
-                                                                        final List<T> graphsCopy) {
+  static <T extends Graph> Map<InPort, InPort> inPortsMapping(final List<T> graphs,
+                                                              final List<T> graphsCopy) {
     return Seq.zip(graphs.stream().map(Graph::inPorts).flatMap(Collection::stream),
             graphsCopy.stream().map(Graph::inPorts).flatMap(Collection::stream))
             .collect(Collectors.toMap(Tuple2::v1, Tuple2::v2));
   }
 
-  protected static <T extends Graph> Map<OutPort, OutPort> outPortsMapping(final List<T> graphs,
-                                                                           final List<T> graphsCopy) {
+  static <T extends Graph> Map<OutPort, OutPort> outPortsMapping(final List<T> graphs,
+                                                                 final List<T> graphsCopy) {
     return Seq.zip(graphs.stream().map(Graph::outPorts).flatMap(Collection::stream),
             graphsCopy.stream().map(Graph::outPorts).flatMap(Collection::stream))
             .collect(Collectors.toMap(Tuple2::v1, Tuple2::v2));
   }
 
-  protected static Map<InPort, OutPort> mappedUpstreams(final Map<InPort, OutPort> upstreams,
-                                                        final Map<InPort, InPort> inPortsMapping,
-                                                        final Map<OutPort, OutPort> outPortsMapping) {
+  static Map<InPort, OutPort> mappedUpstreams(final Map<InPort, OutPort> upstreams,
+                                              final Map<InPort, InPort> inPortsMapping,
+                                              final Map<OutPort, OutPort> outPortsMapping) {
     return upstreams.entrySet().stream()
             .collect(Collectors.toMap((e) -> inPortsMapping.get(e.getKey()), (e) -> outPortsMapping.get(e.getValue())));
   }
 
-  protected static Map<OutPort, InPort> mappedDownstreams(final Map<OutPort, InPort> downstreams,
-                                                          final Map<InPort, InPort> inPortsMapping,
-                                                          final Map<OutPort, OutPort> outPortsMapping) {
+  static Map<OutPort, InPort> mappedDownstreams(final Map<OutPort, InPort> downstreams,
+                                                final Map<InPort, InPort> inPortsMapping,
+                                                final Map<OutPort, OutPort> outPortsMapping) {
     return downstreams.entrySet().stream()
             .collect(Collectors.toMap((e) -> outPortsMapping.get(e.getKey()), (e) -> inPortsMapping.get(e.getValue())));
   }
 
-  protected static List<InPort> mappedInPorts(final List<InPort> inPorts,
-                                              final Map<InPort, InPort> inPortsMapping) {
+  static List<InPort> mappedInPorts(final List<InPort> inPorts,
+                                    final Map<InPort, InPort> inPortsMapping) {
     return inPorts.stream().map(inPortsMapping::get).collect(Collectors.toList());
   }
 
-  protected static List<OutPort> mappedOutPorts(final List<OutPort> outPorts,
-                                                final Map<OutPort, OutPort> outPortsMapping) {
+  static List<OutPort> mappedOutPorts(final List<OutPort> outPorts,
+                                      final Map<OutPort, OutPort> outPortsMapping) {
     return outPorts.stream().map(outPortsMapping::get).collect(Collectors.toList());
   }
 

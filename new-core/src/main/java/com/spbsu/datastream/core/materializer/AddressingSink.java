@@ -1,10 +1,8 @@
 package com.spbsu.datastream.core.materializer;
 
 import akka.actor.ActorRef;
-import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.PayloadHashDataItem;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.materializer.atomic.Control;
-import com.spbsu.datastream.core.materializer.atomic.DataSink;
 
 public class AddressingSink implements DataSink {
   private final ActorRef actorRef;
@@ -16,7 +14,7 @@ public class AddressingSink implements DataSink {
   }
 
   @Override
-  public void accept(final DataItem dataItem) {
+  public void accept(final PayloadHashDataItem dataItem) {
     actorRef.tell(new AddressedMessage<>(dataItem, address), null);
   }
 

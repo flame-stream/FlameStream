@@ -1,15 +1,13 @@
 package com.spbsu.datastream.core.materializer;
 
-import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
-import com.spbsu.datastream.core.materializer.locator.LocalPortLocator;
-import org.apache.zookeeper.ZooKeeper;
+import akka.actor.ActorRef;
+import com.spbsu.datastream.core.graph.InPort;
+import com.spbsu.datastream.core.graph.OutPort;
+
+import java.util.Map;
 
 public interface TickContext {
-  long tick();
+  Map<OutPort, InPort> downstreams();
 
-  ZooKeeper zookeeper();
-
-  LocalPortLocator localLocator();
-
-  AtomicHandle handle();
+  ActorRef forkRouter();
 }

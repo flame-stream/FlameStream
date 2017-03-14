@@ -61,7 +61,7 @@ public class AtomicActor extends UntypedActor {
   private void handleAddressedMessage(final AddressedMessage message) {
     Object payload = message.payload();
     if (payload instanceof DataItem) {
-      atomic.onPush(message.port(), (DataItem) payload, handle);
+      atomic.onPush(message.port(), (DataItem<?>) payload, handle);
     }
   }
 }

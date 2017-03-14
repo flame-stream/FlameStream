@@ -1,7 +1,8 @@
 package com.spbsu.datastream.core.graph.ops;
 
-import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.Hashable;
 import com.spbsu.datastream.core.Meta;
+import com.spbsu.datastream.core.PayloadHashDataItem;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Source;
 import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
@@ -12,7 +13,7 @@ import java.util.Spliterator;
 /**
  * Created by marnikitta on 2/7/17.
  */
-public final class SpliteratorSource<T> extends Source<T> {
+public final class SpliteratorSource<T extends Hashable> extends Source<T> {
   private final Spliterator<T> spliterator;
 
   public SpliteratorSource(final Spliterator<T> spliterator) {
@@ -21,7 +22,7 @@ public final class SpliteratorSource<T> extends Source<T> {
 
   @Override
   public void onStart(final AtomicHandle handler) {
-    spliterator.forEachRemaining(item -> handler.push(outPort(), new DataItem<>(Meta.now(), item)));
+    spliterator.forEachRemaining(item -> handler.push(outPort(), new PayloadHashDataItem<>(Meta.now(), item)));
   }
 
   @Override

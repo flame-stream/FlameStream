@@ -1,28 +1,29 @@
 package com.spbsu.datastream.core.materializer.atomic;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.materializer.locator.PortLocator;
+import com.spbsu.datastream.core.materializer.AddressedMessage;
+import com.spbsu.datastream.core.materializer.RoutingException;
+import com.spbsu.datastream.core.materializer.TickContext;
 
-import java.net.InetSocketAddress;
-import java.util.List;
+import java.util.Optional;
 
 public class AtomicHandleImpl implements AtomicHandle {
-  private final PortLocator portLocator;
+  private final TickContext tickContext;
 
-  public AtomicHandleImpl(final PortLocator portLocator) {
-    this.portLocator = portLocator;
+  public AtomicHandleImpl(final TickContext tickContext) {
+    this.tickContext = tickContext;
   }
 
   @Override
-  public void push(final OutPort out, final DataItem result) {
-    portLocator.sinkForPort(out).orElseThrow(RuntimeException::new).accept(result);
-  }
+  public void push(final OutPort out, final DataItem<?> result) {
+    final Optional<InPort> destination = Optional.ofNullable(tickContext.downstreams().get(out));
+    final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
-  @Override
-  public List<InetSocketAddress> workers() {
-    return null;
+    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(result, address);
+    tickContext.forkRouter().tell(addressedMessage, null);
   }
 
   @Override

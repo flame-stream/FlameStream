@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.PayloadHashDataItem;
 import com.spbsu.datastream.core.graph.FanIn;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;

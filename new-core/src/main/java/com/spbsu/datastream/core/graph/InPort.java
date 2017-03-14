@@ -7,6 +7,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * Created by marnikitta on 2/6/17.
  */
 public final class InPort {
+  private final static long OFFSET = 20;
+  private final static long RAND_MASK = (1 << OFFSET) - 1;
   private final static ThreadLocalRandom rd = ThreadLocalRandom.current();
 
   private final long id;
@@ -18,7 +20,7 @@ public final class InPort {
 
   public InPort(final String name) {
     this.name = name;
-    this.id = rd.nextLong();
+    this.id = (System.currentTimeMillis() << OFFSET) + (rd.nextInt() & RAND_MASK);
   }
 
   public long id() {
