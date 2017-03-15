@@ -38,9 +38,6 @@ public class HashableString implements Hashable<HashableString> {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("HashableString{");
-    sb.append("value='").append(value).append('\'');
-    sb.append('}');
-    return sb.toString();
+    return value();
   }
 }

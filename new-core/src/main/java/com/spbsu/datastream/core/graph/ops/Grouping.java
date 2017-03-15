@@ -8,6 +8,7 @@ import com.spbsu.datastream.core.graph.Processor;
 import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
 
 public class Grouping<T extends Hashable<? super T>> extends Processor<T, GroupingResult<? super T>> {
+  // TODO: 3/14/17 HASHABLE INTERFACE FIX TO MAKE GROUPING EASY
   private final int window;
 
   public Grouping(final int window) {

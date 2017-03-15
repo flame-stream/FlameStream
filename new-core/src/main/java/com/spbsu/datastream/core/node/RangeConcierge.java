@@ -5,7 +5,6 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.materializer.TickContext;
-import com.spbsu.datastream.core.materializer.manager.TickGraphManager;
 
 import static com.spbsu.datastream.core.deploy.DeployApi.DeployForTick;
 
@@ -27,7 +26,7 @@ public class RangeConcierge extends UntypedActor {
   public void onReceive(final Object message) throws Throwable {
     if (message instanceof DeployForTick) {
       final DeployForTick deploy = (DeployForTick) message;
-      final ActorRef tickManager = getContext().actorOf(TickGraphManager.props(remoteRouter, deploy.graph()));
+      //final ActorRef tickManager = getContext().actorOf(TickGraphManager.props(remoteRouter, new deploy.graph()));
     }
   }
 

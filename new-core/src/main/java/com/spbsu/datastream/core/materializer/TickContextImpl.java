@@ -19,11 +19,11 @@ public class TickContextImpl implements TickContext {
 
   @Override
   public Map<OutPort, InPort> downstreams() {
-    return null;
+    return downstreams;
   }
 
   @Override
   public ActorRef forkRouter() {
-    return null;
+    return forkRouter;
   }
 }

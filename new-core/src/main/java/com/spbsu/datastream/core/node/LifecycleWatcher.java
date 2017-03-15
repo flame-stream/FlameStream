@@ -18,7 +18,6 @@ public class LifecycleWatcher extends UntypedActor {
   @Override
   public void onReceive(final Object message) throws Throwable {
     LOG.debug("Got message: {}", message);
-    // TODO: 3/10/17 resubscribe?
 
     if (message instanceof WatchedEvent) {
       final WatchedEvent event = (WatchedEvent) message;

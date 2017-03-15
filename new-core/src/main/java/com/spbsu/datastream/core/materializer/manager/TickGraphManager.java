@@ -29,23 +29,19 @@ import static com.spbsu.datastream.core.materializer.manager.TickGraphManagerApi
 public class TickGraphManager extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
 
-  private final TheGraph graph;
-
-  private TickContext tickContext;
-
   private TickGraphManager(final ActorRef remoteRouter, final HashRange range, final TheGraph graph) {
-    this.graph = graph;
+    final ActorRef router = context().actorOf(ForkRouter.props(range, remoteRouter), "forkRouter");
 
-    final ActorRef router = context().actorOf(ForkRouter.props(range, remoteRouter));
-    this.tickContext = new TickContextImpl(graph.downstreams(), router);
+    final TickContext tickContext = new TickContextImpl(graph.downstreams(), router);
 
     final Map<AtomicGraph, ActorRef> inMapping = initializeAtomics(graph.subGraphs(), tickContext);
     final ActorRef localRouter = localRouter(flatKey(inMapping));
+
     tickContext.forkRouter().tell(localRouter, self());
   }
 
-  public static Props props(final ActorRef remoteRouter, final TheGraph graph) {
-    return Props.create(TickGraphManager.class, graph);
+  public static Props props(final ActorRef remoteRouter, final HashRange range, final TheGraph graph) {
+    return Props.create(TickGraphManager.class, remoteRouter, range, graph);
   }
 
   @Override
