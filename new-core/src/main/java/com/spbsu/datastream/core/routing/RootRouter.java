@@ -20,8 +20,8 @@ public class RootRouter extends UntypedActor {
 
   private final HashRange range;
   private final ActorRef remoteRouter;
-  private final Map<Integer, ActorRef> tickLocalRouters = new HashMap<>();
-  private final Map<ActorRef, Integer> reverseTickLocalRouters = new HashMap<>();
+  private final Map<Long, ActorRef> tickLocalRouters = new HashMap<>();
+  private final Map<ActorRef, Long> reverseTickLocalRouters = new HashMap<>();
 
   private RootRouter(final HashRange range, final ActorRef remoteRouter) {
     this.range = range;
@@ -46,17 +46,21 @@ public class RootRouter extends UntypedActor {
   }
 
   private void route(final AddressedMessage<?> addressedMessage) {
+    LOG.debug("Routing of {}", addressedMessage);
     if (addressedMessage.payload().isBroadcast()) {
+      LOG.debug("Broadcast routing of {}", addressedMessage);
       remoteRouter.tell(addressedMessage, self());
     } else if (range.isIn(addressedMessage.payload().hash())) {
+      LOG.debug("Local routing of {}", addressedMessage);
       routeLocal(addressedMessage);
     } else {
+      LOG.debug("Remote routing of {}", addressedMessage);
       remoteRouter.tell(addressedMessage, self());
     }
   }
 
   private void routeLocal(final AddressedMessage<?> message) {
-    final int tick = message.payload().meta().tick();
+    final long tick = message.payload().meta().tick();
     final ActorRef dest = tickLocalRouters.getOrDefault(tick, context().system().deadLetters());
     dest.tell(message, self());
   }
@@ -69,7 +73,7 @@ public class RootRouter extends UntypedActor {
   }
 
   private void unregister(final Terminated terminated) {
-    final int tick = reverseTickLocalRouters.get(terminated.actor());
+    final long tick = reverseTickLocalRouters.get(terminated.actor());
     reverseTickLocalRouters.remove(terminated.actor());
     tickLocalRouters.remove(tick);
     LOG.info("Unregistered. Tick: {}, actor: {}", tick, terminated.actor());

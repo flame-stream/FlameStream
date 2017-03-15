@@ -1,29 +1,45 @@
 package com.spbsu.datastream.core.materializer;
 
 import akka.actor.ActorRef;
-import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.graph.OutPort;
-
-import java.util.Map;
+import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.graph.TheGraph;
 
 public class TickContextImpl implements TickContext {
-  private final Map<OutPort, InPort> downstreams;
+  private final ActorRef rootRouter;
 
-  private final ActorRef forkRouter;
+  private final long tick;
 
-  public TickContextImpl(final Map<OutPort, InPort> downstreams,
-                         final ActorRef forkRouter) {
-    this.downstreams = downstreams;
-    this.forkRouter = forkRouter;
+  private final HashRange localRange;
+
+  private final TheGraph graph;
+
+  public TickContextImpl(final ActorRef rootRouter,
+                         final long tick,
+                         final HashRange localRange,
+                         final TheGraph graph) {
+    this.rootRouter = rootRouter;
+    this.tick = tick;
+    this.localRange = localRange;
+    this.graph = graph;
   }
 
   @Override
-  public Map<OutPort, InPort> downstreams() {
-    return downstreams;
+  public TheGraph graph() {
+    return graph;
   }
 
   @Override
-  public ActorRef forkRouter() {
-    return forkRouter;
+  public long tick() {
+    return tick;
+  }
+
+  @Override
+  public HashRange localRange() {
+    return localRange;
+  }
+
+  @Override
+  public ActorRef rootRouter() {
+    return rootRouter;
   }
 }

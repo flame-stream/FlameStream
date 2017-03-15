@@ -19,11 +19,11 @@ public class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void push(final OutPort out, final DataItem<?> result) {
-    final Optional<InPort> destination = Optional.ofNullable(tickContext.downstreams().get(out));
+    final Optional<InPort> destination = Optional.ofNullable(tickContext.graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
     final AddressedMessage<?> addressedMessage = new AddressedMessage<>(result, address);
-    tickContext.forkRouter().tell(addressedMessage, null);
+    tickContext.rootRouter().tell(addressedMessage, null);
   }
 
   @Override

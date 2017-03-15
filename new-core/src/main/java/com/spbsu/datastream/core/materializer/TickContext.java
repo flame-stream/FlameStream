@@ -1,13 +1,15 @@
 package com.spbsu.datastream.core.materializer;
 
 import akka.actor.ActorRef;
-import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.graph.OutPort;
-
-import java.util.Map;
+import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.graph.TheGraph;
 
 public interface TickContext {
-  Map<OutPort, InPort> downstreams();
+  TheGraph graph();
 
-  ActorRef forkRouter();
+  long tick();
+
+  HashRange localRange();
+
+  ActorRef rootRouter();
 }

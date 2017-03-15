@@ -4,15 +4,16 @@ import akka.actor.ActorRef;
 
 public interface RootRouterApi {
   class RegisterMe {
-    private final int tick;
+    private final long tick;
+
     private final ActorRef actorRef;
 
-    public RegisterMe(final int tick, final ActorRef actorRef) {
+    public RegisterMe(final long tick, final ActorRef actorRef) {
       this.tick = tick;
       this.actorRef = actorRef;
     }
 
-    public int tick() {
+    public long tick() {
       return tick;
     }
 

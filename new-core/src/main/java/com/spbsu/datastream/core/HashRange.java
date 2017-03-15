@@ -12,8 +12,21 @@ public class HashRange {
     this.to = to;
   }
 
+  public static HashRange fromString(final String string) {
+    final String[] arr = string.split("_");
+    return new HashRange(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]));
+  }
+
   public boolean isIn(int hash) {
     return from <= hash && hash < to;
+  }
+
+  public int from() {
+    return from;
+  }
+
+  public int to() {
+    return to;
   }
 
   @Override
@@ -32,6 +45,6 @@ public class HashRange {
 
   @Override
   public String toString() {
-    return "[" + from + ", " + to + ")";
+    return from + "_" + to;
   }
 }

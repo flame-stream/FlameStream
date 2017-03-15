@@ -44,7 +44,7 @@ public class NodeConcierge extends UntypedActor {
     final ActorRef remoteRouter = remoteRouter(mappings);
     final Set<HashRange> myRanges = myRanges(mappings);
 
-    myRanges.forEach(r -> forRange(r, remoteRouter));
+    myRanges.forEach(r -> conciergeForRange(r, remoteRouter));
   }
 
   @Override
@@ -59,7 +59,7 @@ public class NodeConcierge extends UntypedActor {
     super.preRestart(reason, message);
   }
 
-  private ActorRef forRange(final HashRange range, final ActorRef remoteRouter) {
+  private ActorRef conciergeForRange(final HashRange range, final ActorRef remoteRouter) {
     return context().actorOf(RangeConcierge.props(range, remoteRouter), range.toString());
   }
 
@@ -69,21 +69,24 @@ public class NodeConcierge extends UntypedActor {
   }
 
   private ActorRef remoteRouter(final RangeMappingsDto mappings) {
-    final Map<HashRange, ActorSelection> remotes = mappings.rangeMappings().entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, e -> remoteDispatcher(e.getValue())));
-    return context().actorOf(RemoteRouter.props(remotes));
+    return context().actorOf(RemoteRouter.props(remotes(mappings)), "remoteRouter");
   }
 
-  private ActorSelection remoteDispatcher(final InetSocketAddress socketAddress) {
+  private Map<HashRange, ActorSelection> remotes(final RangeMappingsDto mappings) {
+    return mappings.rangeMappings().entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> remoteDispatcher(e.getValue(), e.getKey())));
+  }
+
+  private ActorSelection remoteDispatcher(final InetSocketAddress socketAddress, final HashRange range) {
     final Address address = Address.apply("akka.tcp", "system",
             socketAddress.getAddress().getCanonicalHostName(),
             socketAddress.getPort());
-    final ActorPath dispatcher = RootActorPath.apply(address, "/").$div("dispatcher");
+    final ActorPath dispatcher = RootActorPath.apply(address, "/concierge").$div(range.toString()).$div("rootRouter");
     return context().system().actorSelection(dispatcher);
   }
 
   private RangeMappingsDto fetchMappings() throws KeeperException, InterruptedException, IOException {
-    final String path = "/member/" + address.getHostString() + ":" + address.getPort();
+    final String path = "/mappings";
     final byte[] data = zooKeeper.getData(path, selfWatcher(), new Stat());
     return mapper.readValue(data, RangeMappingsDto.class);
   }

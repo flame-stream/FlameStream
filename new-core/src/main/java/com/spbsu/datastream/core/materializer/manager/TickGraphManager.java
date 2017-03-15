@@ -5,15 +5,12 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.materializer.TickContext;
-import com.spbsu.datastream.core.materializer.TickContextImpl;
 import com.spbsu.datastream.core.materializer.atomic.AtomicActor;
 import com.spbsu.datastream.core.materializer.atomic.AtomicHandleImpl;
-import com.spbsu.datastream.core.routing.ForkRouter;
+import com.spbsu.datastream.core.routing.RootRouterApi;
 import com.spbsu.datastream.core.routing.TickLocalRouter;
 import scala.Option;
 
@@ -29,19 +26,16 @@ import static com.spbsu.datastream.core.materializer.manager.TickGraphManagerApi
 public class TickGraphManager extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
 
-  private TickGraphManager(final ActorRef remoteRouter, final HashRange range, final TheGraph graph) {
-    final ActorRef router = context().actorOf(ForkRouter.props(range, remoteRouter), "forkRouter");
+  private TickGraphManager(final TickContext context) {
 
-    final TickContext tickContext = new TickContextImpl(graph.downstreams(), router);
-
-    final Map<AtomicGraph, ActorRef> inMapping = initializeAtomics(graph.subGraphs(), tickContext);
+    final Map<AtomicGraph, ActorRef> inMapping = initializeAtomics(context.graph().subGraphs(), context);
     final ActorRef localRouter = localRouter(flatKey(inMapping));
 
-    tickContext.forkRouter().tell(localRouter, self());
+    context.rootRouter().tell(new RootRouterApi.RegisterMe(context.tick(), localRouter), self());
   }
 
-  public static Props props(final ActorRef remoteRouter, final HashRange range, final TheGraph graph) {
-    return Props.create(TickGraphManager.class, remoteRouter, range, graph);
+  public static Props props(final TickContext context) {
+    return Props.create(TickGraphManager.class, context);
   }
 
   @Override

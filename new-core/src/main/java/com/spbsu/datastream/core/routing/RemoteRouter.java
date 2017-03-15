@@ -5,7 +5,6 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.materializer.AddressedMessage;
 import scala.Option;
@@ -49,11 +48,11 @@ public class RemoteRouter extends UntypedActor {
   public void onReceive(final Object message) throws Throwable {
     if (message instanceof AddressedMessage) {
       final AddressedMessage<?> addressedMessage = (AddressedMessage<?>) message;
-      if (addressedMessage.payload() instanceof DataItem) {
-        int hash = ((DataItem) addressedMessage.payload()).hash();
-        actorForHash(hash).tell(message, self());
-      } else {
+      if (addressedMessage.payload().isBroadcast()) {
         routingTable.values().forEach(a -> a.tell(message, self()));
+      } else {
+        int hash = addressedMessage.payload().hash();
+        actorForHash(hash).tell(message, self());
       }
     } else {
       unhandled(message);

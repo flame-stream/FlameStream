@@ -6,7 +6,11 @@ import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.graph.TheGraph;
+import com.spbsu.datastream.core.materializer.TickContext;
+import com.spbsu.datastream.core.materializer.TickContextImpl;
 import com.spbsu.datastream.core.materializer.manager.TickGraphManager;
+import com.spbsu.datastream.core.routing.RootRouter;
 import scala.Option;
 
 import static com.spbsu.datastream.core.deploy.DeployApi.DeployForTick;
@@ -15,11 +19,11 @@ public class RangeConcierge extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
   private final HashRange range;
 
-  private final ActorRef remoteRouter;
+  private final ActorRef rootRouter;
 
   private RangeConcierge(final HashRange range, final ActorRef remoteRouter) {
     this.range = range;
-    this.remoteRouter = remoteRouter;
+    this.rootRouter = context().actorOf(RootRouter.props(range, remoteRouter), "rootRouter");
   }
 
   public static Props props(final HashRange range, final ActorRef remoteRouter) {
@@ -28,7 +32,7 @@ public class RangeConcierge extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
-    LOG.info("Starting... Range: {}", range);
+    LOG.info("Starting...");
     super.preStart();
   }
 
@@ -51,10 +55,14 @@ public class RangeConcierge extends UntypedActor {
     if (message instanceof DeployForTick) {
       final DeployForTick deploy = (DeployForTick) message;
       context().actorOf(
-              TickGraphManager.props(remoteRouter, range, deploy.graph()),
+              TickGraphManager.props(tickContext(deploy.tick(), deploy.graph())),
               Long.toString(deploy.tick()));
     } else {
       unhandled(message);
     }
+  }
+
+  private TickContext tickContext(final long tick, final TheGraph graph) {
+    return new TickContextImpl(this.rootRouter, tick, this.range, graph);
   }
 }

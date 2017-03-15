@@ -35,8 +35,8 @@ public final class Meta implements Comparable<Meta> {
     return new Meta(System.currentTimeMillis());
   }
 
-  public int tick() {
-    return (int) (time / TimeUnit.SECONDS.toMillis(13));
+  public long tick() {
+    return (time / TimeUnit.MINUTES.toMillis(13));
   }
 
   @Override
