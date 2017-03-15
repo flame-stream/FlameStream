@@ -1,6 +1,8 @@
 package com.spbsu.datastream.example.invertedindex.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.spbsu.datastream.example.invertedindex.models.long_containers.IndexLongContainer;
+import com.spbsu.datastream.example.invertedindex.models.long_containers.LongContainer;
 
 /**
  * Author: Artem
@@ -9,19 +11,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class WordIndex implements WordContainer {
   @JsonProperty
   private final String word;
-  @JsonProperty
-  private final long[] positions;
+  private final IndexLongContainer[] positions;
 
-  public WordIndex(String word, long[] positions) {
+  public WordIndex(String word, IndexLongContainer[] positions) {
     this.word = word;
     this.positions = positions;
   }
+
   @Override
   public String word() {
     return word;
   }
 
-  public long[] positions() {
+  @JsonProperty
+  public long[] longPositions() {
+    return LongContainer.toLongArray(positions);
+  }
+
+  public IndexLongContainer[] positions() {
     return positions;
   }
 }

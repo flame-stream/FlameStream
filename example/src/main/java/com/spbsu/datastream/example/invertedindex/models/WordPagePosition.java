@@ -1,14 +1,16 @@
 package com.spbsu.datastream.example.invertedindex.models;
 
+import com.spbsu.datastream.example.invertedindex.models.long_containers.PageLongContainer;
+
 /**
  * Author: Artem
  * Date: 22.01.2017
  */
 public class WordPagePosition implements WordContainer {
   private final String word;
-  private final long[] positions;
+  private final PageLongContainer[] positions;
 
-  public WordPagePosition(String word, long[] positions) {
+  public WordPagePosition(String word, PageLongContainer[] positions) {
     this.word = word;
     this.positions = positions;
   }
@@ -17,7 +19,7 @@ public class WordPagePosition implements WordContainer {
     return word;
   }
 
-  public long[] positions() {
+  public PageLongContainer[] positions() {
     return positions;
   }
 }
