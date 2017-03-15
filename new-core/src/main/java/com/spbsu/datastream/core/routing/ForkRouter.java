@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.materializer.routing;
+package com.spbsu.datastream.core.routing;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;

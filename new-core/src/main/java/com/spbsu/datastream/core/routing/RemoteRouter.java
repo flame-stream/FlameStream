@@ -1,6 +1,6 @@
-package com.spbsu.datastream.core.materializer.routing;
+package com.spbsu.datastream.core.routing;
 
-import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
@@ -12,17 +12,18 @@ import scala.Option;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 public class RemoteRouter extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
 
-  private final Map<HashRange, ActorRef> routingTable;
+  private final Map<HashRange, ActorSelection> routingTable;
 
-  private RemoteRouter(final Map<HashRange, ActorRef> routingTable) {
+  private RemoteRouter(final Map<HashRange, ActorSelection> routingTable) {
     this.routingTable = routingTable;
   }
 
-  public static Props props(final Map<HashRange, ActorRef> hashMapping) {
+  public static Props props(final Map<HashRange, ActorSelection> hashMapping) {
     return Props.create(RemoteRouter.class, new HashMap<>(hashMapping));
   }
 
@@ -59,9 +60,8 @@ public class RemoteRouter extends UntypedActor {
     }
   }
 
-  private ActorRef actorForHash(final int hash) {
+  private ActorSelection actorForHash(final int hash) {
     return routingTable.entrySet().stream().filter((e) -> e.getKey().isIn(hash))
-            .map(Map.Entry::getValue).findAny()
-            .orElse(context().system().deadLetters());
+            .map(Map.Entry::getValue).findAny().orElseThrow(NoSuchElementException::new);
   }
 }

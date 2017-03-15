@@ -1,14 +1,16 @@
 package com.spbsu.datastream.core;
 
-public interface DataItem<T> {
+public interface DataItem<T> extends Traveler {
+  @Override
   Meta meta();
 
   T payload();
 
-  /**
-   * HashFunction is a property of dataItem
-   *
-   * @return hashFunction of the item.
-   */
+  @Override
   int hash();
+
+  @Override
+  default boolean isBroadcast() {
+    return false;
+  }
 }

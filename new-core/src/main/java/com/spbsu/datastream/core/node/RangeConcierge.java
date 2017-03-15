@@ -3,12 +3,16 @@ package com.spbsu.datastream.core.node;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.HashRange;
-import com.spbsu.datastream.core.materializer.TickContext;
+import com.spbsu.datastream.core.materializer.manager.TickGraphManager;
+import scala.Option;
 
 import static com.spbsu.datastream.core.deploy.DeployApi.DeployForTick;
 
 public class RangeConcierge extends UntypedActor {
+  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
   private final HashRange range;
 
   private final ActorRef remoteRouter;
@@ -23,14 +27,34 @@ public class RangeConcierge extends UntypedActor {
   }
 
   @Override
-  public void onReceive(final Object message) throws Throwable {
-    if (message instanceof DeployForTick) {
-      final DeployForTick deploy = (DeployForTick) message;
-      //final ActorRef tickManager = getContext().actorOf(TickGraphManager.props(remoteRouter, new deploy.graph()));
-    }
+  public void preStart() throws Exception {
+    LOG.info("Starting... Range: {}", range);
+    super.preStart();
   }
 
-  public TickContext contextForTick() {
-    throw new UnsupportedOperationException();
+  @Override
+  public void postStop() throws Exception {
+    LOG.info("Stopped");
+    super.postStop();
+  }
+
+  @Override
+  public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
+    LOG.error("Restarting, reason: {}, message: {}", reason, message);
+    super.preRestart(reason, message);
+  }
+
+  @Override
+  public void onReceive(final Object message) throws Throwable {
+    LOG.debug("Received: {}", message);
+
+    if (message instanceof DeployForTick) {
+      final DeployForTick deploy = (DeployForTick) message;
+      context().actorOf(
+              TickGraphManager.props(remoteRouter, range, deploy.graph()),
+              Long.toString(deploy.tick()));
+    } else {
+      unhandled(message);
+    }
   }
 }

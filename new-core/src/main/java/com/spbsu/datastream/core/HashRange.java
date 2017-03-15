@@ -32,8 +32,6 @@ public class HashRange {
 
   @Override
   public String toString() {
-    return "HashRange{" + "from=" + from +
-            ", to=" + to +
-            '}';
+    return "[" + from + ", " + to + ")";
   }
 }

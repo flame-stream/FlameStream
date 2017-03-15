@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.materializer.routing;
+package com.spbsu.datastream.core.routing;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -11,16 +11,16 @@ import scala.Option;
 
 import java.util.Map;
 
-public class LocalRouter extends UntypedActor {
+public class TickLocalRouter extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
   private final Map<InPort, ActorRef> routingTable;
 
-  private LocalRouter(final Map<InPort, ActorRef> routingTable) {
+  private TickLocalRouter(final Map<InPort, ActorRef> routingTable) {
     this.routingTable = routingTable;
   }
 
   public static Props props(final Map<InPort, ActorRef> routingTable) {
-    return Props.create(LocalRouter.class, routingTable);
+    return Props.create(TickLocalRouter.class, routingTable);
   }
 
   @Override

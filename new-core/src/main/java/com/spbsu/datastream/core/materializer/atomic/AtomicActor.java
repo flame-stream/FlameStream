@@ -30,11 +30,13 @@ public class AtomicActor extends UntypedActor {
   @Override
   public void preStart() throws Exception {
     LOG.info("Starting...");
+    super.preStart();
   }
 
   @Override
   public void postStop() throws Exception {
     LOG.info("Stopped");
+    super.postStop();
   }
 
   @Override

@@ -1,11 +1,12 @@
 package com.spbsu.datastream.core.materializer;
 
+import com.spbsu.datastream.core.Traveler;
 import com.spbsu.datastream.core.graph.InPort;
 
 /**
  * Created by marnikitta on 2/8/17.
  */
-public class AddressedMessage<T> {
+public class AddressedMessage<T extends Traveler> {
   private final InPort port;
 
   private final T payload;

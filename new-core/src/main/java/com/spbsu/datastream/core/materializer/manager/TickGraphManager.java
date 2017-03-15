@@ -13,8 +13,8 @@ import com.spbsu.datastream.core.materializer.TickContext;
 import com.spbsu.datastream.core.materializer.TickContextImpl;
 import com.spbsu.datastream.core.materializer.atomic.AtomicActor;
 import com.spbsu.datastream.core.materializer.atomic.AtomicHandleImpl;
-import com.spbsu.datastream.core.materializer.routing.ForkRouter;
-import com.spbsu.datastream.core.materializer.routing.LocalRouter;
+import com.spbsu.datastream.core.routing.ForkRouter;
+import com.spbsu.datastream.core.routing.TickLocalRouter;
 import scala.Option;
 
 import java.util.HashMap;
@@ -47,12 +47,12 @@ public class TickGraphManager extends UntypedActor {
   @Override
   public void preStart() throws Exception {
     LOG.info("Starting...");
+    super.preStart();
   }
 
   @Override
   public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
     LOG.error("Restarting, reason: {}, message: {}", reason, message);
-
     super.preRestart(reason, message);
   }
 
@@ -65,9 +65,8 @@ public class TickGraphManager extends UntypedActor {
     }
   }
 
-
   private ActorRef localRouter(final Map<InPort, ActorRef> portMappings) {
-    return context().actorOf(LocalRouter.props(portMappings), "localRouter");
+    return context().actorOf(TickLocalRouter.props(portMappings), "localRouter");
   }
 
   private Map<InPort, ActorRef> flatKey(final Map<AtomicGraph, ActorRef> map) {
