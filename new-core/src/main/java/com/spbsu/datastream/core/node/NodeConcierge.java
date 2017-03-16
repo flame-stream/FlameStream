@@ -78,10 +78,7 @@ public class NodeConcierge extends UntypedActor {
   }
 
   private ActorSelection remoteDispatcher(final InetSocketAddress socketAddress, final HashRange range) {
-    final Address address = Address.apply("akka.tcp", "system",
-            socketAddress.getAddress().getCanonicalHostName(),
-            socketAddress.getPort());
-    final ActorPath dispatcher = RootActorPath.apply(address, "/concierge").$div(range.toString()).$div("rootRouter");
+    final ActorPath dispatcher = ZKPaths.rootRouter(socketAddress, range);
     return context().system().actorSelection(dispatcher);
   }
 

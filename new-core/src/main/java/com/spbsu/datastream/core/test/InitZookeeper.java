@@ -3,7 +3,6 @@ package com.spbsu.datastream.core.test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.datastream.core.HashRange;
-import com.spbsu.datastream.core.application.ZooKeeperApplication;
 import com.spbsu.datastream.core.node.RangeMappingsDto;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
@@ -16,7 +15,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class InitZookeeper {
   public static void main(final String... args) throws Exception {
@@ -42,9 +40,8 @@ public class InitZookeeper {
     final Map<HashRange, InetSocketAddress> mappings = new HashMap<>();
 
     final InetSocketAddress myAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7001);
-    mappings.putIfAbsent(new HashRange(Integer.MIN_VALUE, Integer.MAX_VALUE), myAddress);
-    //mappings.putIfAbsent(new HashRange(Integer.MIN_VALUE, 1000), myAddress);
-    //mappings.putIfAbsent(new HashRange(1000, Integer.MAX_VALUE), myAddress);
+    mappings.putIfAbsent(new HashRange(Integer.MIN_VALUE, 100000), myAddress);
+    mappings.putIfAbsent(new HashRange(100000, Integer.MAX_VALUE), myAddress);
     ObjectMapper mapper = new ObjectMapper();
 
     System.err.println(mapper.writeValueAsString(RangeMappingsDto.normalConstruct(mappings)));
