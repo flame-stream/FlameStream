@@ -1,7 +1,8 @@
 package com.spbsu.datastream.example.invertedindex.actions;
 
 import com.spbsu.datastream.example.invertedindex.models.*;
-import com.spbsu.datastream.example.invertedindex.utils.PagePositionLong;
+import com.spbsu.datastream.example.invertedindex.models.long_containers.IndexLongContainer;
+import com.spbsu.datastream.example.invertedindex.models.long_containers.PageLongContainer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,37 +32,34 @@ public class UpdateWordIndexFilter implements Function<WordContainer[], Stream<W
   }
 
   private Stream<WordContainer> createOutputStream(WordPagePosition wordPagePosition) {
-    final long first = wordPagePosition.positions()[0];
-    final long[] compressedPositions = new long[1];
-    compressedPositions[0] = PagePositionLong.setRange(first, wordPagePosition.positions().length);
+    final IndexLongContainer[] indexPositions = new IndexLongContainer[1];
+    indexPositions[0] = new IndexLongContainer(wordPagePosition.positions());
 
     final List<WordContainer> output = new ArrayList<>();
-    output.add(new WordIndex(wordPagePosition.word(), compressedPositions));
+    output.add(new WordIndex(wordPagePosition.word(), indexPositions));
     output.add(new WordAddOutput(wordPagePosition.word(), wordPagePosition.positions()));
     return output.stream();
   }
 
   private Stream<WordContainer> createOutputStream(WordIndex wordIndex, WordPagePosition wordPagePosition) {
-    final long first = wordPagePosition.positions()[0];
-    final int pageId = PagePositionLong.pageId(first);
-    final long newValue = PagePositionLong.setRange(first, wordPagePosition.positions().length);
-    final long[] indexPositions = wordIndex.positions();
-    final long positionForSearch = PagePositionLong.createPagePosition(pageId, 0, 0);
+    final IndexLongContainer newValue = new IndexLongContainer(wordPagePosition.positions());
+    final IndexLongContainer[] indexPositions = wordIndex.positions();
+    final IndexLongContainer positionForSearch = new IndexLongContainer(newValue.pageId(), 0, 0);
     final int nearestPositionIndex = -Arrays.binarySearch(indexPositions, positionForSearch) - 1;
-    final boolean updateNotInsert = nearestPositionIndex < indexPositions.length && PagePositionLong.pageId(indexPositions[nearestPositionIndex]) == pageId;
+    final boolean updateNotInsert = nearestPositionIndex < indexPositions.length && indexPositions[nearestPositionIndex].pageId() == newValue.pageId();
     final List<WordContainer> output = new ArrayList<>();
     if (updateNotInsert) {
-      final long[] updatedPositions = new long[indexPositions.length];
+      final IndexLongContainer[] updatedPositions = new IndexLongContainer[indexPositions.length];
       System.arraycopy(indexPositions, 0, updatedPositions, 0, indexPositions.length);
       updatedPositions[nearestPositionIndex] = newValue;
       output.add(new WordIndex(wordIndex.word(), updatedPositions));
 
-      final long nearestPosition = indexPositions[nearestPositionIndex];
-      final int range = PagePositionLong.range(nearestPosition);
-      final long positionWithoutRange = PagePositionLong.setRange(nearestPosition, 0);
-      output.add(new WordRemoveOutput(wordIndex.word(), positionWithoutRange, range));
+      final IndexLongContainer nearestPosition = indexPositions[nearestPositionIndex];
+      final int range = nearestPosition.range();
+      final PageLongContainer start = new PageLongContainer(nearestPosition.pageId(), nearestPosition.version(), nearestPosition.position());
+      output.add(new WordRemoveOutput(wordIndex.word(), start, range));
     } else {
-      final long[] updatedPositions = new long[indexPositions.length + 1];
+      final IndexLongContainer[] updatedPositions = new IndexLongContainer[indexPositions.length + 1];
       System.arraycopy(indexPositions, 0, updatedPositions, 0, nearestPositionIndex);
       System.arraycopy(indexPositions, nearestPositionIndex, updatedPositions, nearestPositionIndex + 1, indexPositions.length - nearestPositionIndex);
       updatedPositions[nearestPositionIndex] = newValue;
