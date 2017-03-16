@@ -1,16 +1,24 @@
 package com.spbsu.datastream.core.test;
 
-import akka.actor.*;
+import akka.actor.ActorPath;
+import akka.actor.ActorSelection;
+import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.HashRange;
-import com.spbsu.datastream.core.graph.FlatGraph;
-import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.graph.ops.Broadcast;
+import com.spbsu.datastream.core.graph.*;
+import com.spbsu.datastream.core.graph.ops.ConsumerSink;
+import com.spbsu.datastream.core.graph.ops.SpliteratorSource;
+import com.spbsu.datastream.core.hashable.HashableInteger;
+import com.spbsu.datastream.core.node.MyPaths;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static com.spbsu.datastream.core.deploy.DeployApi.DeployForTick;
 
@@ -30,31 +38,55 @@ public class DeployGraph {
     final long tick = (int) (System.currentTimeMillis() / TimeUnit.MINUTES.toMillis(13));
     final DeployForTick request = new DeployForTick(theGraph, tick);
 
-    final ActorSelection worker1 = remoteDispatcher(system, 7001, new HashRange(Integer.MIN_VALUE, Integer.MAX_VALUE));
+    final ActorSelection worker1 = rangeConcierge(system, 7001, new HashRange(Integer.MIN_VALUE, 0));
+    final ActorSelection worker2 = rangeConcierge(system, 7002, new HashRange(0, Integer.MAX_VALUE));
     worker1.tell(request, null);
+    worker2.tell(request, null);
   }
 
-  private ActorSelection remoteDispatcher(final ActorSystem system,
-                                          final int port,
-                                          final HashRange range) {
-    final Address address = Address.apply("akka.tcp", "worker",
-            "localhost",
-            port);
-    final ActorPath dispatcher = RootActorPath.apply(address, "/").$div("user").$div("root").$div(range.toString());
-    return system.actorSelection(dispatcher);
+  private ActorSelection rangeConcierge(final ActorSystem system,
+                                        final int port,
+                                        final HashRange range) {
+    final InetSocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
+    final ActorPath rangeConcierge = MyPaths.rangeConcierge(address, range);
+    return system.actorSelection(rangeConcierge);
   }
 
   private TheGraph theGraph() {
-    //final Spliterator<HashableString> spliterator = Stream.generate(UUID::randomUUID).map(UUID::toString)
-    //        .map(HashableString::new)
-    //        .limit(100).spliterator();
-    //final Source<HashableString> source = new SpliteratorSource<>(spliterator);
-    //
-    //final Sink<HashableString> sink = new ConsumerSink<>(System.out::println);
-    //
-    //final Graph gr = source.fuse(sink, source.outPort(), sink.inPort());
+    final Spliterator<HashableInteger> spliterator = new IntSpliterator();
+    final Source<HashableInteger> source = new SpliteratorSource<>(spliterator);
+    final MarkingFilter filter = new MarkingFilter();
+    final Sink<HashableInteger> sink = new ConsumerSink<>(new PrintlnConsumer());
 
-    final FlatGraph graph = FlatGraph.flattened(new Broadcast<>(1));
+    final Graph gr = source.fuse(filter, source.outPort(), filter.inPort()).fuse(sink, filter.outPort(), sink.inPort());
+    final FlatGraph graph = FlatGraph.flattened(gr);
     return new TheGraph(graph);
+  }
+
+  private static class PrintlnConsumer implements Consumer<HashableInteger> {
+    @Override
+    public void accept(final HashableInteger hashableInteger) {
+      System.out.println(hashableInteger);
+    }
+  }
+
+  private static class IntSpliterator extends Spliterators.AbstractSpliterator<HashableInteger> {
+    private boolean plus = false;
+
+    public IntSpliterator() {
+      super(Long.MAX_VALUE, 0);
+    }
+
+    @Override
+    public boolean tryAdvance(final Consumer<? super HashableInteger> action) {
+      if (plus) {
+        plus = false;
+        action.accept(new HashableInteger(100));
+      } else {
+        plus = true;
+        action.accept(new HashableInteger(-100));
+      }
+      return true;
+    }
   }
 }

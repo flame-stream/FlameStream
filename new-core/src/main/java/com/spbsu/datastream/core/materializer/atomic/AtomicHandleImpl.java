@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.materializer.atomic;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.graph.TheGraph;
@@ -34,5 +35,10 @@ public class AtomicHandleImpl implements AtomicHandle {
   @Override
   public void panic(final Exception e) {
     throw new RuntimeException(e);
+  }
+
+  @Override
+  public TickContext context() {
+    return tickContext;
   }
 }

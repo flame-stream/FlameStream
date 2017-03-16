@@ -1,4 +1,6 @@
-package com.spbsu.datastream.core;
+package com.spbsu.datastream.core.hashable;
+
+import com.spbsu.datastream.core.Hashable;
 
 import java.util.Objects;
 

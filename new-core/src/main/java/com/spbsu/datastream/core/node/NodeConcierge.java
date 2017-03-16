@@ -78,7 +78,7 @@ public class NodeConcierge extends UntypedActor {
   }
 
   private ActorSelection remoteDispatcher(final InetSocketAddress socketAddress, final HashRange range) {
-    final ActorPath dispatcher = ZKPaths.rootRouter(socketAddress, range);
+    final ActorPath dispatcher = MyPaths.rootRouter(socketAddress, range);
     return context().system().actorSelection(dispatcher);
   }
 

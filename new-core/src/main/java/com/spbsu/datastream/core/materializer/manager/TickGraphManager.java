@@ -13,11 +13,13 @@ import com.spbsu.datastream.core.materializer.atomic.AtomicHandleImpl;
 import com.spbsu.datastream.core.routing.RootRouterApi;
 import com.spbsu.datastream.core.routing.TickLocalRouter;
 import scala.Option;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,6 +43,12 @@ public class TickGraphManager extends UntypedActor {
   @Override
   public void preStart() throws Exception {
     LOG.info("Starting...");
+    context().system().scheduler().scheduleOnce(
+            FiniteDuration.apply(5, TimeUnit.SECONDS),
+            self(),
+            new TickStarted(),
+            context().system().dispatcher(),
+            self());
     super.preStart();
   }
 

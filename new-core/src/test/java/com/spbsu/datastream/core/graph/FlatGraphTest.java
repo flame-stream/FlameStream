@@ -1,7 +1,7 @@
 package com.spbsu.datastream.core.graph;
 
 import com.google.common.collect.Sets;
-import com.spbsu.datastream.core.HashableString;
+import com.spbsu.datastream.core.hashable.HashableString;
 import com.spbsu.datastream.core.graph.ops.*;
 import org.testng.Assert;
 import org.testng.annotations.Test;

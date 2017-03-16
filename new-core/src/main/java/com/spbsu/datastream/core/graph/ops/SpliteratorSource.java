@@ -9,6 +9,7 @@ import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
 
 import java.util.Objects;
 import java.util.Spliterator;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by marnikitta on 2/7/17.
@@ -22,7 +23,14 @@ public final class SpliteratorSource<T extends Hashable> extends Source<T> {
 
   @Override
   public void onStart(final AtomicHandle handler) {
-    spliterator.forEachRemaining(item -> handler.push(outPort(), new PayloadHashDataItem<>(Meta.now(), item)));
+    spliterator.forEachRemaining(item -> {
+      handler.push(outPort(), new PayloadHashDataItem<>(Meta.now(), item));
+      try {
+        TimeUnit.MILLISECONDS.sleep(100);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    });
   }
 
   @Override

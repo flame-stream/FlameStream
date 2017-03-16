@@ -23,7 +23,7 @@ public class WorkerApplication {
     new WorkerApplication().run(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
   }
 
-  private void run(final InetSocketAddress address) throws IOException {
+  public void run(final InetSocketAddress address) throws IOException {
     final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + address.getPort())
             .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + address.getHostString()))
             .withFallback(ConfigFactory.load("remote"));

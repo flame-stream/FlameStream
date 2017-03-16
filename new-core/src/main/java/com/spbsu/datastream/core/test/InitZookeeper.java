@@ -39,9 +39,11 @@ public class InitZookeeper {
   private byte[] mappings() throws JsonProcessingException {
     final Map<HashRange, InetSocketAddress> mappings = new HashMap<>();
 
-    final InetSocketAddress myAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7001);
-    mappings.putIfAbsent(new HashRange(Integer.MIN_VALUE, 100000), myAddress);
-    mappings.putIfAbsent(new HashRange(100000, Integer.MAX_VALUE), myAddress);
+    final InetSocketAddress worker1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7001);
+    mappings.putIfAbsent(new HashRange(Integer.MIN_VALUE, 0), worker1);
+
+    final InetSocketAddress worker2 = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7002);
+    mappings.putIfAbsent(new HashRange(0, Integer.MAX_VALUE), worker2);
     ObjectMapper mapper = new ObjectMapper();
 
     System.err.println(mapper.writeValueAsString(RangeMappingsDto.normalConstruct(mappings)));

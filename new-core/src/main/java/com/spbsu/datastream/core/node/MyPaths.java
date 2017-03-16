@@ -7,8 +7,8 @@ import com.spbsu.datastream.core.HashRange;
 
 import java.net.InetSocketAddress;
 
-public final class ZKPaths {
-  private ZKPaths() {
+public final class MyPaths {
+  private MyPaths() {
   }
 
   public static ActorPath rangeConcierge(final InetSocketAddress address, final HashRange range) {

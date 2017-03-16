@@ -52,7 +52,8 @@ public class RemoteRouter extends UntypedActor {
         routingTable.values().forEach(a -> a.tell(message, self()));
       } else {
         int hash = addressedMessage.payload().hash();
-        actorForHash(hash).tell(message, self());
+        final ActorSelection recipient = actorForHash(hash);
+        recipient.tell(message, self());
       }
     } else {
       unhandled(message);
