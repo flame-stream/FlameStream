@@ -7,7 +7,6 @@ import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.graph.*;
 import com.spbsu.datastream.core.graph.ops.ConsumerSink;
 import com.spbsu.datastream.core.graph.ops.SpliteratorSource;
-import com.spbsu.datastream.core.hashable.HashableInteger;
 import com.spbsu.datastream.core.node.MyPaths;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -53,24 +52,24 @@ public class DeployGraph {
   }
 
   private TheGraph theGraph() {
-    final Spliterator<HashableInteger> spliterator = new IntSpliterator();
-    final Source<HashableInteger> source = new SpliteratorSource<>(spliterator);
+    final Spliterator<Integer> spliterator = new IntSpliterator();
+    final Source<Integer> source = new SpliteratorSource<>(spliterator);
     final MarkingFilter filter = new MarkingFilter();
-    final Sink<HashableInteger> sink = new ConsumerSink<>(new PrintlnConsumer());
+    final Sink<Integer> sink = new ConsumerSink<>(new PrintlnConsumer());
 
     final Graph gr = source.fuse(filter, source.outPort(), filter.inPort()).fuse(sink, filter.outPort(), sink.inPort());
     final FlatGraph graph = FlatGraph.flattened(gr);
     return new TheGraph(graph);
   }
 
-  private static class PrintlnConsumer implements Consumer<HashableInteger> {
+  private static class PrintlnConsumer implements Consumer<Integer> {
     @Override
-    public void accept(final HashableInteger hashableInteger) {
-      System.out.println(hashableInteger);
+    public void accept(final Integer integer) {
+      System.out.println(integer);
     }
   }
 
-  private static class IntSpliterator extends Spliterators.AbstractSpliterator<HashableInteger> {
+  private static class IntSpliterator extends Spliterators.AbstractSpliterator<Integer> {
     private boolean plus = false;
 
     public IntSpliterator() {
@@ -78,13 +77,13 @@ public class DeployGraph {
     }
 
     @Override
-    public boolean tryAdvance(final Consumer<? super HashableInteger> action) {
+    public boolean tryAdvance(final Consumer<? super Integer> action) {
       if (plus) {
         plus = false;
-        action.accept(new HashableInteger(100));
+        action.accept(100);
       } else {
         plus = true;
-        action.accept(new HashableInteger(-100));
+        action.accept(-100);
       }
       return true;
     }

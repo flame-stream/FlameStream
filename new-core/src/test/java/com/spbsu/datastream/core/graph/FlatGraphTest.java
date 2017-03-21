@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.graph;
 
 import com.google.common.collect.Sets;
 import com.spbsu.datastream.core.graph.ops.*;
-import com.spbsu.datastream.core.hashable.HashableString;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -30,9 +29,9 @@ public class FlatGraphTest {
 
   @Test
   public void simpleLinear() {
-    final StatelessFilter<HashableString, HashableString> filter = new StatelessFilter<>(i -> i);
+    final StatelessFilter<Integer, Integer> filter = new StatelessFilter<>(i -> i);
     final Identity identity = new Identity();
-    final StatelessFilter<HashableString, HashableString> filter1 = new StatelessFilter<>(i -> i);
+    final StatelessFilter<Integer, Integer> filter1 = new StatelessFilter<>(i -> i);
     final Graph fused = filter.fuse(identity,
             filter.outPort(),
             identity.inPort())
@@ -57,12 +56,12 @@ public class FlatGraphTest {
 
   @Test
   public void complex() {
-    final Source<HashableString> source = new SpliteratorSource<>(Stream.of(new HashableString("a")).spliterator());
-    final Broadcast<HashableString> broadcast = new Broadcast<>(2);
-    final StatelessFilter<HashableString, HashableString> f0 = new StatelessFilter<>(i -> i);
-    final StatelessFilter<HashableString, HashableString> f1 = new StatelessFilter<>(i -> i);
-    final Merge<HashableString> merge = new Merge<>(2);
-    final Sink<HashableString> sink = new ConsumerSink<>(System.out::println);
+    final Source<Integer> source = new SpliteratorSource<>(Stream.of(1).spliterator());
+    final Broadcast<Integer> broadcast = new Broadcast<>(2);
+    final StatelessFilter<Integer, Integer> f0 = new StatelessFilter<>(i -> i);
+    final StatelessFilter<Integer, Integer> f1 = new StatelessFilter<>(i -> i);
+    final Merge<Integer> merge = new Merge<>(2);
+    final Sink<Integer> sink = new ConsumerSink<>(System.out::println);
 
     final Graph superGraph = source.fuse(broadcast, source.outPort(), broadcast.inPort()).fuse(f0, broadcast.outPorts().get(0), f0.inPort())
             .fuse(merge, f0.outPort(), merge.inPorts().get(0)).fuse(sink, merge.outPort(), sink.inPort())

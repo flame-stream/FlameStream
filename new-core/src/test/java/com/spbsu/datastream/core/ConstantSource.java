@@ -4,7 +4,7 @@ import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Source;
 import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
 
-public class ConstantSource<T extends Hashable<? super T>> extends Source<T> {
+public class ConstantSource<T> extends Source<T> {
   private final T value;
 
   public ConstantSource(final T value) {

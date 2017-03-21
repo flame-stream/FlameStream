@@ -1,8 +1,10 @@
 package com.spbsu.datastream.core.graph;
 
 import com.spbsu.datastream.core.ConstantSource;
-import com.spbsu.datastream.core.hashable.HashableString;
-import com.spbsu.datastream.core.graph.ops.*;
+import com.spbsu.datastream.core.graph.ops.Broadcast;
+import com.spbsu.datastream.core.graph.ops.ConsumerSink;
+import com.spbsu.datastream.core.graph.ops.Merge;
+import com.spbsu.datastream.core.graph.ops.StatelessFilter;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -24,12 +26,12 @@ public class DeepCopyTest {
 
   @Test
   public void complex() {
-    final Source<HashableString> source = new ConstantSource<>(new HashableString("1"));
-    final Broadcast<HashableString> broadcast = new Broadcast(2);
-    final StatelessFilter<HashableString, HashableString> f0 = new StatelessFilter<>(i -> i);
-    final StatelessFilter<HashableString, HashableString> f1 = new StatelessFilter<>(i -> i);
-    final Merge<HashableString> merge = new Merge<>(2);
-    final ConsumerSink<HashableString> sink = new ConsumerSink<>(System.out::println);
+    final Source<Integer> source = new ConstantSource<>(1);
+    final Broadcast<Integer> broadcast = new Broadcast(2);
+    final StatelessFilter<Integer, Integer> f0 = new StatelessFilter<>(i -> i * 2);
+    final StatelessFilter<Integer, Integer> f1 = new StatelessFilter<>(i -> i);
+    final Merge<Integer> merge = new Merge<>(2);
+    final ConsumerSink<Integer> sink = new ConsumerSink<>(System.out::println);
 
     final Graph superGraph = source.fuse(broadcast, source.outPort(), broadcast.inPort()).fuse(f0, broadcast.outPorts().get(0), f0.inPort())
             .fuse(merge, f0.outPort(), merge.inPorts().get(0)).fuse(sink, merge.outPort(), sink.inPort())
@@ -43,19 +45,19 @@ public class DeepCopyTest {
 
     Assert.assertEquals(flatGraph.subGraphs().size(), flatCopy.subGraphs().size());
 
-    final Source<HashableString> sourceCopy = (ConstantSource<HashableString>) flatCopy.subGraphs().stream()
+    final Source<Integer> sourceCopy = (ConstantSource<Integer>) flatCopy.subGraphs().stream()
             .filter(Source.class::isInstance).findAny().get();
-    final Broadcast<HashableString> broadcastCopy = (Broadcast) flatCopy.subGraphs().stream()
+    final Broadcast<Integer> broadcastCopy = (Broadcast) flatCopy.subGraphs().stream()
             .filter(Broadcast.class::isInstance).findAny().get();
     final List<StatelessFilter> filtersCopy = flatCopy.subGraphs().stream()
             .filter(StatelessFilter.class::isInstance).map(StatelessFilter.class::cast)
             .collect(Collectors.toList());
-    final StatelessFilter<HashableString, HashableString> f0Copy = filtersCopy.get(0).function().equals(f0.function()) ? filtersCopy.get(0) : filtersCopy.get(1);
-    final StatelessFilter<HashableString, HashableString> f1Copy = filtersCopy.get(1).function().equals(f0.function()) ? filtersCopy.get(0) : filtersCopy.get(1);
+    final StatelessFilter<Integer, Integer> f0Copy = filtersCopy.get(0).function().equals(f0.function()) ? filtersCopy.get(0) : filtersCopy.get(1);
+    final StatelessFilter<Integer, Integer> f1Copy = filtersCopy.get(1).function().equals(f0.function()) ? filtersCopy.get(0) : filtersCopy.get(1);
 
-    final Merge<HashableString> mergeCopy = (Merge) flatCopy.subGraphs().stream()
+    final Merge<Integer> mergeCopy = (Merge) flatCopy.subGraphs().stream()
             .filter(Merge.class::isInstance).findAny().get();
-    final ConsumerSink<HashableString> sinkCopy = (ConsumerSink) flatCopy.subGraphs().stream()
+    final ConsumerSink<Integer> sinkCopy = (ConsumerSink) flatCopy.subGraphs().stream()
             .filter(ConsumerSink.class::isInstance).findAny().get();
 
     final Map<OutPort, InPort> expectedDownstreams = new HashMap<>();

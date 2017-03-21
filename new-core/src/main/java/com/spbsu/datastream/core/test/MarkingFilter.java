@@ -6,26 +6,25 @@ import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Processor;
-import com.spbsu.datastream.core.hashable.HashableInteger;
 import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-public class MarkingFilter extends Processor<HashableInteger, HashableInteger> {
+public class MarkingFilter extends Processor<Integer, Integer> {
   private final ThreadLocalRandom rd = ThreadLocalRandom.current();
 
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handle) {
-    final HashableInteger value = ((HashableInteger) item.payload());
+    final Integer value = ((Integer) item.payload());
     int result = rd.nextBoolean() ? 1 : -1;
-    if (value.intValue() >= 0) {
+    if (value >= 0) {
       result *= 2000;
     } else {
       result *= 1000;
     }
 
-    final HashableInteger marked = new HashableInteger(result);
-    final DataItem<HashableInteger> out = new PayloadDataItem<>(Meta.now(), marked);
+    final Integer marked = result;
+    final DataItem<Integer> out = new PayloadDataItem<>(Meta.now(), marked);
     handle.push(outPort(), out);
   }
 
