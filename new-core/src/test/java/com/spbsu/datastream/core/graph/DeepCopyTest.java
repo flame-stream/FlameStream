@@ -12,10 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Created by marnikitta on 2/8/17.
- */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "OptionalGetWithoutIsPresent"})
 public class DeepCopyTest {
   @Test
   public void simpleLinear() {

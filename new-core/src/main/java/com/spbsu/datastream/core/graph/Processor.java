@@ -4,9 +4,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
 public abstract class Processor<T, R> implements AtomicGraph {
   private final InPort inPort = new InPort();
   private final OutPort outPort = new OutPort();

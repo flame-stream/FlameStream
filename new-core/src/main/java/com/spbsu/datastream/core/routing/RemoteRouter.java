@@ -48,10 +48,10 @@ public class RemoteRouter extends UntypedActor {
   public void onReceive(final Object message) throws Throwable {
     if (message instanceof AddressedMessage) {
       final AddressedMessage<?> addressedMessage = (AddressedMessage<?>) message;
-      if (addressedMessage.payload().isBroadcast()) {
+      if (addressedMessage.isBroadcast()) {
         routingTable.values().forEach(a -> a.tell(message, self()));
       } else {
-        int hash = addressedMessage.payload().hash();
+        int hash = addressedMessage.hash();
         final ActorSelection recipient = actorForHash(hash);
         recipient.tell(message, self());
       }

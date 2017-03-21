@@ -1,8 +1,5 @@
 package com.spbsu.datastream.core.graph;
 
-/**
- * Created by marnikitta on 2/6/17.
- */
 public class WiringException extends RuntimeException {
   public WiringException() {
     super();

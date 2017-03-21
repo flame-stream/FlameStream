@@ -7,19 +7,14 @@ import java.util.Objects;
  * Created by solar on 17.10.16.
  */
 
-public final class PayloadHashDataItem<T extends Hashable> implements DataItem<T> {
+public final class PayloadDataItem<T> implements DataItem<T> {
   private final Meta meta;
 
   private final T payload;
 
-  public PayloadHashDataItem(final Meta meta, final T payload) {
+  public PayloadDataItem(final Meta meta, final T payload) {
     this.meta = meta;
     this.payload = payload;
-  }
-
-  @Override
-  public int hash() {
-    return payload.hash();
   }
 
   @Override
@@ -36,7 +31,7 @@ public final class PayloadHashDataItem<T extends Hashable> implements DataItem<T
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final PayloadHashDataItem<?> dataItem = (PayloadHashDataItem<?>) o;
+    final PayloadDataItem<?> dataItem = (PayloadDataItem<?>) o;
     return Objects.equals(meta, dataItem.meta) &&
             Objects.equals(payload, dataItem.payload);
   }
@@ -48,7 +43,7 @@ public final class PayloadHashDataItem<T extends Hashable> implements DataItem<T
 
   @Override
   public String toString() {
-    return "PayloadHashDataItem{" + "meta=" + meta +
+    return "PayloadDataItem{" + "meta=" + meta +
             ", payload=" + payload +
             '}';
   }

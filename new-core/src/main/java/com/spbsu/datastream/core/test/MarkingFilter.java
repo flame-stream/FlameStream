@@ -2,7 +2,7 @@ package com.spbsu.datastream.core.test;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.Meta;
-import com.spbsu.datastream.core.PayloadHashDataItem;
+import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Processor;
@@ -25,7 +25,7 @@ public class MarkingFilter extends Processor<HashableInteger, HashableInteger> {
     }
 
     final HashableInteger marked = new HashableInteger(result);
-    final DataItem<HashableInteger> out = new PayloadHashDataItem<>(Meta.now(), marked);
+    final DataItem<HashableInteger> out = new PayloadDataItem<>(Meta.now(), marked);
     handle.push(outPort(), out);
   }
 

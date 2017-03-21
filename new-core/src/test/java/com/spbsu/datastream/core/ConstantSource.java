@@ -13,13 +13,14 @@ public class ConstantSource<T extends Hashable<? super T>> extends Source<T> {
 
   @Override
   public void onStart(final AtomicHandle handle) {
+    //noinspection InfiniteLoopStatement
     while (true) {
-      handle.push(outPort(), new PayloadHashDataItem<>(Meta.now(), value));
+      handle.push(outPort(), new PayloadDataItem<>(Meta.now(), value));
     }
   }
 
   @Override
   public Graph deepCopy() {
-    return new ConstantSource<T>(value);
+    return new ConstantSource<>(value);
   }
 }

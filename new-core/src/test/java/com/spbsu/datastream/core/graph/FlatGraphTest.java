@@ -1,8 +1,8 @@
 package com.spbsu.datastream.core.graph;
 
 import com.google.common.collect.Sets;
-import com.spbsu.datastream.core.hashable.HashableString;
 import com.spbsu.datastream.core.graph.ops.*;
+import com.spbsu.datastream.core.hashable.HashableString;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -13,11 +13,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
 public class FlatGraphTest {
 
+  @SuppressWarnings("unchecked")
   @Test
   public void atomicFlattening() {
     final Identity identity = new Identity();
@@ -63,8 +61,8 @@ public class FlatGraphTest {
     final Broadcast<HashableString> broadcast = new Broadcast<>(2);
     final StatelessFilter<HashableString, HashableString> f0 = new StatelessFilter<>(i -> i);
     final StatelessFilter<HashableString, HashableString> f1 = new StatelessFilter<>(i -> i);
-    final Merge<HashableString> merge = new Merge<HashableString>(2);
-    final Sink<HashableString> sink = new ConsumerSink<HashableString>(System.out::println);
+    final Merge<HashableString> merge = new Merge<>(2);
+    final Sink<HashableString> sink = new ConsumerSink<>(System.out::println);
 
     final Graph superGraph = source.fuse(broadcast, source.outPort(), broadcast.inPort()).fuse(f0, broadcast.outPorts().get(0), f0.inPort())
             .fuse(merge, f0.outPort(), merge.inPorts().get(0)).fuse(sink, merge.outPort(), sink.inPort())

@@ -1,20 +1,20 @@
 package com.spbsu.datastream.core.graph;
 
+import com.spbsu.datastream.core.HashFunction;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class TheGraph extends AbstractComposedGraph<AtomicGraph> {
+  private final Map<InPort, HashFunction<?>> portHashing;
+
   public TheGraph(final FlatGraph flatGraph) {
+    this(flatGraph, Collections.emptyMap());
+  }
+
+  public TheGraph(final FlatGraph flatGraph, final Map<InPort, HashFunction<?>> portHashing) {
     super(flatGraph);
-  }
-
-  TheGraph(final Set<AtomicGraph> graph) {
-    super(graph);
-  }
-
-  TheGraph(final Set<AtomicGraph> graphs,
-           final Map<OutPort, InPort> wires) {
-    super(graphs, wires);
+    this.portHashing = new HashMap<>(portHashing);
   }
 
   //For deep copy only
@@ -22,8 +22,25 @@ public class TheGraph extends AbstractComposedGraph<AtomicGraph> {
           final Map<InPort, OutPort> upstreams,
           final Map<OutPort, InPort> downstreams, final List<InPort> inPorts,
           final List<OutPort> outPorts,
-          final Set<AtomicGraph> subGraphs) {
+          final Set<AtomicGraph> subGraphs,
+          final Map<InPort, HashFunction<?>> portHashing) {
     super(upstreams, downstreams, inPorts, outPorts, subGraphs);
+    this.portHashing = new HashMap<>(portHashing);
+  }
+
+  public Map<InPort, HashFunction<?>> portHashing() {
+    return portHashing;
+  }
+
+  @Override
+  public String toString() {
+    return "TheGraph{" + "upstreams=" + upstreams() +
+            ", downstreams=" + downstreams() +
+            ", inPorts=" + inPorts() +
+            ", outPorts=" + outPorts() +
+            ", subGraphs=" + subGraphs() +
+            ", portHashing=" + portHashing() +
+            '}';
   }
 
   @Override
@@ -39,21 +56,7 @@ public class TheGraph extends AbstractComposedGraph<AtomicGraph> {
     final Map<OutPort, InPort> downstreams = mappedDownstreams(downstreams(), inPortsMapping, outPortsMapping);
     final List<InPort> inPorts = mappedInPorts(inPorts(), inPortsMapping);
     final List<OutPort> outPorts = mappedOutPorts(outPorts(), outPortsMapping);
-    return new TheGraph(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy));
-  }
 
-  @Override
-  public boolean equals(final Object o) {
-    return super.equals(o);
-  }
-
-  @Override
-  public String toString() {
-    return "TheGraph{" + "upstreams=" + upstreams() +
-            ", downstreams=" + downstreams() +
-            ", inPorts=" + inPorts() +
-            ", outPorts=" + outPorts() +
-            ", subGraphs=" + subGraphs() +
-            '}';
+    return new TheGraph(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy), portHashing());
   }
 }

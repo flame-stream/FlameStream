@@ -17,7 +17,8 @@ public class RangeMappingsDto {
     this(rangeMappings.entrySet().stream().collect(Collectors.toMap(e -> HashRange.fromString(e.getKey()), Map.Entry::getValue)), false);
   }
 
-  private RangeMappingsDto(final Map<HashRange, InetSocketAddress> rangeMappings, final boolean a) {
+  private RangeMappingsDto(final Map<HashRange, InetSocketAddress> rangeMappings,
+                           final boolean variableForDifferentSignature) {
     this.rangeMappings = rangeMappings;
   }
 

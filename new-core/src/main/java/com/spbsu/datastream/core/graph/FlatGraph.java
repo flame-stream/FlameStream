@@ -3,10 +3,8 @@ package com.spbsu.datastream.core.graph;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
 public final class FlatGraph extends AbstractComposedGraph<AtomicGraph> {
+
   private FlatGraph(final Set<AtomicGraph> subGraphs,
                     final Map<OutPort, InPort> wires) {
     super(subGraphs, wires);

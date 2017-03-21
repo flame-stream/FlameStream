@@ -3,9 +3,6 @@ package com.spbsu.datastream.core.graph;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Created by marnikitta on 2/6/17.
- */
 final class ComposedGraphImpl extends AbstractComposedGraph<Graph> {
   ComposedGraphImpl(final Set<Graph> graph) {
     super(graph);

@@ -6,9 +6,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
 public abstract class FanIn<R> implements AtomicGraph {
   private final List<InPort> inPorts;
   private final OutPort outPort;

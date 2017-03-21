@@ -10,7 +10,6 @@ public interface AtomicGraph extends Graph {
   default void onStart(final AtomicHandle handle) {
   }
 
-
   default void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handle) {
   }
 }

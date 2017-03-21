@@ -7,9 +7,6 @@ import org.testng.annotations.Test;
 import java.util.Collections;
 import java.util.HashSet;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
 @SuppressWarnings("unchecked")
 public class ComposedGraphTest {
 

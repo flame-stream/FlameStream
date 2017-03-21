@@ -1,7 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.PayloadHashDataItem;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Sink;
@@ -10,9 +9,6 @@ import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
 public final class ConsumerSink<T> extends Sink<T> {
   private final Consumer<T> consumer;
 
@@ -35,6 +31,7 @@ public final class ConsumerSink<T> extends Sink<T> {
 
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
+    //noinspection unchecked
     consumer.accept((T) item.payload());
   }
 

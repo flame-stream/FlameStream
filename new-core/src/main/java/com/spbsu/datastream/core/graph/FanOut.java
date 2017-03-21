@@ -6,9 +6,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
 public abstract class FanOut<T> implements AtomicGraph {
   private final InPort inPort;
   private final List<OutPort> outPorts;

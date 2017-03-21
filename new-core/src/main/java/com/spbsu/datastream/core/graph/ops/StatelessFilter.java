@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.graph.ops;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.Hashable;
 import com.spbsu.datastream.core.Meta;
-import com.spbsu.datastream.core.PayloadHashDataItem;
+import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Processor;
@@ -12,9 +12,6 @@ import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
 import java.util.Objects;
 import java.util.function.Function;
 
-/**
- * Created by marnikitta on 2/7/17.
- */
 public class StatelessFilter<T, R extends Hashable<? super R>> extends Processor<T, R> {
   private final Function<T, R> function;
 
@@ -28,9 +25,10 @@ public class StatelessFilter<T, R extends Hashable<? super R>> extends Processor
 
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
+    @SuppressWarnings("unchecked")
     final R res = function.apply((T) item.payload());
 
-    handler.push(outPort(), new PayloadHashDataItem<>(new Meta(item.meta(), this.hashCode()), res));
+    handler.push(outPort(), new PayloadDataItem<>(new Meta(item.meta(), this.hashCode()), res));
   }
 
   @Override

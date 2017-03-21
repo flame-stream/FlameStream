@@ -1,7 +1,7 @@
 package com.spbsu.datastream.core.materializer.atomic;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.graph.TheGraph;
@@ -23,7 +23,13 @@ public class AtomicHandleImpl implements AtomicHandle {
     final Optional<InPort> destination = Optional.ofNullable(tickContext.graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
-    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(result, address);
+    final HashFunction hashFunction =
+            context().graph().portHashing().getOrDefault(address, HashFunction.OBJECT_HASH);
+
+    @SuppressWarnings("unchecked")
+    final int hash = hashFunction.applyAsInt(result.payload());
+
+    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(result, address, hash, false);
     tickContext.rootRouter().tell(addressedMessage, null);
   }
 

@@ -47,10 +47,10 @@ public class RootRouter extends UntypedActor {
 
   private void route(final AddressedMessage<?> addressedMessage) {
     LOG.debug("Routing of {}", addressedMessage);
-    if (addressedMessage.payload().isBroadcast()) {
+    if (addressedMessage.isBroadcast()) {
       LOG.debug("Broadcast routing of {}", addressedMessage);
       remoteRouter.tell(addressedMessage, self());
-    } else if (range.isIn(addressedMessage.payload().hash())) {
+    } else if (range.isIn(addressedMessage.hash())) {
       LOG.debug("Local routing of {}", addressedMessage);
       routeLocal(addressedMessage);
     } else {
