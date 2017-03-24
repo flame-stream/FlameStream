@@ -4,6 +4,7 @@ import com.spbsu.datastream.example.invertedindex.models.*;
 import com.spbsu.datastream.example.invertedindex.utils.InvertedIndexStorage;
 import com.spbsu.datastream.example.invertedindex.utils.PagePositionLong;
 
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -30,27 +31,14 @@ public class UpdateWordIndexFilter implements Function<WordContainer[], Stream<W
   }
 
   private Stream<WordContainer> createOutputStream(WordIndex wordIndex, WordPagePosition wordPagePosition) {
-    final long first = wordPagePosition.positions()[0];
-    final int pageId = PagePositionLong.pageId(first);
-
-    final long valueForSearch = PagePositionLong.createPagePosition(pageId, 0, 0);
-    final int newPosition = PagePositionLong.position(first);
-    final int newRange = wordPagePosition.positions().length;
-
     WordRemoveOutput wordRemoveOutput = null;
-    final long prevValue = wordIndex.storage().tryToFindAndUpdate(valueForSearch, newPosition, newRange);
-    if (prevValue == InvertedIndexStorage.PREV_VALUE_NOT_FOUND) {
-      final long newValue = PagePositionLong.setRange(first, newRange);
-      wordIndex.storage().insert(newValue);
-    } else {
+    final long prevValue = wordIndex.storage().updateOrInsert(wordPagePosition.positions());
+    if (prevValue != InvertedIndexStorage.PREV_VALUE_NOT_FOUND) {
       wordRemoveOutput = new WordRemoveOutput(wordIndex.word(), PagePositionLong.setRange(prevValue, 0), PagePositionLong.range(prevValue));
     }
 
-    final WordAddOutput wordAddOutput = new WordAddOutput(wordIndex.word(), wordPagePosition.positions());
     final WordIndex newWordIndex = new WordIndex(wordIndex.word(), wordIndex.storage());
-    if (wordRemoveOutput == null) {
-      return Stream.of(wordIndex, wordAddOutput);
-    }
-    return Stream.of(wordIndex, wordRemoveOutput, wordAddOutput);
+    final WordAddOutput wordAddOutput = new WordAddOutput(wordIndex.word(), wordPagePosition.positions());
+    return Stream.of(newWordIndex, wordRemoveOutput, wordAddOutput).filter(Objects::nonNull);
   }
 }

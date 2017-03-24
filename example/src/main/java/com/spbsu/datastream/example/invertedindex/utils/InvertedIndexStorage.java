@@ -1,5 +1,6 @@
 package com.spbsu.datastream.example.invertedindex.utils;
 
+import com.google.common.annotations.VisibleForTesting;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 
@@ -28,7 +29,24 @@ public class InvertedIndexStorage {
     storage[0] = new TLongArrayList();
   }
 
-  public long tryToFindAndUpdate(long value, int newPosition, int newRange) {
+  public long updateOrInsert(long[] pagePositions) {
+    final long first = pagePositions[0];
+    final int pageId = PagePositionLong.pageId(first);
+
+    final long valueForSearch = PagePositionLong.createPagePosition(pageId, 0, 0);
+    final int newPosition = PagePositionLong.position(first);
+    final int newRange = pagePositions.length;
+
+    final long prevValue = tryToFindAndUpdate(valueForSearch, newPosition, newRange);
+    if (prevValue == InvertedIndexStorage.PREV_VALUE_NOT_FOUND) {
+      final long newValue = PagePositionLong.setRange(first, newRange);
+      insert(newValue);
+    }
+    return prevValue;
+  }
+
+  @VisibleForTesting
+  long tryToFindAndUpdate(long value, int newPosition, int newRange) {
     final int windowIndex = findWindow(value);
     final TLongArrayList window = storage[windowIndex];
     int searchIndex = window.binarySearch(value);
@@ -46,7 +64,8 @@ public class InvertedIndexStorage {
     }
   }
 
-  public void insert(long value) {
+  @VisibleForTesting
+  void insert(long value) {
     int windowIndex = findWindow(value);
     final TLongArrayList window = storage[windowIndex];
     final int insertIndex = -window.binarySearch(value) - 1;
@@ -78,7 +97,8 @@ public class InvertedIndexStorage {
     }
   }
 
-  public TLongList toList() {
+  @VisibleForTesting
+  TLongList toList() {
     final TLongList result = new TLongArrayList();
     for (TLongArrayList list : storage) {
       result.addAll(list);

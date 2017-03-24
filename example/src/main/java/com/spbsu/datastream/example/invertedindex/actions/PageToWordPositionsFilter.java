@@ -34,7 +34,7 @@ public class PageToWordPositionsFilter implements Function<WordContainer, Stream
         final String word = ((String) tokenizer.next()).toLowerCase();
         final long pagePosition = PagePositionLong.createPagePosition(wikiPage.id(), position, wikiPage.version());
         if (!wordPositions.containsKey(word)) {
-          TLongList positions = new TLongArrayList();
+          final TLongList positions = new TLongArrayList();
           positions.add(pagePosition);
           wordPositions.put(word, positions);
         } else {
