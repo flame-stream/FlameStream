@@ -1,7 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.Hashable;
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.Graph;
@@ -12,7 +11,7 @@ import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class StatelessFilter<T, R extends Hashable<? super R>> extends Processor<T, R> {
+public class StatelessFilter<T, R> extends Processor<T, R> {
   private final Function<T, R> function;
 
   public StatelessFilter(final Function<T, R> function) {

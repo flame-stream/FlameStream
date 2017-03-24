@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class InPort {
-  private final static long OFFSET = 20;
+  private final static int OFFSET = 64 - 41;
   private final static long RAND_MASK = (1 << OFFSET) - 1;
   private final static ThreadLocalRandom rd = ThreadLocalRandom.current();
 
