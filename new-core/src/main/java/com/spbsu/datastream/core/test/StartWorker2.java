@@ -9,6 +9,6 @@ import java.net.InetSocketAddress;
 public class StartWorker2 {
   public static void main(final String... args) throws IOException {
     final InetSocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7002);
-    new WorkerApplication().run(address);
+    new WorkerApplication().run(address, "localhost:2181");
   }
 }

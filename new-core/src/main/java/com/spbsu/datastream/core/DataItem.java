@@ -1,7 +1,11 @@
 package com.spbsu.datastream.core;
 
-public interface DataItem<T> extends Traveller {
+public interface DataItem<T> {
+  long id();
+
   Meta meta();
 
   T payload();
+
+  long rootId();
 }

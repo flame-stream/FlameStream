@@ -27,7 +27,8 @@ public class StatelessFilter<T, R> extends Processor<T, R> {
     @SuppressWarnings("unchecked")
     final R res = function.apply((T) item.payload());
 
-    handler.push(outPort(), new PayloadDataItem<>(new Meta(item.meta(), this.hashCode()), res));
+    handler.push(outPort(), new PayloadDataItem<>(new Meta(item.meta(), this.hashCode()), res, item.rootId()));
+    handler.ack(item);
   }
 
   @Override

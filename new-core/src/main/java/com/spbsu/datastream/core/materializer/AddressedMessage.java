@@ -1,18 +1,18 @@
 package com.spbsu.datastream.core.materializer;
 
-import com.spbsu.datastream.core.Traveller;
+import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.InPort;
 
-public class AddressedMessage<T extends Traveller> {
+public class AddressedMessage {
   private final InPort port;
 
   private final int hash;
 
   private final boolean isBroadcast;
 
-  private final T payload;
+  private final DataItem<?> payload;
 
-  public AddressedMessage(final T payload, final InPort port, final int hash, final boolean isBroadcast) {
+  public AddressedMessage(final DataItem<?> payload, final InPort port, final int hash, final boolean isBroadcast) {
     this.port = port;
     this.payload = payload;
     this.isBroadcast = isBroadcast;
@@ -31,7 +31,7 @@ public class AddressedMessage<T extends Traveller> {
     return port;
   }
 
-  public T payload() {
+  public DataItem<?> payload() {
     return payload;
   }
 

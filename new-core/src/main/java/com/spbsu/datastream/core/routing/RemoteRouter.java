@@ -47,7 +47,7 @@ public class RemoteRouter extends UntypedActor {
   @Override
   public void onReceive(final Object message) throws Throwable {
     if (message instanceof AddressedMessage) {
-      final AddressedMessage<?> addressedMessage = (AddressedMessage<?>) message;
+      final AddressedMessage addressedMessage = (AddressedMessage) message;
       if (addressedMessage.isBroadcast()) {
         routingTable.values().forEach(a -> a.tell(message, self()));
       } else {

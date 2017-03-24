@@ -45,7 +45,7 @@ public class RootRouter extends UntypedActor {
     }
   }
 
-  private void route(final AddressedMessage<?> addressedMessage) {
+  private void route(final AddressedMessage addressedMessage) {
     LOG.debug("Routing of {}", addressedMessage);
     if (addressedMessage.isBroadcast()) {
       LOG.debug("Broadcast routing of {}", addressedMessage);
@@ -59,7 +59,7 @@ public class RootRouter extends UntypedActor {
     }
   }
 
-  private void routeLocal(final AddressedMessage<?> message) {
+  private void routeLocal(final AddressedMessage message) {
     final long tick = message.payload().meta().tick();
     final ActorRef dest = tickLocalRouters.getOrDefault(tick, context().system().deadLetters());
     dest.tell(message, self());

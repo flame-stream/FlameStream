@@ -32,6 +32,7 @@
         <leveldb.version>0.7</leveldb.version>
         <leveldb-jni.version>1.8</leveldb-jni.version>
         <akka-kryo-serialization.version>0.5.0</akka-kryo-serialization.version>
+        <commons-cli.version>1.4</commons-cli.version>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
@@ -177,12 +178,12 @@
                             <rules>
                                 <AlwaysPass/>
                                 <!--<DependencyConvergence/>-->
-                                <bannedDependencies>
-                                    <excludes>
-                                        <exclude>commons-logging:commons-logging</exclude>
-                                        <exclude>log4j:log4j</exclude>
-                                    </excludes>
-                                </bannedDependencies>
+                                <!--<bannedDependencies>-->
+                                <!--<excludes>-->
+                                <!--<exclude>commons-logging:commons-logging</exclude>-->
+                                <!--<exclude>log4j:log4j</exclude>-->
+                                <!--</excludes>-->
+                                <!--</bannedDependencies>-->
                             </rules>
                         </configuration>
                         <goals>
