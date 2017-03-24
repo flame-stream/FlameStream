@@ -5,7 +5,9 @@ import com.spbsu.datastream.example.invertedindex.models.WikiPage;
 import com.spbsu.datastream.example.invertedindex.models.WordContainer;
 import com.spbsu.datastream.example.invertedindex.models.WordIndex;
 import com.spbsu.datastream.example.invertedindex.models.WordPagePosition;
-import com.spbsu.datastream.example.invertedindex.models.long_containers.PageLongContainer;
+import com.spbsu.datastream.example.invertedindex.utils.PagePositionLong;
+import gnu.trove.list.TLongList;
+import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,14 +27,14 @@ public class PageToWordPositionsFilter implements Function<WordContainer, Stream
     if (container instanceof WikiPage) {
       final WikiPage wikiPage = (WikiPage) container;
       final WordsTokenizer tokenizer = new WordsTokenizer(wikiPage.titleAndText());
-      final Map<String, List<PageLongContainer>> wordPositions = new HashMap<>();
+      final Map<String, TLongList> wordPositions = new HashMap<>();
       final List<WordContainer> wordPagePositions = new ArrayList<>();
       int position = 0;
       while (tokenizer.hasNext()) {
         final String word = ((String) tokenizer.next()).toLowerCase();
-        final PageLongContainer pagePosition = new PageLongContainer(wikiPage.id(), wikiPage.version(), position);
+        final long pagePosition = PagePositionLong.createPagePosition(wikiPage.id(), position, wikiPage.version());
         if (!wordPositions.containsKey(word)) {
-          List<PageLongContainer> positions = new ArrayList<>();
+          TLongList positions = new TLongArrayList();
           positions.add(pagePosition);
           wordPositions.put(word, positions);
         } else {
@@ -40,19 +42,11 @@ public class PageToWordPositionsFilter implements Function<WordContainer, Stream
         }
         position++;
       }
-      wordPositions.forEach((word, list) -> {
-        final PageLongContainer[] containers = new PageLongContainer[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-          containers[i] = list.get(i);
-        }
-        wordPagePositions.add(new WordPagePosition(word, containers));
-      });
+      wordPositions.forEach((word, list) -> wordPagePositions.add(new WordPagePosition(word, list.toArray())));
       return wordPagePositions.stream();
     } else if (container instanceof WordIndex) {
-      final List<WordContainer> wrapper = new ArrayList<>();
-      wrapper.add(container);
-      return wrapper.stream();
+      return Stream.of(container);
     }
-    return null;
+    return Stream.empty();
   }
 }
