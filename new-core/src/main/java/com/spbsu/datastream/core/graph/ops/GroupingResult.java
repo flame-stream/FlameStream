@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-public class GroupingResult<T extends Hashable<T>> implements Hashable<GroupingResult<T>> {
+public final class GroupingResult<T extends Hashable<T>> implements Hashable<GroupingResult<T>> {
   private final List<T> list;
 
   private final int hash;

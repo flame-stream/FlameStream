@@ -11,7 +11,8 @@ import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class FlatFilter<T, R> extends Processor<T, R> {
+public final class FlatFilter<T, R> extends Processor<T, R> {
+  // TODO: 3/26/17 LOOK AT ME
   private final Function<T, Stream<R>> function;
 
   public FlatFilter(final Function<T, Stream<R>> function, final HashFunction<T> hash) {

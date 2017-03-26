@@ -18,7 +18,6 @@ public class ComposedGraphTest {
 
     final ComposedGraph<Graph> composed = (ComposedGraph<Graph>) pr1.compose(pr2);
     Assert.assertEquals(composed.subGraphs(), Sets.newHashSet(pr1, pr2));
-    Assert.assertEquals(composed.upstreams(), Collections.emptyMap());
     Assert.assertEquals(composed.downstreams(), Collections.emptyMap());
 
     final ComposedGraph<Graph> fused = (ComposedGraph<Graph>) composed.wire(pr1.outPort(), pr2.inPort());
@@ -27,7 +26,6 @@ public class ComposedGraphTest {
     Assert.assertEquals(new HashSet<>(fused.inPorts()), new HashSet<>(pr1.inPorts()));
 
     Assert.assertEquals(fused.downstreams(), Collections.singletonMap(pr1.outPort(), pr2.inPort()));
-    Assert.assertEquals(fused.upstreams(), Collections.singletonMap(pr2.inPort(), pr1.outPort()));
     Assert.assertEquals(fused.subGraphs(), Sets.newHashSet(composed));
   }
 

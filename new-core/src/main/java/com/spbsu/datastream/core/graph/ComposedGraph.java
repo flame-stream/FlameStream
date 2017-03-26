@@ -7,6 +7,4 @@ public interface ComposedGraph<T extends Graph> extends Graph {
   Set<T> subGraphs();
 
   Map<OutPort, InPort> downstreams();
-
-  Map<InPort, OutPort> upstreams();
 }

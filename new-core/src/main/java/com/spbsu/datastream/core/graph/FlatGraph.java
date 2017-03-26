@@ -1,22 +1,17 @@
 package com.spbsu.datastream.core.graph;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-public final class FlatGraph extends AbstractComposedGraph<AtomicGraph> {
+public final class FlatGraph implements ComposedGraph<AtomicGraph> {
+  private final ComposedGraph<AtomicGraph> composedGraph;
 
   private FlatGraph(final Set<AtomicGraph> subGraphs,
                     final Map<OutPort, InPort> wires) {
-    super(subGraphs, wires);
-  }
-
-  //for deep copy only
-  private FlatGraph(final Map<InPort, OutPort> upstreams,
-                    final Map<OutPort, InPort> downstreams,
-                    final List<InPort> inPorts,
-                    final List<OutPort> outPorts,
-                    final Set<AtomicGraph> subGraphs) {
-    super(upstreams, downstreams, inPorts, outPorts, subGraphs);
+    this.composedGraph = new ComposedGraphImpl<>(subGraphs, wires);
   }
 
   public static FlatGraph flattened(final Graph graph) {
@@ -25,7 +20,7 @@ public final class FlatGraph extends AbstractComposedGraph<AtomicGraph> {
     } else if (graph instanceof AtomicGraph) {
       return new FlatGraph(Collections.singleton((AtomicGraph) graph), Collections.emptyMap());
     } else if (graph instanceof ComposedGraph) {
-      final ComposedGraphImpl composed = (ComposedGraphImpl) graph;
+      final ComposedGraph<? extends Graph> composed = (ComposedGraph<? extends Graph>) graph;
 
       final Set<FlatGraph> flatteneds = composed.subGraphs().stream()
               .map(FlatGraph::flattened).collect(Collectors.toSet());
@@ -45,11 +40,31 @@ public final class FlatGraph extends AbstractComposedGraph<AtomicGraph> {
 
   @Override
   public String toString() {
-    return "FlatGraph{" + "upstreams=" + upstreams() +
+    return "FlatGraph{" +
             ", downstreams=" + downstreams() +
             ", inPorts=" + inPorts() +
             ", outPorts=" + outPorts() +
             ", subGraphs=" + subGraphs() +
             '}';
+  }
+
+  @Override
+  public Set<AtomicGraph> subGraphs() {
+    return composedGraph.subGraphs();
+  }
+
+  @Override
+  public Map<OutPort, InPort> downstreams() {
+    return composedGraph.downstreams();
+  }
+
+  @Override
+  public List<InPort> inPorts() {
+    return composedGraph.inPorts();
+  }
+
+  @Override
+  public List<OutPort> outPorts() {
+    return composedGraph.outPorts();
   }
 }

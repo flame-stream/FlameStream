@@ -20,7 +20,6 @@ public class FlatGraphTest {
     final Identity identity = new Identity();
     final FlatGraph flatGraph = FlatGraph.flattened(identity);
 
-    Assert.assertEquals(flatGraph.upstreams(), Collections.emptyMap());
     Assert.assertEquals(flatGraph.downstreams(), Collections.emptyMap());
     Assert.assertEquals(new HashSet<>(flatGraph.inPorts()), new HashSet<>(identity.inPorts()));
     Assert.assertEquals(new HashSet<>(flatGraph.outPorts()), new HashSet<>(identity.outPorts()));
@@ -51,7 +50,6 @@ public class FlatGraphTest {
     final Map<InPort, OutPort> expectedUpstreams = new HashMap<>();
     expectedUpstreams.put(filter1.inPort(), identity.outPort());
     expectedUpstreams.put(identity.inPort(), filter.outPort());
-    Assert.assertEquals(flatGraph.upstreams(), expectedUpstreams);
   }
 
   @Test
@@ -83,7 +81,5 @@ public class FlatGraphTest {
     downstreams.put(merge.outPort(), sink.inPort());
 
     Assert.assertEquals(flattened.downstreams(), downstreams);
-    Assert.assertEquals(flattened.upstreams(), downstreams.entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)));
   }
 }

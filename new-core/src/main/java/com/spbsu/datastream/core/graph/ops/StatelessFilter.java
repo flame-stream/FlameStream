@@ -10,7 +10,7 @@ import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
 
 import java.util.function.Function;
 
-public class StatelessFilter<T, R> extends Processor<T, R> {
+public final class StatelessFilter<T, R> extends Processor<T, R> {
   private final Function<T, R> function;
 
   public StatelessFilter(final Function<T, R> function, final HashFunction<T> hash) {
