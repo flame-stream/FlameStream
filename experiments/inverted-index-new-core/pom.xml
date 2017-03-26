@@ -1,28 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>datastreams-parent</artifactId>
+        <artifactId>datastreams-experiments</artifactId>
         <groupId>com.spbsu.datastreams</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
+    <packaging>pom</packaging>
+
+    <artifactId>datastreams-inverted-index-new-core</artifactId>
 
     <modelVersion>4.0.0</modelVersion>
-
-
-    <artifactId>datastreams-example</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.spbsu.datastreams</groupId>
-            <artifactId>datastreams-core</artifactId>
+            <artifactId>datastreams-new-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.spbsu.datastreams</groupId>
-            <artifactId>datastreams-sql</artifactId>
+            <artifactId>wikiforia-parser</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>
+

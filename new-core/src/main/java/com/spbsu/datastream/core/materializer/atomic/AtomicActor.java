@@ -19,19 +19,19 @@ public class AtomicActor extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
 
   private final AtomicGraph atomic;
-
-  private final TLongObjectMap<InPort> idPortMapping;
-
+  private final TLongObjectMap<InPort> portMappings;
   private final AtomicHandle handle;
+  private final String id;
 
-  private AtomicActor(final AtomicGraph atomic, final AtomicHandle handle) {
+  private AtomicActor(final AtomicGraph atomic, final AtomicHandle handle, final String id) {
     this.atomic = atomic;
     this.handle = handle;
-    this.idPortMapping = idMappings(atomic.inPorts());
+    this.portMappings = idMappings(atomic.inPorts());
+    this.id = id;
   }
 
-  public static Props props(final AtomicGraph atomic, final AtomicHandle handle) {
-    return Props.create(AtomicActor.class, atomic, handle);
+  public static Props props(final AtomicGraph atomic, final AtomicHandle handle, final String id) {
+    return Props.create(AtomicActor.class, atomic, handle, id);
   }
 
   private TLongObjectMap<InPort> idMappings(Collection<InPort> inPorts) {
@@ -40,6 +40,19 @@ public class AtomicActor extends UntypedActor {
       result.put(port.id(), port);
     }
     return result;
+  }
+
+  @Override
+  public void onReceive(final Object message) throws Throwable {
+    LOG.debug("Received {}", message);
+
+    if (message instanceof AddressedMessage) {
+      onAddressedMessage((AddressedMessage) message);
+    } else if (message instanceof TickStarted) {
+      atomic.onStart(handle);
+    } else {
+      unhandled(message);
+    }
   }
 
   @Override
@@ -60,22 +73,7 @@ public class AtomicActor extends UntypedActor {
     super.preRestart(reason, message);
   }
 
-  @Override
-  public void onReceive(final Object message) throws Throwable {
-    LOG.debug("Received {}", message);
-
-    if (message instanceof AddressedMessage) {
-      handleAddressedMessage((AddressedMessage) message);
-
-    } else if (message instanceof TickStarted) {
-      atomic.onStart(handle);
-
-    } else {
-      unhandled(message);
-    }
-  }
-
-  private void handleAddressedMessage(final AddressedMessage message) {
-    atomic.onPush(idPortMapping.get(message.port()), message.payload(), handle);
+  private void onAddressedMessage(final AddressedMessage message) {
+    atomic.onPush(portMappings.get(message.port()), message.payload(), handle);
   }
 }

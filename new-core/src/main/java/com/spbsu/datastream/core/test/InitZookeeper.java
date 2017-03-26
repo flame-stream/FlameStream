@@ -21,11 +21,7 @@ public class InitZookeeper {
     new InitZookeeper().run();
   }
 
-  private void run() throws IOException, KeeperException, InterruptedException {
-    initZookeeper();
-  }
-
-  private void initZookeeper() throws IOException, KeeperException, InterruptedException {
+  public void run() throws IOException, KeeperException, InterruptedException {
     final ZooKeeper zooKeeper = new ZooKeeper("localhost:2181", 5000, System.out::println);
     final Stat stat = zooKeeper.exists("/mappings", false);
     if (stat != null) {

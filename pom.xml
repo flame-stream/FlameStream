@@ -49,6 +49,7 @@
         <module>experiments</module>
         <module>example</module>
         <module>sql</module>
+        <module>wikiforia-parser</module>
     </modules>
 
     <dependencies>

@@ -17,7 +17,7 @@ public class ZooKeeperApplication {
     new ZooKeeperApplication().run();
   }
 
-  private void run() throws IOException {
+  public void run() throws IOException {
     final QuorumPeerConfig quorumConfig = new QuorumPeerConfig();
 
     try (InputStream stream = getClass().getClassLoader().getResourceAsStream("zookeeper-dev.properties")) {

@@ -89,6 +89,8 @@ public class TickGraphManager extends UntypedActor {
 
   private ActorRef actorForAtomic(final AtomicGraph atomic, final TickContext context) {
     LOG.info("Creating actor for atomic {}", atomic);
-    return context().actorOf(AtomicActor.props(atomic, new AtomicHandleImpl(context)), UUID.randomUUID().toString());
+
+    final String id = UUID.randomUUID().toString();
+    return context().actorOf(AtomicActor.props(atomic, new AtomicHandleImpl(context), id), id);
   }
 }

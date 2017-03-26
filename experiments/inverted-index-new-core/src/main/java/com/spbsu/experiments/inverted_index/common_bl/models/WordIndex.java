@@ -1,4 +1,4 @@
-package com.spbsu.experiments.inverted_index.datastreams.models;
+package com.spbsu.experiments.inverted_index.common_bl.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.spbsu.experiments.inverted_index.common_bl.models.WordContainer;

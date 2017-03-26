@@ -28,7 +28,7 @@ public class AtomicHandleImpl implements AtomicHandle {
     @SuppressWarnings("unchecked")
     final int hash = hashFunction.applyAsInt(result.payload());
 
-    final AddressedMessage addressedMessage = new AddressedMessage(result, address.id(), hash, false);
+    final AddressedMessage addressedMessage = new AddressedMessage(result, address.id(), hash);
     tickContext.rootRouter().tell(addressedMessage, null);
   }
 

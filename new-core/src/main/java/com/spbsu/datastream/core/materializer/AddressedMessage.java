@@ -1,7 +1,6 @@
 package com.spbsu.datastream.core.materializer;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.graph.InPort;
 
 public class AddressedMessage {
   private final long port;
@@ -12,11 +11,21 @@ public class AddressedMessage {
 
   private final DataItem<?> payload;
 
-  public AddressedMessage(final DataItem<?> payload, final long port, final int hash, final boolean isBroadcast) {
+  public AddressedMessage(final DataItem<?> payload,
+                          final long port,
+                          final int hash) {
     this.port = port;
     this.payload = payload;
-    this.isBroadcast = isBroadcast;
+    this.isBroadcast = false;
     this.hash = hash;
+  }
+
+  public AddressedMessage(final DataItem<?> payload,
+                          final long port) {
+    this.port = port;
+    this.payload = payload;
+    this.isBroadcast = true;
+    this.hash = 0xFFFFFFFF;
   }
 
   public int hash() {
@@ -37,10 +46,12 @@ public class AddressedMessage {
 
   @Override
   public String toString() {
-    return "AddressedMessage{" + "port=" + port +
-            ", hash=" + hash +
-            ", isBroadcast=" + isBroadcast +
-            ", payload=" + payload +
-            '}';
+    final StringBuilder sb = new StringBuilder("AddressedMessage{");
+    sb.append("port=").append(port);
+    sb.append(", hash=").append(hash);
+    sb.append(", isBroadcast=").append(isBroadcast);
+    sb.append(", payload=").append(payload);
+    sb.append('}');
+    return sb.toString();
   }
 }

@@ -2,8 +2,8 @@ package com.spbsu.experiments.inverted_index.datastreams.io;
 
 import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.seq.CharSeq;
+import com.spbsu.experiments.inverted_index.common_bl.io.Object2JSONConversionPack;
 import com.spbsu.experiments.inverted_index.common_bl.models.WordContainer;
-import com.spbsu.datastream.example.sql.Object2JSONConversionPack;
 
 /**
  * Author: Artem
