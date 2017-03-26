@@ -16,7 +16,7 @@ import java.net.InetSocketAddress;
 public class WorkerApplication {
   public static void main(final String... args) throws IOException {
     final Options options = new Options();
-    final Option hostOpt = Option.builder("host").hasArg().argName("host").desc("worker host name").required().build();
+    final Option hostOpt = Option.builder("host").hasArg().argName("FQDN").desc("worker FQDN").required().build();
     final Option portOpt = Option.builder("port").hasArg().argName("port").desc("worker port").required().build();
     final Option zkOpt = Option.builder("zk").hasArg().argName("connectString").desc("ZK connect string").required().build();
 

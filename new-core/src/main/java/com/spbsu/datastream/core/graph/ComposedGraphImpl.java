@@ -1,7 +1,8 @@
 package com.spbsu.datastream.core.graph;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 final class ComposedGraphImpl extends AbstractComposedGraph<Graph> {
   ComposedGraphImpl(final Set<Graph> graph) {
@@ -31,20 +32,5 @@ final class ComposedGraphImpl extends AbstractComposedGraph<Graph> {
             ", outPorts=" + outPorts() +
             ", subGraphs=" + subGraphs() +
             '}';
-  }
-
-  @Override
-  public Graph deepCopy() {
-    final List<Graph> subGraphs = new ArrayList<>(subGraphs());
-    final List<Graph> subGraphsCopy = subGraphs.stream().map(Graph::deepCopy).collect(Collectors.toList());
-    final Map<InPort, InPort> inPortsMapping = inPortsMapping(subGraphs, subGraphsCopy);
-    final Map<OutPort, OutPort> outPortsMapping = outPortsMapping(subGraphs, subGraphsCopy);
-
-    final Map<InPort, OutPort> upstreams = mappedUpstreams(upstreams(), inPortsMapping, outPortsMapping);
-    final Map<OutPort, InPort> downstreams = mappedDownstreams(downstreams(), inPortsMapping, outPortsMapping);
-    final List<InPort> inPorts = mappedInPorts(inPorts(), inPortsMapping);
-    final List<OutPort> outPorts = mappedOutPorts(outPorts(), outPortsMapping);
-
-    return new ComposedGraphImpl(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy));
   }
 }

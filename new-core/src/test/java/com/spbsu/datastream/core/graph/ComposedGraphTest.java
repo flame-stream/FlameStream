@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph;
 
 import com.google.common.collect.Sets;
+import com.spbsu.datastream.core.HashFunction;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -44,6 +45,6 @@ public class ComposedGraphTest {
   public void foreignPortWiring() {
     final Processor pr1 = new Identity();
 
-    final ComposedGraphImpl graph = new ComposedGraphImpl(pr1, new OutPort(), new InPort());
+    final ComposedGraphImpl graph = new ComposedGraphImpl(pr1, new OutPort(), new InPort(HashFunction.OBJECT_HASH));
   }
 }

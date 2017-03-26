@@ -18,9 +18,4 @@ public class ConstantSource<T> extends Source<T> {
       handle.push(outPort(), new PayloadDataItem<>(Meta.now(), value));
     }
   }
-
-  @Override
-  public Graph deepCopy() {
-    return new ConstantSource<>(value);
-  }
 }

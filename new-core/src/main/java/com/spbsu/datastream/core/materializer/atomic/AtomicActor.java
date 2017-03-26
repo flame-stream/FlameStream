@@ -4,10 +4,14 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.AtomicGraph;
+import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.materializer.AddressedMessage;
+import gnu.trove.map.TLongObjectMap;
+import gnu.trove.map.hash.TLongObjectHashMap;
 import scala.Option;
+
+import java.util.Collection;
 
 import static com.spbsu.datastream.core.materializer.manager.TickGraphManagerApi.TickStarted;
 
@@ -16,15 +20,26 @@ public class AtomicActor extends UntypedActor {
 
   private final AtomicGraph atomic;
 
+  private final TLongObjectMap<InPort> idPortMapping;
+
   private final AtomicHandle handle;
 
   private AtomicActor(final AtomicGraph atomic, final AtomicHandle handle) {
     this.atomic = atomic;
     this.handle = handle;
+    this.idPortMapping = idMappings(atomic.inPorts());
   }
 
   public static Props props(final AtomicGraph atomic, final AtomicHandle handle) {
     return Props.create(AtomicActor.class, atomic, handle);
+  }
+
+  private TLongObjectMap<InPort> idMappings(Collection<InPort> inPorts) {
+    final TLongObjectMap<InPort> result = new TLongObjectHashMap<>();
+    for (final InPort port : inPorts) {
+      result.put(port.id(), port);
+    }
+    return result;
   }
 
   @Override
@@ -61,9 +76,6 @@ public class AtomicActor extends UntypedActor {
   }
 
   private void handleAddressedMessage(final AddressedMessage message) {
-    Object payload = message.payload();
-    if (payload instanceof DataItem) {
-      atomic.onPush(message.port(), (DataItem<?>) payload, handle);
-    }
+    atomic.onPush(idPortMapping.get(message.port()), message.payload(), handle);
   }
 }

@@ -52,21 +52,4 @@ public final class FlatGraph extends AbstractComposedGraph<AtomicGraph> {
             ", subGraphs=" + subGraphs() +
             '}';
   }
-
-  @Override
-  public Graph deepCopy() {
-    final List<AtomicGraph> subGraphs = new ArrayList<>(subGraphs());
-    final List<AtomicGraph> subGraphsCopy = subGraphs.stream().map(Graph::deepCopy)
-            .map(AtomicGraph.class::cast)
-            .collect(Collectors.toList());
-    final Map<InPort, InPort> inPortsMapping = inPortsMapping(subGraphs, subGraphsCopy);
-    final Map<OutPort, OutPort> outPortsMapping = outPortsMapping(subGraphs, subGraphsCopy);
-
-    final Map<InPort, OutPort> upstreams = mappedUpstreams(upstreams(), inPortsMapping, outPortsMapping);
-    final Map<OutPort, InPort> downstreams = mappedDownstreams(downstreams(), inPortsMapping, outPortsMapping);
-    final List<InPort> inPorts = mappedInPorts(inPorts(), inPortsMapping);
-    final List<OutPort> outPorts = mappedOutPorts(outPorts(), outPortsMapping);
-
-    return new FlatGraph(upstreams, downstreams, inPorts, outPorts, new HashSet<>(subGraphsCopy));
-  }
 }

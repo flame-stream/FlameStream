@@ -4,7 +4,7 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.InPort;
 
 public class AddressedMessage {
-  private final InPort port;
+  private final long port;
 
   private final int hash;
 
@@ -12,7 +12,7 @@ public class AddressedMessage {
 
   private final DataItem<?> payload;
 
-  public AddressedMessage(final DataItem<?> payload, final InPort port, final int hash, final boolean isBroadcast) {
+  public AddressedMessage(final DataItem<?> payload, final long port, final int hash, final boolean isBroadcast) {
     this.port = port;
     this.payload = payload;
     this.isBroadcast = isBroadcast;
@@ -27,7 +27,7 @@ public class AddressedMessage {
     return isBroadcast;
   }
 
-  public InPort port() {
+  public long port() {
     return port;
   }
 

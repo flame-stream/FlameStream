@@ -12,10 +12,11 @@ import com.spbsu.datastream.core.materializer.atomic.AtomicActor;
 import com.spbsu.datastream.core.materializer.atomic.AtomicHandleImpl;
 import com.spbsu.datastream.core.routing.RootRouterApi;
 import com.spbsu.datastream.core.routing.TickLocalRouter;
+import gnu.trove.map.TLongObjectMap;
+import gnu.trove.map.hash.TLongObjectHashMap;
 import scala.Option;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -67,15 +68,15 @@ public class TickGraphManager extends UntypedActor {
     }
   }
 
-  private ActorRef localRouter(final Map<InPort, ActorRef> portMappings) {
+  private ActorRef localRouter(final TLongObjectMap<ActorRef> portMappings) {
     return context().actorOf(TickLocalRouter.props(portMappings), "localRouter");
   }
 
-  private Map<InPort, ActorRef> flatKey(final Map<AtomicGraph, ActorRef> map) {
-    final Map<InPort, ActorRef> result = new HashMap<>();
+  private TLongObjectMap<ActorRef> flatKey(final Map<AtomicGraph, ActorRef> map) {
+    final TLongObjectMap<ActorRef> result = new TLongObjectHashMap<>();
     for (Map.Entry<AtomicGraph, ActorRef> e : map.entrySet()) {
       for (InPort port : e.getKey().inPorts()) {
-        result.put(port, e.getValue());
+        result.put(port.id(), e.getValue());
       }
     }
     return result;

@@ -28,28 +28,4 @@ public final class SpliteratorSource<T> extends Source<T> {
       }
     });
   }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    final SpliteratorSource<?> that = (SpliteratorSource<?>) o;
-    return Objects.equals(spliterator, that.spliterator);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(spliterator);
-  }
-
-  @Override
-  public String toString() {
-    return "SpliteratorSource{" + "spliterator=" + spliterator +
-            '}';
-  }
-
-  @Override
-  public Graph deepCopy() {
-    return new SpliteratorSource<>(spliterator);
-  }
 }

@@ -1,12 +1,12 @@
 package com.spbsu.datastream.core.graph;
 
 import java.util.Objects;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 public final class OutPort {
   private final static long OFFSET = 64 - 41;
   private final static long RAND_MASK = (1 << OFFSET) - 1;
-  private final static ThreadLocalRandom rd = ThreadLocalRandom.current();
+  private final static Random rd = new Random();
   private final long id;
 
   public OutPort() {

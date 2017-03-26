@@ -27,9 +27,4 @@ public class MarkingFilter extends Processor<Integer, Integer> {
     final DataItem<Integer> out = new PayloadDataItem<>(Meta.now(), marked);
     handle.push(outPort(), out);
   }
-
-  @Override
-  public Graph deepCopy() {
-    return new MarkingFilter();
-  }
 }

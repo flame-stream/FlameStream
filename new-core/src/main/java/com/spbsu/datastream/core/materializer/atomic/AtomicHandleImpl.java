@@ -23,13 +23,12 @@ public class AtomicHandleImpl implements AtomicHandle {
     final Optional<InPort> destination = Optional.ofNullable(tickContext.graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
-    final HashFunction hashFunction =
-            tickContext.graph().portHashing().getOrDefault(address, HashFunction.OBJECT_HASH);
+    final HashFunction hashFunction = address.hashFunction();
 
     @SuppressWarnings("unchecked")
     final int hash = hashFunction.applyAsInt(result.payload());
 
-    final AddressedMessage addressedMessage = new AddressedMessage(result, address, hash, false);
+    final AddressedMessage addressedMessage = new AddressedMessage(result, address.id(), hash, false);
     tickContext.rootRouter().tell(addressedMessage, null);
   }
 
@@ -44,12 +43,12 @@ public class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public void ack(final DataItem<?> dataItem) {
+  public void ack(final InPort port, final DataItem<?> dataItem) {
 
   }
 
   @Override
-  public void fail(final DataItem<?> dataItem, final Exception reason) {
+  public void fail(final DataItem<?> dataItem, final InPort inPort, final Exception reason) {
     throw new RuntimeException(reason);
   }
 }

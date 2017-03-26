@@ -1,12 +1,22 @@
 package com.spbsu.datastream.core.graph;
 
+import com.spbsu.datastream.core.HashFunction;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 public abstract class Processor<T, R> implements AtomicGraph {
-  private final InPort inPort = new InPort();
+  private final InPort inPort;
   private final OutPort outPort = new OutPort();
+
+  protected Processor(final HashFunction<? super T> hash) {
+    this.inPort = new InPort(hash);
+  }
+
+  protected Processor() {
+    this.inPort = new InPort(HashFunction.OBJECT_HASH);
+  }
 
   public InPort inPort() {
     return inPort;
