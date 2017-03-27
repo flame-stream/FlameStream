@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.routing;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
@@ -46,21 +47,24 @@ public class RemoteRouter extends UntypedActor {
 
   @Override
   public void onReceive(final Object message) throws Throwable {
+    LOG.debug("Received: {}", message);
+
     if (message instanceof AddressedMessage) {
       final AddressedMessage addressedMessage = (AddressedMessage) message;
+
       if (addressedMessage.isBroadcast()) {
         routingTable.values().forEach(a -> a.tell(message, self()));
       } else {
-        int hash = addressedMessage.hash();
-        final ActorSelection recipient = actorForHash(hash);
-        recipient.tell(message, self());
+        final int hash = addressedMessage.hash();
+        final ActorSelection recipient = remoteDispatcherFor(hash);
+        recipient.tell(message, ActorRef.noSender());
       }
     } else {
       unhandled(message);
     }
   }
 
-  private ActorSelection actorForHash(final int hash) {
+  private ActorSelection remoteDispatcherFor(final int hash) {
     return routingTable.entrySet().stream().filter((e) -> e.getKey().isIn(hash))
             .map(Map.Entry::getValue).findAny().orElseThrow(NoSuchElementException::new);
   }

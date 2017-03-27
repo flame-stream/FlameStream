@@ -26,33 +26,12 @@ public class AtomicActor extends UntypedActor {
   private AtomicActor(final AtomicGraph atomic, final AtomicHandle handle, final String id) {
     this.atomic = atomic;
     this.handle = handle;
-    this.portMappings = idMappings(atomic.inPorts());
+    this.portMappings = portMappings(atomic.inPorts());
     this.id = id;
   }
 
   public static Props props(final AtomicGraph atomic, final AtomicHandle handle, final String id) {
     return Props.create(AtomicActor.class, atomic, handle, id);
-  }
-
-  private TLongObjectMap<InPort> idMappings(Collection<InPort> inPorts) {
-    final TLongObjectMap<InPort> result = new TLongObjectHashMap<>();
-    for (final InPort port : inPorts) {
-      result.put(port.id(), port);
-    }
-    return result;
-  }
-
-  @Override
-  public void onReceive(final Object message) throws Throwable {
-    LOG.debug("Received {}", message);
-
-    if (message instanceof AddressedMessage) {
-      onAddressedMessage((AddressedMessage) message);
-    } else if (message instanceof TickStarted) {
-      atomic.onStart(handle);
-    } else {
-      unhandled(message);
-    }
   }
 
   @Override
@@ -73,7 +52,28 @@ public class AtomicActor extends UntypedActor {
     super.preRestart(reason, message);
   }
 
+  @Override
+  public void onReceive(final Object message) throws Throwable {
+    LOG.debug("Received {}", message);
+
+    if (message instanceof AddressedMessage) {
+      onAddressedMessage((AddressedMessage) message);
+    } else if (message instanceof TickStarted) {
+      atomic.onStart(handle);
+    } else {
+      unhandled(message);
+    }
+  }
+
   private void onAddressedMessage(final AddressedMessage message) {
     atomic.onPush(portMappings.get(message.port()), message.payload(), handle);
+  }
+
+  private static TLongObjectMap<InPort> portMappings(Collection<InPort> inPorts) {
+    final TLongObjectMap<InPort> result = new TLongObjectHashMap<>();
+    for (final InPort port : inPorts) {
+      result.put(port.id(), port);
+    }
+    return result;
   }
 }

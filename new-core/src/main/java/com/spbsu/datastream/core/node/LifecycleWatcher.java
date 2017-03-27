@@ -26,6 +26,7 @@ public class LifecycleWatcher extends UntypedActor {
           case Expired:
             System.err.print(event);
             System.err.flush();
+            // TODO: 3/26/17 DO NOT EXIT HERE
             System.exit(1);
             break;
         }

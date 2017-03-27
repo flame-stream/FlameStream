@@ -69,10 +69,10 @@ public class NodeConcierge extends UntypedActor {
   }
 
   private ActorRef remoteRouter(final RangeMappingsDto mappings) {
-    return context().actorOf(RemoteRouter.props(remotes(mappings)), "remoteRouter");
+    return context().actorOf(RemoteRouter.props(remoteDispatchers(mappings)), "remoteRouter");
   }
 
-  private Map<HashRange, ActorSelection> remotes(final RangeMappingsDto mappings) {
+  private Map<HashRange, ActorSelection> remoteDispatchers(final RangeMappingsDto mappings) {
     return mappings.rangeMappings().entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, e -> remoteDispatcher(e.getValue(), e.getKey())));
   }

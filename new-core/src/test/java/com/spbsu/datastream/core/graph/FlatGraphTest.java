@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FlatGraphTest {
@@ -46,10 +45,6 @@ public class FlatGraphTest {
     expectedDownstreams.put(filter.outPort(), identity.inPort());
     expectedDownstreams.put(identity.outPort(), filter1.inPort());
     Assert.assertEquals(flatGraph.downstreams(), expectedDownstreams);
-
-    final Map<InPort, OutPort> expectedUpstreams = new HashMap<>();
-    expectedUpstreams.put(filter1.inPort(), identity.outPort());
-    expectedUpstreams.put(identity.inPort(), filter.outPort());
   }
 
   @Test

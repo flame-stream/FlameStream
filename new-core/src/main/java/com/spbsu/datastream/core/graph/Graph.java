@@ -36,7 +36,7 @@ public interface Graph {
     final HashSet<Graph> graphs = new HashSet<>();
     graphs.add(this);
     graphs.add(that);
-    return new ComposedGraphImpl(graphs);
+    return new ComposedGraphImpl<>(graphs);
   }
 
   /**
@@ -48,7 +48,7 @@ public interface Graph {
    * @return a new Graph with the ports wired
    */
   default Graph wire(final OutPort from, final InPort to) {
-    return new ComposedGraphImpl(this, from, to);
+    return new ComposedGraphImpl<>(this, from, to);
   }
 
   default boolean isSource() {

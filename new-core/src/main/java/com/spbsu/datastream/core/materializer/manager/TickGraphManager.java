@@ -30,9 +30,8 @@ public class TickGraphManager extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
 
   private TickGraphManager(final TickContext context) {
-
-    final Map<AtomicGraph, ActorRef> inMapping = initializeAtomics(context.graph().subGraphs(), context);
-    final ActorRef localRouter = localRouter(flatKey(inMapping));
+    final Map<AtomicGraph, ActorRef> inMapping = initializedAtomics(context.graph().subGraphs(), context);
+    final ActorRef localRouter = localRouter(withFlattenedKey(inMapping));
 
     context.rootRouter().tell(new RootRouterApi.RegisterMe(context.tick(), localRouter), self());
   }
@@ -44,6 +43,7 @@ public class TickGraphManager extends UntypedActor {
   @Override
   public void preStart() throws Exception {
     LOG.info("Starting...");
+    // TODO: 3/26/17 Shitty startup
     context().system().scheduler().scheduleOnce(
             FiniteDuration.apply(5, TimeUnit.SECONDS),
             self(),
@@ -64,15 +64,16 @@ public class TickGraphManager extends UntypedActor {
     LOG.debug("Received: {}", message);
 
     if (message instanceof TickStarted) {
-      getContext().getChildren().forEach(actorRef -> actorRef.tell(new TickStarted(), getSelf()));
+      getContext().getChildren().forEach(actorRef -> actorRef.tell(new TickStarted(), ActorRef.noSender()));
     }
   }
 
   private ActorRef localRouter(final TLongObjectMap<ActorRef> portMappings) {
+    LOG.info("Creating local router");
     return context().actorOf(TickLocalRouter.props(portMappings), "localRouter");
   }
 
-  private TLongObjectMap<ActorRef> flatKey(final Map<AtomicGraph, ActorRef> map) {
+  private TLongObjectMap<ActorRef> withFlattenedKey(final Map<AtomicGraph, ActorRef> map) {
     final TLongObjectMap<ActorRef> result = new TLongObjectHashMap<>();
     for (Map.Entry<AtomicGraph, ActorRef> e : map.entrySet()) {
       for (InPort port : e.getKey().inPorts()) {
@@ -82,8 +83,8 @@ public class TickGraphManager extends UntypedActor {
     return result;
   }
 
-  private Map<AtomicGraph, ActorRef> initializeAtomics(final Set<? extends AtomicGraph> atomicGraphs,
-                                                       final TickContext context) {
+  private Map<AtomicGraph, ActorRef> initializedAtomics(final Set<? extends AtomicGraph> atomicGraphs,
+                                                        final TickContext context) {
     return atomicGraphs.stream().collect(Collectors.toMap(Function.identity(), a -> actorForAtomic(a, context)));
   }
 

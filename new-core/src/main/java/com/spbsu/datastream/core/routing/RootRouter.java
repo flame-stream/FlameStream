@@ -33,6 +33,23 @@ public class RootRouter extends UntypedActor {
   }
 
   @Override
+  public void preStart() throws Exception {
+    LOG.info("Starting...");
+  }
+
+  @Override
+  public void postStop() throws Exception {
+    LOG.info("Stopped");
+    super.postStop();
+  }
+
+  @Override
+  public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
+    LOG.error("Restarting, reason: {}, message: {}", reason, message);
+    super.preRestart(reason, message);
+  }
+
+  @Override
   public void onReceive(final Object message) throws Throwable {
     if (message instanceof AddressedMessage) {
       route((AddressedMessage) message);
@@ -47,14 +64,18 @@ public class RootRouter extends UntypedActor {
 
   private void route(final AddressedMessage addressedMessage) {
     LOG.debug("Routing of {}", addressedMessage);
+
     if (addressedMessage.isBroadcast()) {
       LOG.debug("Broadcast routing of {}", addressedMessage);
+
       remoteRouter.tell(addressedMessage, self());
     } else if (range.isIn(addressedMessage.hash())) {
       LOG.debug("Local routing of {}", addressedMessage);
+
       routeLocal(addressedMessage);
     } else {
       LOG.debug("Remote routing of {}", addressedMessage);
+
       remoteRouter.tell(addressedMessage, self());
     }
   }
@@ -77,22 +98,5 @@ public class RootRouter extends UntypedActor {
     reverseTickLocalRouters.remove(terminated.actor());
     tickLocalRouters.remove(tick);
     LOG.info("Unregistered. Tick: {}, actor: {}", tick, terminated.actor());
-  }
-
-  @Override
-  public void preStart() throws Exception {
-    LOG.info("Starting...");
-  }
-
-  @Override
-  public void postStop() throws Exception {
-    LOG.info("Stopped");
-    super.postStop();
-  }
-
-  @Override
-  public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
-    LOG.error("Restarting, reason: {}, message: {}", reason, message);
-    super.preRestart(reason, message);
   }
 }

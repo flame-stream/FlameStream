@@ -49,11 +49,4 @@ public abstract class Processor<T, R> implements AtomicGraph {
   public int hashCode() {
     return Objects.hash(inPort, outPort);
   }
-
-  @Override
-  public String toString() {
-    return "Processor{" + "inPort=" + inPort +
-            ", outPort=" + outPort +
-            '}';
-  }
 }

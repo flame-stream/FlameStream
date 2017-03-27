@@ -4,7 +4,7 @@ import akka.actor.ActorRef;
 import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
 
-public class TickContextImpl implements TickContext {
+public final class TickContextImpl implements TickContext {
   private final ActorRef rootRouter;
 
   private final long tick;
