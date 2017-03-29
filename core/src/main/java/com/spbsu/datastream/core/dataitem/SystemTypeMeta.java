@@ -37,7 +37,7 @@ public class SystemTypeMeta implements DataItem.Meta<SystemTypeMeta> {
   }
 
   public int tick() {
-    return (int) (globalTime / 10000000);
+    return (int) (globalTime / 1000);
   }
 
   @Override

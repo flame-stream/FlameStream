@@ -40,7 +40,9 @@ public class RunFlink {
     final InputStream inputStream = new FileInputStream(dumpFile);
 
     iterator = new WikiPageIterator(inputStream);
-    final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment(1);
+    env.setBufferTimeout(0);
+
     final DataStream<WikiPage> stream = env.addSource(new WikiPagesSource());
     //noinspection Convert2Lambda
     stream.flatMap(new Splitter())
