@@ -29,6 +29,8 @@ public class LifecycleWatcher extends UntypedActor {
             // TODO: 3/26/17 DO NOT EXIT HERE
             System.exit(1);
             break;
+          default:
+            //do nothing
         }
       }
     }

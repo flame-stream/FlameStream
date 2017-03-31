@@ -13,7 +13,7 @@ public interface Graph {
   List<OutPort> outPorts();
 
   /**
-   * Fuses this Graph to `that` Graph by wiring together `from` and `to`,
+   * Fuses this Graph to `that` Graph by wiring together `from` and `to`.
    *
    * @param that a Graph to fuse with
    * @param from the data source to wire
