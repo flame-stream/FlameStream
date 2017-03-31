@@ -6,7 +6,7 @@ import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.application.WorkerApplication;
 import com.spbsu.datastream.core.application.ZooKeeperApplication;
-import com.spbsu.datastream.core.deploy.DeployApi;
+import com.spbsu.datastream.core.range.RangeConciergeApi;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.FlatFilter;
 import com.spbsu.datastream.core.graph.ops.SpliteratorSource;
@@ -63,7 +63,7 @@ public class RunZKWorkersDeployer {
     // TODO: 3/26/17
     final TheGraph theGraph = null;
     final long tick = (int) (System.currentTimeMillis() / TimeUnit.MINUTES.toMillis(13));
-    final DeployApi.DeployForTick request = new DeployApi.DeployForTick(theGraph, tick);
+    final RangeConciergeApi.DeployForTick request = new RangeConciergeApi.DeployForTick(theGraph, tick);
 
     final ActorSelection worker1 = rangeConcierge(system, 7001, new HashRange(Integer.MIN_VALUE, 0));
     final ActorSelection worker2 = rangeConcierge(system, 7002, new HashRange(0, Integer.MAX_VALUE));

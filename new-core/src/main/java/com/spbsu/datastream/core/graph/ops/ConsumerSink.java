@@ -2,12 +2,10 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Sink;
-import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
+import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class ConsumerSink<T> extends Sink<T> {

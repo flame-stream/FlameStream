@@ -19,7 +19,7 @@ import java.util.Spliterators;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static com.spbsu.datastream.core.deploy.DeployApi.DeployForTick;
+import static com.spbsu.datastream.core.range.RangeConciergeApi.DeployForTick;
 
 public class DeployGraph {
   public static void main(final String... args) throws Exception {

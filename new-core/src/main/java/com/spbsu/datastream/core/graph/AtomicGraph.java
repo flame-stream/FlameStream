@@ -1,7 +1,7 @@
 package com.spbsu.datastream.core.graph;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
+import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 import java.util.Optional;
 

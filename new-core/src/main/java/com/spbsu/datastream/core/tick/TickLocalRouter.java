@@ -1,11 +1,10 @@
-package com.spbsu.datastream.core.routing;
+package com.spbsu.datastream.core.tick;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.spbsu.datastream.core.materializer.AddressedMessage;
 import gnu.trove.map.TLongObjectMap;
 import scala.Option;
 

@@ -2,11 +2,9 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
-import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Source;
-import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
+import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.TimeUnit;
 

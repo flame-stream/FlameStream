@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.routing;
+package com.spbsu.datastream.core.node;
 
 import akka.actor.ActorRef;
 

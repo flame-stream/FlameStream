@@ -1,8 +1,7 @@
 package com.spbsu.datastream.core;
 
-import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Source;
-import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
+import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 public class ConstantSource<T> extends Source<T> {
   private final T value;

@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.materializer;
+package com.spbsu.datastream.core.tick;
 
 import com.spbsu.datastream.core.DataItem;
 

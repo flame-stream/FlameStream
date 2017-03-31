@@ -3,10 +3,9 @@ package com.spbsu.datastream.core.graph.ops;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.graph.FanOut;
-import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
-import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
+import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 public final class Broadcast<T> extends FanOut<T> {
   public Broadcast(final HashFunction<T> hash, final int shape) {

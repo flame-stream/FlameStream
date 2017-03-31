@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.materializer.atomic;
+package com.spbsu.datastream.core.tick.atomic;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.InPort;

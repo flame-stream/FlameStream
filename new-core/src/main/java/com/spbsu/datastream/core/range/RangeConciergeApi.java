@@ -1,8 +1,8 @@
-package com.spbsu.datastream.core.deploy;
+package com.spbsu.datastream.core.range;
 
 import com.spbsu.datastream.core.graph.TheGraph;
 
-public interface DeployApi {
+public interface RangeConciergeApi {
   class DeployForTick {
     private final TheGraph graph;
 

@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.materializer;
+package com.spbsu.datastream.core;
 
 public class RoutingException extends RuntimeException {
   public RoutingException() {

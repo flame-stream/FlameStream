@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.routing;
+package com.spbsu.datastream.core.node;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -7,13 +7,13 @@ import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.HashRange;
-import com.spbsu.datastream.core.materializer.AddressedMessage;
+import com.spbsu.datastream.core.tick.AddressedMessage;
 import scala.Option;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.spbsu.datastream.core.routing.RootRouterApi.RegisterMe;
+import static com.spbsu.datastream.core.node.RootRouterApi.RegisterMe;
 
 public class RootRouter extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());

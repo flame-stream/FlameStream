@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.node;
+package com.spbsu.datastream.core.range;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -7,13 +7,13 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.materializer.TickContext;
-import com.spbsu.datastream.core.materializer.TickContextImpl;
-import com.spbsu.datastream.core.materializer.manager.TickGraphManager;
-import com.spbsu.datastream.core.routing.RootRouter;
+import com.spbsu.datastream.core.tick.TickContext;
+import com.spbsu.datastream.core.tick.TickContextImpl;
+import com.spbsu.datastream.core.tick.manager.TickGraphManager;
+import com.spbsu.datastream.core.node.RootRouter;
 import scala.Option;
 
-import static com.spbsu.datastream.core.deploy.DeployApi.DeployForTick;
+import static com.spbsu.datastream.core.range.RangeConciergeApi.DeployForTick;
 
 public class RangeConcierge extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());

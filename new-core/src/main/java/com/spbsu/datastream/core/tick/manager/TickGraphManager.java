@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.materializer.manager;
+package com.spbsu.datastream.core.tick.manager;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -7,11 +7,11 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.materializer.TickContext;
-import com.spbsu.datastream.core.materializer.atomic.AtomicActor;
-import com.spbsu.datastream.core.materializer.atomic.AtomicHandleImpl;
-import com.spbsu.datastream.core.routing.RootRouterApi;
-import com.spbsu.datastream.core.routing.TickLocalRouter;
+import com.spbsu.datastream.core.tick.TickContext;
+import com.spbsu.datastream.core.tick.atomic.AtomicActor;
+import com.spbsu.datastream.core.tick.atomic.AtomicHandleImpl;
+import com.spbsu.datastream.core.node.RootRouterApi;
+import com.spbsu.datastream.core.tick.TickLocalRouter;
 import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import scala.Option;
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.spbsu.datastream.core.materializer.manager.TickGraphManagerApi.TickStarted;
+import static com.spbsu.datastream.core.tick.manager.TickGraphManagerApi.TickStarted;
 
 public class TickGraphManager extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());

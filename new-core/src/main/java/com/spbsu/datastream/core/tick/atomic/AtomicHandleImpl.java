@@ -1,13 +1,13 @@
-package com.spbsu.datastream.core.materializer.atomic;
+package com.spbsu.datastream.core.tick.atomic;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.materializer.AddressedMessage;
-import com.spbsu.datastream.core.materializer.RoutingException;
-import com.spbsu.datastream.core.materializer.TickContext;
+import com.spbsu.datastream.core.tick.AddressedMessage;
+import com.spbsu.datastream.core.RoutingException;
+import com.spbsu.datastream.core.tick.TickContext;
 
 import java.util.Optional;
 

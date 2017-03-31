@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.materializer.atomic;
+package com.spbsu.datastream.core.tick.atomic;
 
 import akka.actor.Props;
 import akka.actor.UntypedActor;
@@ -6,14 +6,14 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.materializer.AddressedMessage;
+import com.spbsu.datastream.core.tick.AddressedMessage;
 import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import scala.Option;
 
 import java.util.Collection;
 
-import static com.spbsu.datastream.core.materializer.manager.TickGraphManagerApi.TickStarted;
+import static com.spbsu.datastream.core.tick.manager.TickGraphManagerApi.TickStarted;
 
 public class AtomicActor extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());

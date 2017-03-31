@@ -3,12 +3,10 @@ package com.spbsu.datastream.core.graph.ops;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.graph.FanIn;
-import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.materializer.atomic.AtomicHandle;
+import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public final class Merge<R> extends FanIn<R> {
   public Merge(final List<HashFunction<?>> hashes) {

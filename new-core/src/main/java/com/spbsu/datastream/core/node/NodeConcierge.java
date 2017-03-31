@@ -5,7 +5,7 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.datastream.core.HashRange;
-import com.spbsu.datastream.core.routing.RemoteRouter;
+import com.spbsu.datastream.core.range.RangeConcierge;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -90,6 +90,7 @@ public class NodeConcierge extends UntypedActor {
 
   @Override
   public void onReceive(final Object message) throws Throwable {
+    unhandled(message);
   }
 
   private Watcher selfWatcher() {
