@@ -1,5 +1,8 @@
 package com.spbsu.datastream.core;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Arrays;
 
 public final class Trace implements Comparable<Trace> {
@@ -17,6 +20,17 @@ public final class Trace implements Comparable<Trace> {
     this.trace = Arrays.copyOf(trace.trace, trace.trace.length + 1);
     this.trace[this.trace.length - 1] = newLocalTime;
   }
+
+  @JsonCreator
+  private Trace(@JsonProperty("trace") final int[] trace) {
+    this.trace = trace;
+  }
+
+  @JsonProperty("trace")
+  private int[] trace() {
+    return this.trace;
+  }
+
 
   @Override
   public int compareTo(final Trace that) {
