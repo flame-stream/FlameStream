@@ -4,6 +4,8 @@ import akka.actor.ActorRef;
 import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public final class TickContextImpl implements TickContext {
   private final ActorRef rootRouter;
 
@@ -13,6 +15,8 @@ public final class TickContextImpl implements TickContext {
 
   private final TheGraph graph;
 
+  private final AtomicInteger localTime;
+
   public TickContextImpl(final ActorRef rootRouter,
                          final long tick,
                          final HashRange localRange,
@@ -21,6 +25,7 @@ public final class TickContextImpl implements TickContext {
     this.tick = tick;
     this.localRange = localRange;
     this.graph = graph;
+    this.localTime = new AtomicInteger();
   }
 
   @Override
@@ -36,6 +41,11 @@ public final class TickContextImpl implements TickContext {
   @Override
   public HashRange localRange() {
     return localRange;
+  }
+
+  @Override
+  public int incrementLocalTimeAndGet() {
+    return localTime.incrementAndGet();
   }
 
   @Override

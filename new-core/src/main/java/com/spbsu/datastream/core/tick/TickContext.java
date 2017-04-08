@@ -11,5 +11,7 @@ public interface TickContext {
 
   HashRange localRange();
 
+  int incrementLocalTimeAndGet();
+
   ActorRef rootRouter();
 }

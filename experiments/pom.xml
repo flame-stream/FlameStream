@@ -16,6 +16,7 @@
     <modules>
         <module>inverted_index</module>
         <module>inverted-index-new-core</module>
+        <module>storm-test</module>
     </modules>
 
     <dependencies>

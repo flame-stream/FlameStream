@@ -2,11 +2,12 @@ package com.spbsu.datastream.core.tick.atomic;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.Meta;
+import com.spbsu.datastream.core.RoutingException;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.tick.AddressedMessage;
-import com.spbsu.datastream.core.RoutingException;
 import com.spbsu.datastream.core.tick.TickContext;
 
 import java.util.Optional;
@@ -50,5 +51,10 @@ public class AtomicHandleImpl implements AtomicHandle {
   @Override
   public void fail(final DataItem<?> dataItem, final InPort inPort, final Exception reason) {
     throw new RuntimeException(reason);
+  }
+
+  @Override
+  public Meta copyAndAppendLocal(final Meta meta) {
+    return new Meta(meta, tickContext.incrementLocalTimeAndGet());
   }
 }

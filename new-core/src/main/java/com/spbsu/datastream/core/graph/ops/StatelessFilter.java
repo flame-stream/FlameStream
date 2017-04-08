@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Processor;
@@ -32,7 +31,7 @@ public final class StatelessFilter<T, R> extends Processor<T, R> {
     @SuppressWarnings("unchecked")
     final R res = function.apply((T) item.payload());
 
-    handler.push(outPort(), new PayloadDataItem<>(new Meta(item.meta(), this.hashCode()), res, item.rootId()));
+    handler.push(outPort(), new PayloadDataItem<>(handler.copyAndAppendLocal(item.meta()), res));
     handler.ack(inPort, item);
   }
 }
