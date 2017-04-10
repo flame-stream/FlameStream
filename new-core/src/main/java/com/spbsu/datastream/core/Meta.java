@@ -5,31 +5,27 @@ import java.util.Comparator;
 public final class Meta implements Comparable<Meta> {
   private final long globalTime;
 
-  private final int childId;
-
   private final Trace trace;
 
-  private final HashRange rootRange;
+  private final int rootHash;
 
-  public Meta(final long globalTime, final HashRange rootRange) {
+  public Meta(final long globalTime, final int localTime, final int rootHash) {
     this.globalTime = globalTime;
-    this.rootRange = rootRange;
-    this.childId = 0;
-    this.trace = new Trace();
+    this.rootHash = rootHash;
+    this.trace = new Trace(localTime);
   }
 
-  public Meta(final Meta oldMeta, final int childId, final int newLocalTime) {
-    this.rootRange = oldMeta.rootRange();
+  public Meta(final Meta oldMeta, final int newLocalTime, final boolean isSplit) {
+    this.rootHash = oldMeta.rootHash();
     this.globalTime = oldMeta.globalTime();
-    this.childId = childId;
-    this.trace = new Trace(oldMeta.trace(), newLocalTime);
+    this.trace = new Trace(oldMeta.trace(), newLocalTime, isSplit);
   }
 
   /**
-   * Range of the rootNode, on which this DI was produced
+   * Hash of the rootNode, on which this DI was produced
    */
-  public HashRange rootRange() {
-    return rootRange;
+  public int rootHash() {
+    return rootHash;
   }
 
   public long globalTime() {
@@ -40,13 +36,6 @@ public final class Meta implements Comparable<Meta> {
     return trace;
   }
 
-  /**
-   * If DI produces several DI, they marked with different childId
-   */
-  public int childId() {
-    return childId;
-  }
-
   public int tick() {
     return 1;
   }
@@ -54,7 +43,6 @@ public final class Meta implements Comparable<Meta> {
   @Override
   public int compareTo(final Meta that) {
     return Comparator.comparingLong(Meta::globalTime)
-            .thenComparingInt(Meta::childId)
             .thenComparing(Meta::trace)
             .compare(this, that);
   }
@@ -62,8 +50,8 @@ public final class Meta implements Comparable<Meta> {
   @Override
   public String toString() {
     return "Meta{" + "globalTime=" + globalTime +
-            ", childId=" + childId +
             ", trace=" + trace +
+            ", rootHash=" + rootHash +
             '}';
   }
 }

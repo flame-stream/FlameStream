@@ -40,13 +40,13 @@ public class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public Meta copyAndAppendLocal(final Meta meta) {
-    return new Meta(meta, 0, tickContext.incrementLocalTimeAndGet());
+  public Meta copyAndAppendLocal(final Meta meta, final boolean isSplit) {
+    return new Meta(meta, tickContext.incrementLocalTimeAndGet(), isSplit);
   }
 
   @Override
-  public Meta copyAndAppendLocal(final Meta meta, final int childId) {
-    return new Meta(meta, childId, tickContext.incrementLocalTimeAndGet());
+  public int incrementLocalTimeAndGet() {
+    return tickContext.incrementLocalTimeAndGet();
   }
 
   @Override

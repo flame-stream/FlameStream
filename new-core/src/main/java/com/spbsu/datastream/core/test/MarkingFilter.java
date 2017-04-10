@@ -22,7 +22,7 @@ public class MarkingFilter extends Processor<Integer, Integer> {
     }
 
     final Integer marked = result;
-    final DataItem<Integer> out = new PayloadDataItem<>(handle.copyAndAppendLocal(item.meta()), marked);
+    final DataItem<Integer> out = new PayloadDataItem<>(handle.copyAndAppendLocal(item.meta(), false), marked);
     handle.push(outPort(), out);
   }
 }

@@ -3,6 +3,7 @@ package com.spbsu.datastream.core.test;
 import akka.actor.ActorPath;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
+import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.graph.*;
 import com.spbsu.datastream.core.graph.ops.ConsumerSink;
@@ -16,7 +17,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.spbsu.datastream.core.range.RangeConciergeApi.DeployForTick;
@@ -53,7 +53,7 @@ public class DeployGraph {
 
   private TheGraph theGraph() {
     final Spliterator<Integer> spliterator = new IntSpliterator();
-    final Source<Integer> source = new SpliteratorSource<>(spliterator);
+    final Source<Integer> source = new SpliteratorSource<>(spliterator, HashFunction.OBJECT_HASH);
     final MarkingFilter filter = new MarkingFilter();
     final Sink<Integer> sink = new ConsumerSink<>(new PrintlnConsumer());
 

@@ -17,9 +17,9 @@ public interface AtomicHandle {
    */
   void ack(InPort port, DataItem<?> dataItem);
 
-  Meta copyAndAppendLocal(Meta meta);
+  Meta copyAndAppendLocal(Meta meta, boolean isSplit);
 
-  Meta copyAndAppendLocal(Meta meta, int childId);
+  int incrementLocalTimeAndGet();
 
   HashRange localRange();
 }

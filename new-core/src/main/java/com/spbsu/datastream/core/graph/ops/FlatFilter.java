@@ -32,7 +32,7 @@ public final class FlatFilter<T, R> extends Processor<T, R> {
     @SuppressWarnings("unchecked")
     final Stream<R> res = function.apply((T) item.payload());
     res.forEach(r -> {
-      handler.push(outPort(), new PayloadDataItem<>(handler.copyAndAppendLocal(item.meta()), r));
+      handler.push(outPort(), new PayloadDataItem<>(handler.copyAndAppendLocal(item.meta(), true), r));
     });
 
     handler.ack(inPort, item);
