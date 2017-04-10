@@ -35,6 +35,6 @@ public final class FlatFilter<T, R> extends Processor<T, R> {
       handler.push(outPort(), new PayloadDataItem<>(handler.copyAndAppendLocal(item.meta(), true), r));
     });
 
-    handler.ack(inPort, item);
+    ack(item, handler);
   }
 }

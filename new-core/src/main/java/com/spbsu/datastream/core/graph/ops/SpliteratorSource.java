@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
@@ -26,8 +27,10 @@ public final class SpliteratorSource<T> extends Source<T> {
               System.currentTimeMillis(),
               handler.incrementLocalTimeAndGet(),
               initHash.hash(item));
+      final DataItem<T> dataItem = new PayloadDataItem<>(now, item);
 
-      handler.push(outPort(), new PayloadDataItem<>(now, item));
+      handler.push(outPort(), dataItem);
+      ack(dataItem, handler);
       try {
         TimeUnit.MILLISECONDS.sleep(100);
       } catch (InterruptedException e) {

@@ -25,6 +25,6 @@ public final class ConsumerSink<T> extends Sink<T> {
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
     //noinspection unchecked
     consumer.accept((T) item.payload());
-    handler.ack(inPort, item);
+    ack(item, handler);
   }
 }

@@ -18,7 +18,7 @@ public class Grouping<T> extends Processor<T, GroupingResult<? super T>> {
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
     // TODO: 4/10/17 Group, possibly replay
-    handler.ack(inPort, item);
+    ack(item, handler);
   }
 
   @Override

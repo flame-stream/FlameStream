@@ -20,7 +20,7 @@ public final class Merge<R> extends FanIn<R> {
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
     handler.push(outPort(), item);
-    handler.ack(inPort, item);
+    ack(item, handler);
   }
 
 

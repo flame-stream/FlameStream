@@ -5,7 +5,7 @@ import com.spbsu.datastream.core.HashFunction;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class Sink<T> implements AtomicGraph {
+public abstract class Sink<T> extends AckingGraph {
   private final InPort inPort;
 
   protected Sink(final HashFunction<? super T> hash) {
@@ -23,7 +23,7 @@ public abstract class Sink<T> implements AtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    return Collections.emptyList();
+    return super.outPorts();
   }
 
   public InPort inPort() {

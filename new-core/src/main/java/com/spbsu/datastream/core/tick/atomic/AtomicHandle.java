@@ -12,11 +12,6 @@ public interface AtomicHandle {
 
   void panic(Exception e);
 
-  /**
-   * Inspired by Apache Storm
-   */
-  void ack(InPort port, DataItem<?> dataItem);
-
   Meta copyAndAppendLocal(Meta meta, boolean isSplit);
 
   int incrementLocalTimeAndGet();

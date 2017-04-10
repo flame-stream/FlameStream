@@ -26,6 +26,6 @@ public final class Broadcast<T> extends FanOut<T> {
     for (OutPort out : outPorts()) {
       handler.push(out, item);
     }
-    handler.ack(inPort, item);
+    ack(item, handler);
   }
 }

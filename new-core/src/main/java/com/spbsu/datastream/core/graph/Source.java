@@ -1,9 +1,10 @@
 package com.spbsu.datastream.core.graph;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class Source<R> implements AtomicGraph {
+public abstract class Source<R> extends AckingGraph {
   private final OutPort outPort = new OutPort();
 
   @Override
@@ -13,7 +14,10 @@ public abstract class Source<R> implements AtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    return Collections.singletonList(this.outPort);
+    final List<OutPort> outPorts = new ArrayList<>();
+    outPorts.add(outPort);
+    outPorts.addAll(super.outPorts());
+    return Collections.unmodifiableList(outPorts);
   }
 
   public OutPort outPort() {

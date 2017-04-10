@@ -8,7 +8,7 @@ import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 import java.util.Collections;
 import java.util.List;
 
-public final class AckingGraph implements AtomicGraph {
+public class AckingGraph implements AtomicGraph {
   private final OutPort ackPort = new OutPort();
 
   @Override
@@ -25,7 +25,7 @@ public final class AckingGraph implements AtomicGraph {
     return ackPort;
   }
 
-  public void ack(final InPort port, final DataItem<?> dataItem, final AtomicHandle handle) {
+  public void ack(final DataItem<?> dataItem, final AtomicHandle handle) {
     final Ack ack = new Ack(dataItem.meta().globalTime(), dataItem.meta().rootHash(), dataItem.ackHashCode());
     final DataItem<Ack> di = new NoAckDataItem<>(handle.copyAndAppendLocal(dataItem.meta(), false), ack);
     handle.push(ackPort, di);

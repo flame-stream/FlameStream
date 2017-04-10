@@ -2,12 +2,13 @@ package com.spbsu.datastream.core.graph;
 
 import com.spbsu.datastream.core.HashFunction;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class FanIn<R> implements AtomicGraph {
+public abstract class FanIn<R> extends AckingGraph {
   private final List<InPort> inPorts;
   private final OutPort outPort;
 
@@ -29,7 +30,10 @@ public abstract class FanIn<R> implements AtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    return Collections.singletonList(outPort);
+    final List<OutPort> outPorts = new ArrayList<>();
+    outPorts.add(outPort);
+    outPorts.addAll(super.outPorts());
+    return Collections.unmodifiableList(outPorts);
   }
 
   public OutPort outPort() {
