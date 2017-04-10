@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Processor;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
@@ -16,6 +17,12 @@ public class Grouping<T> extends Processor<T, GroupingResult<? super T>> {
 
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
-    //COPYPASTE ME PLEASE
+    // TODO: 4/10/17 Group, possibly replay
+    handler.ack(inPort, item);
+  }
+
+  @Override
+  public void onMinGTimeUpdate(final Meta meta) {
+    // TODO: 4/10/17 CLEAN REPLAY HISTORY
   }
 }

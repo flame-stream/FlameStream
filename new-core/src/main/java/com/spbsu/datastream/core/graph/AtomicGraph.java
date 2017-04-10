@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 import java.util.Optional;
@@ -20,5 +21,9 @@ public interface AtomicGraph extends Graph {
   }
 
   default void onRecover(final Object state, final AtomicHandle handle) {
+  }
+
+  default void onMinGTimeUpdate(final Meta meta) {
+
   }
 }
