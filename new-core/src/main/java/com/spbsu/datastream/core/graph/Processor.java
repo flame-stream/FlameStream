@@ -15,10 +15,6 @@ public abstract class Processor<T, R> extends AckingGraph {
     this.inPort = new InPort(hash);
   }
 
-  protected Processor() {
-    this.inPort = new InPort(HashFunction.OBJECT_HASH);
-  }
-
   public InPort inPort() {
     return inPort;
   }

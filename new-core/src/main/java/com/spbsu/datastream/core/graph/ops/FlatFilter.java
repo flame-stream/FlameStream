@@ -18,11 +18,6 @@ public final class FlatFilter<T, R> extends Processor<T, R> {
     this.function = function;
   }
 
-  public FlatFilter(final Function<T, Stream<R>> function) {
-    super();
-    this.function = function;
-  }
-
   public Function<T, Stream<R>> function() {
     return function;
   }

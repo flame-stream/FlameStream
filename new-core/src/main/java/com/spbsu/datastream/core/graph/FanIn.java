@@ -17,12 +17,6 @@ public abstract class FanIn<R> extends AckingGraph {
     this.outPort = new OutPort();
   }
 
-  protected FanIn(final int shape) {
-    this.inPorts = Stream.generate(() -> HashFunction.OBJECT_HASH).limit(shape)
-            .map(InPort::new).collect(Collectors.toList());
-    this.outPort = new OutPort();
-  }
-
   @Override
   public List<InPort> inPorts() {
     return Collections.unmodifiableList(inPorts);

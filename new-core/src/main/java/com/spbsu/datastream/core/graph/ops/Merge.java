@@ -13,15 +13,9 @@ public final class Merge<R> extends FanIn<R> {
     super(hashes);
   }
 
-  public Merge(final int shape) {
-    super(shape);
-  }
-
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
     handler.push(outPort(), item);
     ack(item, handler);
   }
-
-
 }

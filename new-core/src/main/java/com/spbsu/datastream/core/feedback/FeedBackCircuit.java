@@ -24,6 +24,8 @@ public final class FeedBackCircuit implements AtomicGraph {
   //Inner state
   private final Map<Long, Long> globalTsToXor = new HashMap<>();
 
+  private final Map<Long, Integer> rootHashes = new HashMap<>();
+
   private FeedBackCircuit(final List<HashFunction<?>> ackHashes,
                           final int countSinks) {
     ackPorts = ackHashes.stream().map(InPort::new).collect(Collectors.toList());
@@ -35,8 +37,12 @@ public final class FeedBackCircuit implements AtomicGraph {
     if (ackPorts.contains(inPort)) {
       final Ack ack = (Ack) item.payload();
 
-      final long xor = globalTsToXor.compute(ack.globalTs(),
-              (globalTs, oldXor) -> oldXor == null ? ack.ack() : oldXor ^ ack.ack());
+      globalTsToXor.putIfAbsent(ack.globalTs(), 0L);
+      rootHashes.putIfAbsent(ack.globalTs(), ack.rootHash());
+
+      final long xor = globalTsToXor.computeIfPresent(
+              ack.globalTs(),
+              (globalTs, oldXor) -> oldXor ^ ack.ack());
       if (xor == 0) {
         closeDataItem(ack.globalTs(), handle, item.meta());
       }
@@ -44,14 +50,16 @@ public final class FeedBackCircuit implements AtomicGraph {
   }
 
   private void closeDataItem(final long globalTs, final AtomicHandle handle, final Meta lastAckMeta) {
-    globalTsToXor.remove(globalTs);
-
-    for (int i = 0; i < feedbackPorts.size(); ++i) {
+    feedbackPorts.forEach(feedbackPort -> {
       handle.push(
-              feedbackPorts.get(i),
-              new NoAckDataItem<>(handle.copyAndAppendLocal(lastAckMeta, true), new DICompeted(globalTs))
-      );
-    }
+              feedbackPort,
+              new NoAckDataItem<>(
+                      handle.copyAndAppendLocal(lastAckMeta, true),
+                      new DICompeted(globalTs, rootHashes.get(globalTs))));
+    });
+
+    rootHashes.remove(globalTs);
+    globalTsToXor.remove(globalTs);
   }
 
   @Override

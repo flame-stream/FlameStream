@@ -17,11 +17,6 @@ public final class StatelessFilter<T, R> extends Processor<T, R> {
     this.function = function;
   }
 
-  public StatelessFilter(final Function<T, R> function) {
-    super();
-    this.function = function;
-  }
-
   public Function<T, R> function() {
     return function;
   }

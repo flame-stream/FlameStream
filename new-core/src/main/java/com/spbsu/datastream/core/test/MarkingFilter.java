@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.test;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Processor;
@@ -10,6 +11,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class MarkingFilter extends Processor<Integer, Integer> {
   private final ThreadLocalRandom rd = ThreadLocalRandom.current();
+
+  public MarkingFilter(final HashFunction<? super Integer> hash) {
+    super(hash);
+  }
 
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handle) {

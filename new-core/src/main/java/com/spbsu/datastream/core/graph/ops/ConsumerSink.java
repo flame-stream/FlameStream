@@ -11,13 +11,10 @@ import java.util.function.Consumer;
 public final class ConsumerSink<T> extends Sink<T> {
   private final Consumer<T> consumer;
 
-  public ConsumerSink(final Consumer<T> consumer, final HashFunction<T> hash) {
-    super(hash);
-    this.consumer = consumer;
-  }
-
-  public ConsumerSink(final Consumer<T> consumer) {
-    super();
+  public ConsumerSink(final Consumer<T> consumer,
+                      final HashFunction<? super T> hash,
+                      final HashFunction<? super T> initHash) {
+    super(hash, initHash);
     this.consumer = consumer;
   }
 

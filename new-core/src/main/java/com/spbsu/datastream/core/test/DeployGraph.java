@@ -54,8 +54,8 @@ public class DeployGraph {
   private TheGraph theGraph() {
     final Spliterator<Integer> spliterator = new IntSpliterator();
     final Source<Integer> source = new SpliteratorSource<>(spliterator, HashFunction.OBJECT_HASH);
-    final MarkingFilter filter = new MarkingFilter();
-    final Sink<Integer> sink = new ConsumerSink<>(new PrintlnConsumer());
+    final MarkingFilter filter = new MarkingFilter(HashFunction.OBJECT_HASH);
+    final Sink<Integer> sink = new ConsumerSink<>(new PrintlnConsumer(), HashFunction.OBJECT_HASH, HashFunction.OBJECT_HASH);
 
     final Graph gr = source.fuse(filter, source.outPort(), filter.inPort()).fuse(sink, filter.outPort(), sink.inPort());
     final FlatGraph graph = FlatGraph.flattened(gr);

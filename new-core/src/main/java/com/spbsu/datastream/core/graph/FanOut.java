@@ -18,12 +18,6 @@ public abstract class FanOut<T> extends AckingGraph {
             .collect(Collectors.toList());
   }
 
-  protected FanOut(final int shape) {
-    this.inPort = new InPort(HashFunction.OBJECT_HASH);
-    this.outPorts = Stream.generate(OutPort::new).limit(shape)
-            .collect(Collectors.toList());
-  }
-
   @Override
   public List<InPort> inPorts() {
     return Collections.singletonList(inPort);

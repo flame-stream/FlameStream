@@ -12,10 +12,6 @@ public final class Broadcast<T> extends FanOut<T> {
     super(hash, shape);
   }
 
-  public Broadcast(final int shape) {
-    super(shape);
-  }
-
   @Override
   public String toString() {
     return "Broadcast{" + super.toString() + '}';

@@ -35,11 +35,6 @@ public class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public void ack(final InPort port, final DataItem<?> dataItem) {
-
-  }
-
-  @Override
   public Meta copyAndAppendLocal(final Meta meta, final boolean isSplit) {
     return new Meta(meta, tickContext.incrementLocalTimeAndGet(), isSplit);
   }
