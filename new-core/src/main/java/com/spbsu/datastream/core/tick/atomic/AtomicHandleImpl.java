@@ -1,12 +1,8 @@
 package com.spbsu.datastream.core.tick.atomic;
 
-import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.Meta;
-import com.spbsu.datastream.core.RoutingException;
+import com.spbsu.datastream.core.*;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
-import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.tick.AddressedMessage;
 import com.spbsu.datastream.core.tick.TickContext;
 
@@ -34,11 +30,6 @@ public class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public void deploy(final TheGraph graph) {
-
-  }
-
-  @Override
   public void panic(final Exception e) {
     throw new RuntimeException(e);
   }
@@ -49,12 +40,17 @@ public class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public void fail(final DataItem<?> dataItem, final InPort inPort, final Exception reason) {
-    throw new RuntimeException(reason);
+  public Meta copyAndAppendLocal(final Meta meta) {
+    return new Meta(meta, 0, tickContext.incrementLocalTimeAndGet());
   }
 
   @Override
-  public Meta copyAndAppendLocal(final Meta meta) {
-    return new Meta(meta, tickContext.incrementLocalTimeAndGet());
+  public Meta copyAndAppendLocal(final Meta meta, final int childId) {
+    return new Meta(meta, childId, tickContext.incrementLocalTimeAndGet());
+  }
+
+  @Override
+  public HashRange localRange() {
+    return tickContext.localRange();
   }
 }

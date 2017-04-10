@@ -1,7 +1,6 @@
 package com.spbsu.datastream.core.test;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.Processor;
@@ -23,7 +22,7 @@ public class MarkingFilter extends Processor<Integer, Integer> {
     }
 
     final Integer marked = result;
-    final DataItem<Integer> out = new PayloadDataItem<>(Meta.now(), marked);
+    final DataItem<Integer> out = new PayloadDataItem<>(handle.copyAndAppendLocal(item.meta()), marked);
     handle.push(outPort(), out);
   }
 }

@@ -4,4 +4,6 @@ public interface DataItem<T> {
   Meta meta();
 
   T payload();
+
+  long ackHashCode();
 }

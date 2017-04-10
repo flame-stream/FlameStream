@@ -18,7 +18,8 @@ public final class SpliteratorSource<T> extends Source<T> {
   @Override
   public void onStart(final AtomicHandle handler) {
     spliterator.forEachRemaining(item -> {
-      handler.push(outPort(), new PayloadDataItem<>(Meta.now(), item));
+      final Meta now = new Meta(System.currentTimeMillis(), handler.localRange());
+      handler.push(outPort(), new PayloadDataItem<>(now, item));
       try {
         TimeUnit.MILLISECONDS.sleep(100);
       } catch (InterruptedException e) {

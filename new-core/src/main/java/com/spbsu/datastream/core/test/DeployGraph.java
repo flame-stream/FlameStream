@@ -34,7 +34,7 @@ public class DeployGraph {
 
 
     final TheGraph theGraph = theGraph();
-    final long tick = (int) (System.currentTimeMillis() / TimeUnit.MINUTES.toMillis(13));
+    final long tick = 1;
     final DeployForTick request = new DeployForTick(theGraph, tick);
 
     final ActorSelection worker1 = rangeConcierge(system, 7001, new HashRange(Integer.MIN_VALUE, 0));

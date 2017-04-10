@@ -1,55 +1,60 @@
 package com.spbsu.datastream.core;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Comparator;
-import java.util.concurrent.TimeUnit;
 
 public final class Meta implements Comparable<Meta> {
   private final long globalTime;
 
+  private final int childId;
+
   private final Trace trace;
 
-  public Meta(final long globalTime) {
+  private final HashRange rootRange;
+
+  public Meta(final long globalTime, final HashRange rootRange) {
     this.globalTime = globalTime;
+    this.rootRange = rootRange;
+    this.childId = 0;
     this.trace = new Trace();
   }
 
-  public Meta(final Meta oldMeta, final int newLocalTime) {
+  public Meta(final Meta oldMeta, final int childId, final int newLocalTime) {
+    this.rootRange = oldMeta.rootRange();
     this.globalTime = oldMeta.globalTime();
+    this.childId = childId;
     this.trace = new Trace(oldMeta.trace(), newLocalTime);
   }
 
-  @JsonCreator
-  private Meta(@JsonProperty("trace") final Trace trace, @JsonProperty("globalTime") final long globalTime) {
-    this.globalTime = globalTime;
-    this.trace = trace;
+  /**
+   * Range of the rootNode, on which this DI was produced
+   */
+  public HashRange rootRange() {
+    return rootRange;
   }
 
-  public static Meta now() {
-    return new Meta(System.currentTimeMillis());
-  }
-
-  @JsonProperty("globalTime")
   public long globalTime() {
     return globalTime;
   }
 
-  @JsonProperty("localTime")
   public Trace trace() {
     return trace;
   }
 
-  @JsonIgnore
+  /**
+   * If DI produces several DI, they marked with different childId
+   */
+  public int childId() {
+    return childId;
+  }
+
   public int tick() {
-    return (int) (globalTime() / TimeUnit.HOURS.toMillis(1));
+    return 1;
   }
 
   @Override
   public int compareTo(final Meta that) {
     return Comparator.comparingLong(Meta::globalTime)
+            .thenComparingInt(Meta::childId)
             .thenComparing(Meta::trace)
             .compare(this, that);
   }
@@ -57,6 +62,7 @@ public final class Meta implements Comparable<Meta> {
   @Override
   public String toString() {
     return "Meta{" + "globalTime=" + globalTime +
+            ", childId=" + childId +
             ", trace=" + trace +
             '}';
   }
