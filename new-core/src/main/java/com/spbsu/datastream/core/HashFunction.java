@@ -16,6 +16,7 @@ public interface HashFunction<T> extends ToIntFunction<T> {
     }
   };
 
+
   boolean equal(T o1, T o2);
 
   int hash(T value);

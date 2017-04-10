@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.FanIn;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
@@ -15,7 +16,10 @@ public final class Merge<R> extends FanIn<R> {
 
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
-    handler.push(outPort(), item);
+    final DataItem<?> newItem = new PayloadDataItem<>(handler.copyAndAppendLocal(item.meta(), false), item.payload());
+
+    prePush(newItem, handler);
+    handler.push(outPort(), newItem);
     ack(item, handler);
   }
 }

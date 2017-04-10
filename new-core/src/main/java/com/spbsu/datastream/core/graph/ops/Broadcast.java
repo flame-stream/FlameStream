@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.FanOut;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -20,6 +21,8 @@ public final class Broadcast<T> extends FanOut<T> {
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
     for (OutPort out : outPorts()) {
+      final DataItem<?> newItem = new PayloadDataItem<>(handler.copyAndAppendLocal(item.meta(), true), item.payload());
+      prePush(newItem, handler);
       handler.push(out, item);
     }
     ack(item, handler);

@@ -30,4 +30,8 @@ public class AckingGraph implements AtomicGraph {
     final DataItem<Ack> di = new NoAckDataItem<>(handle.copyAndAppendLocal(dataItem.meta(), false), ack);
     handle.push(ackPort, di);
   }
+
+  public void prePush(final DataItem<?> dataItem, final AtomicHandle handle) {
+    ack(dataItem, handle);
+  }
 }

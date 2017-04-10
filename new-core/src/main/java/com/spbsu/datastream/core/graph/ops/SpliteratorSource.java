@@ -29,8 +29,8 @@ public final class SpliteratorSource<T> extends Source<T> {
               initHash.hash(item));
       final DataItem<T> dataItem = new PayloadDataItem<>(now, item);
 
+      prePush(dataItem, handler);
       handler.push(outPort(), dataItem);
-      ack(dataItem, handler);
       try {
         TimeUnit.MILLISECONDS.sleep(100);
       } catch (InterruptedException e) {

@@ -8,6 +8,9 @@ public final class TheGraph implements ComposedGraph<AtomicGraph> {
   private final ComposedGraph<AtomicGraph> composedGraph;
 
   public TheGraph(final FlatGraph flatGraph) {
+    if (!flatGraph.isClosed()) {
+      throw new IllegalArgumentException("Graph should be closed");
+    }
     composedGraph = flatGraph;
   }
 

@@ -5,8 +5,12 @@ import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.HashRange;
-import com.spbsu.datastream.core.graph.*;
-import com.spbsu.datastream.core.graph.ops.ConsumerSink;
+import com.spbsu.datastream.core.graph.FlatGraph;
+import com.spbsu.datastream.core.graph.Graph;
+import com.spbsu.datastream.core.graph.Source;
+import com.spbsu.datastream.core.graph.TheGraph;
+import com.spbsu.datastream.core.graph.ops.ConsumerBarrierSink;
+import com.spbsu.datastream.core.graph.ops.PreSinkMetaFilter;
 import com.spbsu.datastream.core.graph.ops.SpliteratorSource;
 import com.spbsu.datastream.core.node.MyPaths;
 import com.typesafe.config.Config;
@@ -55,9 +59,13 @@ public class DeployGraph {
     final Spliterator<Integer> spliterator = new IntSpliterator();
     final Source<Integer> source = new SpliteratorSource<>(spliterator, HashFunction.OBJECT_HASH);
     final MarkingFilter filter = new MarkingFilter(HashFunction.OBJECT_HASH);
-    final Sink<Integer> sink = new ConsumerSink<>(new PrintlnConsumer(), HashFunction.OBJECT_HASH, HashFunction.OBJECT_HASH);
+    final PreSinkMetaFilter<Integer> preSinkMetaFilter = new PreSinkMetaFilter<>(HashFunction.OBJECT_HASH);
+    final ConsumerBarrierSink<Integer> sink = new ConsumerBarrierSink<>(new PrintlnConsumer());
 
-    final Graph gr = source.fuse(filter, source.outPort(), filter.inPort()).fuse(sink, filter.outPort(), sink.inPort());
+    final Graph gr = source
+            .fuse(filter, source.outPort(), filter.inPort())
+            .fuse(preSinkMetaFilter, filter.outPort(), preSinkMetaFilter.inPort())
+            .fuse(sink, preSinkMetaFilter.outPort(), sink.inPort());
     final FlatGraph graph = FlatGraph.flattened(gr);
     return new TheGraph(graph);
   }
