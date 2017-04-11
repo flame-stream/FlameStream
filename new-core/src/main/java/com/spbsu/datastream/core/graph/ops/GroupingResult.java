@@ -1,38 +1,35 @@
 package com.spbsu.datastream.core.graph.ops;
 
-import com.spbsu.datastream.core.Hashable;
+import com.spbsu.datastream.core.HashFunction;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
-public final class GroupingResult<T extends Hashable<T>> implements Hashable<GroupingResult<T>> {
-  private final List<T> list;
+public final class GroupingResult<T> {
+  public final static HashFunction<GroupingResult> HASH_FUNCTION = new HashFunction<GroupingResult>() {
+    @Override
+    public boolean equal(final GroupingResult o1, final GroupingResult o2) {
+      return o1.rootHash() == o2.rootHash();
+    }
+
+    @Override
+    public int hash(final GroupingResult value) {
+      return value.rootHash();
+    }
+  };
 
   private final int hash;
+  private List<T> payload;
 
-  public GroupingResult(final List<T> list) {
-    this.list = Collections.unmodifiableList(new ArrayList<>(list));
-    this.hash = list.stream().findAny().map(Hashable::hash).orElse(0);
+  public GroupingResult(final List<T> payload, int hash) {
+    this.payload = payload;
+    this.hash = hash;
   }
 
-  @Override
-  public int hash() {
+  public List<T> payload() {
+    return payload;
+  }
+
+  public int rootHash() {
     return hash;
-  }
-
-  @Override
-  public boolean hashEquals(final GroupingResult<T> that) {
-    final Optional<T> thatAny = that.list.stream().findAny();
-    final Optional<T> thisAny = this.list.stream().findAny();
-
-    if (!thisAny.isPresent() && !thatAny.isPresent()) {
-      return true;
-    } else if (thisAny.isPresent() && thatAny.isPresent()) {
-      return thisAny.get().hashEquals(thatAny.get());
-    } else {
-      return false;
-    }
   }
 }

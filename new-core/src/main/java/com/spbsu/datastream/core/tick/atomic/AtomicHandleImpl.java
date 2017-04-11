@@ -3,6 +3,7 @@ package com.spbsu.datastream.core.tick.atomic;
 import com.spbsu.datastream.core.*;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
+import com.spbsu.datastream.core.graph.ops.GroupingState;
 import com.spbsu.datastream.core.tick.AddressedMessage;
 import com.spbsu.datastream.core.tick.TickContext;
 
@@ -27,6 +28,17 @@ public class AtomicHandleImpl implements AtomicHandle {
 
     final AddressedMessage addressedMessage = new AddressedMessage(result, address.id(), hash);
     tickContext.rootRouter().tell(addressedMessage, null);
+  }
+
+  @Override
+  public GroupingState loadGroupingState() {
+    //TODO: 4/11/17 load from LevelDB
+    return null;
+  }
+
+  @Override
+  public void saveGroupingState(final GroupingState storage) {
+    //TODO: 4/11/17 save to LevelDB
   }
 
   @Override
