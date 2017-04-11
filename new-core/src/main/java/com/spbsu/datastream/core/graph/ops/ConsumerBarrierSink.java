@@ -29,8 +29,10 @@ public final class ConsumerBarrierSink<T> extends AckingGraph {
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
     //noinspection unchecked
     if (inPort.equals(this.inPort)) {
+      consumer.accept(((PreSinkMetaElement<T>) item.payload()).payload());
       ack(item, handler);
     } else if (inPort.equals(feedbackPort)) {
+      System.out.println(item.payload());
       ack(item, handler);
     }
   }

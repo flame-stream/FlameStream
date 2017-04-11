@@ -5,6 +5,7 @@ import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.feedback.FeedBackCircuit;
 import com.spbsu.datastream.core.graph.FlatGraph;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.Source;
@@ -66,7 +67,16 @@ public class DeployGraph {
             .fuse(filter, source.outPort(), filter.inPort())
             .fuse(preSinkMetaFilter, filter.outPort(), preSinkMetaFilter.inPort())
             .fuse(sink, preSinkMetaFilter.outPort(), sink.inPort());
-    final FlatGraph graph = FlatGraph.flattened(gr);
+
+    final FeedBackCircuit feedBackCircuit = new FeedBackCircuit(4, 1);
+
+    final Graph completeGraph = gr.fuse(feedBackCircuit, source.ackPort(), feedBackCircuit.inPorts().get(0))
+            .wire(filter.ackPort(), feedBackCircuit.inPorts().get(1))
+            .wire(preSinkMetaFilter.ackPort(), feedBackCircuit.inPorts().get(2))
+            .wire(sink.ackPort(), feedBackCircuit.inPorts().get(3))
+            .wire(feedBackCircuit.outPorts().get(0), sink.feedbackPort());
+
+    final FlatGraph graph = FlatGraph.flattened(completeGraph);
     return new TheGraph(graph);
   }
 

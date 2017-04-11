@@ -1,7 +1,6 @@
 package com.spbsu.datastream.core.feedback;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
@@ -26,9 +25,9 @@ public final class FeedBackCircuit implements AtomicGraph {
 
   private final Map<Long, Integer> rootHashes = new HashMap<>();
 
-  private FeedBackCircuit(final List<HashFunction<?>> ackHashes,
+  public FeedBackCircuit(final int ackers,
                           final int countSinks) {
-    ackPorts = ackHashes.stream().map(InPort::new).collect(Collectors.toList());
+    ackPorts = Stream.generate(() -> Ack.HASH_FUNCTION).map(InPort::new).limit(ackers).collect(Collectors.toList());
     feedbackPorts = Stream.generate(OutPort::new).limit(countSinks).collect(Collectors.toList());
   }
 
