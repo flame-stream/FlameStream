@@ -1,34 +1,29 @@
 package com.spbsu.datastream.core;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 public final class Meta implements Comparable<Meta> {
-  private final long globalTime;
+  private final GlobalTime globalTime;
 
   private final Trace trace;
 
-  private final int rootHash;
-
-  public Meta(final long globalTime, final int localTime, final int rootHash) {
+  public Meta(final GlobalTime globalTime, final int localTime) {
     this.globalTime = globalTime;
-    this.rootHash = rootHash;
-    this.trace = new Trace(localTime);
+    this.trace = new Trace(new LocalEvent(localTime));
   }
 
-  public Meta(final Meta oldMeta, final int newLocalTime, final boolean isSplit) {
-    this.rootHash = oldMeta.rootHash();
+  public Meta(final Meta oldMeta, final int newLocalTime) {
     this.globalTime = oldMeta.globalTime();
-    this.trace = new Trace(oldMeta.trace(), newLocalTime, isSplit);
+    this.trace = new Trace(oldMeta.trace(), new LocalEvent(newLocalTime));
   }
 
-  /**
-   * Hash of the rootNode, on which this DI was produced
-   */
-  public int rootHash() {
-    return rootHash;
+  public Meta(final Meta oldMeta, final int newLocalTime, final int childId) {
+    this.globalTime = oldMeta.globalTime();
+    this.trace = new Trace(oldMeta.trace(), new LocalEvent(newLocalTime, childId));
   }
 
-  public long globalTime() {
+  public GlobalTime globalTime() {
     return globalTime;
   }
 
@@ -42,16 +37,29 @@ public final class Meta implements Comparable<Meta> {
 
   @Override
   public int compareTo(final Meta that) {
-    return Comparator.comparingLong(Meta::globalTime)
+    return Comparator.comparing(Meta::globalTime)
             .thenComparing(Meta::trace)
             .compare(this, that);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || this.getClass() != o.getClass()) return false;
+    final Meta meta = (Meta) o;
+    return Objects.equals(globalTime, meta.globalTime) &&
+            Objects.equals(trace, meta.trace);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(globalTime, trace);
   }
 
   @Override
   public String toString() {
     return "Meta{" + "globalTime=" + globalTime +
             ", trace=" + trace +
-            ", rootHash=" + rootHash +
             '}';
   }
 }

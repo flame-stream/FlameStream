@@ -1,0 +1,32 @@
+package com.spbsu.datastream.core.graph;
+
+import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.Meta;
+import com.spbsu.datastream.core.PayloadDataItem;
+import com.spbsu.datastream.core.feedback.Ack;
+import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
+
+public abstract class AbstractAtomicGraph implements AtomicGraph {
+  private final OutPort ackPort = new OutPort();
+
+  private int localTime = 0;
+
+  protected final int incrementLocalTimeAndGet() {
+    ++localTime;
+    return localTime;
+  }
+
+  public final OutPort ackPort() {
+    return ackPort;
+  }
+
+  protected final void ack(final DataItem<?> dataItem, final AtomicHandle handle) {
+    final Ack ack = new Ack(dataItem.meta().globalTime().time(), dataItem.meta().globalTime().initHash(), dataItem.ack());
+    final DataItem<Ack> di = new PayloadDataItem<>(new Meta(dataItem.meta(), this.incrementLocalTimeAndGet()), ack);
+    handle.push(ackPort, di);
+  }
+
+  protected final void prePush(final DataItem<?> dataItem, final AtomicHandle handle) {
+    this.ack(dataItem, handle);
+  }
+}

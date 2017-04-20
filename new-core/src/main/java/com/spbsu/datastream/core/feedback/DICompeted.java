@@ -2,8 +2,8 @@ package com.spbsu.datastream.core.feedback;
 
 import com.spbsu.datastream.core.HashFunction;
 
-public class DICompeted {
-  public final static HashFunction<DICompeted> HASH_FUNCTION = new HashFunction<DICompeted>() {
+public final class DICompeted {
+  public static final HashFunction<DICompeted> HASH_FUNCTION = new HashFunction<DICompeted>() {
     @Override
     public boolean equal(final DICompeted o1, final DICompeted o2) {
       return o1.rootHash() == o2.rootHash();

@@ -1,6 +1,9 @@
 package com.spbsu.datastream.core.tick.atomic;
 
-import com.spbsu.datastream.core.*;
+import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.RoutingException;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.graph.ops.GroupingState;
@@ -9,7 +12,7 @@ import com.spbsu.datastream.core.tick.TickContext;
 
 import java.util.Optional;
 
-public class AtomicHandleImpl implements AtomicHandle {
+public final class AtomicHandleImpl implements AtomicHandle {
   private final TickContext tickContext;
 
   public AtomicHandleImpl(final TickContext tickContext) {
@@ -21,7 +24,7 @@ public class AtomicHandleImpl implements AtomicHandle {
     final Optional<InPort> destination = Optional.ofNullable(tickContext.graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
-    final HashFunction hashFunction = address.hashFunction();
+    @SuppressWarnings("rawtypes") final HashFunction hashFunction = address.hashFunction();
 
     @SuppressWarnings("unchecked")
     final int hash = hashFunction.applyAsInt(result.payload());
@@ -31,13 +34,13 @@ public class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public GroupingState loadGroupingState() {
+  public GroupingState<?> loadGroupingState() {
     //TODO: 4/11/17 load from LevelDB
     return null;
   }
 
   @Override
-  public void saveGroupingState(final GroupingState storage) {
+  public void saveGroupingState(final GroupingState<?> storage) {
     //TODO: 4/11/17 save to LevelDB
   }
 
@@ -47,11 +50,7 @@ public class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public Meta copyAndAppendLocal(final Meta meta, final boolean isSplit) {
-    return new Meta(meta, tickContext.incrementLocalTimeAndGet(), isSplit);
-  }
-
-  @Override
+  // TODO: 4/15/17 Move localTime to each operation
   public int incrementLocalTimeAndGet() {
     return tickContext.incrementLocalTimeAndGet();
   }

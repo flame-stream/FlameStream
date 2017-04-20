@@ -2,8 +2,9 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.feedback.DICompeted;
-import com.spbsu.datastream.core.graph.AckingGraph;
+import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
+import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 import java.util.ArrayList;
@@ -11,29 +12,29 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-public final class ConsumerBarrierSink<T> extends AckingGraph {
+public final class ConsumerBarrierSink<T> extends AbstractAtomicGraph {
   private final Consumer<T> consumer;
 
   private final InPort inPort;
 
   private final InPort feedbackPort;
 
-
   public ConsumerBarrierSink(final Consumer<T> consumer) {
+    super();
     this.consumer = consumer;
     this.inPort = new InPort(PreSinkMetaElement.HASH_FUNCTION);
     this.feedbackPort = new InPort(DICompeted.HASH_FUNCTION);
   }
 
+
+  @SuppressWarnings({"unchecked", "CastToConcreteClass"})
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
-    //noinspection unchecked
     if (inPort.equals(this.inPort)) {
       consumer.accept(((PreSinkMetaElement<T>) item.payload()).payload());
-      ack(item, handler);
+      this.ack(item, handler);
     } else if (inPort.equals(feedbackPort)) {
-      System.out.println(item.payload());
-      ack(item, handler);
+      this.ack(item, handler);
     }
   }
 
@@ -55,5 +56,10 @@ public final class ConsumerBarrierSink<T> extends AckingGraph {
     inPorts.add(inPort);
     inPorts.add(feedbackPort);
     return Collections.unmodifiableList(inPorts);
+  }
+
+  @Override
+  public List<OutPort> outPorts() {
+    return Collections.singletonList(this.ackPort());
   }
 }

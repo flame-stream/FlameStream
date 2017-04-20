@@ -22,7 +22,7 @@ public interface Graph {
    **/
 
   default Graph fuse(final Graph that, final OutPort from, final InPort to) {
-    return compose(that).wire(from, to);
+    return this.compose(that).wire(from, to);
   }
 
   /**
@@ -51,19 +51,7 @@ public interface Graph {
     return new ComposedGraphImpl<>(this, from, to);
   }
 
-  default boolean isSource() {
-    return outPorts().size() == 1 && inPorts().isEmpty();
-  }
-
-  default boolean isSink() {
-    return inPorts().size() == 1 && outPorts().isEmpty();
-  }
-
-  default boolean isFlow() {
-    return inPorts().size() == 1 && outPorts().size() == 1;
-  }
-
   default boolean isClosed() {
-    return inPorts().isEmpty() && outPorts().isEmpty();
+    return this.inPorts().isEmpty() && this.outPorts().isEmpty();
   }
 }

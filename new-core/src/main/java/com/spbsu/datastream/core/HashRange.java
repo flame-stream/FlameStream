@@ -2,7 +2,7 @@ package com.spbsu.datastream.core;
 
 import java.util.Objects;
 
-public class HashRange {
+public final class HashRange {
   private final int from;
 
   private final int to;
@@ -12,12 +12,12 @@ public class HashRange {
     this.to = to;
   }
 
-  public static HashRange fromString(final String string) {
-    final String[] arr = string.split("_");
+  public static HashRange fromString(final String serializedHashRange) {
+    final String[] arr = serializedHashRange.split("_");
     return new HashRange(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]));
   }
 
-  public boolean isIn(int hash) {
+  public boolean isIn(final int hash) {
     return from <= hash && hash < to;
   }
 
@@ -31,8 +31,12 @@ public class HashRange {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || this.getClass() != o.getClass()) {
+      return false;
+    }
     final HashRange hashRange = (HashRange) o;
     return from == hashRange.from &&
             to == hashRange.to;

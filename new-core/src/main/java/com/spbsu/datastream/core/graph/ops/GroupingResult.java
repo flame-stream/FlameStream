@@ -2,10 +2,12 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.HashFunction;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class GroupingResult<T> {
-  public final static HashFunction<GroupingResult> HASH_FUNCTION = new HashFunction<GroupingResult>() {
+  public static final HashFunction<GroupingResult> HASH_FUNCTION = new HashFunction<GroupingResult>() {
     @Override
     public boolean equal(final GroupingResult o1, final GroupingResult o2) {
       return o1.rootHash() == o2.rootHash();
@@ -18,15 +20,15 @@ public final class GroupingResult<T> {
   };
 
   private final int hash;
-  private List<T> payload;
+  private final List<T> payload;
 
-  public GroupingResult(final List<T> payload, int hash) {
-    this.payload = payload;
+  public GroupingResult(final List<T> payload, final int hash) {
+    this.payload = new ArrayList<>(payload);
     this.hash = hash;
   }
 
   public List<T> payload() {
-    return payload;
+    return Collections.unmodifiableList(payload);
   }
 
   public int rootHash() {

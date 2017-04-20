@@ -11,7 +11,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class ZooKeeperApplication {
-  private final Logger LOG = LoggerFactory.getLogger(ZooKeeperApplication.class);
+  private final Logger log = LoggerFactory.getLogger(ZooKeeperApplication.class);
 
   public static void main(final String... args) throws IOException {
     new ZooKeeperApplication().run();
@@ -20,7 +20,7 @@ public class ZooKeeperApplication {
   public void run() throws IOException {
     final QuorumPeerConfig quorumConfig = new QuorumPeerConfig();
 
-    try (InputStream stream = getClass().getClassLoader().getResourceAsStream("zookeeper-dev.properties")) {
+    try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("zookeeper-dev.properties")) {
       final Properties props = new Properties();
       props.load(stream);
       quorumConfig.parseProperties(props);
@@ -35,9 +35,9 @@ public class ZooKeeperApplication {
     new Thread(() -> {
       try {
         zooKeeperServer.runFromConfig(serverConfig);
-        LOG.info("ZooKeeper is alive");
+        log.info("ZooKeeper is alive");
       } catch (IOException e) {
-        LOG.error("ZooKeeper is dead", e);
+        log.error("ZooKeeper is dead", e);
       }
     }).start();
   }

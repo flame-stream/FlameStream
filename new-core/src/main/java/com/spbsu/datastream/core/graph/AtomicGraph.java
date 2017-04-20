@@ -18,7 +18,7 @@ public interface AtomicGraph extends Graph {
   default void onCommit(final AtomicHandle handle) {
   }
 
-  default void onRecover(final GroupingState state, final AtomicHandle handle) {
+  default void onRecover(final GroupingState<?> state, final AtomicHandle handle) {
   }
 
   default void onMinGTimeUpdate(final Meta meta) {

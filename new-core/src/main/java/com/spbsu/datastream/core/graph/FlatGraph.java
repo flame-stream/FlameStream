@@ -41,10 +41,10 @@ public final class FlatGraph implements ComposedGraph<AtomicGraph> {
   @Override
   public String toString() {
     return "FlatGraph{" +
-            ", downstreams=" + downstreams() +
-            ", inPorts=" + inPorts() +
-            ", outPorts=" + outPorts() +
-            ", subGraphs=" + subGraphs() +
+            ", downstreams=" + this.downstreams() +
+            ", inPorts=" + this.inPorts() +
+            ", outPorts=" + this.outPorts() +
+            ", subGraphs=" + this.subGraphs() +
             '}';
   }
 

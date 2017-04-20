@@ -4,8 +4,9 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
+import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.graph.Processor;
+import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 import java.util.ArrayList;
@@ -14,16 +15,22 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class Grouping<T> extends Processor<T, GroupingResult<? super T>> {
-  private final int window;
+public final class Grouping<T> extends AbstractAtomicGraph {
+  private final InPort inPort;
+  private final OutPort outPort = new OutPort();
+
+
   private final HashFunction<T> hash;
+  private final int window;
   private final GroupingState<T> buffers;
   private GroupingState<T> state;
 
+
   public Grouping(final HashFunction<T> hash, final int window) {
-    super(hash);
-    this.hash = hash;
+    super();
+    this.inPort = new InPort(hash);
     this.window = window;
+    this.hash = hash;
     buffers = new LazyGroupingState<>(hash);
   }
 
@@ -46,11 +53,11 @@ public class Grouping<T> extends Processor<T, GroupingResult<? super T>> {
       group.add(group.size() - replayCount, dataItem);
       if (replayCount > 0) {
         for (int i = group.size() - replayCount; i < group.size(); i++) {
-          prePush(dataItem, handler);
+          this.prePush(dataItem, handler);
           handler.push(outPort(), new PayloadDataItem<GroupingResult>(
                   group.get(i).meta(),
                   new GroupingResult<>(group.subList(window > 0 ? Math.max(0, i + 1 - window) : 0, i + 1).stream().map(DataItem::payload).collect(Collectors.toList()), hash.applyAsInt(dataItem.payload()))));
-          ack(dataItem, handler);
+          this.ack(dataItem, handler);
         }
         return;
       }
@@ -86,9 +93,9 @@ public class Grouping<T> extends Processor<T, GroupingResult<? super T>> {
   }
 
   @Override
-  public void onRecover(final GroupingState state, final AtomicHandle handle) {
+  public void onRecover(final GroupingState<?> state, final AtomicHandle handle) {
     //noinspection unchecked
-    this.state = state;
+    this.state = (GroupingState<T>) state;
   }
 
   @Override
@@ -103,5 +110,27 @@ public class Grouping<T> extends Processor<T, GroupingResult<? super T>> {
     };
     buffers.forEach(removeOldConsumer);
     state.forEach(removeOldConsumer);
+  }
+
+  public InPort inPort() {
+    return inPort;
+  }
+
+  @Override
+  public List<InPort> inPorts() {
+    return Collections.singletonList(inPort);
+  }
+
+  public OutPort outPort() {
+    return outPort;
+  }
+
+  @Override
+  public List<OutPort> outPorts() {
+    final List<OutPort> result = new ArrayList<>();
+    result.add(outPort);
+    result.add(this.ackPort());
+
+    return Collections.unmodifiableList(result);
   }
 }

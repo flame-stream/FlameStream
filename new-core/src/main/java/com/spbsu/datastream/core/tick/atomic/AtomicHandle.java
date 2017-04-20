@@ -9,13 +9,11 @@ import com.spbsu.datastream.core.graph.ops.GroupingState;
 public interface AtomicHandle {
   void push(OutPort out, DataItem<?> result);
 
-  GroupingState loadGroupingState();
+  GroupingState<?> loadGroupingState();
 
-  void saveGroupingState(GroupingState storage);
+  void saveGroupingState(GroupingState<?> storage);
 
   void panic(Exception e);
-
-  Meta copyAndAppendLocal(Meta meta, boolean isSplit);
 
   int incrementLocalTimeAndGet();
 

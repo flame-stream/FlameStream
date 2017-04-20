@@ -2,36 +2,67 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
+import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.graph.Processor;
+import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
+import org.jooq.lambda.Seq;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public final class FlatFilter<T, R> extends Processor<T, R> {
+public final class FlatFilter<T, R> extends AbstractAtomicGraph {
   private final Function<T, Stream<R>> function;
 
+  private final OutPort outPort = new OutPort();
+
+  private final InPort inPort;
+
   public FlatFilter(final Function<T, Stream<R>> function, final HashFunction<T> hash) {
-    super(hash);
+    super();
     this.function = function;
+    this.inPort = new InPort(hash);
   }
 
-  public Function<T, Stream<R>> function() {
-    return function;
+  @SuppressWarnings("unchecked")
+  @Override
+  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
+    final Stream<R> res = function.apply((T) item.payload());
+    Seq.zipWithIndex(res).forEach(t -> {
+      final Meta newMeta = new Meta(item.meta(), this.incrementLocalTimeAndGet(), Math.toIntExact(t.v2()));
+      final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t.v1());
+
+      this.prePush(newDataItem, handler);
+      handler.push(this.outPort(), newDataItem);
+    });
+
+    this.ack(item, handler);
+  }
+
+  public InPort inPort() {
+    return this.inPort;
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
-    @SuppressWarnings("unchecked")
-    final Stream<R> res = function.apply((T) item.payload());
-    res.forEach(r -> {
-      final DataItem<R> newDataItem = new PayloadDataItem<>(handler.copyAndAppendLocal(item.meta(), true), r);
-      prePush(newDataItem, handler);
-      handler.push(outPort(), newDataItem);
-    });
+  public List<InPort> inPorts() {
+    return Collections.singletonList(inPort);
+  }
 
-    ack(item, handler);
+  public OutPort outPort() {
+    return this.outPort;
+  }
+
+  @Override
+  public List<OutPort> outPorts() {
+    final List<OutPort> outPorts = new ArrayList<>();
+    outPorts.add(outPort);
+    outPorts.add(this.ackPort());
+
+    return Collections.unmodifiableList(outPorts);
   }
 }

@@ -5,5 +5,5 @@ public interface DataItem<T> {
 
   T payload();
 
-  long ackHashCode();
+  long ack();
 }

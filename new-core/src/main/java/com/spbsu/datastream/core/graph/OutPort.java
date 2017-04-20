@@ -1,16 +1,17 @@
 package com.spbsu.datastream.core.graph;
 
+import java.security.SecureRandom;
 import java.util.Objects;
 import java.util.Random;
 
 public final class OutPort {
-  private final static long OFFSET = 64 - 41;
-  private final static long RAND_MASK = (1 << OFFSET) - 1;
-  private final static Random rd = new Random();
+  private static final Random RANDOM = new SecureRandom();
+  private static final long OFFSET = 64L - 41L;
+  private static final long RAND_MASK = (1L << OutPort.OFFSET) - 1L;
   private final long id;
 
   public OutPort() {
-    this.id = (System.currentTimeMillis() << OFFSET) + (rd.nextInt() & RAND_MASK);
+    this.id = (System.currentTimeMillis() << OutPort.OFFSET) + (OutPort.RANDOM.nextLong() & OutPort.RAND_MASK);
   }
 
 
@@ -26,8 +27,12 @@ public final class OutPort {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || this.getClass() != o.getClass()) {
+      return false;
+    }
     final OutPort port = (OutPort) o;
     return id == port.id;
   }

@@ -26,7 +26,7 @@ public final class PayloadDataItem<T> implements DataItem<T> {
   }
 
   @Override
-  public long ackHashCode() {
+  public long ack() {
     return ackHashCode;
   }
 

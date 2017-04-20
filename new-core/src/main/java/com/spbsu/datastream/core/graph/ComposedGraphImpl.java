@@ -11,11 +11,6 @@ final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
 
   private final Set<T> subGraphs;
 
-
-  ComposedGraphImpl(final ComposedGraphImpl<T> that) {
-    this(that.downstreams, that.inPorts, that.outPorts, that.subGraphs);
-  }
-
   ComposedGraphImpl(final Set<T> graphs) {
     this(graphs, Collections.emptyMap());
   }
@@ -28,7 +23,7 @@ final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
 
   ComposedGraphImpl(final Set<T> graphs,
                     final Map<OutPort, InPort> wires) {
-    assertCorrectWires(graphs, wires);
+    ComposedGraphImpl.assertCorrectWires(graphs, wires);
 
     this.subGraphs = new HashSet<>(graphs);
 
@@ -41,16 +36,6 @@ final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
     this.outPorts = graphs.stream().map(Graph::outPorts)
             .flatMap(List::stream).filter(port -> !downstreams.containsKey(port))
             .collect(Collectors.toList());
-  }
-
-  ComposedGraphImpl(final Map<OutPort, InPort> downstreams,
-                    final List<InPort> inPorts,
-                    final List<OutPort> outPorts,
-                    final Set<T> subGraphs) {
-    this.downstreams = downstreams;
-    this.inPorts = inPorts;
-    this.outPorts = outPorts;
-    this.subGraphs = subGraphs;
   }
 
   @Override
@@ -73,12 +58,12 @@ final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
     return Collections.unmodifiableMap(this.downstreams);
   }
 
-  private static void assertCorrectWires(final Set<? extends Graph> graphs,
+  private static void assertCorrectWires(final Collection<? extends Graph> graphs,
                                          final Map<OutPort, InPort> wires) {
-    wires.forEach((from, to) -> assertCorrectWire(graphs, from, to));
+    wires.forEach((from, to) -> ComposedGraphImpl.assertCorrectWire(graphs, from, to));
   }
 
-  private static void assertCorrectWire(final Set<? extends Graph> graphs, final OutPort from, final InPort to) {
+  private static void assertCorrectWire(final Collection<? extends Graph> graphs, final OutPort from, final InPort to) {
     if (graphs.stream().noneMatch(graph -> graph.outPorts().contains(from))) {
       throw new WiringException("Out ports of " + graphs + " hasn't got " + from);
     }

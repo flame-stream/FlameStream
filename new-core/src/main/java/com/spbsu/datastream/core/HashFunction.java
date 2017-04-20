@@ -22,7 +22,7 @@ public interface HashFunction<T> extends ToIntFunction<T> {
   int hash(T value);
 
   @Override
-  default int applyAsInt(T value) {
-    return hash(value);
+  default int applyAsInt(final T value) {
+    return this.hash(value);
   }
 }

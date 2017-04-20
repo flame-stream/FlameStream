@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.feedback;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.Meta;
+import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -49,13 +50,7 @@ public final class FeedBackCircuit implements AtomicGraph {
   }
 
   private void closeDataItem(final long globalTs, final AtomicHandle handle, final Meta lastAckMeta) {
-    feedbackPorts.forEach(feedbackPort -> {
-      handle.push(
-              feedbackPort,
-              new NoAckDataItem<>(
-                      handle.copyAndAppendLocal(lastAckMeta, true),
-                      new DICompeted(globalTs, rootHashes.get(globalTs))));
-    });
+    // TODO: 4/20/17
 
     rootHashes.remove(globalTs);
     globalTsToXor.remove(globalTs);

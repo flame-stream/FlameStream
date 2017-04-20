@@ -34,7 +34,7 @@ public class WorkerApplication {
 
       final String connectingString = cmd.getOptionValue("zk");
       new WorkerApplication().run(socketAddress, connectingString);
-    } catch (ParseException e) {
+    } catch (final ParseException e) {
       System.err.println("Parsing failed.  Reason: " + e.getMessage());
       final HelpFormatter formatter = new HelpFormatter();
       formatter.printHelp("dataStreams", options);

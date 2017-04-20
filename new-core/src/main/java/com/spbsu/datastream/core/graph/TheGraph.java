@@ -17,10 +17,10 @@ public final class TheGraph implements ComposedGraph<AtomicGraph> {
   @Override
   public String toString() {
     return "TheGraph{" +
-            ", downstreams=" + downstreams() +
-            ", inPorts=" + inPorts() +
-            ", outPorts=" + outPorts() +
-            ", subGraphs=" + subGraphs() +
+            ", downstreams=" + this.downstreams() +
+            ", inPorts=" + this.inPorts() +
+            ", outPorts=" + this.outPorts() +
+            ", subGraphs=" + this.subGraphs() +
             '}';
   }
 
