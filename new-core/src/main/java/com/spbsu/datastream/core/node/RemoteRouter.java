@@ -14,12 +14,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-public class RemoteRouter extends UntypedActor {
-  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
+public final class RemoteRouter extends UntypedActor {
+  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
 
   private final Map<HashRange, ActorSelection> routingTable;
 
   private RemoteRouter(final Map<HashRange, ActorSelection> routingTable) {
+    super();
     this.routingTable = routingTable;
   }
 
@@ -29,43 +30,43 @@ public class RemoteRouter extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
-    LOG.info("Starting...");
+    this.LOG.info("Starting...");
     super.preStart();
   }
 
   @Override
   public void postStop() throws Exception {
-    LOG.info("Stopped");
+    this.LOG.info("Stopped");
     super.postStop();
   }
 
   @Override
   public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
-    LOG.error("Restarting, reason: {}, message: {}", reason, message);
+    this.LOG.error("Restarting, reason: {}, message: {}", reason, message);
     super.preRestart(reason, message);
   }
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    LOG.debug("Received: {}", message);
+    this.LOG.debug("Received: {}", message);
 
     if (message instanceof AddressedMessage) {
       final AddressedMessage addressedMessage = (AddressedMessage) message;
 
       if (addressedMessage.isBroadcast()) {
-        routingTable.values().forEach(a -> a.tell(message, self()));
+        this.routingTable.values().forEach(a -> a.tell(message, this.self()));
       } else {
         final int hash = addressedMessage.hash();
-        final ActorSelection recipient = remoteDispatcherFor(hash);
+        final ActorSelection recipient = this.remoteDispatcherFor(hash);
         recipient.tell(message, ActorRef.noSender());
       }
     } else {
-      unhandled(message);
+      this.unhandled(message);
     }
   }
 
   private ActorSelection remoteDispatcherFor(final int hash) {
-    return routingTable.entrySet().stream().filter((e) -> e.getKey().isIn(hash))
+    return this.routingTable.entrySet().stream().filter(e -> e.getKey().isIn(hash))
             .map(Map.Entry::getValue).findAny().orElseThrow(NoSuchElementException::new);
   }
 }

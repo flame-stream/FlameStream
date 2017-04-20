@@ -10,11 +10,12 @@ import scala.Option;
 
 import java.util.Optional;
 
-public class TickLocalRouter extends UntypedActor {
-  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
+public final class TickLocalRouter extends UntypedActor {
+  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
   private final TLongObjectMap<ActorRef> routingTable;
 
   private TickLocalRouter(final TLongObjectMap<ActorRef> routingTable) {
+    super();
     this.routingTable = routingTable;
   }
 
@@ -24,19 +25,19 @@ public class TickLocalRouter extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
-    LOG.info("Starting...");
+    this.LOG.info("Starting...");
     super.preStart();
   }
 
   @Override
   public void postStop() throws Exception {
-    LOG.info("Stopped");
+    this.LOG.info("Stopped");
     super.postStop();
   }
 
   @Override
   public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
-    LOG.error("Restarting, reason: {}, message: {}", reason, message);
+    this.LOG.error("Restarting, reason: {}, message: {}", reason, message);
     super.preRestart(reason, message);
   }
 
@@ -44,11 +45,11 @@ public class TickLocalRouter extends UntypedActor {
   public void onReceive(final Object message) throws Throwable {
     if (message instanceof AddressedMessage) {
       final AddressedMessage addressedMessage = (AddressedMessage) message;
-      final ActorRef route = Optional.ofNullable(routingTable.get(addressedMessage.port()))
-              .orElse(context().system().deadLetters());
-      route.tell(message, self());
+      final ActorRef route = Optional.ofNullable(this.routingTable.get(addressedMessage.port()))
+              .orElse(this.context().system().deadLetters());
+      route.tell(message, this.self());
     } else {
-      unhandled(message);
+      this.unhandled(message);
     }
   }
 }

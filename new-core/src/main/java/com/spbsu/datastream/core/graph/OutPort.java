@@ -16,12 +16,12 @@ public final class OutPort {
 
 
   public long id() {
-    return id;
+    return this.id;
   }
 
   @Override
   public String toString() {
-    return "OutPort{" + "id=" + id +
+    return "OutPort{" + "id=" + this.id +
             '}';
   }
 
@@ -34,11 +34,11 @@ public final class OutPort {
       return false;
     }
     final OutPort port = (OutPort) o;
-    return id == port.id;
+    return this.id == port.id;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);
+    return Objects.hash(this.id);
   }
 }

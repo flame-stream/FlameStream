@@ -25,10 +25,10 @@ public final class DICompeted {
   }
 
   public int rootHash() {
-    return rootHash;
+    return this.rootHash;
   }
 
   public long globalTs() {
-    return globalTs;
+    return this.globalTs;
   }
 }

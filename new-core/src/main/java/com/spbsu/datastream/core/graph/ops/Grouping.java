@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@SuppressWarnings({"rawtypes", "ConditionalExpression"})
 public final class Grouping<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
@@ -31,22 +32,21 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     this.inPort = new InPort(hash);
     this.window = window;
     this.hash = hash;
-    buffers = new LazyGroupingState<>(hash);
+    this.buffers = new LazyGroupingState<>(hash);
   }
 
   @Override
   public void onStart(final AtomicHandle handle) {
-    state = new LazyGroupingState<>(hash);
+    this.state = new LazyGroupingState<>(this.hash);
   }
 
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
     //noinspection unchecked
     final DataItem<T> dataItem = (DataItem<T>) item;
-    List<DataItem<T>> group = buffers.get(dataItem).orElse(null);
+    List<DataItem<T>> group = this.buffers.get(dataItem).orElse(null);
     if (group != null) { // look for time collision in the current tick
       int replayCount = 0;
-      //noinspection unchecked
       while (replayCount < group.size() && group.get(group.size() - replayCount - 1).meta().compareTo(dataItem.meta()) > 0) {
         replayCount++;
       }
@@ -54,42 +54,42 @@ public final class Grouping<T> extends AbstractAtomicGraph {
       if (replayCount > 0) {
         for (int i = group.size() - replayCount; i < group.size(); i++) {
           this.prePush(dataItem, handler);
-          handler.push(outPort(), new PayloadDataItem<GroupingResult>(
+          handler.push(this.outPort(), new PayloadDataItem<GroupingResult>(
                   group.get(i).meta(),
-                  new GroupingResult<>(group.subList(window > 0 ? Math.max(0, i + 1 - window) : 0, i + 1).stream().map(DataItem::payload).collect(Collectors.toList()), hash.applyAsInt(dataItem.payload()))));
+                  new GroupingResult<>(group.subList(this.window > 0 ? Math.max(0, i + 1 - this.window) : 0, i + 1).stream().map(DataItem::payload).collect(Collectors.toList()), this.hash.applyAsInt(dataItem.payload()))));
           this.ack(dataItem, handler);
         }
         return;
       }
     } else { // creating group from existing in the state
-      group = new ArrayList<>(state.get(dataItem).orElse(Collections.emptyList()));
+      group = new ArrayList<>(this.state.get(dataItem).orElse(Collections.emptyList()));
       group.add(dataItem);
-      buffers.put(group);
+      this.buffers.put(group);
     }
-    prePush(dataItem, handler);
-    handler.push(outPort(), new PayloadDataItem<GroupingResult>(
+    this.prePush(dataItem, handler);
+    handler.push(this.outPort(), new PayloadDataItem<GroupingResult>(
             dataItem.meta(),
             new GroupingResult<>(
-                    (window > 0 ? group.subList(Math.max(0, group.size() - window), group.size()) : group).stream().map(DataItem::payload).collect(Collectors.toList()),
-                    hash.applyAsInt(dataItem.payload()))));
-    ack(dataItem, handler);
+                    (this.window > 0 ? group.subList(Math.max(0, group.size() - this.window), group.size()) : group).stream().map(DataItem::payload).collect(Collectors.toList()),
+                    this.hash.applyAsInt(dataItem.payload()))));
+    this.ack(dataItem, handler);
   }
 
   @Override
   public void onCommit(final AtomicHandle handle) {
-    buffers.forEach(group -> {
-      final List<DataItem<T>> windowedGroup = group.subList(window > 0 ? Math.max(0, group.size() - window + 1) : 0, group.size());
+    this.buffers.forEach(group -> {
+      final List<DataItem<T>> windowedGroup = group.subList(this.window > 0 ? Math.max(0, group.size() - this.window + 1) : 0, group.size());
       if (!windowedGroup.isEmpty()) {
-        final List<DataItem<T>> oldGroup = state.get(group.get(0)).orElse(null);
+        final List<DataItem<T>> oldGroup = this.state.get(group.get(0)).orElse(null);
         if (oldGroup != null) {
           oldGroup.clear();
           oldGroup.addAll(windowedGroup);
         } else {
-          state.put(windowedGroup);
+          this.state.put(windowedGroup);
         }
       }
     });
-    handle.saveGroupingState(state);
+    handle.saveGroupingState(this.state);
   }
 
   @Override
@@ -102,33 +102,32 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   public void onMinGTimeUpdate(final Meta meta) {
     final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
       int removeIndex = 0;
-      //noinspection unchecked
       while (removeIndex < group.size() && group.get(group.size() - removeIndex - 1).meta().compareTo(meta) > 0) {
         removeIndex++;
       }
       group.subList(0, removeIndex).clear();
     };
-    buffers.forEach(removeOldConsumer);
-    state.forEach(removeOldConsumer);
+    this.buffers.forEach(removeOldConsumer);
+    this.state.forEach(removeOldConsumer);
   }
 
   public InPort inPort() {
-    return inPort;
+    return this.inPort;
   }
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.singletonList(inPort);
+    return Collections.singletonList(this.inPort);
   }
 
   public OutPort outPort() {
-    return outPort;
+    return this.outPort;
   }
 
   @Override
   public List<OutPort> outPorts() {
     final List<OutPort> result = new ArrayList<>();
-    result.add(outPort);
+    result.add(this.outPort);
     result.add(this.ackPort());
 
     return Collections.unmodifiableList(result);

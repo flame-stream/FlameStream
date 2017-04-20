@@ -15,15 +15,16 @@ import scala.Option;
 
 import static com.spbsu.datastream.core.range.RangeConciergeApi.DeployForTick;
 
-public class RangeConcierge extends UntypedActor {
-  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
+public final class RangeConcierge extends UntypedActor {
+  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
   private final HashRange range;
 
   private final ActorRef rootRouter;
 
   private RangeConcierge(final HashRange range, final ActorRef remoteRouter) {
+    super();
     this.range = range;
-    this.rootRouter = context().actorOf(RootRouter.props(range, remoteRouter), "rootRouter");
+    this.rootRouter = this.context().actorOf(RootRouter.props(range, remoteRouter), "rootRouter");
   }
 
   public static Props props(final HashRange range, final ActorRef remoteRouter) {
@@ -32,33 +33,33 @@ public class RangeConcierge extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
-    LOG.info("Starting...");
+    this.LOG.info("Starting...");
     super.preStart();
   }
 
   @Override
   public void postStop() throws Exception {
-    LOG.info("Stopped");
+    this.LOG.info("Stopped");
     super.postStop();
   }
 
   @Override
   public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
-    LOG.error("Restarting, reason: {}, message: {}", reason, message);
+    this.LOG.error("Restarting, reason: {}, message: {}", reason, message);
     super.preRestart(reason, message);
   }
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    LOG.debug("Received: {}", message);
+    this.LOG.debug("Received: {}", message);
 
     if (message instanceof DeployForTick) {
       final DeployForTick deploy = (DeployForTick) message;
-      context().actorOf(
-              TickGraphManager.props(tickContext(deploy.tick(), deploy.graph())),
+      this.context().actorOf(
+              TickGraphManager.props(this.tickContext(deploy.tick(), deploy.graph())),
               Long.toString(deploy.tick()));
     } else {
-      unhandled(message);
+      this.unhandled(message);
     }
   }
 

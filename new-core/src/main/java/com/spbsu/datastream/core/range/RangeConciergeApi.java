@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.range;
 import com.spbsu.datastream.core.graph.TheGraph;
 
 public interface RangeConciergeApi {
-  class DeployForTick {
+  final class DeployForTick {
     private final TheGraph graph;
 
     private final long tick;
@@ -14,17 +14,17 @@ public interface RangeConciergeApi {
     }
 
     public TheGraph graph() {
-      return graph;
+      return this.graph;
     }
 
     public long tick() {
-      return tick;
+      return this.tick;
     }
 
     @Override
     public String toString() {
-      return "DeployForTick{" + "graph=" + graph +
-              ", tick=" + tick +
+      return "DeployForTick{" + "graph=" + this.graph +
+              ", tick=" + this.tick +
               '}';
     }
   }

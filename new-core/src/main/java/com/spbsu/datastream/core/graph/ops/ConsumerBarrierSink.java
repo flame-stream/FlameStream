@@ -31,30 +31,26 @@ public final class ConsumerBarrierSink<T> extends AbstractAtomicGraph {
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
     if (inPort.equals(this.inPort)) {
-      consumer.accept(((PreSinkMetaElement<T>) item.payload()).payload());
+      this.consumer.accept(((PreSinkMetaElement<T>) item.payload()).payload());
       this.ack(item, handler);
-    } else if (inPort.equals(feedbackPort)) {
+    } else if (inPort.equals(this.feedbackPort)) {
       this.ack(item, handler);
     }
   }
 
-  public Consumer<T> consumer() {
-    return consumer;
-  }
-
   public InPort inPort() {
-    return inPort;
+    return this.inPort;
   }
 
   public InPort feedbackPort() {
-    return feedbackPort;
+    return this.feedbackPort;
   }
 
   @Override
   public List<InPort> inPorts() {
     final List<InPort> inPorts = new ArrayList<>();
-    inPorts.add(inPort);
-    inPorts.add(feedbackPort);
+    inPorts.add(this.inPort);
+    inPorts.add(this.feedbackPort);
     return Collections.unmodifiableList(inPorts);
   }
 

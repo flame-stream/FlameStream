@@ -20,6 +20,7 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
   private final List<OutPort> broadcastPorts;
 
   public Broadcast(final HashFunction<T> hash, final int shape) {
+    super();
     this.inPort = new InPort(hash);
     this.broadcastPorts = Stream.generate(OutPort::new).limit((long) shape)
             .collect(Collectors.toList());
@@ -41,7 +42,7 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.singletonList(inPort);
+    return Collections.singletonList(this.inPort);
   }
 
   public InPort inPort() {
@@ -49,7 +50,7 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
   }
 
   public List<OutPort> broadcastPorts() {
-    return Collections.unmodifiableList(broadcastPorts);
+    return Collections.unmodifiableList(this.broadcastPorts);
   }
 
   @Override

@@ -39,6 +39,8 @@ public interface Graph {
     return new ComposedGraphImpl<>(graphs);
   }
 
+  ComposedGraph<AtomicGraph> flattened();
+
   /**
    * Creates a new Graph based on the current Graph but with
    * the given OutPort wired to the given InPort.

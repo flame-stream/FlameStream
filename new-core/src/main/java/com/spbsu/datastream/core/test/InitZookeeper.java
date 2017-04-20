@@ -16,8 +16,8 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
-public class InitZookeeper {
-  public static void main(final String... args) throws Exception {
+public final class InitZookeeper {
+  public static void main(final String... args) throws IOException, KeeperException, InterruptedException {
     new InitZookeeper().run();
   }
 
@@ -28,7 +28,7 @@ public class InitZookeeper {
       zooKeeper.delete("/mappings", stat.getVersion());
     }
 
-    zooKeeper.create("/mappings", mappings(), ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
+    zooKeeper.create("/mappings", this.mappings(), ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
     zooKeeper.close();
   }
 
@@ -40,7 +40,7 @@ public class InitZookeeper {
 
     final InetSocketAddress worker2 = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7002);
     mappings.putIfAbsent(new HashRange(0, Integer.MAX_VALUE), worker2);
-    ObjectMapper mapper = new ObjectMapper();
+    final ObjectMapper mapper = new ObjectMapper();
 
     System.err.println(mapper.writeValueAsString(RangeMappingsDto.normalConstruct(mappings)));
 

@@ -27,36 +27,36 @@ public final class StatelessFilter<T, R> extends AbstractAtomicGraph {
   }
 
   public Function<T, R> function() {
-    return function;
+    return this.function;
   }
 
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
     @SuppressWarnings("unchecked")
-    final R res = function.apply((T) item.payload());
+    final R res = this.function.apply((T) item.payload());
 
     handler.push(this.outPort(), new PayloadDataItem<>(new Meta(item.meta(), this.incrementLocalTimeAndGet()), res));
     this.ack(item, handler);
   }
 
   public InPort inPort() {
-    return inPort;
+    return this.inPort;
   }
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.singletonList(inPort);
+    return Collections.singletonList(this.inPort);
   }
 
   public OutPort outPort() {
-    return outPort;
+    return this.outPort;
   }
 
   @Override
   public List<OutPort> outPorts() {
     final List<OutPort> outPorts = new ArrayList<>();
 
-    outPorts.add(outPort);
+    outPorts.add(this.outPort);
     outPorts.add(this.ackPort());
 
     return Collections.unmodifiableList(outPorts);

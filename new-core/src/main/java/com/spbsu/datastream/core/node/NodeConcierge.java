@@ -18,14 +18,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class NodeConcierge extends UntypedActor {
-  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
+public final class NodeConcierge extends UntypedActor {
+  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
 
   private final ZooKeeper zooKeeper;
   private final InetSocketAddress address;
   private final ObjectMapper mapper = new ObjectMapper();
 
   private NodeConcierge(final InetSocketAddress address, final ZooKeeper zooKeeper) {
+    super();
     this.zooKeeper = zooKeeper;
     this.address = address;
   }
@@ -36,64 +37,65 @@ public class NodeConcierge extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
-    LOG.info("Starting... Address: {}", address);
+    this.LOG.info("Starting... Address: {}", this.address);
 
-    final RangeMappingsDto mappings = fetchMappings();
-    LOG.info("Mappings fetched: {}", mappings);
+    final RangeMappingsDto mappings = this.fetchMappings();
+    this.LOG.info("Mappings fetched: {}", mappings);
 
-    final ActorRef remoteRouter = remoteRouter(mappings);
-    final Set<HashRange> myRanges = myRanges(mappings);
+    final ActorRef remoteRouter = this.remoteRouter(mappings);
+    final Set<HashRange> myRanges = this.myRanges(mappings);
 
-    myRanges.forEach(r -> conciergeForRange(r, remoteRouter));
+    myRanges.forEach(r -> this.conciergeForRange(r, remoteRouter));
+    super.preStart();
   }
 
   @Override
   public void postStop() throws Exception {
-    LOG.info("Stopped");
+    this.LOG.info("Stopped");
     super.postStop();
   }
 
   @Override
   public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
-    LOG.error("Restarting, reason: {}, message: {}", reason, message);
+    this.LOG.error("Restarting, reason: {}, message: {}", reason, message);
     super.preRestart(reason, message);
   }
 
   private ActorRef conciergeForRange(final HashRange range, final ActorRef remoteRouter) {
-    return context().actorOf(RangeConcierge.props(range, remoteRouter), range.toString());
+    return this.context().actorOf(RangeConcierge.props(range, remoteRouter), range.toString());
   }
 
   private Set<HashRange> myRanges(final RangeMappingsDto mappings) {
-    return mappings.rangeMappings().entrySet().stream().filter(e -> e.getValue().equals(address))
+    return mappings.rangeMappings().entrySet().stream().filter(e -> e.getValue().equals(this.address))
             .map(Map.Entry::getKey).collect(Collectors.toSet());
   }
 
   private ActorRef remoteRouter(final RangeMappingsDto mappings) {
-    return context().actorOf(RemoteRouter.props(remoteDispatchers(mappings)), "remoteRouter");
+    return this.context().actorOf(RemoteRouter.props(this.remoteDispatchers(mappings)), "remoteRouter");
   }
 
   private Map<HashRange, ActorSelection> remoteDispatchers(final RangeMappingsDto mappings) {
     return mappings.rangeMappings().entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, e -> remoteDispatcher(e.getValue(), e.getKey())));
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> this.remoteDispatcher(e.getValue(), e.getKey())));
   }
 
   private ActorSelection remoteDispatcher(final InetSocketAddress socketAddress, final HashRange range) {
     final ActorPath dispatcher = MyPaths.rootRouter(socketAddress, range);
-    return context().system().actorSelection(dispatcher);
+    return this.context().system().actorSelection(dispatcher);
   }
 
   private RangeMappingsDto fetchMappings() throws KeeperException, InterruptedException, IOException {
     final String path = "/mappings";
-    final byte[] data = zooKeeper.getData(path, selfWatcher(), new Stat());
-    return mapper.readValue(data, RangeMappingsDto.class);
+    final byte[] data = this.zooKeeper.getData(path, this.selfWatcher(), new Stat());
+    return this.mapper.readValue(data, RangeMappingsDto.class);
   }
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    unhandled(message);
+    this.unhandled(message);
   }
 
   private Watcher selfWatcher() {
-    return event -> self().tell(event, self());
+    return event -> this.self().tell(event, this.self());
   }
 }

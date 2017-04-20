@@ -21,7 +21,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void push(final OutPort out, final DataItem<?> result) {
-    final Optional<InPort> destination = Optional.ofNullable(tickContext.graph().downstreams().get(out));
+    final Optional<InPort> destination = Optional.ofNullable(this.tickContext.graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
     @SuppressWarnings("rawtypes") final HashFunction hashFunction = address.hashFunction();
@@ -30,7 +30,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
     final int hash = hashFunction.applyAsInt(result.payload());
 
     final AddressedMessage addressedMessage = new AddressedMessage(result, address.id(), hash);
-    tickContext.rootRouter().tell(addressedMessage, null);
+    this.tickContext.rootRouter().tell(addressedMessage, null);
   }
 
   @Override
@@ -45,18 +45,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public void panic(final Exception e) {
-    throw new RuntimeException(e);
-  }
-
-  @Override
-  // TODO: 4/15/17 Move localTime to each operation
-  public int incrementLocalTimeAndGet() {
-    return tickContext.incrementLocalTimeAndGet();
-  }
-
-  @Override
   public HashRange localRange() {
-    return tickContext.localRange();
+    return this.tickContext.localRange();
   }
 }

@@ -20,17 +20,17 @@ public final class InPort {
   }
 
   public long id() {
-    return id;
+    return this.id;
   }
 
   public HashFunction<?> hashFunction() {
-    return hashFunction;
+    return this.hashFunction;
   }
 
   @Override
   public String toString() {
-    return "InPort{" + "id=" + id +
-            ", hashFunction=" + hashFunction +
+    return "InPort{" + "id=" + this.id +
+            ", hashFunction=" + this.hashFunction +
             '}';
   }
 
@@ -43,13 +43,13 @@ public final class InPort {
       return false;
     }
     final InPort port = (InPort) o;
-    return id == port.id &&
-            Objects.equals(hashFunction, port.hashFunction);
+    return this.id == port.id &&
+            Objects.equals(this.hashFunction, port.hashFunction);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, hashFunction);
+    return Objects.hash(this.id, this.hashFunction);
   }
 }
 

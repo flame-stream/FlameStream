@@ -51,8 +51,8 @@ public final class GlobalTime implements Comparable<GlobalTime> {
 
   @Override
   public String toString() {
-    return "GlobalTime{" + "time=" + time +
-            ", initHash=" + initHash +
+    return "GlobalTime{" + "time=" + this.time +
+            ", initHash=" + this.initHash +
             '}';
   }
 }

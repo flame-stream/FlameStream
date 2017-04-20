@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.node;
 import akka.actor.ActorRef;
 
 public interface RootRouterApi {
-  class RegisterMe {
+  final class RegisterMe {
     private final long tick;
 
     private final ActorRef actorRef;
@@ -14,17 +14,17 @@ public interface RootRouterApi {
     }
 
     public long tick() {
-      return tick;
+      return this.tick;
     }
 
     public ActorRef actorRef() {
-      return actorRef;
+      return this.actorRef;
     }
 
     @Override
     public String toString() {
-      return "RegisterMe{" + "tick=" + tick +
-              ", actorRef=" + actorRef +
+      return "RegisterMe{" + "tick=" + this.tick +
+              ", actorRef=" + this.actorRef +
               '}';
     }
   }

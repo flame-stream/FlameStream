@@ -2,7 +2,7 @@ package com.spbsu.datastream.core.tick;
 
 import com.spbsu.datastream.core.DataItem;
 
-public class AddressedMessage {
+public final class AddressedMessage {
   private final long port;
 
   private final int hash;
@@ -20,38 +20,28 @@ public class AddressedMessage {
     this.hash = hash;
   }
 
-  public AddressedMessage(final DataItem<?> payload,
-                          final long port) {
-    this.port = port;
-    this.payload = payload;
-    this.isBroadcast = true;
-    this.hash = 0xFFFFFFFF;
-  }
-
   public int hash() {
-    return hash;
+    return this.hash;
   }
 
   public boolean isBroadcast() {
-    return isBroadcast;
+    return this.isBroadcast;
   }
 
   public long port() {
-    return port;
+    return this.port;
   }
 
   public DataItem<?> payload() {
-    return payload;
+    return this.payload;
   }
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("AddressedMessage{");
-    sb.append("port=").append(port);
-    sb.append(", hash=").append(hash);
-    sb.append(", isBroadcast=").append(isBroadcast);
-    sb.append(", payload=").append(payload);
-    sb.append('}');
-    return sb.toString();
+    return "AddressedMessage{" + "port=" + this.port +
+            ", hash=" + this.hash +
+            ", isBroadcast=" + this.isBroadcast +
+            ", payload=" + this.payload +
+            '}';
   }
 }

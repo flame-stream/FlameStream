@@ -8,8 +8,8 @@ import org.apache.zookeeper.WatchedEvent;
 
 import static org.apache.zookeeper.Watcher.Event;
 
-public class LifecycleWatcher extends UntypedActor {
-  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
+public final class LifecycleWatcher extends UntypedActor {
+  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
 
   public static Props props() {
     return Props.create(LifecycleWatcher.class);
@@ -17,20 +17,17 @@ public class LifecycleWatcher extends UntypedActor {
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    LOG.debug("Got message: {}", message);
+    this.LOG.debug("Got message: {}", message);
 
     if (message instanceof WatchedEvent) {
       final WatchedEvent event = (WatchedEvent) message;
       if (event.getType() == Event.EventType.None) {
-        switch (event.getState()) {
-          case Expired:
-            System.err.print(event);
-            System.err.flush();
-            // TODO: 3/26/17 DO NOT EXIT HERE
-            System.exit(1);
-            break;
-          default:
-            //do nothing
+        final Event.KeeperState state = event.getState();
+        if (state == Event.KeeperState.Expired) {
+          System.err.print(event);
+          System.err.flush();
+          // TODO: 3/26/17 DO NOT EXIT HERE
+          System.exit(1);
         }
       }
     }

@@ -2,6 +2,7 @@ package com.spbsu.datastream.core;
 
 import java.util.Arrays;
 
+@SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
 public final class Trace implements Comparable<Trace> {
   //Inner representation is a subject for a discussion and/or an optimization
 
@@ -17,7 +18,7 @@ public final class Trace implements Comparable<Trace> {
   }
 
   public LocalEvent eventAt(final int position) {
-    return trace[position];
+    return this.trace[position];
   }
 
   @Override
@@ -42,17 +43,17 @@ public final class Trace implements Comparable<Trace> {
       return false;
     }
     final Trace trace1 = (Trace) o;
-    return Arrays.equals(trace, trace1.trace);
+    return Arrays.equals(this.trace, trace1.trace);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(trace);
+    return Arrays.hashCode(this.trace);
   }
 
   @Override
   public String toString() {
-    return "Trace{" + "trace=" + Arrays.toString(trace) +
+    return "Trace{" + "trace=" + Arrays.toString(this.trace) +
             '}';
   }
 }

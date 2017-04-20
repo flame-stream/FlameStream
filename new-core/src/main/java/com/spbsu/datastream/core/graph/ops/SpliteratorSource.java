@@ -30,10 +30,10 @@ public final class SpliteratorSource<T> extends AbstractAtomicGraph {
   public void onStart(final AtomicHandle handler) {
     final AtomicInteger currentId = new AtomicInteger();
 
-    spliterator.forEachRemaining(item -> {
+    this.spliterator.forEachRemaining(item -> {
       final GlobalTime globalTime = new GlobalTime(System.currentTimeMillis(),
               handler.localRange().from());
-      final Meta now = new Meta(globalTime, handler.incrementLocalTimeAndGet());
+      final Meta now = new Meta(globalTime, this.incrementLocalTimeAndGet());
       final DataItem<T> dataItem = new PayloadDataItem<>(now, item);
 
       this.prePush(dataItem, handler);
@@ -47,7 +47,7 @@ public final class SpliteratorSource<T> extends AbstractAtomicGraph {
   }
 
   public OutPort outPort() {
-    return outPort;
+    return this.outPort;
   }
 
   @Override
@@ -58,7 +58,7 @@ public final class SpliteratorSource<T> extends AbstractAtomicGraph {
   @Override
   public List<OutPort> outPorts() {
     final List<OutPort> result = new ArrayList<>();
-    result.add(outPort);
+    result.add(this.outPort);
     result.add(this.ackPort());
 
     return Collections.unmodifiableList(result);

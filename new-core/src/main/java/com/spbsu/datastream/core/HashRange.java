@@ -18,15 +18,15 @@ public final class HashRange {
   }
 
   public boolean isIn(final int hash) {
-    return from <= hash && hash < to;
+    return this.from <= hash && hash < this.to;
   }
 
   public int from() {
-    return from;
+    return this.from;
   }
 
   public int to() {
-    return to;
+    return this.to;
   }
 
   @Override
@@ -38,17 +38,17 @@ public final class HashRange {
       return false;
     }
     final HashRange hashRange = (HashRange) o;
-    return from == hashRange.from &&
-            to == hashRange.to;
+    return this.from == hashRange.from &&
+            this.to == hashRange.to;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(from, to);
+    return Objects.hash(this.from, this.to);
   }
 
   @Override
   public String toString() {
-    return from + "_" + to;
+    return this.from + "_" + this.to;
   }
 }

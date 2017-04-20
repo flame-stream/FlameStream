@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@SuppressWarnings("rawtypes")
 public final class GroupingResult<T> {
   public static final HashFunction<GroupingResult> HASH_FUNCTION = new HashFunction<GroupingResult>() {
     @Override
@@ -28,10 +29,10 @@ public final class GroupingResult<T> {
   }
 
   public List<T> payload() {
-    return Collections.unmodifiableList(payload);
+    return Collections.unmodifiableList(this.payload);
   }
 
   public int rootHash() {
-    return hash;
+    return this.hash;
   }
 }

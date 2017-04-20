@@ -18,6 +18,7 @@ public final class Merge<R> extends AbstractAtomicGraph {
   private final List<InPort> inPorts;
   private final OutPort outPort = new OutPort();
 
+  @SuppressWarnings("TypeMayBeWeakened")
   public Merge(final List<HashFunction<?>> hashes) {
     super();
     this.inPorts = hashes.stream().map(InPort::new).collect(Collectors.toList());
@@ -35,17 +36,17 @@ public final class Merge<R> extends AbstractAtomicGraph {
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.unmodifiableList(inPorts);
+    return Collections.unmodifiableList(this.inPorts);
   }
 
   public OutPort outPort() {
-    return outPort;
+    return this.outPort;
   }
 
   @Override
   public List<OutPort> outPorts() {
     final List<OutPort> result = new ArrayList<>();
-    result.add(outPort);
+    result.add(this.outPort);
     result.add(this.ackPort());
 
     return Collections.unmodifiableList(result);

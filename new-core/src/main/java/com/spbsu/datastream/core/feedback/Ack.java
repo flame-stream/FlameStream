@@ -2,7 +2,7 @@ package com.spbsu.datastream.core.feedback;
 
 import com.spbsu.datastream.core.HashFunction;
 
-public class Ack {
+public final class Ack {
   public static final HashFunction<Ack> HASH_FUNCTION = new HashFunction<Ack>() {
     @Override
     public boolean equal(final Ack o1, final Ack o2) {
@@ -28,14 +28,14 @@ public class Ack {
   }
 
   public int rootHash() {
-    return rootHash;
+    return this.rootHash;
   }
 
   public long globalTs() {
-    return globalTs;
+    return this.globalTs;
   }
 
   public long ack() {
-    return ack;
+    return this.ack;
   }
 }

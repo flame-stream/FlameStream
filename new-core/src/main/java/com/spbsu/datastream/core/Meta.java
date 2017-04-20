@@ -24,13 +24,14 @@ public final class Meta implements Comparable<Meta> {
   }
 
   public GlobalTime globalTime() {
-    return globalTime;
+    return this.globalTime;
   }
 
   public Trace trace() {
-    return trace;
+    return this.trace;
   }
 
+  @SuppressWarnings("MethodReturnAlwaysConstant")
   public int tick() {
     return 1;
   }
@@ -47,19 +48,19 @@ public final class Meta implements Comparable<Meta> {
     if (this == o) return true;
     if (o == null || this.getClass() != o.getClass()) return false;
     final Meta meta = (Meta) o;
-    return Objects.equals(globalTime, meta.globalTime) &&
-            Objects.equals(trace, meta.trace);
+    return Objects.equals(this.globalTime, meta.globalTime) &&
+            Objects.equals(this.trace, meta.trace);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(globalTime, trace);
+    return Objects.hash(this.globalTime, this.trace);
   }
 
   @Override
   public String toString() {
-    return "Meta{" + "globalTime=" + globalTime +
-            ", trace=" + trace +
+    return "Meta{" + "globalTime=" + this.globalTime +
+            ", trace=" + this.trace +
             '}';
   }
 }

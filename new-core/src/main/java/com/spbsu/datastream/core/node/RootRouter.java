@@ -15,8 +15,8 @@ import java.util.Map;
 
 import static com.spbsu.datastream.core.node.RootRouterApi.RegisterMe;
 
-public class RootRouter extends UntypedActor {
-  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
+public final class RootRouter extends UntypedActor {
+  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
 
   private final HashRange range;
   private final ActorRef remoteRouter;
@@ -24,6 +24,7 @@ public class RootRouter extends UntypedActor {
   private final Map<ActorRef, Long> reverseTickLocalRouters = new HashMap<>();
 
   private RootRouter(final HashRange range, final ActorRef remoteRouter) {
+    super();
     this.range = range;
     this.remoteRouter = remoteRouter;
   }
@@ -34,69 +35,71 @@ public class RootRouter extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
-    LOG.info("Starting...");
+    this.LOG.info("Starting...");
+    super.preStart();
   }
 
   @Override
   public void postStop() throws Exception {
-    LOG.info("Stopped");
+    this.LOG.info("Stopped");
     super.postStop();
   }
 
   @Override
   public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
-    LOG.error("Restarting, reason: {}, message: {}", reason, message);
+    this.LOG.error("Restarting, reason: {}, message: {}", reason, message);
     super.preRestart(reason, message);
   }
 
+  @SuppressWarnings({"IfStatementWithTooManyBranches", "ChainOfInstanceofChecks"})
   @Override
   public void onReceive(final Object message) throws Throwable {
     if (message instanceof AddressedMessage) {
-      route((AddressedMessage) message);
+      this.route((AddressedMessage) message);
     } else if (message instanceof RegisterMe) {
-      register((RegisterMe) message);
+      this.register((RegisterMe) message);
     } else if (message instanceof Terminated) {
-      unregister((Terminated) message);
+      this.unregister((Terminated) message);
     } else {
-      unhandled(message);
+      this.unhandled(message);
     }
   }
 
   private void route(final AddressedMessage addressedMessage) {
-    LOG.debug("Routing of {}", addressedMessage);
+    this.LOG.debug("Routing of {}", addressedMessage);
 
     if (addressedMessage.isBroadcast()) {
-      LOG.debug("Broadcast routing of {}", addressedMessage);
+      this.LOG.debug("Broadcast routing of {}", addressedMessage);
 
-      remoteRouter.tell(addressedMessage, self());
-    } else if (range.isIn(addressedMessage.hash())) {
-      LOG.debug("Local routing of {}", addressedMessage);
+      this.remoteRouter.tell(addressedMessage, this.self());
+    } else if (this.range.isIn(addressedMessage.hash())) {
+      this.LOG.debug("Local routing of {}", addressedMessage);
 
-      routeLocal(addressedMessage);
+      this.routeLocal(addressedMessage);
     } else {
-      LOG.debug("Remote routing of {}", addressedMessage);
+      this.LOG.debug("Remote routing of {}", addressedMessage);
 
-      remoteRouter.tell(addressedMessage, self());
+      this.remoteRouter.tell(addressedMessage, this.self());
     }
   }
 
   private void routeLocal(final AddressedMessage message) {
     final long tick = message.payload().meta().tick();
-    final ActorRef dest = tickLocalRouters.getOrDefault(tick, context().system().deadLetters());
-    dest.tell(message, self());
+    final ActorRef dest = this.tickLocalRouters.getOrDefault(tick, this.context().system().deadLetters());
+    dest.tell(message, this.self());
   }
 
   private void register(final RegisterMe registerMe) {
-    tickLocalRouters.putIfAbsent(registerMe.tick(), registerMe.actorRef());
-    reverseTickLocalRouters.putIfAbsent(registerMe.actorRef(), registerMe.tick());
-    context().watch(registerMe.actorRef());
-    LOG.info("Registered. Tick: {}, actor: {}", registerMe.tick(), registerMe.actorRef());
+    this.tickLocalRouters.putIfAbsent(registerMe.tick(), registerMe.actorRef());
+    this.reverseTickLocalRouters.putIfAbsent(registerMe.actorRef(), registerMe.tick());
+    this.context().watch(registerMe.actorRef());
+    this.LOG.info("Registered. Tick: {}, actor: {}", registerMe.tick(), registerMe.actorRef());
   }
 
   private void unregister(final Terminated terminated) {
-    final long tick = reverseTickLocalRouters.get(terminated.actor());
-    reverseTickLocalRouters.remove(terminated.actor());
-    tickLocalRouters.remove(tick);
-    LOG.info("Unregistered. Tick: {}, actor: {}", tick, terminated.actor());
+    final long tick = this.reverseTickLocalRouters.get(terminated.actor());
+    this.reverseTickLocalRouters.remove(terminated.actor());
+    this.tickLocalRouters.remove(tick);
+    this.LOG.info("Unregistered. Tick: {}, actor: {}", tick, terminated.actor());
   }
 }

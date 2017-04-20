@@ -17,23 +17,23 @@ public final class PayloadDataItem<T> implements DataItem<T> {
 
   @Override
   public Meta meta() {
-    return meta;
+    return this.meta;
   }
 
   @Override
   public T payload() {
-    return payload;
+    return this.payload;
   }
 
   @Override
   public long ack() {
-    return ackHashCode;
+    return this.ackHashCode;
   }
 
   @Override
   public String toString() {
-    return "PayloadDataItem{" + "meta=" + meta +
-            ", payload=" + payload +
+    return "PayloadDataItem{" + "meta=" + this.meta +
+            ", payload=" + this.payload +
             '}';
   }
 }

@@ -30,26 +30,26 @@ public final class TickContextImpl implements TickContext {
 
   @Override
   public TheGraph graph() {
-    return graph;
+    return this.graph;
   }
 
   @Override
   public long tick() {
-    return tick;
+    return this.tick;
   }
 
   @Override
   public HashRange localRange() {
-    return localRange;
+    return this.localRange;
   }
 
   @Override
   public int incrementLocalTimeAndGet() {
-    return localTime.incrementAndGet();
+    return this.localTime.incrementAndGet();
   }
 
   @Override
   public ActorRef rootRouter() {
-    return rootRouter;
+    return this.rootRouter;
   }
 }

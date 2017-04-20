@@ -17,8 +17,8 @@ import gnu.trove.map.hash.TLongObjectHashMap;
 import scala.Option;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -26,14 +26,15 @@ import java.util.stream.Collectors;
 
 import static com.spbsu.datastream.core.tick.manager.TickGraphManagerApi.TickStarted;
 
-public class TickGraphManager extends UntypedActor {
-  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
+public final class TickGraphManager extends UntypedActor {
+  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
 
   private TickGraphManager(final TickContext context) {
-    final Map<AtomicGraph, ActorRef> inMapping = initializedAtomics(context.graph().subGraphs(), context);
-    final ActorRef localRouter = localRouter(withFlattenedKey(inMapping));
+    super();
+    final Map<AtomicGraph, ActorRef> inMapping = this.initializedAtomics(context.graph().subGraphs(), context);
+    final ActorRef localRouter = this.localRouter(this.withFlattenedKey(inMapping));
 
-    context.rootRouter().tell(new RootRouterApi.RegisterMe(context.tick(), localRouter), self());
+    context.rootRouter().tell(new RootRouterApi.RegisterMe(context.tick(), localRouter), this.self());
   }
 
   public static Props props(final TickContext context) {
@@ -42,56 +43,56 @@ public class TickGraphManager extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
-    LOG.info("Starting...");
+    this.LOG.info("Starting...");
     // TODO: 3/26/17 Shitty startup
-    context().system().scheduler().scheduleOnce(
+    this.context().system().scheduler().scheduleOnce(
             FiniteDuration.apply(5, TimeUnit.SECONDS),
-            self(),
+            this.self(),
             new TickStarted(),
-            context().system().dispatcher(),
-            self());
+            this.context().system().dispatcher(),
+            this.self());
     super.preStart();
   }
 
   @Override
   public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
-    LOG.error("Restarting, reason: {}, message: {}", reason, message);
+    this.LOG.error("Restarting, reason: {}, message: {}", reason, message);
     super.preRestart(reason, message);
   }
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    LOG.debug("Received: {}", message);
+    this.LOG.debug("Received: {}", message);
 
     if (message instanceof TickStarted) {
-      getContext().getChildren().forEach(actorRef -> actorRef.tell(new TickStarted(), ActorRef.noSender()));
+      this.getContext().getChildren().forEach(actorRef -> actorRef.tell(new TickStarted(), ActorRef.noSender()));
     }
   }
 
   private ActorRef localRouter(final TLongObjectMap<ActorRef> portMappings) {
-    LOG.info("Creating local router");
-    return context().actorOf(TickLocalRouter.props(portMappings), "localRouter");
+    this.LOG.info("Creating local router");
+    return this.context().actorOf(TickLocalRouter.props(portMappings), "localRouter");
   }
 
   private TLongObjectMap<ActorRef> withFlattenedKey(final Map<AtomicGraph, ActorRef> map) {
     final TLongObjectMap<ActorRef> result = new TLongObjectHashMap<>();
-    for (Map.Entry<AtomicGraph, ActorRef> e : map.entrySet()) {
-      for (InPort port : e.getKey().inPorts()) {
+    for (final Map.Entry<AtomicGraph, ActorRef> e : map.entrySet()) {
+      for (final InPort port : e.getKey().inPorts()) {
         result.put(port.id(), e.getValue());
       }
     }
     return result;
   }
 
-  private Map<AtomicGraph, ActorRef> initializedAtomics(final Set<? extends AtomicGraph> atomicGraphs,
+  private Map<AtomicGraph, ActorRef> initializedAtomics(final Collection<? extends AtomicGraph> atomicGraphs,
                                                         final TickContext context) {
-    return atomicGraphs.stream().collect(Collectors.toMap(Function.identity(), a -> actorForAtomic(a, context)));
+    return atomicGraphs.stream().collect(Collectors.toMap(Function.identity(), a -> this.actorForAtomic(a, context)));
   }
 
   private ActorRef actorForAtomic(final AtomicGraph atomic, final TickContext context) {
-    LOG.info("Creating actor for atomic {}", atomic);
+    this.LOG.info("Creating actor for atomic {}", atomic);
 
     final String id = UUID.randomUUID().toString();
-    return context().actorOf(AtomicActor.props(atomic, new AtomicHandleImpl(context), id), id);
+    return this.context().actorOf(AtomicActor.props(atomic, new AtomicHandleImpl(context), id), id);
   }
 }

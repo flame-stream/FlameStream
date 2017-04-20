@@ -21,11 +21,11 @@ public final class LocalEvent implements Comparable<LocalEvent> {
   }
 
   public int localTime() {
-    return localTime;
+    return this.localTime;
   }
 
   public int childId() {
-    return childId;
+    return this.childId;
   }
 
   @Override
@@ -44,19 +44,19 @@ public final class LocalEvent implements Comparable<LocalEvent> {
       return false;
     }
     final LocalEvent that = (LocalEvent) o;
-    return localTime == that.localTime &&
-            childId == that.childId;
+    return this.localTime == that.localTime &&
+            this.childId == that.childId;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(localTime, childId);
+    return Objects.hash(this.localTime, this.childId);
   }
 
   @Override
   public String toString() {
-    return "LocalEvent{" + "localTime=" + localTime +
-            ", childId=" + childId +
+    return "LocalEvent{" + "localTime=" + this.localTime +
+            ", childId=" + this.childId +
             '}';
   }
 }

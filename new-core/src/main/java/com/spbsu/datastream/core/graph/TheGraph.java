@@ -7,11 +7,11 @@ import java.util.Set;
 public final class TheGraph implements ComposedGraph<AtomicGraph> {
   private final ComposedGraph<AtomicGraph> composedGraph;
 
-  public TheGraph(final FlatGraph flatGraph) {
-    if (!flatGraph.isClosed()) {
+  public TheGraph(final Graph graph) {
+    if (!graph.isClosed()) {
       throw new IllegalArgumentException("Graph should be closed");
     }
-    composedGraph = flatGraph;
+    this.composedGraph = graph.flattened();
   }
 
   @Override
@@ -26,21 +26,26 @@ public final class TheGraph implements ComposedGraph<AtomicGraph> {
 
   @Override
   public Set<AtomicGraph> subGraphs() {
-    return composedGraph.subGraphs();
+    return this.composedGraph.subGraphs();
   }
 
   @Override
   public Map<OutPort, InPort> downstreams() {
-    return composedGraph.downstreams();
+    return this.composedGraph.downstreams();
   }
 
   @Override
   public List<InPort> inPorts() {
-    return composedGraph.inPorts();
+    return this.composedGraph.inPorts();
   }
 
   @Override
   public List<OutPort> outPorts() {
-    return composedGraph.outPorts();
+    return this.composedGraph.outPorts();
+  }
+
+  @Override
+  public ComposedGraph<AtomicGraph> flattened() {
+    return this.composedGraph;
   }
 }

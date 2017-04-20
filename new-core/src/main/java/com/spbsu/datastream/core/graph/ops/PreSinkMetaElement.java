@@ -25,10 +25,10 @@ final class PreSinkMetaElement<T> {
   }
 
   T payload() {
-    return payload;
+    return this.payload;
   }
 
   int metaHash() {
-    return metaHash;
+    return this.metaHash;
   }
 }

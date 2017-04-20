@@ -32,7 +32,7 @@ public final class FlatFilter<T, R> extends AbstractAtomicGraph {
   @SuppressWarnings("unchecked")
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
-    final Stream<R> res = function.apply((T) item.payload());
+    final Stream<R> res = this.function.apply((T) item.payload());
     Seq.zipWithIndex(res).forEach(t -> {
       final Meta newMeta = new Meta(item.meta(), this.incrementLocalTimeAndGet(), Math.toIntExact(t.v2()));
       final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t.v1());
@@ -50,7 +50,7 @@ public final class FlatFilter<T, R> extends AbstractAtomicGraph {
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.singletonList(inPort);
+    return Collections.singletonList(this.inPort);
   }
 
   public OutPort outPort() {
@@ -60,7 +60,7 @@ public final class FlatFilter<T, R> extends AbstractAtomicGraph {
   @Override
   public List<OutPort> outPorts() {
     final List<OutPort> outPorts = new ArrayList<>();
-    outPorts.add(outPort);
+    outPorts.add(this.outPort);
     outPorts.add(this.ackPort());
 
     return Collections.unmodifiableList(outPorts);

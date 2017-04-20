@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-public class WorkerApplication {
+public final class WorkerApplication {
   public static void main(final String... args) throws IOException {
     final Options options = new Options();
     final Option hostOpt = Option.builder("host").hasArg().argName("FQDN").desc("worker FQDN").required().build();
