@@ -4,16 +4,25 @@ import com.spbsu.datastream.core.*;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@SuppressWarnings("unchecked")
 public final class GroupingTest {
 
-  @SuppressWarnings("unchecked")
+  private final Logger LOG = LoggerFactory.getLogger(GroupingTest.class);
+
   @Test
   public void withoutReordering() {
     final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
@@ -44,11 +53,9 @@ public final class GroupingTest {
     expectedResult.add(y1);
     expectedResult.add(y2);
     expectedResult.add(y3);
-
     Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void headReordering() {
     final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
@@ -85,7 +92,6 @@ public final class GroupingTest {
     Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void tailReordering() {
     final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
@@ -122,7 +128,6 @@ public final class GroupingTest {
     Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void reverseReordering() {
     final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
@@ -164,7 +169,6 @@ public final class GroupingTest {
     Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void reorderingWithInvalidating() {
     final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
@@ -239,9 +243,9 @@ public final class GroupingTest {
             .map(li -> new GroupingResult<>(li, 1))
             .toSet();
 
-    System.out.println("Got: " + out.stream().map(DataItem::payload).collect(Collectors.toList()));
-    System.out.println("Must have: " + mustHave);
+    this.LOG.debug("Got: {}", out.stream().map(DataItem::payload).collect(Collectors.toList()));
+    this.LOG.debug("Must have: {}", mustHave);
 
-    Assert.assertTrue(out.stream().map(DataItem::payload).collect(Collectors.toSet()).containsAll(mustHave));
+    Assert.assertTrue(out.stream().map(DataItem::payload).collect(Collectors.toSet()).containsAll(mustHave), "Result must contain expected elements");
   }
 }
