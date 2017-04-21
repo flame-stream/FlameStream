@@ -26,7 +26,6 @@ public final class GroupingTest {
       }
     });
 
-
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
@@ -67,8 +66,8 @@ public final class GroupingTest {
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
 
     grouping.onStart(handle);
-    grouping.onPush(grouping.inPort(), x1, handle);
     grouping.onPush(grouping.inPort(), x2, handle);
+    grouping.onPush(grouping.inPort(), x1, handle);
     grouping.onPush(grouping.inPort(), x3, handle);
 
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
