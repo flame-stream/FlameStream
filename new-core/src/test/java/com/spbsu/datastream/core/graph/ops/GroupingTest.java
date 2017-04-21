@@ -2,14 +2,14 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.*;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
+import org.jooq.lambda.Collectable;
+import org.jooq.lambda.Seq;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public final class GroupingTest {
 
@@ -205,5 +205,43 @@ public final class GroupingTest {
     expectedResult.add(y5);
 
     Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
+  }
+
+  @Test
+  public void shuffleReordering() {
+    final int window = 3;
+
+    final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), window);
+
+    final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
+
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> {
+      if (!port.equals(grouping.ackPort())) {
+        out.add((DataItem<GroupingResult<String>>) di);
+      }
+    });
+
+    final List<DataItem<String>> input = IntStream.range(0, 5)
+            .mapToObj(i -> new PayloadDataItem<>(new Meta(new GlobalTime(i, 1)), "v" + i))
+            .collect(Collectors.toList());
+
+    final List<DataItem<String>> shuffledInput = new ArrayList<>(input);
+
+    Collections.shuffle(shuffledInput, new Random(2));
+
+    grouping.onStart(handle);
+    shuffledInput.forEach(di -> grouping.onPush(grouping.inPort(), di, handle));
+
+    final Set<GroupingResult<String>> mustHave = Seq.seq(input)
+            .map(DataItem::payload)
+            .sliding(window)
+            .map(Collectable::toList)
+            .map(li -> new GroupingResult<>(li, 1))
+            .toSet();
+
+    System.out.println("Got: " + out.stream().map(DataItem::payload).collect(Collectors.toList()));
+    System.out.println("Must have: " + mustHave);
+
+    Assert.assertTrue(out.stream().map(DataItem::payload).collect(Collectors.toSet()).containsAll(mustHave));
   }
 }

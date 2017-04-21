@@ -39,7 +39,7 @@ public final class GroupingResult<T> {
 
   @Override
   public String toString() {
-    return "GroupingResult{" + "payload=" + this.payload + '}';
+    return "GR{" + this.payload + '}';
   }
 
   @Override
