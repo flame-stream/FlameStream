@@ -18,7 +18,6 @@ public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
   private final OutPort outPort = new OutPort();
 
   public PreSinkMetaFilter(final HashFunction<T> hashFunction) {
-    super();
     this.inPort = new InPort(hashFunction);
   }
 

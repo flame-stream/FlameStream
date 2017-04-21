@@ -24,7 +24,6 @@ public final class RootRouter extends UntypedActor {
   private final Map<ActorRef, Long> reverseTickLocalRouters = new HashMap<>();
 
   private RootRouter(final HashRange range, final ActorRef remoteRouter) {
-    super();
     this.range = range;
     this.remoteRouter = remoteRouter;
   }

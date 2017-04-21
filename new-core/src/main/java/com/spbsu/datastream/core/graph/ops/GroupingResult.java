@@ -5,6 +5,7 @@ import com.spbsu.datastream.core.HashFunction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @SuppressWarnings("rawtypes")
 public final class GroupingResult<T> {
@@ -34,5 +35,24 @@ public final class GroupingResult<T> {
 
   public int rootHash() {
     return this.hash;
+  }
+
+  @Override
+  public String toString() {
+    return "GroupingResult{" + "payload=" + this.payload + '}';
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || this.getClass() != o.getClass()) return false;
+    final GroupingResult<?> that = (GroupingResult<?>) o;
+    return this.hash == that.hash &&
+            Objects.equals(this.payload, that.payload);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.hash, this.payload);
   }
 }

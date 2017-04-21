@@ -30,7 +30,6 @@ public final class TickGraphManager extends UntypedActor {
   private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
 
   private TickGraphManager(final TickContext context) {
-    super();
     final Map<AtomicGraph, ActorRef> inMapping = this.initializedAtomics(context.graph().subGraphs(), context);
     final ActorRef localRouter = this.localRouter(this.withFlattenedKey(inMapping));
 

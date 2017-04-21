@@ -4,7 +4,6 @@ public class RoutingException extends RuntimeException {
   private static final long serialVersionUID = 5189602567459523932L;
 
   public RoutingException() {
-    super();
   }
 
   public RoutingException(final String message) {

@@ -15,7 +15,6 @@ public final class TickLocalRouter extends UntypedActor {
   private final TLongObjectMap<ActorRef> routingTable;
 
   private TickLocalRouter(final TLongObjectMap<ActorRef> routingTable) {
-    super();
     this.routingTable = routingTable;
   }
 

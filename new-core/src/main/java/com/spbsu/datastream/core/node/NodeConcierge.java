@@ -26,7 +26,6 @@ public final class NodeConcierge extends UntypedActor {
   private final ObjectMapper mapper = new ObjectMapper();
 
   private NodeConcierge(final InetSocketAddress address, final ZooKeeper zooKeeper) {
-    super();
     this.zooKeeper = zooKeeper;
     this.address = address;
   }

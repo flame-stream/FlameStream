@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core;
 
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class PayloadDataItem<T> implements DataItem<T> {
@@ -35,5 +36,20 @@ public final class PayloadDataItem<T> implements DataItem<T> {
     return "PayloadDataItem{" + "meta=" + this.meta +
             ", payload=" + this.payload +
             '}';
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || this.getClass() != o.getClass()) return false;
+    final PayloadDataItem<?> that = (PayloadDataItem<?>) o;
+    return this.ackHashCode == that.ackHashCode &&
+            Objects.equals(this.meta, that.meta) &&
+            Objects.equals(this.payload, that.payload);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.meta, this.payload, this.ackHashCode);
   }
 }

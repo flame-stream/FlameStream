@@ -20,7 +20,6 @@ public final class Merge<R> extends AbstractAtomicGraph {
 
   @SuppressWarnings("TypeMayBeWeakened")
   public Merge(final List<HashFunction<?>> hashes) {
-    super();
     this.inPorts = hashes.stream().map(InPort::new).collect(Collectors.toList());
   }
 

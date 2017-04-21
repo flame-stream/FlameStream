@@ -5,8 +5,13 @@ import java.util.Arrays;
 @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
 public final class Trace implements Comparable<Trace> {
   //Inner representation is a subject for a discussion and/or an optimization
+  public static final Trace EMPTY_TRACE = new Trace();
 
   private final LocalEvent[] trace;
+
+  private Trace() {
+    this.trace = new LocalEvent[0];
+  }
 
   public Trace(final LocalEvent localEvent) {
     this.trace = new LocalEvent[]{localEvent};

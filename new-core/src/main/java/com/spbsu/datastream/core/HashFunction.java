@@ -16,6 +16,19 @@ public interface HashFunction<T> extends ToIntFunction<T> {
     }
   };
 
+  static <T> HashFunction<T> constantHash(final int hash) {
+    return new HashFunction<T>() {
+      @Override
+      public boolean equal(final T o1, final T o2) {
+        return true;
+      }
+
+      @Override
+      public int hash(final T value) {
+        return hash;
+      }
+    };
+  }
 
   boolean equal(T o1, T o2);
 

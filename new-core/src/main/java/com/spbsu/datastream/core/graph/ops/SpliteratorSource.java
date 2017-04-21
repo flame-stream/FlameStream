@@ -22,7 +22,6 @@ public final class SpliteratorSource<T> extends AbstractAtomicGraph {
   private final Spliterator<T> spliterator;
 
   public SpliteratorSource(final Spliterator<T> spliterator) {
-    super();
     this.spliterator = spliterator;
   }
 
@@ -33,7 +32,7 @@ public final class SpliteratorSource<T> extends AbstractAtomicGraph {
     this.spliterator.forEachRemaining(item -> {
       final GlobalTime globalTime = new GlobalTime(System.currentTimeMillis(),
               handler.localRange().from());
-      final Meta now = new Meta(globalTime, this.incrementLocalTimeAndGet());
+      final Meta now = new Meta(globalTime);
       final DataItem<T> dataItem = new PayloadDataItem<>(now, item);
 
       this.prePush(dataItem, handler);

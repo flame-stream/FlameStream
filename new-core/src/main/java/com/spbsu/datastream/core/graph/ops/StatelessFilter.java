@@ -21,7 +21,6 @@ public final class StatelessFilter<T, R> extends AbstractAtomicGraph {
   private final Function<T, R> function;
 
   public StatelessFilter(final Function<T, R> function, final HashFunction<? super T> hash) {
-    super();
     this.inPort = new InPort(hash);
     this.function = function;
   }

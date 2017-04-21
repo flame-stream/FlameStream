@@ -17,12 +17,12 @@ import java.util.stream.Stream;
  * Date: 22.02.2017
  * Time: 22:29
  */
-@SuppressWarnings("TypeMayBeWeakened")
+@SuppressWarnings({"TypeMayBeWeakened", "OptionalContainsCollection"})
 public final class LazyGroupingState<T> implements GroupingState<T> {
-  private final HashFunction<T> hash;
+  private final HashFunction<? super T> hash;
   private final TLongObjectMap<Object> buffers = new TLongObjectHashMap<>();
 
-  public LazyGroupingState(final HashFunction<T> hash) {
+  public LazyGroupingState(final HashFunction<? super T> hash) {
     this.hash = hash;
   }
 

@@ -20,7 +20,6 @@ public final class RemoteRouter extends UntypedActor {
   private final Map<HashRange, ActorSelection> routingTable;
 
   private RemoteRouter(final Map<HashRange, ActorSelection> routingTable) {
-    super();
     this.routingTable = routingTable;
   }
 

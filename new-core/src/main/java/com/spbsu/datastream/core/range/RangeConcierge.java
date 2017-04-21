@@ -22,7 +22,6 @@ public final class RangeConcierge extends UntypedActor {
   private final ActorRef rootRouter;
 
   private RangeConcierge(final HashRange range, final ActorRef remoteRouter) {
-    super();
     this.range = range;
     this.rootRouter = this.context().actorOf(RootRouter.props(range, remoteRouter), "rootRouter");
   }

@@ -21,11 +21,9 @@ public final class AtomicActor extends UntypedActor {
   private final AtomicHandle handle;
 
   private AtomicActor(final AtomicGraph atomic, final AtomicHandle handle, final String id) {
-    super();
     this.atomic = atomic;
     this.handle = handle;
     this.portMappings = AtomicActor.portMappings(atomic.inPorts());
-    final String id1 = id;
   }
 
   public static Props props(final AtomicGraph atomic, final AtomicHandle handle, final String id) {

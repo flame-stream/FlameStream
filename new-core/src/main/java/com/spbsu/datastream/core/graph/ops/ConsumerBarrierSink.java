@@ -20,7 +20,6 @@ public final class ConsumerBarrierSink<T> extends AbstractAtomicGraph {
   private final InPort feedbackPort;
 
   public ConsumerBarrierSink(final Consumer<T> consumer) {
-    super();
     this.consumer = consumer;
     this.inPort = new InPort(PreSinkMetaElement.HASH_FUNCTION);
     this.feedbackPort = new InPort(DICompeted.HASH_FUNCTION);

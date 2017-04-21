@@ -21,14 +21,13 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final OutPort outPort = new OutPort();
 
 
-  private final HashFunction<T> hash;
+  private final HashFunction<? super T> hash;
   private final int window;
   private final GroupingState<T> buffers;
   private GroupingState<T> state;
 
 
-  public Grouping(final HashFunction<T> hash, final int window) {
-    super();
+  public Grouping(final HashFunction<? super T> hash, final int window) {
     this.inPort = new InPort(hash);
     this.window = window;
     this.hash = hash;
@@ -55,7 +54,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
         for (int i = group.size() - replayCount; i < group.size(); i++) {
           this.prePush(dataItem, handler);
           handler.push(this.outPort(), new PayloadDataItem<GroupingResult>(
-                  group.get(i).meta(),
+                  new Meta(group.get(i).meta(), this.incrementLocalTimeAndGet()),
                   new GroupingResult<>(group.subList(this.window > 0 ? Math.max(0, i + 1 - this.window) : 0, i + 1).stream().map(DataItem::payload).collect(Collectors.toList()), this.hash.applyAsInt(dataItem.payload()))));
           this.ack(dataItem, handler);
         }
@@ -68,7 +67,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     }
     this.prePush(dataItem, handler);
     handler.push(this.outPort(), new PayloadDataItem<GroupingResult>(
-            dataItem.meta(),
+            new Meta(dataItem.meta(), this.incrementLocalTimeAndGet()),
             new GroupingResult<>(
                     (this.window > 0 ? group.subList(Math.max(0, group.size() - this.window), group.size()) : group).stream().map(DataItem::payload).collect(Collectors.toList()),
                     this.hash.applyAsInt(dataItem.payload()))));

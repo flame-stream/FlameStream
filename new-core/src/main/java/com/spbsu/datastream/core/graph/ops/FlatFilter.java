@@ -24,7 +24,6 @@ public final class FlatFilter<T, R> extends AbstractAtomicGraph {
   private final InPort inPort;
 
   public FlatFilter(final Function<T, Stream<R>> function, final HashFunction<T> hash) {
-    super();
     this.function = function;
     this.inPort = new InPort(hash);
   }

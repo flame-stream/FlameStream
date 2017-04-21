@@ -8,9 +8,9 @@ public final class Meta implements Comparable<Meta> {
 
   private final Trace trace;
 
-  public Meta(final GlobalTime globalTime, final int localTime) {
+  public Meta(final GlobalTime globalTime) {
     this.globalTime = globalTime;
-    this.trace = new Trace(new LocalEvent(localTime));
+    this.trace = Trace.EMPTY_TRACE;
   }
 
   public Meta(final Meta oldMeta, final int newLocalTime) {
@@ -31,7 +31,7 @@ public final class Meta implements Comparable<Meta> {
     return this.trace;
   }
 
-  @SuppressWarnings("MethodReturnAlwaysConstant")
+  @SuppressWarnings({"MethodReturnAlwaysConstant", "MethodMayBeStatic"})
   public int tick() {
     return 1;
   }

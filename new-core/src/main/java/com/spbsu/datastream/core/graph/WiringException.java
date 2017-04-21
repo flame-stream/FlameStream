@@ -4,7 +4,6 @@ public class WiringException extends RuntimeException {
   private static final long serialVersionUID = 1962808487048377310L;
 
   public WiringException() {
-    super();
   }
 
   public WiringException(final String message) {
