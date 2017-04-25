@@ -9,7 +9,6 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -34,8 +33,9 @@ public final class StatelessFilter<T, R> extends AbstractAtomicGraph {
     @SuppressWarnings("unchecked")
     final R res = this.function.apply((T) item.payload());
 
-    handler.push(this.outPort(), new PayloadDataItem<>(new Meta(item.meta(), this.incrementLocalTimeAndGet()), res));
-    this.ack(item, handler);
+    final DataItem<R> result = new PayloadDataItem<>(new Meta(item.meta(), this.incrementLocalTimeAndGet()), res);
+
+    handler.push(this.outPort(), result);
   }
 
   public InPort inPort() {
@@ -53,12 +53,7 @@ public final class StatelessFilter<T, R> extends AbstractAtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    final List<OutPort> outPorts = new ArrayList<>();
-
-    outPorts.add(this.outPort);
-    outPorts.add(this.ackPort());
-
-    return Collections.unmodifiableList(outPorts);
+    return Collections.singletonList(this.outPort);
   }
 }
 

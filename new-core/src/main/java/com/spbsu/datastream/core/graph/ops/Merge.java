@@ -9,7 +9,6 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,9 +27,7 @@ public final class Merge<R> extends AbstractAtomicGraph {
     final DataItem<?> newItem = new PayloadDataItem<>(new Meta(item.meta(), this.incrementLocalTimeAndGet()),
             item.payload());
 
-    this.prePush(newItem, handler);
     handler.push(this.outPort(), newItem);
-    this.ack(item, handler);
   }
 
   @Override
@@ -44,10 +41,6 @@ public final class Merge<R> extends AbstractAtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    final List<OutPort> result = new ArrayList<>();
-    result.add(this.outPort);
-    result.add(this.ackPort());
-
-    return Collections.unmodifiableList(result);
+    return Collections.singletonList(this.outPort);
   }
 }

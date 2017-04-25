@@ -9,7 +9,6 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Spliterator;
@@ -35,7 +34,6 @@ public final class SpliteratorSource<T> extends AbstractAtomicGraph {
       final Meta now = new Meta(globalTime);
       final DataItem<T> dataItem = new PayloadDataItem<>(now, item);
 
-      this.prePush(dataItem, handler);
       handler.push(this.outPort(), dataItem);
       try {
         TimeUnit.MILLISECONDS.sleep(100L);
@@ -56,10 +54,6 @@ public final class SpliteratorSource<T> extends AbstractAtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    final List<OutPort> result = new ArrayList<>();
-    result.add(this.outPort);
-    result.add(this.ackPort());
-
-    return Collections.unmodifiableList(result);
+    return Collections.singletonList(this.outPort);
   }
 }

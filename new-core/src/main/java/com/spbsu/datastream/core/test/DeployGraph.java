@@ -5,7 +5,6 @@ import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.HashRange;
-import com.spbsu.datastream.core.feedback.FeedBackCircuit;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.ConsumerBarrierSink;
@@ -39,7 +38,7 @@ public final class DeployGraph {
 
     final TheGraph theGraph = DeployGraph.theGraph();
     final long tick = 1L;
-    final DeployForTick request = new DeployForTick(theGraph, tick);
+    final DeployForTick request = new DeployForTick(theGraph, tick, System.currentTimeMillis(), 20);
 
     final ActorSelection worker1 = DeployGraph.rangeConcierge(system, 7001, new HashRange(Integer.MIN_VALUE, 0));
     final ActorSelection worker2 = DeployGraph.rangeConcierge(system, 7002, new HashRange(0, Integer.MAX_VALUE));
@@ -58,26 +57,18 @@ public final class DeployGraph {
 
   private static TheGraph theGraph() {
     final Spliterator<Integer> spliterator = new IntSpliterator();
+
     final SpliteratorSource<Integer> source = new SpliteratorSource<>(spliterator);
     final StatelessFilter<Integer, Integer> filter = new StatelessFilter<>(new MyFunc(), HashFunction.OBJECT_HASH);
-
     final PreSinkMetaFilter<?> preSinkMetaFilter = new PreSinkMetaFilter<>(HashFunction.OBJECT_HASH);
     final ConsumerBarrierSink<Integer> sink = new ConsumerBarrierSink<>(new PrintlnConsumer());
 
-    final Graph gr = source
+    final Graph logicGraph = source
             .fuse(filter, source.outPort(), filter.inPort())
             .fuse(preSinkMetaFilter, filter.outPort(), preSinkMetaFilter.inPort())
             .fuse(sink, preSinkMetaFilter.outPort(), sink.inPort());
 
-    final Graph feedBackCircuit = new FeedBackCircuit(4, 1);
-
-    final Graph completeGraph = gr.fuse(feedBackCircuit, source.ackPort(), feedBackCircuit.inPorts().get(0))
-            .wire(filter.ackPort(), feedBackCircuit.inPorts().get(1))
-            .wire(preSinkMetaFilter.ackPort(), feedBackCircuit.inPorts().get(2))
-            .wire(sink.ackPort(), feedBackCircuit.inPorts().get(3))
-            .wire(feedBackCircuit.outPorts().get(0), sink.feedbackPort());
-
-    return new TheGraph(completeGraph);
+    return new TheGraph(logicGraph);
   }
 
   public static final class PrintlnConsumer implements Consumer<Integer> {

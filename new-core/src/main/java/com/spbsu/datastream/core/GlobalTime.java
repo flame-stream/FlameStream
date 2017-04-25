@@ -4,8 +4,9 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public final class GlobalTime implements Comparable<GlobalTime> {
+  public static final GlobalTime INF = new GlobalTime(Long.MAX_VALUE, Integer.MAX_VALUE);
+
   //Inner representation is a subject for a discussion and/or an optimization
-  public static final int WINDOW_SIZE = 10;
 
   private final long time;
 

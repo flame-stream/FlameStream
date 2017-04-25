@@ -31,7 +31,7 @@ public final class TickGraphManager extends UntypedActor {
 
   private TickGraphManager(final TickContext context) {
     final Map<AtomicGraph, ActorRef> inMapping = this.initializedAtomics(context.graph().subGraphs(), context);
-    final ActorRef localRouter = this.localRouter(this.withFlattenedKey(inMapping));
+    final ActorRef localRouter = this.localRouter(TickGraphManager.withFlattenedKey(inMapping));
 
     context.rootRouter().tell(new RootRouterApi.RegisterMe(context.tick(), localRouter), this.self());
   }
@@ -73,7 +73,7 @@ public final class TickGraphManager extends UntypedActor {
     return this.context().actorOf(TickLocalRouter.props(portMappings), "localRouter");
   }
 
-  private TLongObjectMap<ActorRef> withFlattenedKey(final Map<AtomicGraph, ActorRef> map) {
+  private static TLongObjectMap<ActorRef> withFlattenedKey(final Map<AtomicGraph, ActorRef> map) {
     final TLongObjectMap<ActorRef> result = new TLongObjectHashMap<>();
     for (final Map.Entry<AtomicGraph, ActorRef> e : map.entrySet()) {
       for (final InPort port : e.getKey().inPorts()) {

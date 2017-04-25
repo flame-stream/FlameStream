@@ -7,10 +7,10 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
+import com.spbsu.datastream.core.node.RootRouter;
 import com.spbsu.datastream.core.tick.TickContext;
 import com.spbsu.datastream.core.tick.TickContextImpl;
 import com.spbsu.datastream.core.tick.manager.TickGraphManager;
-import com.spbsu.datastream.core.node.RootRouter;
 import scala.Option;
 
 import static com.spbsu.datastream.core.range.RangeConciergeApi.DeployForTick;
@@ -55,14 +55,14 @@ public final class RangeConcierge extends UntypedActor {
     if (message instanceof DeployForTick) {
       final DeployForTick deploy = (DeployForTick) message;
       this.context().actorOf(
-              TickGraphManager.props(this.tickContext(deploy.tick(), deploy.graph())),
+              TickGraphManager.props(this.tickContext(deploy.tick(), deploy.graph(), deploy.startTs(), deploy.window())),
               Long.toString(deploy.tick()));
     } else {
       this.unhandled(message);
     }
   }
 
-  private TickContext tickContext(final long tick, final TheGraph graph) {
-    return new TickContextImpl(this.rootRouter, tick, this.range, graph);
+  private TickContext tickContext(final long tick, final TheGraph graph, final long startTs, final long window) {
+    return new TickContextImpl(this.rootRouter, tick, this.range, startTs, window, graph);
   }
 }

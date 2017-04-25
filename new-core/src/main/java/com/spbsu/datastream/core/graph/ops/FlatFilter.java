@@ -10,7 +10,6 @@ import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 import org.jooq.lambda.Seq;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -36,11 +35,8 @@ public final class FlatFilter<T, R> extends AbstractAtomicGraph {
       final Meta newMeta = new Meta(item.meta(), this.incrementLocalTimeAndGet(), Math.toIntExact(t.v2()));
       final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t.v1());
 
-      this.prePush(newDataItem, handler);
       handler.push(this.outPort(), newDataItem);
     });
-
-    this.ack(item, handler);
   }
 
   public InPort inPort() {
@@ -58,10 +54,6 @@ public final class FlatFilter<T, R> extends AbstractAtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    final List<OutPort> outPorts = new ArrayList<>();
-    outPorts.add(this.outPort);
-    outPorts.add(this.ackPort());
-
-    return Collections.unmodifiableList(outPorts);
+    return Collections.singletonList(this.outPort);
   }
 }

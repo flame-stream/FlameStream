@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.graph;
 import java.util.*;
 import java.util.stream.Collectors;
 
-final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
+public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
   private final Map<OutPort, InPort> downstreams;
 
   private final List<InPort> inPorts;
@@ -11,7 +11,7 @@ final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
 
   private final Set<T> subGraphs;
 
-  ComposedGraphImpl(final Set<T> graphs) {
+  public ComposedGraphImpl(final Set<T> graphs) {
     this(graphs, Collections.emptyMap());
   }
 

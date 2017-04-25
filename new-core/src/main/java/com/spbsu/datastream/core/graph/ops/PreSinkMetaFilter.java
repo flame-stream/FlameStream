@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
+import com.google.common.collect.ImmutableList;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.Meta;
@@ -26,9 +27,7 @@ public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
     final DataItem<?> newItem = new PayloadDataItem<>(
             new Meta(item.meta(), this.incrementLocalTimeAndGet()),
             new PreSinkMetaElement<>(item.payload(), item.meta().globalTime().initHash()));
-    this.prePush(newItem, handle);
     handle.push(this.outPort(), newItem);
-    this.ack(item, handle);
   }
 
   public InPort inPort() {
@@ -46,11 +45,6 @@ public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    final List<OutPort> outPorts = new ArrayList<>();
-
-    outPorts.add(this.outPort);
-    outPorts.add(this.ackPort());
-
-    return Collections.unmodifiableList(outPorts);
+    return Collections.singletonList(this.outPort);
   }
 }

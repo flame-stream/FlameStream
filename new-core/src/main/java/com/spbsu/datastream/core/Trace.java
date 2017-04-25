@@ -58,7 +58,6 @@ public final class Trace implements Comparable<Trace> {
 
   @Override
   public String toString() {
-    return "Trace{" + "trace=" + Arrays.toString(this.trace) +
-            '}';
+    return Arrays.toString(this.trace);
   }
 }

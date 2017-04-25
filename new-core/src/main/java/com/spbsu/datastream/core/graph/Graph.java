@@ -39,8 +39,6 @@ public interface Graph {
     return new ComposedGraphImpl<>(graphs);
   }
 
-  ComposedGraph<AtomicGraph> flattened();
-
   /**
    * Creates a new Graph based on the current Graph but with
    * the given OutPort wired to the given InPort.
@@ -52,6 +50,8 @@ public interface Graph {
   default Graph wire(final OutPort from, final InPort to) {
     return new ComposedGraphImpl<>(this, from, to);
   }
+
+  ComposedGraph<AtomicGraph> flattened();
 
   default boolean isClosed() {
     return this.inPorts().isEmpty() && this.outPorts().isEmpty();

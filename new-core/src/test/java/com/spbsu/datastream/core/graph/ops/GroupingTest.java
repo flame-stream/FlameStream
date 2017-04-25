@@ -1,6 +1,11 @@
 package com.spbsu.datastream.core.graph.ops;
 
-import com.spbsu.datastream.core.*;
+import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.FakeAtomicHandle;
+import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.Meta;
+import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
@@ -29,11 +34,7 @@ public final class GroupingTest {
 
     final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
 
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> {
-      if (!port.equals(grouping.ackPort())) {
-        out.add((DataItem<GroupingResult<String>>) di);
-      }
-    });
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
 
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
@@ -62,11 +63,7 @@ public final class GroupingTest {
 
     final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
 
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> {
-      if (!port.equals(grouping.ackPort())) {
-        out.add((DataItem<GroupingResult<String>>) di);
-      }
-    });
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
 
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
@@ -98,11 +95,7 @@ public final class GroupingTest {
 
     final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
 
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> {
-      if (!port.equals(grouping.ackPort())) {
-        out.add((DataItem<GroupingResult<String>>) di);
-      }
-    });
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
 
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
@@ -134,12 +127,7 @@ public final class GroupingTest {
 
     final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
 
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> {
-      if (!port.equals(grouping.ackPort())) {
-        out.add((DataItem<GroupingResult<String>>) di);
-      }
-    });
-
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
 
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
@@ -175,11 +163,7 @@ public final class GroupingTest {
 
     final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
 
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> {
-      if (!port.equals(grouping.ackPort())) {
-        out.add((DataItem<GroupingResult<String>>) di);
-      }
-    });
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
 
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
@@ -219,11 +203,7 @@ public final class GroupingTest {
 
     final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
 
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> {
-      if (!port.equals(grouping.ackPort())) {
-        out.add((DataItem<GroupingResult<String>>) di);
-      }
-    });
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
 
     final List<DataItem<String>> input = IntStream.range(0, 5)
             .mapToObj(i -> new PayloadDataItem<>(new Meta(new GlobalTime(i, 1)), "v" + i))

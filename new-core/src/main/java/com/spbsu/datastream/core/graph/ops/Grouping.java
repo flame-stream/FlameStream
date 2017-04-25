@@ -52,11 +52,9 @@ public final class Grouping<T> extends AbstractAtomicGraph {
       group.add(group.size() - replayCount, dataItem);
       if (replayCount > 0) {
         for (int i = group.size() - replayCount; i < group.size(); i++) {
-          this.prePush(dataItem, handler);
           handler.push(this.outPort(), new PayloadDataItem<GroupingResult>(
                   new Meta(group.get(i).meta(), this.incrementLocalTimeAndGet()),
                   new GroupingResult<>(group.subList(this.window > 0 ? Math.max(0, i + 1 - this.window) : 0, i + 1).stream().map(DataItem::payload).collect(Collectors.toList()), this.hash.applyAsInt(dataItem.payload()))));
-          this.ack(dataItem, handler);
         }
         return;
       }
@@ -65,13 +63,11 @@ public final class Grouping<T> extends AbstractAtomicGraph {
       group.add(dataItem);
       this.buffers.put(group);
     }
-    this.prePush(dataItem, handler);
     handler.push(this.outPort(), new PayloadDataItem<GroupingResult>(
             new Meta(dataItem.meta(), this.incrementLocalTimeAndGet()),
             new GroupingResult<>(
                     (this.window > 0 ? group.subList(Math.max(0, group.size() - this.window), group.size()) : group).stream().map(DataItem::payload).collect(Collectors.toList()),
                     this.hash.applyAsInt(dataItem.payload()))));
-    this.ack(dataItem, handler);
   }
 
   @Override
@@ -125,10 +121,6 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    final List<OutPort> result = new ArrayList<>();
-    result.add(this.outPort);
-    result.add(this.ackPort());
-
-    return Collections.unmodifiableList(result);
+    return Collections.singletonList(this.outPort);
   }
 }

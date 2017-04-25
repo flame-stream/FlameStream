@@ -8,9 +8,23 @@ public interface RangeConciergeApi {
 
     private final long tick;
 
-    public DeployForTick(final TheGraph graph, final long tick) {
+    private final long startTs;
+
+    private final long window;
+
+    public DeployForTick(final TheGraph graph, final long tick, final long startTs, final long window) {
       this.graph = graph;
       this.tick = tick;
+      this.startTs = startTs;
+      this.window = window;
+    }
+
+    public long window() {
+      return this.window;
+    }
+
+    public long startTs() {
+      return this.startTs;
     }
 
     public TheGraph graph() {
@@ -25,6 +39,8 @@ public interface RangeConciergeApi {
     public String toString() {
       return "DeployForTick{" + "graph=" + this.graph +
               ", tick=" + this.tick +
+              ", startTs=" + this.startTs +
+              ", window=" + this.window +
               '}';
     }
   }

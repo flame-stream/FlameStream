@@ -9,7 +9,6 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,17 +25,15 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
+  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handle) {
     final List<OutPort> outPorts = this.outPorts();
 
     for (int i = 0; i < outPorts.size(); ++i) {
       final Meta newMeta = new Meta(item.meta(), this.incrementLocalTimeAndGet(), i);
 
       final DataItem<?> newItem = new PayloadDataItem<>(newMeta, item.payload());
-      this.prePush(newItem, handler);
-      handler.push(outPorts.get(i), item);
+      handle.push(outPorts.get(i), item);
     }
-    this.ack(item, handler);
   }
 
   @Override
@@ -54,10 +51,7 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
 
   @Override
   public List<OutPort> outPorts() {
-    final List<OutPort> outPorts = new ArrayList<>();
-    outPorts.addAll(this.broadcastPorts);
-    outPorts.add(this.ackPort());
-    return Collections.unmodifiableList(outPorts);
+    return Collections.unmodifiableList(this.broadcastPorts);
   }
 
   @Override
