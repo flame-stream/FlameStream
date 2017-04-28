@@ -43,13 +43,12 @@ public final class InPort {
       return false;
     }
     final InPort port = (InPort) o;
-    return this.id == port.id &&
-            Objects.equals(this.hashFunction, port.hashFunction);
+    return this.id == port.id;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.id, this.hashFunction);
+    return Objects.hash(this.id);
   }
 }
 

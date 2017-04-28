@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core;
+package com.spbsu.datastream.core.configuration;
 
 import java.util.Objects;
 
@@ -17,7 +17,7 @@ public final class HashRange {
     return new HashRange(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]));
   }
 
-  public boolean isIn(final int hash) {
+  public boolean contains(final int hash) {
     return this.from <= hash && hash < this.to;
   }
 

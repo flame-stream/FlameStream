@@ -1,8 +1,8 @@
-package com.spbsu.datastream.core.node;
+package com.spbsu.datastream.core.range;
 
 import akka.actor.ActorRef;
 
-public interface RootRouterApi {
+public interface RangeRouterApi {
   final class RegisterMe {
     private final long tick;
 

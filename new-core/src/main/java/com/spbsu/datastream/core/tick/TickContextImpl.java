@@ -1,26 +1,29 @@
 package com.spbsu.datastream.core.tick;
 
 import akka.actor.ActorRef;
-import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
 
 public final class TickContextImpl implements TickContext {
   private final ActorRef rootRouter;
+  private final ActorRef rangeRouter;
 
   private final HashRange localRange;
 
   private final TheGraph graph;
 
-  private final long tick;
+  private final int tick;
   private final long startTime;
   private final long window;
 
   public TickContextImpl(final ActorRef rootRouter,
-                         final long tick,
+                         final ActorRef rangeRouter,
+                         final int tick,
                          final HashRange localRange,
                          final long startTime,
                          final long window,
                          final TheGraph graph) {
+    this.rangeRouter = rangeRouter;
     this.rootRouter = rootRouter;
     this.tick = tick;
     this.localRange = localRange;
@@ -35,7 +38,7 @@ public final class TickContextImpl implements TickContext {
   }
 
   @Override
-  public long tick() {
+  public int tick() {
     return this.tick;
   }
 
@@ -57,5 +60,10 @@ public final class TickContextImpl implements TickContext {
   @Override
   public ActorRef rootRouter() {
     return this.rootRouter;
+  }
+
+  @Override
+  public ActorRef rangeRouter() {
+    return this.rangeRouter;
   }
 }

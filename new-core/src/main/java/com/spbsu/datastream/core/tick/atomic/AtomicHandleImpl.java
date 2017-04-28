@@ -2,17 +2,15 @@ package com.spbsu.datastream.core.tick.atomic;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.HashRange;
 import com.spbsu.datastream.core.RoutingException;
+import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.graph.ops.GroupingState;
-import com.spbsu.datastream.core.tick.AddressedMessage;
+import com.spbsu.datastream.core.range.AddressedMessage;
+import com.spbsu.datastream.core.tick.PortBindDataItem;
 import com.spbsu.datastream.core.tick.TickContext;
-import org.slf4j.Logger;
-import sun.rmi.runtime.Log;
 
-import java.util.Collection;
 import java.util.Optional;
 
 public final class AtomicHandleImpl implements AtomicHandle {
@@ -32,7 +30,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
     @SuppressWarnings("unchecked")
     final int hash = hashFunction.applyAsInt(result.payload());
 
-    final AddressedMessage addressedMessage = new AddressedMessage(result, address.id(), hash);
+    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(new PortBindDataItem(result, address), hash, this.tickContext.tick());
     this.tickContext.rootRouter().tell(addressedMessage, null);
   }
 

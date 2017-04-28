@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core;
 
+import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.graph.ops.GroupingState;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;

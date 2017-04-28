@@ -1,9 +1,8 @@
-package com.spbsu.datastream.core.node;
+package com.spbsu.datastream.core.configuration;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.spbsu.datastream.core.HashRange;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
@@ -18,14 +17,15 @@ public final class RangeMappingsDto {
     this(rangeMappings.entrySet().stream().collect(Collectors.toMap(e -> HashRange.fromString(e.getKey()), Map.Entry::getValue)), false);
   }
 
+  public static RangeMappingsDto normalConstruct(final Map<HashRange, InetSocketAddress> rangeMappings) {
+    return new RangeMappingsDto(rangeMappings, false);
+  }
+
   @SuppressWarnings("SameParameterValue")
+  @JsonIgnore
   private RangeMappingsDto(final Map<HashRange, InetSocketAddress> rangeMappings,
                            final boolean variableForDifferentSignature) {
     this.rangeMappings = rangeMappings;
-  }
-
-  public static RangeMappingsDto normalConstruct(final Map<HashRange, InetSocketAddress> rangeMappings) {
-    return new RangeMappingsDto(rangeMappings, false);
   }
 
   @JsonProperty("mappings")

@@ -2,19 +2,18 @@ package com.spbsu.datastream.core.feedback;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
 import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.tick.TickContext;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class AckActor extends UntypedActor {
+public final class AckActor extends LoggingActor {
   private final AckLedger ledger;
   private GlobalTime currentMin = GlobalTime.INF;
 
   private final List<ActorRef> resultSubscribers;
-  private final TickContext context;
 
   public static Props props(final TickContext context, final List<ActorRef> resultSubscribers) {
     return Props.create(AckActor.class, context, resultSubscribers);
@@ -22,8 +21,6 @@ public final class AckActor extends UntypedActor {
 
   private AckActor(final TickContext context, final List<ActorRef> resultSubscribers) {
     this.resultSubscribers = new ArrayList<>(resultSubscribers);
-    this.context = context;
-
     this.ledger = new AckLedgerImpl(context.startTime(), context.window(), null);
   }
 

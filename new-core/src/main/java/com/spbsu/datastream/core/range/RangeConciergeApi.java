@@ -6,13 +6,13 @@ public interface RangeConciergeApi {
   final class DeployForTick {
     private final TheGraph graph;
 
-    private final long tick;
+    private final int tick;
 
     private final long startTs;
 
     private final long window;
 
-    public DeployForTick(final TheGraph graph, final long tick, final long startTs, final long window) {
+    public DeployForTick(final TheGraph graph, final int tick, final long startTs, final long window) {
       this.graph = graph;
       this.tick = tick;
       this.startTs = startTs;
@@ -31,7 +31,7 @@ public interface RangeConciergeApi {
       return this.graph;
     }
 
-    public long tick() {
+    public int tick() {
       return this.tick;
     }
 

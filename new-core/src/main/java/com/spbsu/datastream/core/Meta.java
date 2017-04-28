@@ -31,11 +31,6 @@ public final class Meta implements Comparable<Meta> {
     return this.trace;
   }
 
-  @SuppressWarnings({"MethodReturnAlwaysConstant", "MethodMayBeStatic"})
-  public int tick() {
-    return 1;
-  }
-
   @Override
   public int compareTo(final Meta that) {
     return Comparator.comparing(Meta::globalTime)

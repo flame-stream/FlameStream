@@ -4,11 +4,12 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import com.spbsu.datastream.core.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 
 import static org.apache.zookeeper.Watcher.Event;
 
-public final class LifecycleWatcher extends UntypedActor {
+public final class LifecycleWatcher extends LoggingActor {
   private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
 
   public static Props props() {

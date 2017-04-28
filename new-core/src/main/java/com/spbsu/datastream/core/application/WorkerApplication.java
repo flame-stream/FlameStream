@@ -8,12 +8,16 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.cli.*;
 import org.apache.zookeeper.ZooKeeper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 public final class WorkerApplication {
+  private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
+
   public static void main(final String... args) throws IOException {
     final Options options = new Options();
     final Option hostOpt = Option.builder("host").hasArg().argName("FQDN").desc("worker FQDN").required().build();
@@ -35,10 +39,9 @@ public final class WorkerApplication {
       final String connectingString = cmd.getOptionValue("zk");
       new WorkerApplication().run(socketAddress, connectingString);
     } catch (final ParseException e) {
-      System.err.println("Parsing failed.  Reason: " + e.getMessage());
+      WorkerApplication.LOG.error("Parsing failed", e);
       final HelpFormatter formatter = new HelpFormatter();
       formatter.printHelp("dataStreams", options);
-      System.exit(1);
     }
   }
 

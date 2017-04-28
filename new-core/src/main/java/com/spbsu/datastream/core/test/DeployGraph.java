@@ -4,7 +4,7 @@ import akka.actor.ActorPath;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.ConsumerBarrierSink;
@@ -37,7 +37,7 @@ public final class DeployGraph {
 
 
     final TheGraph theGraph = DeployGraph.theGraph();
-    final long tick = 1L;
+    final int tick = 1;
     final DeployForTick request = new DeployForTick(theGraph, tick, System.currentTimeMillis(), 20);
 
     final ActorSelection worker1 = DeployGraph.rangeConcierge(system, 7001, new HashRange(Integer.MIN_VALUE, 0));

@@ -1,15 +1,13 @@
 package com.spbsu.datastream.core.tick;
 
 import akka.actor.ActorRef;
-import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
-
-import java.util.Set;
 
 public interface TickContext {
   TheGraph graph();
 
-  long tick();
+  int tick();
 
   long startTime();
 
@@ -18,4 +16,6 @@ public interface TickContext {
   HashRange localRange();
 
   ActorRef rootRouter();
+
+  ActorRef rangeRouter();
 }

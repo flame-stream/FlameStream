@@ -1,33 +1,38 @@
 package com.spbsu.datastream.core.node;
 
-import akka.actor.*;
+import akka.actor.ActorRef;
+import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.datastream.core.HashRange;
+import com.spbsu.datastream.core.LoggingActor;
+import com.spbsu.datastream.core.configuration.HashRange;
+import com.spbsu.datastream.core.configuration.RangeMappingsDto;
+import com.spbsu.datastream.core.front.FrontActor;
 import com.spbsu.datastream.core.range.RangeConcierge;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
-import scala.Option;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public final class NodeConcierge extends UntypedActor {
+public final class NodeConcierge extends LoggingActor {
   private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
 
   private final ZooKeeper zooKeeper;
-  private final InetSocketAddress address;
+  private final InetSocketAddress myAddress;
   private final ObjectMapper mapper = new ObjectMapper();
 
-  private NodeConcierge(final InetSocketAddress address, final ZooKeeper zooKeeper) {
+  private NodeConcierge(final InetSocketAddress myAddress, final ZooKeeper zooKeeper) {
     this.zooKeeper = zooKeeper;
-    this.address = address;
+    this.myAddress = myAddress;
   }
 
   public static Props props(final InetSocketAddress address, final ZooKeeper zooKeeper) {
@@ -36,57 +41,46 @@ public final class NodeConcierge extends UntypedActor {
 
   @Override
   public void preStart() throws Exception {
-    this.LOG.info("Starting... Address: {}", this.address);
+    this.LOG.info("Starting... Address: {}", this.myAddress);
 
-    final RangeMappingsDto mappings = this.fetchMappings();
-    this.LOG.info("Mappings fetched: {}", mappings);
+    final Map<HashRange, InetSocketAddress> rangeMappings = this.fetchRangeMappings();
+    this.LOG.info("Range mappings fetched: {}", rangeMappings);
 
-    final ActorRef remoteRouter = this.remoteRouter(mappings);
-    final Set<HashRange> myRanges = this.myRanges(mappings);
+    final ActorRef rootRouter = this.context().actorOf(RootRouter.props(rangeMappings), "rootRouter");
 
-    myRanges.forEach(r -> this.conciergeForRange(r, remoteRouter));
+    final Set<HashRange> myRanges = this.myRanges(rangeMappings);
+    myRanges.forEach(r -> this.conciergeForRange(r, rootRouter));
+
+    final Map<InetSocketAddress, String> frontMappings = this.fetchFrontMappings();
+    this.LOG.info("Front mappings fetched: {}", frontMappings);
+
+    // TODO: 4/28/17 Front not starting
+    Optional.ofNullable(frontMappings.get(this.myAddress))
+            .ifPresent(id -> this.context().actorOf(FrontActor.props(rootRouter, id), "front"));
+
     super.preStart();
-  }
-
-  @Override
-  public void postStop() throws Exception {
-    this.LOG.info("Stopped");
-    super.postStop();
-  }
-
-  @Override
-  public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
-    this.LOG.error("Restarting, reason: {}, message: {}", reason, message);
-    super.preRestart(reason, message);
   }
 
   private ActorRef conciergeForRange(final HashRange range, final ActorRef remoteRouter) {
     return this.context().actorOf(RangeConcierge.props(range, remoteRouter), range.toString());
   }
 
-  private Set<HashRange> myRanges(final RangeMappingsDto mappings) {
-    return mappings.rangeMappings().entrySet().stream().filter(e -> e.getValue().equals(this.address))
+  private Set<HashRange> myRanges(final Map<HashRange, InetSocketAddress> mappings) {
+    return mappings.entrySet().stream().filter(e -> e.getValue().equals(this.myAddress))
             .map(Map.Entry::getKey).collect(Collectors.toSet());
   }
 
-  private ActorRef remoteRouter(final RangeMappingsDto mappings) {
-    return this.context().actorOf(RemoteRouter.props(this.remoteDispatchers(mappings)), "remoteRouter");
-  }
-
-  private Map<HashRange, ActorSelection> remoteDispatchers(final RangeMappingsDto mappings) {
-    return mappings.rangeMappings().entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, e -> this.remoteDispatcher(e.getValue(), e.getKey())));
-  }
-
-  private ActorSelection remoteDispatcher(final InetSocketAddress socketAddress, final HashRange range) {
-    final ActorPath dispatcher = MyPaths.rootRouter(socketAddress, range);
-    return this.context().system().actorSelection(dispatcher);
-  }
-
-  private RangeMappingsDto fetchMappings() throws KeeperException, InterruptedException, IOException {
-    final String path = "/mappings";
+  private Map<HashRange, InetSocketAddress> fetchRangeMappings() throws KeeperException, InterruptedException, IOException {
+    final String path = "/ranges";
     final byte[] data = this.zooKeeper.getData(path, this.selfWatcher(), new Stat());
-    return this.mapper.readValue(data, RangeMappingsDto.class);
+    return this.mapper.readValue(data, RangeMappingsDto.class).rangeMappings();
+  }
+
+  private Map<InetSocketAddress, String> fetchFrontMappings() throws KeeperException, InterruptedException, IOException {
+    final String path = "/fronts";
+    final byte[] data = this.zooKeeper.getData(path, this.selfWatcher(), new Stat());
+    return this.mapper.readValue(data, new TypeReference<Map<String, InetSocketAddress>>() {
+    });
   }
 
   @Override
