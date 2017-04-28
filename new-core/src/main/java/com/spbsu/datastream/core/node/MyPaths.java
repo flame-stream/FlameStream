@@ -27,4 +27,12 @@ public final class MyPaths {
             .$div(range.toString())
             .$div("rangeRouter");
   }
+
+  public static ActorPath front(final InetSocketAddress address) {
+    final Address add = Address.apply("akka.tcp", "worker", address.getAddress().getHostName(), address.getPort());
+    return RootActorPath.apply(add, "/")
+            .$div("user")
+            .$div("root")
+            .$div("front");
+  }
 }

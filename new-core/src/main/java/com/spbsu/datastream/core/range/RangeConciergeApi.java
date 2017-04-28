@@ -1,22 +1,34 @@
 package com.spbsu.datastream.core.range;
 
+import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
 
 public interface RangeConciergeApi {
   final class DeployForTick {
     private final TheGraph graph;
 
-    private final int tick;
+    private final long tick;
 
     private final long startTs;
 
     private final long window;
 
-    public DeployForTick(final TheGraph graph, final int tick, final long startTs, final long window) {
+    private final HashRange ackerLocation;
+
+    public DeployForTick(final TheGraph graph,
+                         final HashRange ackerLocation,
+                         final long tick,
+                         final long startTs,
+                         final long window) {
+      this.ackerLocation = ackerLocation;
       this.graph = graph;
       this.tick = tick;
       this.startTs = startTs;
       this.window = window;
+    }
+
+    public HashRange ackerRange() {
+      return this.ackerLocation;
     }
 
     public long window() {
@@ -31,7 +43,7 @@ public interface RangeConciergeApi {
       return this.graph;
     }
 
-    public int tick() {
+    public long tick() {
       return this.tick;
     }
 

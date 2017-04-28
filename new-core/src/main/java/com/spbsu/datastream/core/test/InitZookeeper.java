@@ -68,10 +68,10 @@ public final class InitZookeeper {
     final Map<HashRange, InetSocketAddress> mappings = new HashMap<>();
 
     final InetSocketAddress worker1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7001);
-    mappings.putIfAbsent(new HashRange(Integer.MIN_VALUE, 0), worker1);
+    mappings.putIfAbsent(new HashRange(Integer.MIN_VALUE, Integer.MAX_VALUE / 2), worker1);
 
     final InetSocketAddress worker2 = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7002);
-    mappings.putIfAbsent(new HashRange(0, Integer.MAX_VALUE), worker2);
+    mappings.putIfAbsent(new HashRange(Integer.MAX_VALUE / 2, Integer.MAX_VALUE), worker2);
     final ObjectMapper mapper = new ObjectMapper();
 
     System.err.println(mapper.writeValueAsString(RangeMappingsDto.normalConstruct(mappings)));

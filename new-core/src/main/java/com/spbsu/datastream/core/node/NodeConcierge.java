@@ -51,10 +51,9 @@ public final class NodeConcierge extends LoggingActor {
     final Set<HashRange> myRanges = this.myRanges(rangeMappings);
     myRanges.forEach(r -> this.conciergeForRange(r, rootRouter));
 
-    final Map<InetSocketAddress, String> frontMappings = this.fetchFrontMappings();
+    final Map<InetSocketAddress, Integer> frontMappings = this.fetchFrontMappings();
     this.LOG.info("Front mappings fetched: {}", frontMappings);
 
-    // TODO: 4/28/17 Front not starting
     Optional.ofNullable(frontMappings.get(this.myAddress))
             .ifPresent(id -> this.context().actorOf(FrontActor.props(rootRouter, id), "front"));
 
@@ -76,11 +75,13 @@ public final class NodeConcierge extends LoggingActor {
     return this.mapper.readValue(data, RangeMappingsDto.class).rangeMappings();
   }
 
-  private Map<InetSocketAddress, String> fetchFrontMappings() throws KeeperException, InterruptedException, IOException {
+  private Map<InetSocketAddress, Integer> fetchFrontMappings() throws KeeperException, InterruptedException, IOException {
     final String path = "/fronts";
     final byte[] data = this.zooKeeper.getData(path, this.selfWatcher(), new Stat());
-    return this.mapper.readValue(data, new TypeReference<Map<String, InetSocketAddress>>() {
+    final Map<Integer, InetSocketAddress> result = this.mapper.readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {
     });
+
+    return result.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }
 
   @Override

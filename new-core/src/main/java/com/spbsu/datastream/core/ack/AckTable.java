@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.feedback;
+package com.spbsu.datastream.core.ack;
 
 public interface AckTable {
   void report(final long windowHead);

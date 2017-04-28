@@ -3,6 +3,7 @@ package com.spbsu.datastream.core.tick;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.LoggingActor;
+import com.spbsu.datastream.core.ack.AckActor;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.range.RangeRouterApi;
@@ -20,10 +21,14 @@ import java.util.stream.Collectors;
 
 public final class TickConcierge extends LoggingActor {
   private TickConcierge(final TickContext context) {
-    final Map<AtomicGraph, ActorRef> inMapping = this.initializedAtomics(context.graph().subGraphs(), context);
+    final Map<AtomicGraph, ActorRef> inMapping = this.initializedAtomics(context.graph().graph().subGraphs(), context);
 
     final ActorRef localRouter = this.localRouter(TickConcierge.withFlattenedKey(inMapping));
     context.rangeRouter().tell(new RangeRouterApi.RegisterMe(context.tick(), localRouter), this.self());
+
+    if (context.localRange().equals(context.ackerRange())) {
+      this.context().actorOf(AckActor.props(context), "acker");
+    }
   }
 
   public static Props props(final TickContext context) {
@@ -31,25 +36,8 @@ public final class TickConcierge extends LoggingActor {
   }
 
   @Override
-  public void preStart() throws Exception {
-    this.LOG.info("Starting...");
-    // TODO: 3/26/17 Shitty startup
-    this.context().system().scheduler().scheduleOnce(
-            FiniteDuration.apply(5, TimeUnit.SECONDS),
-            this.self(),
-            new TickConciergeApi.TickStarted(),
-            this.context().system().dispatcher(),
-            this.self());
-    super.preStart();
-  }
-
-  @Override
   public void onReceive(final Object message) throws Throwable {
-    this.LOG.debug("Received: {}", message);
-
-    if (message instanceof TickConciergeApi.TickStarted) {
-      this.getContext().getChildren().forEach(actorRef -> actorRef.tell(new TickConciergeApi.TickStarted(), ActorRef.noSender()));
-    }
+    this.LOG().debug("Received: {}", message);
   }
 
   private ActorRef localRouter(final Map<InPort, ActorRef> portMappings) {

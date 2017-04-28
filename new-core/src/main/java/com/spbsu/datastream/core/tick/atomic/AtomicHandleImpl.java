@@ -22,7 +22,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void push(final OutPort out, final DataItem<?> result) {
-    final Optional<InPort> destination = Optional.ofNullable(this.tickContext.graph().downstreams().get(out));
+    final Optional<InPort> destination = Optional.ofNullable(this.tickContext.graph().graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
     @SuppressWarnings("rawtypes") final HashFunction hashFunction = address.hashFunction();

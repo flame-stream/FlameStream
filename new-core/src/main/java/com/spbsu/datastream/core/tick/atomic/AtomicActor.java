@@ -5,8 +5,6 @@ import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.tick.PortBindDataItem;
 
-import static com.spbsu.datastream.core.tick.TickConciergeApi.TickStarted;
-
 public final class AtomicActor extends LoggingActor {
   private final AtomicGraph atomic;
   private final AtomicHandle handle;
@@ -20,15 +18,19 @@ public final class AtomicActor extends LoggingActor {
     return Props.create(AtomicActor.class, atomic, handle);
   }
 
+  @Override
+  public void preStart() throws Exception {
+    this.atomic.onStart(this.handle);
+    super.preStart();
+  }
+
   @SuppressWarnings("ChainOfInstanceofChecks")
   @Override
   public void onReceive(final Object message) throws Throwable {
-    this.LOG.debug("Received {}", message);
+    this.LOG().debug("Received {}", message);
 
     if (message instanceof PortBindDataItem) {
       this.onAddressedMessage((PortBindDataItem) message);
-    } else if (message instanceof TickStarted) {
-      this.atomic.onStart(this.handle);
     } else {
       this.unhandled(message);
     }

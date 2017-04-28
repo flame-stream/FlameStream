@@ -4,8 +4,6 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.Props;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.range.AddressedMessage;
@@ -30,7 +28,7 @@ public final class RootRouter extends LoggingActor {
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    this.LOG.debug("Received: {}", message);
+    this.LOG().debug("Received: {}", message);
 
     if (message instanceof AddressedMessage) {
       final AddressedMessage<?> addressedMessage = (AddressedMessage<?>) message;

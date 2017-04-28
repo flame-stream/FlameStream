@@ -1,8 +1,8 @@
-package com.spbsu.datastream.core.feedback;
+package com.spbsu.datastream.core.ack;
 
 import com.spbsu.datastream.core.GlobalTime;
 
-import java.util.Collection;
+import java.util.Set;
 
 public interface AckLedger {
   void report(final GlobalTime windowHead);
@@ -11,7 +11,7 @@ public interface AckLedger {
 
   void ack(final GlobalTime windowHead, final long xor);
 
-  Collection<Integer> initHashes();
+  Set<Integer> initHashes();
 
   long startTs();
 

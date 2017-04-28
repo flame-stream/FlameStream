@@ -1,51 +1,42 @@
 package com.spbsu.datastream.core.graph;
 
-import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public final class TheGraph implements ComposedGraph<AtomicGraph> {
+public final class TheGraph {
   private final ComposedGraph<AtomicGraph> composedGraph;
 
-  public TheGraph(final Graph graph) {
-    if (!graph.isClosed()) {
-      throw new IllegalArgumentException("Graph should be closed");
-    }
+  private final Map<Integer, InPort> frontBindings;
+
+  public TheGraph(final Graph graph, final Map<Integer, InPort> frontBindings) {
+    TheGraph.assertFrontMapping(graph, frontBindings);
+
     this.composedGraph = graph.flattened();
+    this.frontBindings = new HashMap<>(frontBindings);
   }
 
-  @Override
-  public String toString() {
-    return "TheGraph{" +
-            ", downstreams=" + this.downstreams() +
-            ", inPorts=" + this.inPorts() +
-            ", outPorts=" + this.outPorts() +
-            ", subGraphs=" + this.subGraphs() +
-            '}';
-  }
-
-  @Override
-  public Set<AtomicGraph> subGraphs() {
-    return this.composedGraph.subGraphs();
-  }
-
-  @Override
-  public Map<OutPort, InPort> downstreams() {
-    return this.composedGraph.downstreams();
-  }
-
-  @Override
-  public List<InPort> inPorts() {
-    return this.composedGraph.inPorts();
-  }
-
-  @Override
-  public List<OutPort> outPorts() {
-    return this.composedGraph.outPorts();
-  }
-
-  @Override
-  public ComposedGraph<AtomicGraph> flattened() {
+  public ComposedGraph<AtomicGraph> graph() {
     return this.composedGraph;
+  }
+
+  public Map<Integer, InPort> frontBindings() {
+    return Collections.unmodifiableMap(this.frontBindings);
+  }
+
+  private static void assertFrontMapping(final Graph tail,
+                                         final Map<Integer, InPort> frontDownstreams) {
+    final Set<InPort> bindPorts = new HashSet<>(frontDownstreams.values());
+    final Set<InPort> freePorts = new HashSet<>(tail.inPorts());
+
+    if (!freePorts.stream().allMatch(bindPorts::contains)) {
+      throw new IllegalArgumentException("Not all inPorts are binded");
+    }
+
+    if (!bindPorts.stream().allMatch(freePorts::contains)) {
+      throw new IllegalArgumentException("Unknow port binding");
+    }
   }
 }

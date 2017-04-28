@@ -4,25 +4,29 @@ import akka.actor.ActorRef;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
 
+import java.util.Collections;
+import java.util.Set;
+
 public final class TickContextImpl implements TickContext {
   private final ActorRef rootRouter;
   private final ActorRef rangeRouter;
 
   private final HashRange localRange;
-
+  private final HashRange ackerRange;
   private final TheGraph graph;
 
-  private final int tick;
+  private final long tick;
   private final long startTime;
   private final long window;
 
   public TickContextImpl(final ActorRef rootRouter,
                          final ActorRef rangeRouter,
-                         final int tick,
-                         final HashRange localRange,
+                         final TheGraph graph,
+                         final long tick,
                          final long startTime,
                          final long window,
-                         final TheGraph graph) {
+                         final HashRange localRange,
+                         final HashRange ackerRange) {
     this.rangeRouter = rangeRouter;
     this.rootRouter = rootRouter;
     this.tick = tick;
@@ -30,6 +34,7 @@ public final class TickContextImpl implements TickContext {
     this.startTime = startTime;
     this.window = window;
     this.graph = graph;
+    this.ackerRange = ackerRange;
   }
 
   @Override
@@ -38,7 +43,7 @@ public final class TickContextImpl implements TickContext {
   }
 
   @Override
-  public int tick() {
+  public long tick() {
     return this.tick;
   }
 
@@ -55,6 +60,11 @@ public final class TickContextImpl implements TickContext {
   @Override
   public HashRange localRange() {
     return this.localRange;
+  }
+
+  @Override
+  public HashRange ackerRange() {
+    return this.ackerRange;
   }
 
   @Override

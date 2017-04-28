@@ -7,13 +7,15 @@ import com.spbsu.datastream.core.graph.TheGraph;
 public interface TickContext {
   TheGraph graph();
 
-  int tick();
+  long tick();
 
   long startTime();
 
   long window();
 
   HashRange localRange();
+
+  HashRange ackerRange();
 
   ActorRef rootRouter();
 

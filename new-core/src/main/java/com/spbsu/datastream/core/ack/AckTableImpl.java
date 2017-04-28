@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.feedback;
+package com.spbsu.datastream.core.ack;
 
 import java.util.SortedMap;
 import java.util.TreeMap;

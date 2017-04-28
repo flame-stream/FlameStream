@@ -1,24 +1,31 @@
 package com.spbsu.datastream.core.test;
 
 import akka.actor.ActorPath;
+import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.configuration.HashRange;
+import com.spbsu.datastream.core.front.RawData;
 import com.spbsu.datastream.core.graph.Graph;
+import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.ConsumerBarrierSink;
 import com.spbsu.datastream.core.graph.ops.PreSinkMetaFilter;
-import com.spbsu.datastream.core.graph.ops.SpliteratorSource;
 import com.spbsu.datastream.core.graph.ops.StatelessFilter;
 import com.spbsu.datastream.core.node.MyPaths;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -35,15 +42,37 @@ public final class DeployGraph {
             .withFallback(ConfigFactory.load("remote"));
     final ActorSystem system = ActorSystem.create("requester", config);
 
-
     final TheGraph theGraph = DeployGraph.theGraph();
-    final int tick = 1;
-    final DeployForTick request = new DeployForTick(theGraph, tick, System.currentTimeMillis(), 20);
+    final long tick = System.currentTimeMillis() / TimeUnit.HOURS.toMillis(1);
 
-    final ActorSelection worker1 = DeployGraph.rangeConcierge(system, 7001, new HashRange(Integer.MIN_VALUE, 0));
-    final ActorSelection worker2 = DeployGraph.rangeConcierge(system, 7002, new HashRange(0, Integer.MAX_VALUE));
+    final DeployForTick request = new DeployForTick(theGraph,
+            new HashRange(Integer.MIN_VALUE, Integer.MAX_VALUE / 2),
+            tick,
+            System.currentTimeMillis(),
+            20);
+
+    final ActorSelection worker1 = DeployGraph.rangeConcierge(system, 7001, new HashRange(Integer.MIN_VALUE, Integer.MAX_VALUE / 2));
+    final ActorSelection worker2 = DeployGraph.rangeConcierge(system, 7002, new HashRange(Integer.MAX_VALUE / 2, Integer.MAX_VALUE));
     worker1.tell(request, null);
     worker2.tell(request, null);
+
+    final ActorSelection front1 = DeployGraph.front(system, 7001);
+    final ActorSelection front2 = DeployGraph.front(system, 7002);
+    front1.tell(request, ActorRef.noSender());
+    front2.tell(request, ActorRef.noSender());
+
+    final Random rd = new Random();
+    try (final BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+      br.lines().forEach(l -> {
+        if (rd.nextBoolean()) {
+          front1.tell(new RawData<>(l), ActorRef.noSender());
+        } else {
+          front2.tell(new RawData<>(l), ActorRef.noSender());
+        }
+      });
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @SuppressWarnings("TypeMayBeWeakened")
@@ -55,54 +84,42 @@ public final class DeployGraph {
     return system.actorSelection(rangeConcierge);
   }
 
+  private static ActorSelection front(final ActorSystem system,
+                                      final int port) {
+    final InetSocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
+    final ActorPath front = MyPaths.front(address);
+    return system.actorSelection(front);
+  }
+
   private static TheGraph theGraph() {
-    final Spliterator<Integer> spliterator = new IntSpliterator();
-
-    final SpliteratorSource<Integer> source = new SpliteratorSource<>(spliterator);
-    final StatelessFilter<Integer, Integer> filter = new StatelessFilter<>(new MyFunc(), HashFunction.OBJECT_HASH);
+    final StatelessFilter<String, String> filter = new StatelessFilter<>(new MyFunc(), HashFunction.OBJECT_HASH);
     final PreSinkMetaFilter<?> preSinkMetaFilter = new PreSinkMetaFilter<>(HashFunction.OBJECT_HASH);
-    final ConsumerBarrierSink<Integer> sink = new ConsumerBarrierSink<>(new PrintlnConsumer());
+    final ConsumerBarrierSink<String> sink = new ConsumerBarrierSink<>(new PrintlnConsumer());
 
-    final Graph logicGraph = source
-            .fuse(filter, source.outPort(), filter.inPort())
+    final Graph logicGraph = filter
             .fuse(preSinkMetaFilter, filter.outPort(), preSinkMetaFilter.inPort())
             .fuse(sink, preSinkMetaFilter.outPort(), sink.inPort());
 
-    return new TheGraph(logicGraph);
+    final Map<Integer, InPort> frontBindings = new HashMap<>();
+
+    frontBindings.put(1, filter.inPort());
+    frontBindings.put(2, filter.inPort());
+
+    return new TheGraph(logicGraph, frontBindings);
   }
 
-  public static final class PrintlnConsumer implements Consumer<Integer> {
+  public static final class PrintlnConsumer implements Consumer<String> {
     @Override
-    public void accept(final Integer integer) {
-      System.out.println(integer);
+    public void accept(final String value) {
+      System.out.println(value);
     }
   }
 
-  public static final class IntSpliterator extends Spliterators.AbstractSpliterator<Integer> {
-    private boolean plus = false;
-
-    public IntSpliterator() {
-      super(Long.MAX_VALUE, 0);
-    }
+  private static final class MyFunc implements Function<String, String> {
 
     @Override
-    public boolean tryAdvance(final Consumer<? super Integer> action) {
-      if (this.plus) {
-        this.plus = false;
-        action.accept(100);
-      } else {
-        this.plus = true;
-        action.accept(-100);
-      }
-      return true;
-    }
-  }
-
-  private static final class MyFunc implements Function<Integer, Integer> {
-
-    @Override
-    public Integer apply(final Integer integer) {
-      return integer + 1;
+    public String apply(final String integer) {
+      return integer + "; filter was here!";
     }
   }
 }

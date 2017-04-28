@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.feedback;
+package com.spbsu.datastream.core.ack;
 
 import com.spbsu.datastream.core.GlobalTime;
 

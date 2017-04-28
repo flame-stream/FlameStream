@@ -3,8 +3,6 @@ package com.spbsu.datastream.core.range;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Terminated;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.LoggingActor;
 
 import java.util.HashMap;
@@ -38,7 +36,7 @@ public final class RangeRouter extends LoggingActor {
   }
 
   private void route(final AddressedMessage<?> message) {
-    this.LOG.debug("Routing of {}", message);
+    this.LOG().debug("Routing of {}", message);
 
     final long tick = message.tick();
     final ActorRef dest = this.tickLocalRouters.getOrDefault(tick, this.context().system().deadLetters());
@@ -49,7 +47,7 @@ public final class RangeRouter extends LoggingActor {
     this.tickLocalRouters.put(registerMe.tick(), registerMe.actorRef());
     this.context().watch(registerMe.actorRef());
 
-    this.LOG.info("Tick local router has been registered. Tick: {}, actor: {}", registerMe.tick(), registerMe.actorRef());
+    this.LOG().info("Tick local router has been registered. Tick: {}, actor: {}", registerMe.tick(), registerMe.actorRef());
   }
 
   private void unregister(final Terminated terminated) {
@@ -60,6 +58,6 @@ public final class RangeRouter extends LoggingActor {
             .orElseThrow(NoSuchElementException::new);
 
     this.tickLocalRouters.remove(tick);
-    this.LOG.info("Tick local router has been unregistered. Tick: {}, actor: {}", tick, terminated.actor());
+    this.LOG().info("Tick local router has been unregistered. Tick: {}, actor: {}", tick, terminated.actor());
   }
 }
