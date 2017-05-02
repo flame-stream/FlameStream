@@ -202,7 +202,7 @@ public final class GroupingTest {
 
   @Test
   public void shuffleReordering() {
-    final int window = 3;
+    final int window = 6;
 
     final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), window);
 
@@ -210,7 +210,7 @@ public final class GroupingTest {
 
     final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
 
-    final List<DataItem<String>> input = IntStream.range(0, 5)
+    final List<DataItem<String>> input = IntStream.range(0, 1000)
             .mapToObj(i -> new PayloadDataItem<>(new Meta(new GlobalTime(i, 1)), "v" + i))
             .collect(Collectors.toList());
 
@@ -228,8 +228,8 @@ public final class GroupingTest {
             .map(li -> new GroupingResult<>(li, 1))
             .toSet();
 
-    this.LOG.debug("Got: {}", out.stream().map(DataItem::payload).collect(Collectors.toList()));
-    this.LOG.debug("Must have: {}", mustHave);
+    //this.LOG.debug("Got: {}", out.stream().map(DataItem::payload).collect(Collectors.toList()));
+    //this.LOG.debug("Must have: {}", mustHave);
 
     Assert.assertTrue(out.stream().map(DataItem::payload).collect(Collectors.toSet()).containsAll(mustHave), "Result must contain expected elements");
   }
