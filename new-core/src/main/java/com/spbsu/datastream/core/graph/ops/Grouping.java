@@ -1,9 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
-import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.Meta;
-import com.spbsu.datastream.core.PayloadDataItem;
+import com.spbsu.datastream.core.*;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -11,6 +8,7 @@ import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -20,12 +18,15 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
-
   private final HashFunction<? super T> hash;
   private final int window;
   private final GroupingState<T> buffers;
   private GroupingState<T> state;
 
+  private static final Comparator<Trace> traceComparator = (o1, o2) -> -o1.compareTo(o2);
+  private static final Comparator<Meta> metaComparator = (o1, o2) -> Comparator.comparing(Meta::globalTime)
+          .thenComparing(Meta::trace, traceComparator)
+          .compare(o1, o2);
 
   public Grouping(final HashFunction<? super T> hash, final int window) {
     this.inPort = new InPort(hash);
@@ -46,12 +47,12 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     List<DataItem<T>> group = this.buffers.get(dataItem).orElse(null);
     if (group != null) { // look for time collision in the current tick
       int replayCount = 0;
-      while (replayCount < group.size() && group.get(group.size() - replayCount - 1).meta().compareTo(dataItem.meta()) > 0) {
+      while (replayCount < group.size() && metaComparator.compare(group.get(group.size() - replayCount - 1).meta(), dataItem.meta()) > 0) {
         replayCount++;
       }
       group.add(group.size() - replayCount, dataItem);
       if (replayCount > 0) {
-        for (int i = group.size() - replayCount; i < group.size(); i++) {
+        for (int i = group.size() - replayCount - 1; i < group.size(); i++) {
           handler.push(this.outPort(), new PayloadDataItem<GroupingResult>(
                   new Meta(group.get(i).meta(), this.incrementLocalTimeAndGet()),
                   new GroupingResult<>(group.subList(this.window > 0 ? Math.max(0, i + 1 - this.window) : 0, i + 1).stream().map(DataItem::payload).collect(Collectors.toList()), this.hash.applyAsInt(dataItem.payload()))));
@@ -97,7 +98,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   public void onMinGTimeUpdate(final Meta meta) {
     final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
       int removeIndex = 0;
-      while (removeIndex < group.size() && group.get(group.size() - removeIndex - 1).meta().compareTo(meta) > 0) {
+      while (removeIndex < group.size() && metaComparator.compare(group.get(group.size() - removeIndex - 1).meta(), meta) > 0) {
         removeIndex++;
       }
       group.subList(0, removeIndex).clear();

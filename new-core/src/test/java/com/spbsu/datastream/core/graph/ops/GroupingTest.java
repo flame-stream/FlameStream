@@ -45,6 +45,7 @@ public final class GroupingTest {
     grouping.onPush(grouping.inPort(), x2, handle);
     grouping.onPush(grouping.inPort(), x3, handle);
 
+    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
@@ -54,7 +55,7 @@ public final class GroupingTest {
     expectedResult.add(y1);
     expectedResult.add(y2);
     expectedResult.add(y3);
-    Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
+    Assert.assertEquals(actualResult, expectedResult);
   }
 
   @Test
@@ -74,6 +75,7 @@ public final class GroupingTest {
     grouping.onPush(grouping.inPort(), x1, handle);
     grouping.onPush(grouping.inPort(), x3, handle);
 
+    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x2.payload()), 1);
@@ -86,7 +88,7 @@ public final class GroupingTest {
     expectedResult.add(y3);
     expectedResult.add(y4);
 
-    Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
+    Assert.assertEquals(actualResult, expectedResult);
   }
 
   @Test
@@ -106,6 +108,7 @@ public final class GroupingTest {
     grouping.onPush(grouping.inPort(), x3, handle);
     grouping.onPush(grouping.inPort(), x2, handle);
 
+    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
@@ -118,7 +121,7 @@ public final class GroupingTest {
     expectedResult.add(y3);
     expectedResult.add(y4);
 
-    Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
+    Assert.assertEquals(actualResult, expectedResult);
   }
 
   @Test
@@ -138,6 +141,7 @@ public final class GroupingTest {
     grouping.onPush(grouping.inPort(), x2, handle);
     grouping.onPush(grouping.inPort(), x1, handle);
 
+    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x3.payload()), 1);
@@ -154,7 +158,7 @@ public final class GroupingTest {
     expectedResult.add(y5);
     expectedResult.add(y6);
 
-    Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
+    Assert.assertEquals(actualResult, expectedResult);
   }
 
   @Test
@@ -178,6 +182,7 @@ public final class GroupingTest {
     grouping.onPush(grouping.inPort(), x3, handle);
     grouping.onPush(grouping.inPort(), x3Prime, handle);
 
+    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
@@ -192,7 +197,7 @@ public final class GroupingTest {
     expectedResult.add(y4);
     expectedResult.add(y5);
 
-    Assert.assertEquals(out.stream().map(DataItem::payload).collect(Collectors.toList()), expectedResult);
+    Assert.assertEquals(actualResult, expectedResult);
   }
 
   @Test
