@@ -13,7 +13,7 @@ public final class ZooKeeperApplication {
     new ZooKeeperApplication().run();
   }
 
-  public void run() {
+  public void run() throws IOException {
     final QuorumPeerConfig quorumConfig = new QuorumPeerConfig();
 
     try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("zookeeper-dev.properties")) {
@@ -28,12 +28,6 @@ public final class ZooKeeperApplication {
     final ServerConfig serverConfig = new ServerConfig();
     serverConfig.readFrom(quorumConfig);
 
-    new Thread(() -> {
-      try {
-        zooKeeperServer.runFromConfig(serverConfig);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }).start();
+    zooKeeperServer.runFromConfig(serverConfig);
   }
 }

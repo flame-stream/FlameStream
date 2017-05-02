@@ -18,6 +18,8 @@ import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -29,6 +31,8 @@ public final class NodeConcierge extends LoggingActor {
   private final ZooKeeper zooKeeper;
   private final InetSocketAddress myAddress;
   private final ObjectMapper mapper = new ObjectMapper();
+
+  private final List<ActorRef> deployees = new ArrayList<>();
 
   private NodeConcierge(final InetSocketAddress myAddress, final ZooKeeper zooKeeper) {
     this.zooKeeper = zooKeeper;
@@ -49,13 +53,14 @@ public final class NodeConcierge extends LoggingActor {
     final ActorRef rootRouter = this.context().actorOf(RootRouter.props(rangeMappings), "rootRouter");
 
     final Set<HashRange> myRanges = this.myRanges(rangeMappings);
-    myRanges.forEach(r -> this.conciergeForRange(r, rootRouter));
+    this.deployees.addAll(myRanges.stream().map(r -> this.conciergeForRange(r, rootRouter)).collect(Collectors.toList()));
 
     final Map<InetSocketAddress, Integer> frontMappings = this.fetchFrontMappings();
     this.LOG.info("Front mappings fetched: {}", frontMappings);
 
     Optional.ofNullable(frontMappings.get(this.myAddress))
-            .ifPresent(id -> this.context().actorOf(FrontActor.props(rootRouter, id), "front"));
+            .map(id -> this.context().actorOf(FrontActor.props(rootRouter, id), "front"))
+            .ifPresent(this.deployees::add);
 
     super.preStart();
   }
@@ -86,7 +91,11 @@ public final class NodeConcierge extends LoggingActor {
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    this.unhandled(message);
+    if (message instanceof DeployForTick) {
+      this.deployees.forEach(d -> d.tell(message, ActorRef.noSender()));
+    } else {
+      this.unhandled(message);
+    }
   }
 
   private Watcher selfWatcher() {

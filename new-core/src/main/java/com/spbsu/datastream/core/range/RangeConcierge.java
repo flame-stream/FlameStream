@@ -4,11 +4,10 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.configuration.HashRange;
+import com.spbsu.datastream.core.node.DeployForTick;
 import com.spbsu.datastream.core.tick.TickConcierge;
 import com.spbsu.datastream.core.tick.TickContext;
 import com.spbsu.datastream.core.tick.TickContextImpl;
-
-import static com.spbsu.datastream.core.range.RangeConciergeApi.DeployForTick;
 
 public final class RangeConcierge extends LoggingActor {
   private final HashRange myRange;

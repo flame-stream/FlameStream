@@ -6,7 +6,13 @@ import com.spbsu.datastream.core.node.LifecycleWatcher;
 import com.spbsu.datastream.core.node.NodeConcierge;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +23,17 @@ import java.net.InetSocketAddress;
 
 public final class WorkerApplication {
   private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
+
+  private final InetSocketAddress host;
+  private final String zkConnectString;
+
+  private ActorSystem system;
+  private ZooKeeper zk;
+
+  public WorkerApplication(final InetSocketAddress host, final String zkConnectString) {
+    this.host = host;
+    this.zkConnectString = zkConnectString;
+  }
 
   public static void main(final String... args) throws IOException {
     final Options options = new Options();
@@ -37,7 +54,7 @@ public final class WorkerApplication {
       final InetSocketAddress socketAddress = new InetSocketAddress(address, port);
 
       final String connectingString = cmd.getOptionValue("zk");
-      new WorkerApplication().run(socketAddress, connectingString);
+      new WorkerApplication(socketAddress, connectingString).run();
     } catch (final ParseException e) {
       WorkerApplication.LOG.error("Parsing failed", e);
       final HelpFormatter formatter = new HelpFormatter();
@@ -45,16 +62,30 @@ public final class WorkerApplication {
     }
   }
 
-  public void run(final InetSocketAddress localHost, final String zkConnectString) throws IOException {
-    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + localHost.getPort())
-            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + localHost.getHostString()))
-            .withFallback(ConfigFactory.load("remote"));
-    final ActorSystem system = ActorSystem.create("worker", config);
-    final ActorRef watcher = system.actorOf(LifecycleWatcher.props(), "watcher");
+  public void run() {
+    try {
+      final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + this.host.getPort())
+              .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + this.host.getHostString()))
+              .withFallback(ConfigFactory.load("remote"));
+      this.system = ActorSystem.create("worker", config);
+      final ActorRef watcher = this.system.actorOf(LifecycleWatcher.props(), "watcher");
 
-    final ZooKeeper zooKeeper = new ZooKeeper(zkConnectString, 5000,
-            event -> watcher.tell(event, null));
+      this.zk = new ZooKeeper(this.zkConnectString, 5000,
+              event -> watcher.tell(event, null));
 
-    final ActorRef concierge = system.actorOf(NodeConcierge.props(localHost, zooKeeper), "root");
+      final ActorRef concierge = this.system.actorOf(NodeConcierge.props(this.host, this.zk), "root");
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void shutdown() {
+    // TODO: 5/2/17 Graceful stop
+    this.system.shutdown();
+    try {
+      this.zk.close();
+    } catch (final InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

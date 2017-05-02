@@ -8,12 +8,11 @@ import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.InPort;
+import com.spbsu.datastream.core.node.DeployForTick;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import static com.spbsu.datastream.core.range.RangeConciergeApi.DeployForTick;
 
 public final class FrontActor extends LoggingActor {
   private final ActorRef rootRouter;
