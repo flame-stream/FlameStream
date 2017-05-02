@@ -1,6 +1,10 @@
 package com.spbsu.datastream.core.graph.ops;
 
-import com.spbsu.datastream.core.*;
+import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.Meta;
+import com.spbsu.datastream.core.PayloadDataItem;
+import com.spbsu.datastream.core.Trace;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -23,10 +27,9 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final GroupingState<T> buffers;
   private GroupingState<T> state;
 
-  private static final Comparator<Trace> traceComparator = (o1, o2) -> -o1.compareTo(o2);
-  private static final Comparator<Meta> metaComparator = (o1, o2) -> Comparator.comparing(Meta::globalTime)
-          .thenComparing(Meta::trace, traceComparator)
-          .compare(o1, o2);
+  private static final Comparator<Trace> traceComparator = Comparator.reverseOrder();
+  private static final Comparator<Meta> metaComparator = Comparator.comparing(Meta::globalTime)
+          .thenComparing(Meta::trace, traceComparator);
 
   public Grouping(final HashFunction<? super T> hash, final int window) {
     this.inPort = new InPort(hash);
