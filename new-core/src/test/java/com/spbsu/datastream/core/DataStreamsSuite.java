@@ -30,34 +30,36 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public abstract class DataStreamsSuite {
+  //Suite data
   private final Map<HashRange, InetSocketAddress> workers = DataStreamsSuite.workers(10);
   private final Map<Integer, InetSocketAddress> fronts = DataStreamsSuite.fronts(this.workers);
 
+  //Test method data
   private final Collection<WorkerApplication> workerApplication = new HashSet<>();
-
   private ActorSystem localSystem;
 
   @BeforeSuite
-  public final void initSystem() {
+  public final void beforeSuite() throws IOException, InterruptedException {
     final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + 12341)
             .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + InetAddress.getLoopbackAddress().getHostName()))
             .withFallback(ConfigFactory.load("remote"));
     this.localSystem = ActorSystem.create("requester", config);
 
     new Thread(Unchecked.runnable(() -> new ZooKeeperApplication().run())).start();
+    TimeUnit.SECONDS.sleep(5);
   }
 
-
   @AfterSuite
-  public final void shutdownSystem() {
+  public final void afterSuite() throws IOException, InterruptedException {
     // TODO: 5/2/17 Graceful stop
     this.localSystem.shutdown();
+
+    // TODO: 5/2/17 kill ZK
+    Files.newDirectoryStream(Paths.get("zookeeper", "version-2")).forEach(Unchecked.consumer(Files::delete));
   }
 
   @BeforeMethod
   public final void prepareEnvironment() throws IOException, KeeperException, InterruptedException {
-    TimeUnit.SECONDS.sleep(5);
-
     try (final ZK zkConfigurationDeployer = new ZK("localhost:2181")) {
       zkConfigurationDeployer.pushFrontMappings(this.fronts);
       zkConfigurationDeployer.pushRangeMappings(this.workers);
@@ -73,8 +75,7 @@ public abstract class DataStreamsSuite {
   }
 
   @AfterMethod
-  public final void clearEnvironment() throws InterruptedException, IOException {
-    Files.newDirectoryStream(Paths.get("zookeeper", "version-2")).forEach(Unchecked.consumer(Files::delete));
+  public final void clearEnvironment() {
     this.workerApplication.forEach(WorkerApplication::shutdown);
     this.workerApplication.clear();
   }
