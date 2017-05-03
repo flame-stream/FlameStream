@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
@@ -98,16 +99,16 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onMinGTimeUpdate(final Meta meta) {
-    final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
-      int removeIndex = 0;
-      while (removeIndex < group.size() && metaComparator.compare(group.get(group.size() - removeIndex - 1).meta(), meta) > 0) {
-        removeIndex++;
-      }
-      group.subList(0, removeIndex).clear();
-    };
-    this.buffers.forEach(removeOldConsumer);
-    this.state.forEach(removeOldConsumer);
+  public void onMinGTimeUpdate(final GlobalTime globalTime) {
+    //final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
+    //  int removeIndex = 0;
+    //  while (removeIndex < group.size() && metaComparator.compare(group.get(group.size() - removeIndex - 1).meta(), meta) > 0) {
+    //    removeIndex++;
+    //  }
+    //  group.subList(0, removeIndex).clear();
+    //};
+    //this.buffers.forEach(removeOldConsumer);
+    //this.state.forEach(removeOldConsumer);
   }
 
   public InPort inPort() {
