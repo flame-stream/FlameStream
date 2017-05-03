@@ -26,7 +26,7 @@ public final class ConsumerBarrierSink<T> extends AbstractAtomicGraph {
   @Override
   public void onMinGTimeUpdate(final GlobalTime globalTime, final AtomicHandle handle) {
     this.collector.update(globalTime);
-    this.collector.released().stream().map(i -> (T) i).forEach(this.consumer);
+    this.collector.release(obj -> this.consumer.accept((T) obj));
   }
 
   @Override

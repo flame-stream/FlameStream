@@ -3,15 +3,18 @@ package com.spbsu.datastream.core.barrier;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 
 public final class LinearCollector implements BarrierCollector {
   private final SortedMap<GlobalTime, List<DataItem<?>>> invalidationPool = new TreeMap<>();
 
-  private final List<Object> released = new ArrayList<>();
+  private final Queue<Object> released = new ArrayDeque<>();
 
   @Override
   public void update(final GlobalTime newOldest) {
@@ -32,10 +35,8 @@ public final class LinearCollector implements BarrierCollector {
   }
 
   @Override
-  public List<?> released() {
-    final List<?> result = new ArrayList<>(this.released);
-    result.clear();
-
-    return result;
+  public void release(final Consumer<Object> consumer) {
+    this.released.forEach(consumer);
+    this.released.clear();
   }
 }
