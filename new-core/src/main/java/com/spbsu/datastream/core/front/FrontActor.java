@@ -12,7 +12,6 @@ import com.spbsu.datastream.core.node.DeployForTick;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public final class FrontActor extends LoggingActor {
   private final ActorRef rootRouter;
@@ -39,7 +38,7 @@ public final class FrontActor extends LoggingActor {
       final Meta now = new Meta(globalTime);
       final DataItem<?> dataItem = new PayloadDataItem<>(now, data);
 
-      final long tick = globalTime.time() / TimeUnit.HOURS.toMillis(1);
+      final long tick = globalTime.time() / GlobalTime.TICK_LENGTH;
 
       final ActorRef tickFront = this.tickFronts.get(tick);
       tickFront.tell(dataItem, ActorRef.noSender());

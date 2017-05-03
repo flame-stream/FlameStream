@@ -22,6 +22,6 @@ public interface AtomicGraph extends Graph {
   default void onRecover(final GroupingState<?> state, final AtomicHandle handle) {
   }
 
-  default void onMinGTimeUpdate(final GlobalTime globalTime) {
+  default void onMinGTimeUpdate(final GlobalTime globalTime, final AtomicHandle handle) {
   }
 }

@@ -1,11 +1,15 @@
 package com.spbsu.datastream.core;
 
 import akka.actor.ActorPath;
+import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.application.WorkerApplication;
 import com.spbsu.datastream.core.application.ZooKeeperApplication;
 import com.spbsu.datastream.core.configuration.HashRange;
+import com.spbsu.datastream.core.front.RawData;
+import com.spbsu.datastream.core.graph.TheGraph;
+import com.spbsu.datastream.core.node.DeployForTick;
 import com.spbsu.datastream.core.node.MyPaths;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -22,16 +26,21 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public abstract class DataStreamsSuite {
   //Suite data
-  private final Map<HashRange, InetSocketAddress> workers = DataStreamsSuite.workers(10);
+  private final Map<HashRange, InetSocketAddress> workers = DataStreamsSuite.workers(2);
   private final Map<Integer, InetSocketAddress> fronts = DataStreamsSuite.fronts(this.workers);
 
   //Test method data
@@ -46,7 +55,7 @@ public abstract class DataStreamsSuite {
     this.localSystem = ActorSystem.create("requester", config);
 
     new Thread(Unchecked.runnable(() -> new ZooKeeperApplication().run())).start();
-    TimeUnit.SECONDS.sleep(5);
+    TimeUnit.SECONDS.sleep(2);
   }
 
   @AfterSuite
@@ -72,6 +81,16 @@ public abstract class DataStreamsSuite {
       this.workerApplication.add(worker);
       workerThread.start();
     }
+
+    for (final InetSocketAddress front : this.fronts.values()) {
+      final WorkerApplication worker = new WorkerApplication(front, "localhost:2181");
+      final Thread workerThread = new Thread(worker::run);
+
+      this.workerApplication.add(worker);
+      workerThread.start();
+    }
+
+    TimeUnit.SECONDS.sleep(5);
   }
 
   @AfterMethod
@@ -80,9 +99,36 @@ public abstract class DataStreamsSuite {
     this.workerApplication.clear();
   }
 
-  protected Map<Integer, ActorSelection> frontRawReceivers() throws InterruptedException, IOException, KeeperException {
-    return this.fronts.entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, e -> DataStreamsSuite.front(this.localSystem, e.getValue())));
+  protected final void deploy(final TheGraph theGraph) {
+    final DeployForTick deployForTick = new DeployForTick(
+            theGraph,
+            this.workers.keySet().stream().findAny().orElseThrow(RuntimeException::new),
+            System.currentTimeMillis() / GlobalTime.TICK_LENGTH,
+            100
+    );
+
+    Stream.concat(this.workers.values().stream(), this.fronts.values().stream())
+            .map(MyPaths::nodeConcierge)
+            .map(path -> this.localSystem.actorSelection(path))
+            .forEach(con -> con.tell(deployForTick, ActorRef.noSender()));
+  }
+
+  protected final Set<Integer> fronts() {
+    return this.fronts.keySet();
+  }
+
+  protected final Consumer<Object> randomConsumer() {
+    final List<Consumer<Object>> result = new ArrayList<>();
+
+    for (final Map.Entry<Integer, InetSocketAddress> front : this.fronts.entrySet()) {
+      final ActorSelection frontActor = DataStreamsSuite.front(this.localSystem, front.getValue());
+      final Consumer<Object> consumer = obj -> frontActor.tell(new RawData<>(obj), ActorRef.noSender());
+      result.add(consumer);
+    }
+
+    final Random rd = new Random();
+
+    return obj -> result.get(rd.nextInt(result.size())).accept(obj);
   }
 
   private static Map<Integer, InetSocketAddress> fronts(
@@ -109,8 +155,16 @@ public abstract class DataStreamsSuite {
 
       final Map<HashRange, InetSocketAddress> workers = new HashMap<>();
 
-      for (int left = Integer.MIN_VALUE, right = left + step, port = 5123; right <= Integer.MAX_VALUE - step; left += step, right += step, port += 1) {
-        workers.put(new HashRange(left, right), new InetSocketAddress(InetAddress.getLocalHost(), port));
+      int port = 5123;
+      long left = Integer.MIN_VALUE;
+      long right = left + step;
+
+      for (int i = 0; i < count; ++i) {
+        workers.put(new HashRange((int) left, (int) right), new InetSocketAddress(InetAddress.getLocalHost(), port));
+
+        left += step;
+        right = Math.min(Integer.MAX_VALUE, right + step);
+        port += 1;
       }
 
       return workers;

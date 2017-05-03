@@ -26,6 +26,19 @@ public final class Trace implements Comparable<Trace> {
     return this.trace[position];
   }
 
+  public int size() {
+    return this.trace.length;
+  }
+
+  public boolean isInvalidatedBy(final Trace that) {
+    for (int i = 0; i < Math.min(this.size(), that.size()); ++i) {
+      if (!this.eventAt(i).equals(that.eventAt(i))) {
+        return this.eventAt(i).localTime() < that.eventAt(i).localTime();
+      }
+    }
+    return false;
+  }
+
   @Override
   public int compareTo(final Trace that) {
     for (int i = 0; i < Math.min(that.trace.length, this.trace.length); ++i) {

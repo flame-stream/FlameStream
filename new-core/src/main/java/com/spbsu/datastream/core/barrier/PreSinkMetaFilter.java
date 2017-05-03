@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.graph.ops;
+package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
@@ -16,7 +16,7 @@ public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
-  public PreSinkMetaFilter(final HashFunction<T> hashFunction) {
+  public PreSinkMetaFilter(final HashFunction<? super T> hashFunction) {
     this.inPort = new InPort(hashFunction);
   }
 

@@ -8,8 +8,6 @@ public final class DeployForTick {
 
   private final long tick;
 
-  private final long startTs;
-
   private final long window;
 
   private final HashRange ackerLocation;
@@ -17,12 +15,10 @@ public final class DeployForTick {
   public DeployForTick(final TheGraph graph,
                        final HashRange ackerLocation,
                        final long tick,
-                       final long startTs,
                        final long window) {
     this.ackerLocation = ackerLocation;
     this.graph = graph;
     this.tick = tick;
-    this.startTs = startTs;
     this.window = window;
   }
 
@@ -32,10 +28,6 @@ public final class DeployForTick {
 
   public long window() {
     return this.window;
-  }
-
-  public long startTs() {
-    return this.startTs;
   }
 
   public TheGraph graph() {
@@ -50,7 +42,6 @@ public final class DeployForTick {
   public String toString() {
     return "DeployForTick{" + "graph=" + this.graph +
             ", tick=" + this.tick +
-            ", startTs=" + this.startTs +
             ", window=" + this.window +
             '}';
   }

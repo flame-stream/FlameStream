@@ -74,7 +74,7 @@ public final class AckTableImpl implements AckTable {
   }
 
   @Override
-  public long startTs() {
+  public long start() {
     return this.startTs;
   }
 }

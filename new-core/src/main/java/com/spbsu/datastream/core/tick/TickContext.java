@@ -9,8 +9,6 @@ public interface TickContext {
 
   long tick();
 
-  long startTime();
-
   long window();
 
   HashRange localRange();

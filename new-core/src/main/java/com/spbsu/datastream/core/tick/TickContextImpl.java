@@ -16,14 +16,12 @@ public final class TickContextImpl implements TickContext {
   private final TheGraph graph;
 
   private final long tick;
-  private final long startTime;
   private final long window;
 
   public TickContextImpl(final ActorRef rootRouter,
                          final ActorRef rangeRouter,
                          final TheGraph graph,
                          final long tick,
-                         final long startTime,
                          final long window,
                          final HashRange localRange,
                          final HashRange ackerRange) {
@@ -31,7 +29,6 @@ public final class TickContextImpl implements TickContext {
     this.rootRouter = rootRouter;
     this.tick = tick;
     this.localRange = localRange;
-    this.startTime = startTime;
     this.window = window;
     this.graph = graph;
     this.ackerRange = ackerRange;
@@ -45,11 +42,6 @@ public final class TickContextImpl implements TickContext {
   @Override
   public long tick() {
     return this.tick;
-  }
-
-  @Override
-  public long startTime() {
-    return this.startTime;
   }
 
   @Override

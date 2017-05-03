@@ -1,6 +1,7 @@
-package com.spbsu.datastream.core.graph.ops;
+package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -12,22 +13,25 @@ import java.util.function.Consumer;
 
 public final class ConsumerBarrierSink<T> extends AbstractAtomicGraph {
   private final Consumer<T> consumer;
-
   private final InPort inPort;
+
+  private final BarrierCollector collector = new LinearCollector();
 
   public ConsumerBarrierSink(final Consumer<T> consumer) {
     this.consumer = consumer;
     this.inPort = new InPort(PreSinkMetaElement.HASH_FUNCTION);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public void onMinGTimeUpdate(final GlobalTime globalTime, final AtomicHandle handle) {
+    this.collector.update(globalTime);
+    this.collector.released().stream().map(i -> (T) i).forEach(this.consumer);
+  }
 
-  @SuppressWarnings({"unchecked", "CastToConcreteClass"})
   @Override
   public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
-    if (inPort.equals(this.inPort)) {
-      // TODO: 4/21/17 LOGIC
-      this.consumer.accept(((PreSinkMetaElement<T>) item.payload()).payload());
-    }
+    this.collector.enqueue(item);
   }
 
   public InPort inPort() {

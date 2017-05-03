@@ -7,7 +7,7 @@ public interface AckTable {
 
   long window();
 
-  long startTs();
+  long start();
 
   void ack(final long windowHead, final long xor);
 }

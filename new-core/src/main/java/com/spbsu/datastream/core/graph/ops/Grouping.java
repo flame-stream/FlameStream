@@ -99,7 +99,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onMinGTimeUpdate(final GlobalTime globalTime) {
+  public void onMinGTimeUpdate(final GlobalTime globalTime, final AtomicHandle handle) {
     //final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
     //  int removeIndex = 0;
     //  while (removeIndex < group.size() && metaComparator.compare(group.get(group.size() - removeIndex - 1).meta(), meta) > 0) {

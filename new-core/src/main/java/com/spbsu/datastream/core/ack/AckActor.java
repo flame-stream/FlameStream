@@ -9,14 +9,16 @@ import java.util.Collections;
 
 public final class AckActor extends LoggingActor {
   private final AckLedger ledger;
-  private GlobalTime currentMin = GlobalTime.INF;
+  private GlobalTime currentMin = GlobalTime.MAX;
 
   public static Props props(final TickContext context) {
     return Props.create(AckActor.class, context);
   }
 
   private AckActor(final TickContext context) {
-    this.ledger = new AckLedgerImpl(context.startTime(), context.window(), Collections.emptySet());
+    this.ledger = new AckLedgerImpl(context.tick() * GlobalTime.TICK_LENGTH,
+            context.window(),
+            Collections.emptySet());
   }
 
   @Override

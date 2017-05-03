@@ -45,7 +45,7 @@ public final class RangeConcierge extends LoggingActor {
             this.rangeRouter,
             deployForTick.graph(),
             deployForTick.tick(),
-            deployForTick.startTs(), deployForTick.window(),
+            deployForTick.window(),
             this.myRange,
             deployForTick.ackerRange());
   }
