@@ -20,6 +20,11 @@ public final class FakeAtomicHandle implements AtomicHandle {
   }
 
   @Override
+  public void ack(final DataItem<?> item) {
+
+  }
+
+  @Override
   public GroupingState<?> loadGroupingState() {
     // TODO: 4/21/17 return empty state
     throw new UnsupportedOperationException("Loading of the grouping state has not implemented yet");

@@ -51,7 +51,6 @@ public class RunInvertedIndex {
     final Iterator<WikiPage> wikiForiaPageIterator = new WikiPageIterator(inputStream);
     final Input iteratorInput = new IteratorInput<>(wikiForiaPageIterator, WikiPage.class);
 
-    DataStreamsContext.output.removeState(types.type("<type name>"));
     iteratorInput.stream(null).flatMap((input) -> {
       final StreamSink sink = new StreamSink();
       final Sink joba = makeJoba(akka, sink, types);
@@ -62,6 +61,7 @@ public class RunInvertedIndex {
       return sink.stream().onClose(DataStreamsContext.output::commit);
     }).forEach(DataStreamsContext.output.processor());
 
+    DataStreamsContext.output.removeState(types.type("<type name>"));
     DataStreamsContext.output.close();
     akka.shutdown();
   }

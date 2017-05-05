@@ -1,7 +1,6 @@
 package com.spbsu.datastream.core.node;
 
 import akka.actor.Props;
-import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.LoggingActor;

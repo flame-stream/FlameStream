@@ -4,8 +4,8 @@ import com.spbsu.datastream.core.GlobalTime;
 
 import java.util.Set;
 
-public interface AckLedger {
-  void report(final GlobalTime windowHead);
+interface AckLedger {
+  void report(GlobalTime windowHead, long xor);
 
   GlobalTime min();
 

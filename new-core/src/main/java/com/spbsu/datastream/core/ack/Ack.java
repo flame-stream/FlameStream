@@ -19,4 +19,11 @@ public final class Ack {
   public GlobalTime time() {
     return this.time;
   }
+
+  @Override
+  public String toString() {
+    return "Ack{" + "xor=" + this.xor +
+            ", time=" + this.time +
+            '}';
+  }
 }

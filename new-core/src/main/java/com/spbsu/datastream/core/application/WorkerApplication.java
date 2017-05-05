@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 
 public final class WorkerApplication {
   private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
@@ -35,7 +36,7 @@ public final class WorkerApplication {
     this.zkConnectString = zkConnectString;
   }
 
-  public static void main(final String... args) throws IOException {
+  public static void main(final String... args) throws UnknownHostException {
     final Options options = new Options();
     final Option hostOpt = Option.builder("host").hasArg().argName("FQDN").desc("worker FQDN").required().build();
     final Option portOpt = Option.builder("port").hasArg().argName("port").desc("worker port").required().build();

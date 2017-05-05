@@ -32,15 +32,19 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public abstract class DataStreamsSuite {
+public class DataStreamsSuite {
+  private static final int START_WORKER_PORT = 5223;
+  private static final int START_FRONT_PORT = 5323;
+
   //Suite data
-  private final Map<HashRange, InetSocketAddress> workers = DataStreamsSuite.workers(2);
+  private final Map<HashRange, InetSocketAddress> workers = DataStreamsSuite.workers(10);
   private final Map<Integer, InetSocketAddress> fronts = DataStreamsSuite.fronts(this.workers);
 
   //Test method data
@@ -103,8 +107,8 @@ public abstract class DataStreamsSuite {
     final DeployForTick deployForTick = new DeployForTick(
             theGraph,
             this.workers.keySet().stream().findAny().orElseThrow(RuntimeException::new),
-            System.currentTimeMillis() / GlobalTime.TICK_LENGTH,
-            100
+            System.nanoTime(),
+            TimeUnit.MILLISECONDS.toNanos(100)
     );
 
     Stream.concat(this.workers.values().stream(), this.fronts.values().stream())
@@ -131,12 +135,30 @@ public abstract class DataStreamsSuite {
     return obj -> result.get(rd.nextInt(result.size())).accept(obj);
   }
 
+  protected final <T> Consumer<T> wrap(final Queue<T> collection) {
+    final ActorRef consumerActor = this.localSystem.actorOf(CollectorActor.props(collection));
+    return new ActorConsumer<>(consumerActor);
+  }
+
+  private static final class ActorConsumer<T> implements Consumer<T> {
+    private final ActorRef actorRef;
+
+    ActorConsumer(final ActorRef actorRef) {
+      this.actorRef = actorRef;
+    }
+
+    @Override
+    public void accept(final T o) {
+      this.actorRef.tell(o, ActorRef.noSender());
+    }
+  }
+
   private static Map<Integer, InetSocketAddress> fronts(
           final Map<HashRange, InetSocketAddress> correspondingWorkers) {
     try {
       final Map<Integer, InetSocketAddress> fronts = new HashMap<>();
 
-      int port = 5223;
+      int port = DataStreamsSuite.START_FRONT_PORT;
 
       for (final HashRange range : correspondingWorkers.keySet()) {
         fronts.put(range.from(), new InetSocketAddress(InetAddress.getLocalHost(), port));
@@ -149,13 +171,14 @@ public abstract class DataStreamsSuite {
     }
   }
 
+  @SuppressWarnings("NumericCastThatLosesPrecision")
   private static Map<HashRange, InetSocketAddress> workers(final int count) {
     try {
       final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / count);
 
       final Map<HashRange, InetSocketAddress> workers = new HashMap<>();
 
-      int port = 5123;
+      int port = DataStreamsSuite.START_WORKER_PORT;
       long left = Integer.MIN_VALUE;
       long right = left + step;
 

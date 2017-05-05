@@ -3,12 +3,12 @@ package com.spbsu.datastream.core.barrier;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
 
-import java.util.List;
+import java.util.function.Consumer;
 
-public interface BarrierCollector {
-  void update(GlobalTime maxTime);
+interface BarrierCollector {
+  void update(GlobalTime minTime);
 
   void enqueue(DataItem<?> item);
 
-  List<?> released();
+  void release(Consumer<DataItem<?>> consumer);
 }

@@ -9,13 +9,11 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.range.RangeRouterApi;
 import com.spbsu.datastream.core.tick.atomic.AtomicActor;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandleImpl;
-import scala.concurrent.duration.FiniteDuration;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -23,12 +21,15 @@ public final class TickConcierge extends LoggingActor {
   private TickConcierge(final TickContext context) {
     final Map<AtomicGraph, ActorRef> inMapping = this.initializedAtomics(context.graph().graph().subGraphs(), context);
 
-    final ActorRef localRouter = this.localRouter(TickConcierge.withFlattenedKey(inMapping));
-    context.rangeRouter().tell(new RangeRouterApi.RegisterMe(context.tick(), localRouter), this.self());
-
+    final ActorRef localRouter;
     if (context.localRange().equals(context.ackerRange())) {
-      this.context().actorOf(AckActor.props(context), "acker");
+      final ActorRef acker = this.context().actorOf(AckActor.props(context), "acker");
+      localRouter = this.localRouter(TickConcierge.withFlattenedKey(inMapping), acker);
+    } else {
+      localRouter = this.localRouter(TickConcierge.withFlattenedKey(inMapping));
     }
+
+    context.rangeRouter().tell(new RangeRouterApi.RegisterMe(context.tick(), localRouter), this.self());
   }
 
   public static Props props(final TickContext context) {
@@ -42,6 +43,10 @@ public final class TickConcierge extends LoggingActor {
 
   private ActorRef localRouter(final Map<InPort, ActorRef> portMappings) {
     return this.context().actorOf(TickLocalRouter.props(portMappings), "localRouter");
+  }
+
+  private ActorRef localRouter(final Map<InPort, ActorRef> portMappings, final ActorRef acker) {
+    return this.context().actorOf(TickLocalRouter.props(portMappings, acker), "localRouter");
   }
 
   private static Map<InPort, ActorRef> withFlattenedKey(final Map<AtomicGraph, ActorRef> map) {

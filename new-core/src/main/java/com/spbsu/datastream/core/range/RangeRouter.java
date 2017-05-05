@@ -11,7 +11,7 @@ import java.util.NoSuchElementException;
 
 import static com.spbsu.datastream.core.range.RangeRouterApi.RegisterMe;
 
-public final class RangeRouter extends LoggingActor {
+final class RangeRouter extends LoggingActor {
   private final Map<Long, ActorRef> tickLocalRouters = new HashMap<>();
 
   private RangeRouter() {

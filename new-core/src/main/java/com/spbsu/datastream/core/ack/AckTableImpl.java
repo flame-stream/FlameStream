@@ -41,17 +41,18 @@ public final class AckTableImpl implements AckTable {
   }
 
   @Override
-  public void report(final long windowHead) {
-    this.table.computeIfPresent(windowHead, (ts, entry) -> new AckEntry(true, entry.xor()));
-    this.table.putIfAbsent(windowHead, new AckEntry(true, 0));
+  public void report(final long windowHead, final long xor) {
+    assert (windowHead - this.startTs) % this.window == 0;
+    this.table.computeIfPresent(windowHead, (ts, entry) -> new AckEntry(true, entry.xor() ^ xor));
+    this.table.putIfAbsent(windowHead, new AckEntry(true, xor));
   }
 
   @Override
-  public void ack(final long windowHead, final long xor) {
-    // FIXME: 4/25/17 Handle inside windows updates
+  public void ack(final long ts, final long xor) {
+    final long lowerBound = this.startTs + this.window * ((ts - this.startTs) / this.window);
 
-    this.table.computeIfPresent(windowHead, (ts, entry) -> new AckEntry(entry.isReported(), entry.xor() ^ xor));
-    this.table.putIfAbsent(windowHead, new AckEntry(true, xor));
+    this.table.computeIfPresent(lowerBound, (t, entry) -> new AckEntry(entry.isReported(), entry.xor() ^ xor));
+    this.table.putIfAbsent(lowerBound, new AckEntry(false, xor));
   }
 
   @Override

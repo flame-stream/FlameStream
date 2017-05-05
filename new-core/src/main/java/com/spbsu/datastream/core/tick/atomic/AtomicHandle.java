@@ -8,6 +8,8 @@ import com.spbsu.datastream.core.graph.ops.GroupingState;
 public interface AtomicHandle {
   void push(OutPort out, DataItem<?> result);
 
+  void ack(DataItem<?> item);
+
   GroupingState<?> loadGroupingState();
 
   void saveGroupingState(GroupingState<?> storage);
