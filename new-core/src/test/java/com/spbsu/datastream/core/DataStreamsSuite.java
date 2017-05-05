@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public final class DataStreamsSuite {
+public class DataStreamsSuite {
   private static final int START_WORKER_PORT = 5223;
   private static final int START_FRONT_PORT = 5323;
 
@@ -52,7 +52,7 @@ public final class DataStreamsSuite {
   private ActorSystem localSystem;
 
   @BeforeSuite
-  public void beforeSuite() throws IOException, InterruptedException {
+  public final void beforeSuite() throws IOException, InterruptedException {
     final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + 12341)
             .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + InetAddress.getLoopbackAddress().getHostName()))
             .withFallback(ConfigFactory.load("remote"));
@@ -63,7 +63,7 @@ public final class DataStreamsSuite {
   }
 
   @AfterSuite
-  public void afterSuite() throws IOException, InterruptedException {
+  public final void afterSuite() throws IOException, InterruptedException {
     // TODO: 5/2/17 Graceful stop
     this.localSystem.shutdown();
 
@@ -72,7 +72,7 @@ public final class DataStreamsSuite {
   }
 
   @BeforeMethod
-  public void prepareEnvironment() throws IOException, KeeperException, InterruptedException {
+  public final void prepareEnvironment() throws IOException, KeeperException, InterruptedException {
     try (final ZK zkConfigurationDeployer = new ZK("localhost:2181")) {
       zkConfigurationDeployer.pushFrontMappings(this.fronts);
       zkConfigurationDeployer.pushRangeMappings(this.workers);
@@ -98,12 +98,12 @@ public final class DataStreamsSuite {
   }
 
   @AfterMethod
-  public void clearEnvironment() {
+  public final void clearEnvironment() {
     this.workerApplication.forEach(WorkerApplication::shutdown);
     this.workerApplication.clear();
   }
 
-  protected void deploy(final TheGraph theGraph) {
+  protected final void deploy(final TheGraph theGraph) {
     final DeployForTick deployForTick = new DeployForTick(
             theGraph,
             this.workers.keySet().stream().findAny().orElseThrow(RuntimeException::new),
@@ -117,11 +117,11 @@ public final class DataStreamsSuite {
             .forEach(con -> con.tell(deployForTick, ActorRef.noSender()));
   }
 
-  protected Set<Integer> fronts() {
+  protected final Set<Integer> fronts() {
     return this.fronts.keySet();
   }
 
-  protected Consumer<Object> randomConsumer() {
+  protected final Consumer<Object> randomConsumer() {
     final List<Consumer<Object>> result = new ArrayList<>();
 
     for (final Map.Entry<Integer, InetSocketAddress> front : this.fronts.entrySet()) {
@@ -135,7 +135,7 @@ public final class DataStreamsSuite {
     return obj -> result.get(rd.nextInt(result.size())).accept(obj);
   }
 
-  protected <T> Consumer<T> wrap(final Queue<T> collection) {
+  protected final <T> Consumer<T> wrap(final Queue<T> collection) {
     final ActorRef consumerActor = this.localSystem.actorOf(CollectorActor.props(collection));
     return new ActorConsumer<>(consumerActor);
   }
