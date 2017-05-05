@@ -43,7 +43,7 @@ public final class IdentityTest extends DataStreamsSuite {
     final List<Integer> source = new Random().ints(10000).boxed().collect(Collectors.toList());
     source.forEach(this.randomConsumer());
 
-    TimeUnit.SECONDS.sleep(10);
+    TimeUnit.SECONDS.sleep(20);
 
     Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * 3).collect(Collectors.toSet()));
   }
