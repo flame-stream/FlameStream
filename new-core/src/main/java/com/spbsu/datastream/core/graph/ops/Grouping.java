@@ -1,11 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
-import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.GlobalTime;
-import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.Meta;
-import com.spbsu.datastream.core.PayloadDataItem;
-import com.spbsu.datastream.core.Trace;
+import com.spbsu.datastream.core.*;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -84,17 +79,17 @@ public final class Grouping<T> extends AbstractAtomicGraph {
           oldGroup.clear();
           oldGroup.addAll(windowedGroup);
         } else {
-          this.state.put(windowedGroup);
+          this.state.put(new ArrayList<>(windowedGroup));
         }
       }
     });
-    handle.saveGroupingState(this.state);
+    handle.saveState(inPort, this.state);
   }
 
   @Override
-  public void onRecover(final GroupingState<?> state, final AtomicHandle handle) {
+  public void onRecover(final AtomicHandle handle) {
     //noinspection unchecked
-    this.state = (GroupingState<T>) state;
+    this.state = (GroupingState<T>) handle.loadState(inPort).orElse(new LazyGroupingState<>(hash));
   }
 
   @Override

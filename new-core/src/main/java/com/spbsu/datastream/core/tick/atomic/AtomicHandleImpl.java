@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.tick.atomic;
 
 import akka.actor.ActorRef;
+import com.google.common.primitives.Longs;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.RoutingException;
@@ -8,18 +9,27 @@ import com.spbsu.datastream.core.ack.Ack;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
-import com.spbsu.datastream.core.graph.ops.GroupingState;
 import com.spbsu.datastream.core.range.AddressedMessage;
 import com.spbsu.datastream.core.tick.PortBindDataItem;
 import com.spbsu.datastream.core.tick.TickContext;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.Options;
+import org.iq80.leveldb.impl.DbImpl;
 
+import java.io.*;
 import java.util.Optional;
 
 public final class AtomicHandleImpl implements AtomicHandle {
   private final TickContext tickContext;
+  private final DB db;
 
   public AtomicHandleImpl(final TickContext tickContext) {
     this.tickContext = tickContext;
+    try {
+      db = new DbImpl(new Options().createIfMissing(true), new File("./leveldb"));
+    } catch (IOException e) {
+      throw new RuntimeException("LevelDB is not initialized: " + e);
+    }
   }
 
   @Override
@@ -45,14 +55,46 @@ public final class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public GroupingState<?> loadGroupingState() {
-    //TODO: 4/11/17 load from LevelDB
-    return null;
+  public Optional<Object> loadState(final InPort inPort) {
+    final byte[] key = Longs.toByteArray(inPort.id());
+    final byte[] value = db.get(key);
+    if (value != null) {
+      final ByteArrayInputStream in = new ByteArrayInputStream(value);
+      try {
+        final ObjectInputStream is = new ObjectInputStream(in);
+        final Object state = is.readObject();
+        is.close();
+        in.close();
+        return Optional.of(state);
+      } catch (IOException | ClassNotFoundException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      return Optional.empty();
+    }
   }
 
   @Override
-  public void saveGroupingState(final GroupingState<?> storage) {
-    //TODO: 4/11/17 save to LevelDB
+  public void saveState(final InPort inPort, final Object state) {
+    final byte[] key = Longs.toByteArray(inPort.id());
+    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    try {
+      final ObjectOutputStream oos = new ObjectOutputStream(bos);
+      oos.writeObject(state);
+      oos.close();
+
+      final byte[] value = bos.toByteArray();
+      bos.close();
+      db.put(key, value);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void removeState(final InPort inPort) {
+    final byte[] key = Longs.toByteArray(inPort.id());
+    db.delete(key);
   }
 
   @Override
