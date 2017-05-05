@@ -68,7 +68,7 @@ public class DataStreamsSuite {
     this.localSystem.shutdown();
 
     // TODO: 5/2/17 kill ZK
-    Files.newDirectoryStream(Paths.get("zookeeper", "version-2")).forEach(Unchecked.consumer(Files::delete));
+    Files.newDirectoryStream(Paths.get("zookeeper/version-2")).forEach(Unchecked.consumer(Files::delete));
   }
 
   @BeforeMethod
