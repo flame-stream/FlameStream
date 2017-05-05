@@ -10,7 +10,7 @@ import com.spbsu.datastream.core.graph.InPort;
 
 import java.util.Map;
 
-public final class TickLocalRouter extends LoggingActor {
+final class TickLocalRouter extends LoggingActor {
   private final Map<InPort, ActorRef> routingTable;
   private final ActorRef acker;
 

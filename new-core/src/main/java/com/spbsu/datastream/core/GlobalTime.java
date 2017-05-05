@@ -2,7 +2,6 @@ package com.spbsu.datastream.core;
 
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public final class GlobalTime implements Comparable<GlobalTime> {
   public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, -1);

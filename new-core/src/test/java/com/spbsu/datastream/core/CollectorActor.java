@@ -4,7 +4,7 @@ import akka.actor.Props;
 
 import java.util.Queue;
 
-public final class CollectorActor<T> extends LoggingActor {
+final class CollectorActor<T> extends LoggingActor {
   private final Queue<T> queue;
 
   public static <T> Props props(final Queue<T> queue) {
@@ -15,8 +15,9 @@ public final class CollectorActor<T> extends LoggingActor {
     this.queue = queue;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void onReceive(final Object message) throws Throwable {
-    queue.offer((T) message);
+    this.queue.offer((T) message);
   }
 }

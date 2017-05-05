@@ -4,9 +4,6 @@ import akka.actor.ActorRef;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
 
-import java.util.Collections;
-import java.util.Set;
-
 public final class TickContextImpl implements TickContext {
   private final ActorRef rootRouter;
   private final ActorRef rangeRouter;

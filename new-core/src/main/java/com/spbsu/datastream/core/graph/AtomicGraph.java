@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.graph;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
-import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.graph.ops.GroupingState;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 

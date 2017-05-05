@@ -5,7 +5,7 @@ import com.spbsu.datastream.core.GlobalTime;
 
 import java.util.function.Consumer;
 
-public interface BarrierCollector {
+interface BarrierCollector {
   void update(GlobalTime minTime);
 
   void enqueue(DataItem<?> item);

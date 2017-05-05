@@ -12,7 +12,7 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.range.AddressedMessage;
 import com.spbsu.datastream.core.tick.PortBindDataItem;
 
-public final class TickFrontActor extends LoggingActor {
+final class TickFrontActor extends LoggingActor {
   private final ActorRef rootRouter;
   private final InPort target;
   private final int frontId;

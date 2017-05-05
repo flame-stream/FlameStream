@@ -14,7 +14,7 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 
-public final class RootRouter extends LoggingActor {
+final class RootRouter extends LoggingActor {
   private final Map<HashRange, ActorSelection> routingTable;
 
   private RootRouter(final Map<HashRange, InetSocketAddress> ranges) {
@@ -31,12 +31,12 @@ public final class RootRouter extends LoggingActor {
 
     if (message instanceof AddressedMessage) {
       final AddressedMessage<?> addressedMessage = (AddressedMessage<?>) message;
-      if (!addressedMessage.isBroadcast()) {
+      if (addressedMessage.isBroadcast()) {
+        this.routingTable.values().forEach(as -> as.tell(message, ActorRef.noSender()));
+      } else {
         final int hash = addressedMessage.hash();
         final ActorSelection recipient = this.rangeRouterFor(hash);
         recipient.tell(message, ActorRef.noSender());
-      } else {
-        this.routingTable.values().forEach(as -> as.tell(message, ActorRef.noSender()));
       }
     } else {
       this.unhandled(message);

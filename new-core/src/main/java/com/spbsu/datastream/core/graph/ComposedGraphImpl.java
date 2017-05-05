@@ -1,6 +1,12 @@
 package com.spbsu.datastream.core.graph;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
@@ -21,8 +27,8 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
     this(Collections.singleton(graph), Collections.singletonMap(from, to));
   }
 
-  ComposedGraphImpl(final Set<T> graphs,
-                    final Map<OutPort, InPort> wires) {
+  private ComposedGraphImpl(final Set<T> graphs,
+                            final Map<OutPort, InPort> wires) {
     ComposedGraphImpl.assertCorrectWires(graphs, wires);
 
     this.subGraphs = new HashSet<>(graphs);

@@ -39,7 +39,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public abstract class DataStreamsSuite {
+public final class DataStreamsSuite {
+  private static final int START_WORKER_PORT = 5223;
+  private static final int START_FRONT_PORT = 5323;
+
   //Suite data
   private final Map<HashRange, InetSocketAddress> workers = DataStreamsSuite.workers(10);
   private final Map<Integer, InetSocketAddress> fronts = DataStreamsSuite.fronts(this.workers);
@@ -49,7 +52,7 @@ public abstract class DataStreamsSuite {
   private ActorSystem localSystem;
 
   @BeforeSuite
-  public final void beforeSuite() throws IOException, InterruptedException {
+  public void beforeSuite() throws IOException, InterruptedException {
     final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + 12341)
             .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + InetAddress.getLoopbackAddress().getHostName()))
             .withFallback(ConfigFactory.load("remote"));
@@ -60,7 +63,7 @@ public abstract class DataStreamsSuite {
   }
 
   @AfterSuite
-  public final void afterSuite() throws IOException, InterruptedException {
+  public void afterSuite() throws IOException, InterruptedException {
     // TODO: 5/2/17 Graceful stop
     this.localSystem.shutdown();
 
@@ -69,7 +72,7 @@ public abstract class DataStreamsSuite {
   }
 
   @BeforeMethod
-  public final void prepareEnvironment() throws IOException, KeeperException, InterruptedException {
+  public void prepareEnvironment() throws IOException, KeeperException, InterruptedException {
     try (final ZK zkConfigurationDeployer = new ZK("localhost:2181")) {
       zkConfigurationDeployer.pushFrontMappings(this.fronts);
       zkConfigurationDeployer.pushRangeMappings(this.workers);
@@ -95,12 +98,12 @@ public abstract class DataStreamsSuite {
   }
 
   @AfterMethod
-  public final void clearEnvironment() {
+  public void clearEnvironment() {
     this.workerApplication.forEach(WorkerApplication::shutdown);
     this.workerApplication.clear();
   }
 
-  protected final void deploy(final TheGraph theGraph) {
+  protected void deploy(final TheGraph theGraph) {
     final DeployForTick deployForTick = new DeployForTick(
             theGraph,
             this.workers.keySet().stream().findAny().orElseThrow(RuntimeException::new),
@@ -114,11 +117,11 @@ public abstract class DataStreamsSuite {
             .forEach(con -> con.tell(deployForTick, ActorRef.noSender()));
   }
 
-  protected final Set<Integer> fronts() {
+  protected Set<Integer> fronts() {
     return this.fronts.keySet();
   }
 
-  protected final Consumer<Object> randomConsumer() {
+  protected Consumer<Object> randomConsumer() {
     final List<Consumer<Object>> result = new ArrayList<>();
 
     for (final Map.Entry<Integer, InetSocketAddress> front : this.fronts.entrySet()) {
@@ -132,7 +135,7 @@ public abstract class DataStreamsSuite {
     return obj -> result.get(rd.nextInt(result.size())).accept(obj);
   }
 
-  protected final <T> Consumer<T> wrap(final Queue<T> collection) {
+  protected <T> Consumer<T> wrap(final Queue<T> collection) {
     final ActorRef consumerActor = this.localSystem.actorOf(CollectorActor.props(collection));
     return new ActorConsumer<>(consumerActor);
   }
@@ -140,7 +143,7 @@ public abstract class DataStreamsSuite {
   private static final class ActorConsumer<T> implements Consumer<T> {
     private final ActorRef actorRef;
 
-    public ActorConsumer(final ActorRef actorRef) {
+    ActorConsumer(final ActorRef actorRef) {
       this.actorRef = actorRef;
     }
 
@@ -155,7 +158,7 @@ public abstract class DataStreamsSuite {
     try {
       final Map<Integer, InetSocketAddress> fronts = new HashMap<>();
 
-      int port = 5223;
+      int port = DataStreamsSuite.START_FRONT_PORT;
 
       for (final HashRange range : correspondingWorkers.keySet()) {
         fronts.put(range.from(), new InetSocketAddress(InetAddress.getLocalHost(), port));
@@ -168,13 +171,14 @@ public abstract class DataStreamsSuite {
     }
   }
 
+  @SuppressWarnings("NumericCastThatLosesPrecision")
   private static Map<HashRange, InetSocketAddress> workers(final int count) {
     try {
       final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / count);
 
       final Map<HashRange, InetSocketAddress> workers = new HashMap<>();
 
-      int port = 5123;
+      int port = DataStreamsSuite.START_WORKER_PORT;
       long left = Integer.MIN_VALUE;
       long right = left + step;
 

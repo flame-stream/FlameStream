@@ -1,8 +1,5 @@
 package com.spbsu.datastream.core.ack;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.SortedMap;
 import java.util.TreeMap;
 

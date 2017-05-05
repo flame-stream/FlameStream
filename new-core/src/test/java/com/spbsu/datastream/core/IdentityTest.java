@@ -63,7 +63,7 @@ public final class IdentityTest extends DataStreamsSuite {
 
     @Override
     public Integer apply(final Integer s) {
-      return s * factor;
+      return s * this.factor;
     }
   }
 }

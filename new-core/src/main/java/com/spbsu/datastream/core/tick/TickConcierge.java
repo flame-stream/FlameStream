@@ -9,14 +9,11 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.range.RangeRouterApi;
 import com.spbsu.datastream.core.tick.atomic.AtomicActor;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandleImpl;
-import scala.concurrent.duration.FiniteDuration;
 
-import javax.activity.ActivityRequiredException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 

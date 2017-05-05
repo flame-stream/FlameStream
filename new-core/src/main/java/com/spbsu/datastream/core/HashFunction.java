@@ -1,6 +1,5 @@
 package com.spbsu.datastream.core;
 
-import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 
 public interface HashFunction<T> extends ToIntFunction<T> {
