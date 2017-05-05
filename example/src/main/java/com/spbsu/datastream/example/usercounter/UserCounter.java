@@ -2,11 +2,13 @@ package com.spbsu.datastream.example.usercounter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.io.Serializable;
+
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class UserCounter implements UserContainer {
+public class UserCounter implements UserContainer, Serializable {
   @JsonProperty
   private String user;
   @JsonProperty

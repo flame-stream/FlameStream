@@ -3,11 +3,13 @@ package com.spbsu.datastream.core.dataitem;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.DataStreamsContext;
 
+import java.io.Serializable;
+
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class ObjectDataItem implements DataItem {
+public class ObjectDataItem implements DataItem, Serializable {
   private final Object item;
   private final Class clazz;
   private final Meta meta;

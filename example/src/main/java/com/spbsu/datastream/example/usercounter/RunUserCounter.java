@@ -16,11 +16,12 @@ import com.spbsu.datastream.core.job.MergeActor;
 import com.spbsu.datastream.core.job.ReplicatorJoba;
 import com.spbsu.datastream.core.job.control.EndOfTick;
 
+import java.io.IOException;
 import java.util.function.Function;
 
 
 public class RunUserCounter {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     DataStreamsContext.serializatonRepository = new SerializationRepository<>(
             new TypeConvertersCollection(ConversionRepository.ROOT,
                     UserContainer.class.getPackage().getName() + ".io"),
@@ -30,6 +31,7 @@ public class RunUserCounter {
     final ActorSystem akka = ActorSystem.create();
     final int maxUserCount = 5000;
 
+    DataStreamsContext.output.removeState(types.type("Group(Merge(UsersLog, States), UserHash, 2)"));
     new UserLogInput().stream(/*"ypes.type("UsersLog")*/ null).flatMap((input) -> {
       StreamSink sink = new StreamSink();
       //joba = types.<Integer>convert(types.type("UsersLog"), types.type("Group(UserLog, 2)"), sink);
@@ -42,6 +44,7 @@ public class RunUserCounter {
       return sink.stream().onClose(DataStreamsContext.output::commit);
     }).forEach(DataStreamsContext.output.processor());
 
+    DataStreamsContext.output.close();
     akka.shutdown();
   }
 

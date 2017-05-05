@@ -3,6 +3,7 @@ package com.spbsu.datastream.core.job.grouping_storage;
 import com.spbsu.datastream.core.DataItem;
 import gnu.trove.map.hash.TLongObjectHashMap;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.stream.Stream;
  * Date: 22.02.2017
  * Time: 22:29
  */
-public class LazyGroupingStorage implements GroupingStorage {
+public class LazyGroupingStorage implements GroupingStorage, Serializable {
   private final DataItem.Grouping grouping;
   private final TLongObjectHashMap<Object> buffers = new TLongObjectHashMap<>();
 
