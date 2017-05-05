@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +41,7 @@ import java.util.stream.Stream;
 
 public abstract class DataStreamsSuite {
   //Suite data
-  private final Map<HashRange, InetSocketAddress> workers = DataStreamsSuite.workers(2);
+  private final Map<HashRange, InetSocketAddress> workers = DataStreamsSuite.workers(10);
   private final Map<Integer, InetSocketAddress> fronts = DataStreamsSuite.fronts(this.workers);
 
   //Test method data
@@ -103,8 +104,8 @@ public abstract class DataStreamsSuite {
     final DeployForTick deployForTick = new DeployForTick(
             theGraph,
             this.workers.keySet().stream().findAny().orElseThrow(RuntimeException::new),
-            System.currentTimeMillis() / GlobalTime.TICK_LENGTH,
-            100
+            System.nanoTime(),
+            TimeUnit.MILLISECONDS.toNanos(100)
     );
 
     Stream.concat(this.workers.values().stream(), this.fronts.values().stream())
@@ -129,6 +130,24 @@ public abstract class DataStreamsSuite {
     final Random rd = new Random();
 
     return obj -> result.get(rd.nextInt(result.size())).accept(obj);
+  }
+
+  protected final <T> Consumer<T> wrap(final Queue<T> collection) {
+    final ActorRef consumerActor = this.localSystem.actorOf(CollectorActor.props(collection));
+    return new ActorConsumer<>(consumerActor);
+  }
+
+  private static final class ActorConsumer<T> implements Consumer<T> {
+    private final ActorRef actorRef;
+
+    public ActorConsumer(final ActorRef actorRef) {
+      this.actorRef = actorRef;
+    }
+
+    @Override
+    public void accept(final T o) {
+      this.actorRef.tell(o, ActorRef.noSender());
+    }
   }
 
   private static Map<Integer, InetSocketAddress> fronts(

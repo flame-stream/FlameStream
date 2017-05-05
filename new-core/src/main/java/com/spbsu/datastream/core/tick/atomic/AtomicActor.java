@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.tick.atomic;
 
 import akka.actor.Props;
 import com.spbsu.datastream.core.LoggingActor;
+import com.spbsu.datastream.core.ack.MinTimeUpdate;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.tick.PortBindDataItem;
 
@@ -31,6 +32,8 @@ public final class AtomicActor extends LoggingActor {
 
     if (message instanceof PortBindDataItem) {
       this.onAddressedMessage((PortBindDataItem) message);
+    } else if (message instanceof MinTimeUpdate) {
+      this.onMinTimeUpdate((MinTimeUpdate) message);
     } else {
       this.unhandled(message);
     }
@@ -38,5 +41,10 @@ public final class AtomicActor extends LoggingActor {
 
   private void onAddressedMessage(final PortBindDataItem message) {
     this.atomic.onPush(message.inPort(), message.payload(), this.handle);
+    this.handle.ack(message.payload());
+  }
+
+  private void onMinTimeUpdate(final MinTimeUpdate message) {
+    this.atomic.onMinGTimeUpdate(message.minTime(), this.handle);
   }
 }

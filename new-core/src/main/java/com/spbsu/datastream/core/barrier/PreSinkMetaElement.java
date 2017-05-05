@@ -33,4 +33,11 @@ final class PreSinkMetaElement<T> {
   int metaHash() {
     return this.metaHash;
   }
+
+  @Override
+  public String toString() {
+    return "PreSinkMetaElement{" + "payload=" + this.payload +
+            ", metaHash=" + this.metaHash +
+            '}';
+  }
 }

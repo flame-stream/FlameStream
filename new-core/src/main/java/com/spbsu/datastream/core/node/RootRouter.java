@@ -9,7 +9,6 @@ import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.range.AddressedMessage;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -23,7 +22,7 @@ public final class RootRouter extends LoggingActor {
   }
 
   public static Props props(final Map<HashRange, InetSocketAddress> hashMapping) {
-    return Props.create(RootRouter.class, new HashMap<>(hashMapping));
+    return Props.create(RootRouter.class, hashMapping);
   }
 
   @Override
@@ -32,10 +31,13 @@ public final class RootRouter extends LoggingActor {
 
     if (message instanceof AddressedMessage) {
       final AddressedMessage<?> addressedMessage = (AddressedMessage<?>) message;
-
-      final int hash = addressedMessage.hash();
-      final ActorSelection recipient = this.rangeRouterFor(hash);
-      recipient.tell(message, ActorRef.noSender());
+      if (!addressedMessage.isBroadcast()) {
+        final int hash = addressedMessage.hash();
+        final ActorSelection recipient = this.rangeRouterFor(hash);
+        recipient.tell(message, ActorRef.noSender());
+      } else {
+        this.routingTable.values().forEach(as -> as.tell(message, ActorRef.noSender()));
+      }
     } else {
       this.unhandled(message);
     }

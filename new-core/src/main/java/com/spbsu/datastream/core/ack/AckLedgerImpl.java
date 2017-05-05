@@ -28,8 +28,8 @@ public final class AckLedgerImpl implements AckLedger {
   }
 
   @Override
-  public void report(final GlobalTime windowHead) {
-    this.tables.get(windowHead.front()).report(windowHead.time());
+  public void report(final GlobalTime windowHead, final long xor) {
+    this.tables.get(windowHead.front()).report(windowHead.time(), xor);
   }
 
   @Override

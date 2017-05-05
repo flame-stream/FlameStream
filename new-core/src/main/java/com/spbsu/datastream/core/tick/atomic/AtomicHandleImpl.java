@@ -1,8 +1,10 @@
 package com.spbsu.datastream.core.tick.atomic;
 
+import akka.actor.ActorRef;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.RoutingException;
+import com.spbsu.datastream.core.ack.Ack;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -27,11 +29,19 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
     @SuppressWarnings("rawtypes") final HashFunction hashFunction = address.hashFunction();
 
-    @SuppressWarnings("unchecked")
-    final int hash = hashFunction.applyAsInt(result.payload());
+    @SuppressWarnings("unchecked") final int hash = hashFunction.applyAsInt(result.payload());
 
     final AddressedMessage<?> addressedMessage = new AddressedMessage<>(new PortBindDataItem(result, address), hash, this.tickContext.tick());
-    this.tickContext.rootRouter().tell(addressedMessage, null);
+    this.ack(result);
+    this.tickContext.rootRouter().tell(addressedMessage, ActorRef.noSender());
+  }
+
+  @Override
+  public void ack(final DataItem<?> item) {
+    final int hash = this.tickContext.ackerRange().from();
+
+    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(new Ack(item.ack(), item.meta().globalTime()), hash, this.tickContext.tick());
+    this.tickContext.rootRouter().tell(addressedMessage, ActorRef.noSender());
   }
 
   @Override

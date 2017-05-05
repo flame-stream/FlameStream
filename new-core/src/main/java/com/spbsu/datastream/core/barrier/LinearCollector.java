@@ -14,13 +14,13 @@ import java.util.function.Consumer;
 public final class LinearCollector implements BarrierCollector {
   private final SortedMap<GlobalTime, List<DataItem<?>>> invalidationPool = new TreeMap<>();
 
-  private final Queue<Object> released = new ArrayDeque<>();
+  private final Queue<DataItem<?>> released = new ArrayDeque<>();
 
   @Override
-  public void update(final GlobalTime newOldest) {
-    this.invalidationPool.headMap(newOldest)
+  public void update(final GlobalTime minTime) {
+    this.invalidationPool.headMap(minTime)
             .values().stream().flatMap(List::stream).forEach(this.released::add);
-    this.invalidationPool.headMap(newOldest).clear();
+    this.invalidationPool.headMap(minTime).clear();
   }
 
   @Override
@@ -35,7 +35,7 @@ public final class LinearCollector implements BarrierCollector {
   }
 
   @Override
-  public void release(final Consumer<Object> consumer) {
+  public void release(final Consumer<DataItem<?>> consumer) {
     this.released.forEach(consumer);
     this.released.clear();
   }
