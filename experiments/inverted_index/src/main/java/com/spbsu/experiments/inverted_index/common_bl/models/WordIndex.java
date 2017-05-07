@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.spbsu.experiments.inverted_index.common_bl.models.WordContainer;
 import com.spbsu.experiments.inverted_index.common_bl.utils.InvertedIndexStorage;
 
+import java.io.Serializable;
+
 /**
  * Author: Artem
  * Date: 22.01.2017
  */
-public class WordIndex implements WordContainer {
+public class WordIndex implements WordContainer, Serializable {
   @JsonProperty
   private final String word;
   private final InvertedIndexStorage storage;

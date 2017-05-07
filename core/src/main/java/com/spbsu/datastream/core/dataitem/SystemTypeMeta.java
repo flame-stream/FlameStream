@@ -1,22 +1,25 @@
 package com.spbsu.datastream.core.dataitem;
 
 import com.spbsu.datastream.core.DataItem;
+import org.jetbrains.annotations.NotNull;
+
+import java.io.Serializable;
 
 /**
  * Experts League
  * Created by solar on 05.11.16.
  */
-public class SystemTypeMeta implements DataItem.Meta<SystemTypeMeta> {
+public class SystemTypeMeta implements DataItem.Meta<SystemTypeMeta>, Serializable {
   public static final SystemTypeMeta ZERO = new SystemTypeMeta() {
     @Override
-    public int compareTo(final SystemTypeMeta o) {
+    public int compareTo(@NotNull final SystemTypeMeta o) {
       return -1;
     }
   };
 
   public static final SystemTypeMeta INFINITY = new SystemTypeMeta() {
     @Override
-    public int compareTo(final SystemTypeMeta o) {
+    public int compareTo(@NotNull final SystemTypeMeta o) {
       return 1;
     }
   };
@@ -46,7 +49,7 @@ public class SystemTypeMeta implements DataItem.Meta<SystemTypeMeta> {
   }
 
   @Override
-  public int compareTo(final SystemTypeMeta o) {
+  public int compareTo(@NotNull final SystemTypeMeta o) {
     return globalTime == o.globalTime ? Integer.compare(localTime, o.localTime) : Long.compare(globalTime, o.globalTime);
   }
 }

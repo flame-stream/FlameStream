@@ -3,11 +3,13 @@ package com.spbsu.experiments.inverted_index.datastreams.actions;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.experiments.inverted_index.common_bl.models.WordContainer;
 
+import java.io.Serializable;
+
 /**
  * Author: Artem
  * Date: 18.01.2017
  */
-public class WordGrouping implements DataItem.Grouping {
+public class WordGrouping implements DataItem.Grouping, Serializable {
   @Override
   public long hash(DataItem item) {
     //noinspection ConstantConditions

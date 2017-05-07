@@ -22,10 +22,7 @@ import com.spbsu.experiments.inverted_index.common_bl.io.WikiPageIterator;
 import com.spbsu.experiments.inverted_index.common_bl.models.WikiPage;
 import com.spbsu.experiments.inverted_index.common_bl.models.WordContainer;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.Iterator;
 
@@ -34,7 +31,7 @@ import java.util.Iterator;
  * Date: 14.01.2017
  */
 public class RunInvertedIndex {
-  public static void main(String[] args) throws FileNotFoundException {
+  public static void main(String[] args) throws IOException {
     DataStreamsContext.serializatonRepository = new SerializationRepository<>(
             new TypeConvertersCollection(ConversionRepository.ROOT,
                     RunInvertedIndex.class.getPackage().getName() + ".io"),
@@ -64,6 +61,8 @@ public class RunInvertedIndex {
       return sink.stream().onClose(DataStreamsContext.output::commit);
     }).forEach(DataStreamsContext.output.processor());
 
+    DataStreamsContext.output.removeState(types.type("<type name>"));
+    DataStreamsContext.output.close();
     akka.shutdown();
   }
 

@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.graph;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
-import com.spbsu.datastream.core.graph.ops.GroupingState;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 /**
@@ -18,7 +17,7 @@ public interface AtomicGraph extends Graph {
   default void onCommit(final AtomicHandle handle) {
   }
 
-  default void onRecover(final GroupingState<?> state, final AtomicHandle handle) {
+  default void onRecover(final AtomicHandle handle) {
   }
 
   default void onMinGTimeUpdate(final GlobalTime globalTime, final AtomicHandle handle) {

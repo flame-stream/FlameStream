@@ -30,7 +30,7 @@ public class GroupingJoba extends Joba.AbstractJoba {
     this.window = window;
 
     buffers = new LazyGroupingStorage(grouping);
-    state = DataStreamsContext.output.load(generates).orElse(new LazyGroupingStorage(grouping));
+    state = DataStreamsContext.output.loadState(generates).orElse(new LazyGroupingStorage(grouping));
   }
 
   public void accept(DataItem item) {
@@ -67,11 +67,11 @@ public class GroupingJoba extends Joba.AbstractJoba {
               oldGroup.clear();
               oldGroup.addAll(windowedGroup);
             } else {
-              state.put(windowedGroup);
+              state.put(new ArrayList<>(windowedGroup));
             }
           }
         });
-        DataStreamsContext.output.save(generates(), state);
+        DataStreamsContext.output.saveState(generates(), state);
       }
     }
     sink.accept(eot);

@@ -4,12 +4,14 @@ import com.google.common.annotations.VisibleForTesting;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 
+import java.io.Serializable;
+
 /**
  * User: Artem
  * Date: 19.03.2017
  * Time: 13:05
  */
-public class InvertedIndexStorage {
+public class InvertedIndexStorage implements Serializable {
   public static final int PREV_VALUE_NOT_FOUND = -1;
   private static final int DEFAULT_MAX_WINDOW_SIZE = 100;
 

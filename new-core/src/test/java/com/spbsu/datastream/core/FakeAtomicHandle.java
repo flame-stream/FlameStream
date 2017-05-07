@@ -3,10 +3,11 @@ package com.spbsu.datastream.core;
 import akka.actor.ActorPath;
 import akka.actor.ActorSelection;
 import com.spbsu.datastream.core.configuration.HashRange;
+import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
-import com.spbsu.datastream.core.graph.ops.GroupingState;
 import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 public final class FakeAtomicHandle implements AtomicHandle {
@@ -31,15 +32,18 @@ public final class FakeAtomicHandle implements AtomicHandle {
 
   }
 
-  @Override
-  public GroupingState<?> loadGroupingState() {
-    // TODO: 4/21/17 return empty state
-    throw new UnsupportedOperationException("Loading of the grouping state has not implemented yet");
+  public Optional<Object> loadState(final InPort inPort) {
+    return Optional.empty();
   }
 
   @Override
-  public void saveGroupingState(final GroupingState<?> storage) {
+  public void saveState(final InPort inPort, final Object state) {
     throw new UnsupportedOperationException("Saving of the grouping state has not implemented yet");
+  }
+
+  @Override
+  public void removeState(final InPort inPort) {
+    throw new UnsupportedOperationException("Removing of the grouping state has not implemented yet");
   }
 
   @Override
