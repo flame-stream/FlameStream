@@ -23,7 +23,7 @@ public interface RangeRouterApi {
 
     @Override
     public String toString() {
-      return "RegisterMe{" + "tick=" + this.tick +
+      return "RegisterMe{" + "startTs=" + this.tick +
               ", actorRef=" + this.actorRef +
               '}';
     }

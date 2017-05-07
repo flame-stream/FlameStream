@@ -4,7 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.configuration.HashRange;
-import com.spbsu.datastream.core.node.DeployForTick;
+import com.spbsu.datastream.core.node.TickInfo;
 import com.spbsu.datastream.core.tick.TickConcierge;
 import com.spbsu.datastream.core.tick.TickContext;
 import com.spbsu.datastream.core.tick.TickContextImpl;
@@ -30,23 +30,20 @@ public final class RangeConcierge extends LoggingActor {
   public void onReceive(final Object message) throws Throwable {
     this.LOG().debug("Received: {}", message);
 
-    if (message instanceof DeployForTick) {
-      final DeployForTick deploy = (DeployForTick) message;
+    if (message instanceof TickInfo) {
+      final TickInfo deploy = (TickInfo) message;
       this.context().actorOf(
               TickConcierge.props(this.tickContext(deploy)),
-              Long.toString(deploy.tick()));
+              Long.toString(deploy.startTs()));
     } else {
       this.unhandled(message);
     }
   }
 
-  private TickContext tickContext(final DeployForTick deployForTick) {
+  private TickContext tickContext(final TickInfo tickInfo) {
     return new TickContextImpl(this.rootRouter,
             this.rangeRouter,
-            deployForTick.graph(),
-            deployForTick.tick(),
-            deployForTick.window(),
             this.myRange,
-            deployForTick.ackerRange());
+            tickInfo);
   }
 }

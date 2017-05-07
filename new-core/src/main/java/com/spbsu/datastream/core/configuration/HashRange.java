@@ -12,11 +12,6 @@ public final class HashRange {
     this.to = to;
   }
 
-  public static HashRange fromString(final String serializedHashRange) {
-    final String[] arr = serializedHashRange.split("_");
-    return new HashRange(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]));
-  }
-
   public boolean contains(final int hash) {
     return this.from <= hash && hash < this.to;
   }

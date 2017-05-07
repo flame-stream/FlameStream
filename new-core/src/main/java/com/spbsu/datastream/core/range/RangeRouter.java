@@ -47,7 +47,7 @@ final class RangeRouter extends LoggingActor {
     this.tickLocalRouters.put(registerMe.tick(), registerMe.actorRef());
     this.context().watch(registerMe.actorRef());
 
-    this.LOG().info("Tick local router has been registered. Tick: {}, actor: {}", registerMe.tick(), registerMe.actorRef());
+    this.LOG().info("KryoInfoSerializer local router has been registered. KryoInfoSerializer: {}, actor: {}", registerMe.tick(), registerMe.actorRef());
   }
 
   private void unregister(final Terminated terminated) {
@@ -58,6 +58,6 @@ final class RangeRouter extends LoggingActor {
             .orElseThrow(NoSuchElementException::new);
 
     this.tickLocalRouters.remove(tick);
-    this.LOG().info("Tick local router has been unregistered. Tick: {}, actor: {}", tick, terminated.actor());
+    this.LOG().info("KryoInfoSerializer local router has been unregistered. KryoInfoSerializer: {}, actor: {}", tick, terminated.actor());
   }
 }

@@ -3,17 +3,12 @@ package com.spbsu.datastream.core.tick;
 import akka.actor.ActorRef;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
+import com.spbsu.datastream.core.node.TickInfo;
 
 public interface TickContext {
-  TheGraph graph();
-
-  long tick();
-
-  long window();
+  TickInfo tickInfo();
 
   HashRange localRange();
-
-  HashRange ackerRange();
 
   ActorRef rootRouter();
 

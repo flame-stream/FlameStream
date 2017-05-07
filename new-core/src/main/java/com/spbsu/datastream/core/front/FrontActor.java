@@ -8,7 +8,7 @@ import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.node.DeployForTick;
+import com.spbsu.datastream.core.node.TickInfo;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.TreeMap;
@@ -42,9 +42,9 @@ public final class FrontActor extends LoggingActor {
 
       final ActorRef tickFront = this.tickFronts.get(tick);
       tickFront.tell(dataItem, ActorRef.noSender());
-    } else if (message instanceof DeployForTick) {
-      final DeployForTick deploy = (DeployForTick) message;
-      this.LOG().info("Deploying for tick: {}", deploy);
+    } else if (message instanceof TickInfo) {
+      final TickInfo deploy = (TickInfo) message;
+      this.LOG().info("Deploying for startTs: {}", deploy);
 
       final InPort target = deploy.graph().frontBindings().get(this.id);
 
@@ -52,11 +52,11 @@ public final class FrontActor extends LoggingActor {
               deploy.ackerRange(),
               target,
               this.id,
-              deploy.tick(),
+              deploy.startTs(),
               deploy.window()),
-              Long.toString(deploy.tick()));
+              Long.toString(deploy.startTs()));
 
-      this.tickFronts.putIfAbsent(deploy.tick(), tickFront);
+      this.tickFronts.putIfAbsent(deploy.startTs(), tickFront);
 
       this.context().system().scheduler().schedule(
               FiniteDuration.apply(0, TimeUnit.NANOSECONDS),

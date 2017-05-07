@@ -6,9 +6,10 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.configuration.HashRange;
-import com.spbsu.datastream.core.configuration.RangeMappingsDto;
+import com.spbsu.datastream.core.configuration.HashRangeDeserializer;
 import com.spbsu.datastream.core.front.FrontActor;
 import com.spbsu.datastream.core.range.RangeConcierge;
 import org.apache.zookeeper.KeeperException;
@@ -21,84 +22,102 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class NodeConcierge extends LoggingActor {
-  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
+  static {
+    final SimpleModule module = new SimpleModule();
+    module.addKeyDeserializer(HashRange.class, new HashRangeDeserializer());
+    NodeConcierge.MAPPER.registerModule(module);
+  }
+
+  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
   private final ZooKeeper zooKeeper;
   private final InetSocketAddress myAddress;
-  private final ObjectMapper mapper = new ObjectMapper();
+  private final int id;
 
   private final List<ActorRef> deployees = new ArrayList<>();
 
-  private NodeConcierge(final InetSocketAddress myAddress, final ZooKeeper zooKeeper) {
+  private NodeConcierge(final int id, final InetSocketAddress myAddress, final ZooKeeper zooKeeper) {
     this.zooKeeper = zooKeeper;
     this.myAddress = myAddress;
+    this.id = id;
   }
 
-  public static Props props(final InetSocketAddress address, final ZooKeeper zooKeeper) {
-    return Props.create(NodeConcierge.class, address, zooKeeper);
+  public static Props props(final int id, final InetSocketAddress address, final ZooKeeper zooKeeper) {
+    return Props.create(NodeConcierge.class, id, address, zooKeeper);
   }
 
   @Override
   public void preStart() throws Exception {
-    this.LOG.info("Starting... Address: {}", this.myAddress);
+    super.preStart();
 
-    final Map<HashRange, InetSocketAddress> rangeMappings = this.fetchRangeMappings();
-    this.LOG.info("Range mappings fetched: {}", rangeMappings);
+    final Map<Integer, InetSocketAddress> dns = this.fetchDNS();
+    this.LOG.info("DNS fetched: {}", dns);
 
-    final ActorRef rootRouter = this.context().actorOf(RootRouter.props(rangeMappings), "rootRouter");
+    final Map<HashRange, Integer> ranges = this.fetchRangeMappings();
+    this.LOG.info("Ranges fetched: {}", ranges);
 
-    final Set<HashRange> myRanges = this.myRanges(rangeMappings);
+    final Map<HashRange, InetSocketAddress> resolved = ranges.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> dns.get(e.getValue())));
+    final ActorRef rootRouter = this.context().actorOf(RootRouter.props(resolved), "rootRouter");
+
+    final Set<HashRange> myRanges = this.myRanges(ranges);
     this.deployees.addAll(myRanges.stream().map(r -> this.conciergeForRange(r, rootRouter)).collect(Collectors.toList()));
 
-    final Map<InetSocketAddress, Integer> frontMappings = this.fetchFrontMappings();
-    this.LOG.info("Front mappings fetched: {}", frontMappings);
+    final Set<Integer> fronts = this.fetchFronts();
+    this.LOG.info("Fronts fetched: {}", fronts);
 
-    Optional.ofNullable(frontMappings.get(this.myAddress))
-            .map(id -> this.context().actorOf(FrontActor.props(rootRouter, id), "front"))
-            .ifPresent(this.deployees::add);
+    if (fronts.contains(this.id)) {
+      this.deployees.add(this.context().actorOf(FrontActor.props(rootRouter, this.id), "front"));
+    }
 
-    super.preStart();
+    this.context().actorOf(TickCurator.props(this.zooKeeper, this.self()), "curator");
+  }
+
+  private Map<Integer, InetSocketAddress> fetchDNS() throws IOException, KeeperException, InterruptedException {
+    final String path = "/dns";
+    final byte[] data = this.zooKeeper.getData(path, this.selfWatcher(), new Stat());
+    return NodeConcierge.MAPPER.readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {
+    });
+  }
+
+  private Map<HashRange, Integer> fetchRangeMappings() throws KeeperException, InterruptedException, IOException {
+    final String path = "/ranges";
+    final byte[] data = this.zooKeeper.getData(path, this.selfWatcher(), new Stat());
+    return NodeConcierge.MAPPER.readValue(data, new TypeReference<Map<HashRange, Integer>>() {
+    });
+  }
+
+  private Set<HashRange> myRanges(final Map<HashRange, Integer> mappings) {
+    return mappings.entrySet().stream().filter(e -> e.getValue().equals(this.id))
+            .map(Map.Entry::getKey).collect(Collectors.toSet());
   }
 
   private ActorRef conciergeForRange(final HashRange range, final ActorRef remoteRouter) {
     return this.context().actorOf(RangeConcierge.props(range, remoteRouter), range.toString());
   }
 
-  private Set<HashRange> myRanges(final Map<HashRange, InetSocketAddress> mappings) {
-    return mappings.entrySet().stream().filter(e -> e.getValue().equals(this.myAddress))
-            .map(Map.Entry::getKey).collect(Collectors.toSet());
-  }
-
-  private Map<HashRange, InetSocketAddress> fetchRangeMappings() throws KeeperException, InterruptedException, IOException {
-    final String path = "/ranges";
-    final byte[] data = this.zooKeeper.getData(path, this.selfWatcher(), new Stat());
-    return this.mapper.readValue(data, RangeMappingsDto.class).rangeMappings();
-  }
-
-  private Map<InetSocketAddress, Integer> fetchFrontMappings() throws KeeperException, InterruptedException, IOException {
+  private Set<Integer> fetchFronts() throws KeeperException, InterruptedException, IOException {
     final String path = "/fronts";
     final byte[] data = this.zooKeeper.getData(path, this.selfWatcher(), new Stat());
-    final Map<Integer, InetSocketAddress> result = this.mapper.readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {
+    return NodeConcierge.MAPPER.readValue(data, new TypeReference<Set<Integer>>() {
     });
-
-    return result.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
-  }
-
-  @Override
-  public void onReceive(final Object message) throws Throwable {
-    if (message instanceof DeployForTick) {
-      this.deployees.forEach(d -> d.tell(message, ActorRef.noSender()));
-    } else {
-      this.unhandled(message);
-    }
   }
 
   private Watcher selfWatcher() {
     return event -> this.self().tell(event, this.self());
+  }
+
+  @Override
+  public void onReceive(final Object message) throws Throwable {
+    if (message instanceof TickInfo) {
+      this.deployees.forEach(d -> d.tell(message, ActorRef.noSender()));
+    } else {
+      this.unhandled(message);
+    }
   }
 }

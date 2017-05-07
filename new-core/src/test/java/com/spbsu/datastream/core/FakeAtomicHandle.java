@@ -1,5 +1,7 @@
 package com.spbsu.datastream.core;
 
+import akka.actor.ActorPath;
+import akka.actor.ActorSelection;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.graph.ops.GroupingState;
@@ -12,6 +14,11 @@ public final class FakeAtomicHandle implements AtomicHandle {
 
   public FakeAtomicHandle(final BiConsumer<OutPort, DataItem<?>> pushConsumer) {
     this.pushConsumer = pushConsumer;
+  }
+
+  @Override
+  public ActorSelection actorSelection(final ActorPath path) {
+    return null;
   }
 
   @Override

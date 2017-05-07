@@ -1,6 +1,9 @@
 package com.spbsu.datastream.core.tick.atomic;
 
+import akka.actor.ActorContext;
+import akka.actor.ActorPath;
 import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.RoutingException;
@@ -17,30 +20,37 @@ import java.util.Optional;
 
 public final class AtomicHandleImpl implements AtomicHandle {
   private final TickContext tickContext;
+  private final ActorContext context;
 
-  public AtomicHandleImpl(final TickContext tickContext) {
+  public AtomicHandleImpl(final TickContext tickContext, final ActorContext context) {
     this.tickContext = tickContext;
+    this.context = context;
+  }
+
+  @Override
+  public ActorSelection actorSelection(final ActorPath path) {
+    return this.context.actorSelection(path);
   }
 
   @Override
   public void push(final OutPort out, final DataItem<?> result) {
-    final Optional<InPort> destination = Optional.ofNullable(this.tickContext.graph().graph().downstreams().get(out));
+    final Optional<InPort> destination = Optional.ofNullable(this.tickContext.tickInfo().graph().graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
     @SuppressWarnings("rawtypes") final HashFunction hashFunction = address.hashFunction();
 
     @SuppressWarnings("unchecked") final int hash = hashFunction.applyAsInt(result.payload());
 
-    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(new PortBindDataItem(result, address), hash, this.tickContext.tick());
+    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(new PortBindDataItem(result, address), hash, this.tickContext.tickInfo().startTs());
     this.ack(result);
     this.tickContext.rootRouter().tell(addressedMessage, ActorRef.noSender());
   }
 
   @Override
   public void ack(final DataItem<?> item) {
-    final int hash = this.tickContext.ackerRange().from();
+    final int hash = this.tickContext.tickInfo().ackerRange().from();
 
-    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(new Ack(item.ack(), item.meta().globalTime()), hash, this.tickContext.tick());
+    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(new Ack(item.ack(), item.meta().globalTime()), hash, this.tickContext.tickInfo().startTs());
     this.tickContext.rootRouter().tell(addressedMessage, ActorRef.noSender());
   }
 

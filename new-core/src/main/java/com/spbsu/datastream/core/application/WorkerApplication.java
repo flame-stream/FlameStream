@@ -27,17 +27,20 @@ public final class WorkerApplication {
 
   private final InetSocketAddress host;
   private final String zkConnectString;
+  private final int id;
 
   private ActorSystem system;
   private ZooKeeper zk;
 
-  public WorkerApplication(final InetSocketAddress host, final String zkConnectString) {
+  public WorkerApplication(final int id, final InetSocketAddress host, final String zkConnectString) {
+    this.id = id;
     this.host = host;
     this.zkConnectString = zkConnectString;
   }
 
   public static void main(final String... args) throws UnknownHostException {
     final Options options = new Options();
+    final Option idOpt = Option.builder("id").hasArg().argName("id").desc("worker id").required().build();
     final Option hostOpt = Option.builder("host").hasArg().argName("FQDN").desc("worker FQDN").required().build();
     final Option portOpt = Option.builder("port").hasArg().argName("port").desc("worker port").required().build();
     final Option zkOpt = Option.builder("zk").hasArg().argName("connectString").desc("ZK connect string").required().build();
@@ -50,12 +53,13 @@ public final class WorkerApplication {
 
     try {
       final CommandLine cmd = parser.parse(options, args);
+      final int id = Integer.valueOf(cmd.getOptionValue("id"));
       final InetAddress address = InetAddress.getByName(cmd.getOptionValue("host"));
       final int port = Integer.parseInt(cmd.getOptionValue("port"));
       final InetSocketAddress socketAddress = new InetSocketAddress(address, port);
 
       final String connectingString = cmd.getOptionValue("zk");
-      new WorkerApplication(socketAddress, connectingString).run();
+      new WorkerApplication(id, socketAddress, connectingString).run();
     } catch (final ParseException e) {
       WorkerApplication.LOG.error("Parsing failed", e);
       final HelpFormatter formatter = new HelpFormatter();
@@ -74,7 +78,7 @@ public final class WorkerApplication {
       this.zk = new ZooKeeper(this.zkConnectString, 5000,
               event -> watcher.tell(event, null));
 
-      final ActorRef concierge = this.system.actorOf(NodeConcierge.props(this.host, this.zk), "root");
+      final ActorRef concierge = this.system.actorOf(NodeConcierge.props(this.id, this.host, this.zk), "root");
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }

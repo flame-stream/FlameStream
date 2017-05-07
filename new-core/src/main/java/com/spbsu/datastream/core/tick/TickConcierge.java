@@ -19,17 +19,17 @@ import java.util.stream.Collectors;
 
 public final class TickConcierge extends LoggingActor {
   private TickConcierge(final TickContext context) {
-    final Map<AtomicGraph, ActorRef> inMapping = this.initializedAtomics(context.graph().graph().subGraphs(), context);
+    final Map<AtomicGraph, ActorRef> inMapping = this.initializedAtomics(context.tickInfo().graph().graph().subGraphs(), context);
 
     final ActorRef localRouter;
-    if (context.localRange().equals(context.ackerRange())) {
+    if (context.localRange().equals(context.tickInfo().ackerRange())) {
       final ActorRef acker = this.context().actorOf(AckActor.props(context), "acker");
       localRouter = this.localRouter(TickConcierge.withFlattenedKey(inMapping), acker);
     } else {
       localRouter = this.localRouter(TickConcierge.withFlattenedKey(inMapping));
     }
 
-    context.rangeRouter().tell(new RangeRouterApi.RegisterMe(context.tick(), localRouter), this.self());
+    context.rangeRouter().tell(new RangeRouterApi.RegisterMe(context.tickInfo().startTs(), localRouter), this.self());
   }
 
   public static Props props(final TickContext context) {
@@ -66,6 +66,6 @@ public final class TickConcierge extends LoggingActor {
 
   private ActorRef actorForAtomic(final AtomicGraph atomic, final TickContext context) {
     final String id = UUID.randomUUID().toString();
-    return this.context().actorOf(AtomicActor.props(atomic, new AtomicHandleImpl(context)), id);
+    return this.context().actorOf(AtomicActor.props(atomic, new AtomicHandleImpl(context, this.context())), id);
   }
 }

@@ -1,5 +1,8 @@
 package com.spbsu.datastream.core.barrier;
 
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
@@ -9,17 +12,27 @@ import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 
-public final class ConsumerBarrierSink<T> extends AbstractAtomicGraph {
-  private final Consumer<T> consumer;
+public final class RemoteActorConsumer<T> extends AbstractAtomicGraph {
+  private final ActorPath path;
   private final InPort inPort;
 
   private final BarrierCollector collector = new LinearCollector();
 
-  public ConsumerBarrierSink(final Consumer<T> consumer) {
-    this.consumer = consumer;
+  private ActorSelection actor;
+
+  public RemoteActorConsumer(final ActorPath path) {
+    this.path = path;
     this.inPort = new InPort(PreSinkMetaElement.HASH_FUNCTION);
+  }
+
+  public InPort inPort() {
+    return this.inPort;
+  }
+
+  @Override
+  public void onStart(final AtomicHandle handle) {
+    this.actor = handle.actorSelection(this.path);
   }
 
   @Override
@@ -35,11 +48,7 @@ public final class ConsumerBarrierSink<T> extends AbstractAtomicGraph {
   }
 
   private void consume(final DataItem<PreSinkMetaElement<T>> di) {
-    this.consumer.accept(di.payload().payload());
-  }
-
-  public InPort inPort() {
-    return this.inPort;
+    this.actor.tell(di.payload().payload(), ActorRef.noSender());
   }
 
   @Override
@@ -52,3 +61,4 @@ public final class ConsumerBarrierSink<T> extends AbstractAtomicGraph {
     return Collections.emptyList();
   }
 }
+

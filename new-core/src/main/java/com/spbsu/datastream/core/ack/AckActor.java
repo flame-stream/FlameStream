@@ -9,21 +9,20 @@ import com.spbsu.datastream.core.tick.TickContext;
 
 public final class AckActor extends LoggingActor {
   private final AckLedger ledger;
+  private final TickContext context;
   private GlobalTime currentMin = GlobalTime.MIN;
 
-  private final TickContext context;
+  private AckActor(final TickContext context) {
+    this.ledger = new AckLedgerImpl(context.tickInfo().startTs(),
+            context.tickInfo().window(),
+            context.tickInfo().graph().frontBindings().keySet());
+    this.context = context;
+
+    this.LOG().info("Acker initiated: startTs:{}, window: {}, fronts: {}", this.ledger.startTs(), this.ledger.window(), this.ledger.initHashes());
+  }
 
   public static Props props(final TickContext context) {
     return Props.create(AckActor.class, context);
-  }
-
-  private AckActor(final TickContext context) {
-    this.ledger = new AckLedgerImpl(context.tick(),
-            context.window(),
-            context.graph().frontBindings().keySet());
-    this.context = context;
-
-    this.LOG().info("Acker initiated: tick:{}, window: {}, fronts: {}", this.ledger.startTs(), this.ledger.window(), this.ledger.initHashes());
   }
 
   @Override
@@ -49,6 +48,6 @@ public final class AckActor extends LoggingActor {
 
   private void sendMinUpdates(final GlobalTime min) {
     this.LOG().debug("New min time: {}", min);
-    this.context.rootRouter().tell(new AddressedMessage<>(this.context.tick(), new MinTimeUpdate(min)), ActorRef.noSender());
+    this.context.rootRouter().tell(new AddressedMessage<>(this.context.tickInfo().startTs(), new MinTimeUpdate(min)), ActorRef.noSender());
   }
 }
