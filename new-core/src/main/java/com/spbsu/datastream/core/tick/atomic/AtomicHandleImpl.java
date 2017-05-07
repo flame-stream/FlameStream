@@ -19,7 +19,12 @@ import org.iq80.leveldb.DB;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.impl.DbImpl;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Optional;
 
 public final class AtomicHandleImpl implements AtomicHandle {
@@ -27,15 +32,10 @@ public final class AtomicHandleImpl implements AtomicHandle {
   private final ActorContext context;
   private final DB db;
 
-  public AtomicHandleImpl(final TickContext tickContext, final ActorContext context) {
+  public AtomicHandleImpl(final DB db, final TickContext tickContext, final ActorContext context) {
     this.tickContext = tickContext;
     this.context = context;
-
-    try {
-      db = new DbImpl(new Options().createIfMissing(true), new File("./leveldb"));
-    } catch (IOException e) {
-      throw new RuntimeException("LevelDB is not initialized: " + e);
-    }
+    this.db = db;
   }
 
   @Override
