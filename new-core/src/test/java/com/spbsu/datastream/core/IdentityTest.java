@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -25,16 +24,16 @@ public final class IdentityTest {
 
   @Test
   public void emptyTest() throws InterruptedException {
-    try (TestStage stage = new TestStage(2)) {
+    try (TestStand stage = new TestStand(10)) {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
       stage.deploy(IdentityTest.graph(stage.fronts(), stage.wrap(result)));
 
-      final List<Integer> source = new Random().ints(10000).boxed().collect(Collectors.toList());
+      final List<Integer> source = new Random().ints(5000).boxed().collect(Collectors.toList());
       source.forEach(stage.randomFrontConsumer());
 
-      TimeUnit.SECONDS.sleep(30);
+      stage.waitTick();
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }

@@ -12,13 +12,12 @@ import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.front.RawData;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.node.MyPaths;
-import com.spbsu.datastream.core.node.TickInfo;
+import com.spbsu.datastream.core.tick.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.jooq.lambda.Unchecked;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -42,7 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @SuppressWarnings("ProhibitedExceptionThrown")
-public final class TestStage implements Closeable {
+final class TestStand implements Closeable {
   private static final String ZK_STRING = "localhost:2181";
   private static final int LOCAL_SYSTEM_PORT = 12345;
 
@@ -52,25 +51,29 @@ public final class TestStage implements Closeable {
   private final Map<HashRange, Integer> workers;
   private final Set<Integer> fronts;
 
-  //Test method data
   private final Collection<WorkerApplication> workerApplication = new HashSet<>();
+
+  private final ZooKeeperApplication zk;
+  private final Thread zkThread;
   private final ActorSystem localSystem;
 
-  public TestStage(final int workersCount) {
-    this.dns = TestStage.dns(workersCount);
-    this.workers = TestStage.workers(this.dns.keySet());
+  public TestStand(final int workersCount) {
+    this.dns = TestStand.dns(workersCount);
+    this.workers = TestStand.workers(this.dns.keySet());
     this.fronts = this.dns.keySet();
 
     try {
-      final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + TestStage.LOCAL_SYSTEM_PORT)
+      final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + TestStand.LOCAL_SYSTEM_PORT)
               .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + InetAddress.getLocalHost().getHostName()))
               .withFallback(ConfigFactory.load("remote"));
       this.localSystem = ActorSystem.create("requester", config);
 
-      Files.newDirectoryStream(Paths.get("zookeeper/version-2")).forEach(Unchecked.consumer(Files::delete));
-      new Thread(Unchecked.runnable(() -> new ZooKeeperApplication().run())).start();
+      Files.newDirectoryStream(Paths.get("target/zookeeper/version-2")).forEach(Unchecked.consumer(Files::delete));
+      this.zk = new ZooKeeperApplication();
+      this.zkThread = new Thread(Unchecked.runnable(this.zk::run));
+      this.zkThread.start();
 
-      TimeUnit.SECONDS.sleep(5);
+      TimeUnit.SECONDS.sleep(1);
       this.deployPartitioning();
       this.workerApplication.addAll(this.startWorkers());
     } catch (final Exception e) {
@@ -78,8 +81,77 @@ public final class TestStage implements Closeable {
     }
   }
 
+  @Override
+  public void close() {
+    try {
+      this.zk.shutdown();
+      this.zkThread.join();
+
+      this.localSystem.shutdown();
+
+      this.workerApplication.forEach(WorkerApplication::shutdown);
+      this.workerApplication.clear();
+    } catch (final InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public Collection<Integer> fronts() {
+    return Collections.unmodifiableSet(this.fronts);
+  }
+
+  public <T> ActorPath wrap(final Queue<T> collection) {
+    try {
+      final String id = UUID.randomUUID().toString();
+      final ActorRef consumerActor = this.localSystem.actorOf(CollectorActor.props(collection), id);
+      final Address add = Address.apply("akka.tcp", "requester",
+              InetAddress.getLocalHost().getHostName(),
+              TestStand.LOCAL_SYSTEM_PORT);
+      return RootActorPath.apply(add, "/")
+              .$div("user")
+              .$div(id);
+    } catch (final UnknownHostException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void deploy(final TheGraph theGraph) {
+    final long startTs = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+    final TickInfo tickInfo = new TickInfo(
+            theGraph,
+            this.workers.values().stream().findAny().orElseThrow(RuntimeException::new),
+            this.workers,
+            startTs,
+            startTs + TimeUnit.MINUTES.toNanos(30),
+            TimeUnit.MILLISECONDS.toNanos(100)
+    );
+    try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStand.ZK_STRING)) {
+      zkConfigurationDeployer.pushTick(tickInfo);
+      TimeUnit.SECONDS.sleep(4);
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void waitTick() throws InterruptedException {
+    TimeUnit.SECONDS.sleep(30);
+  }
+
+  public Consumer<Object> randomFrontConsumer() {
+    final List<Consumer<Object>> result = new ArrayList<>();
+
+    for (final int frontId : this.fronts) {
+      final ActorSelection frontActor = TestStand.front(this.localSystem, frontId, this.dns.get(frontId));
+      final Consumer<Object> consumer = obj -> frontActor.tell(new RawData<>(obj), ActorRef.noSender());
+      result.add(consumer);
+    }
+
+    final Random rd = new Random();
+    return obj -> result.get(rd.nextInt(result.size())).accept(obj);
+  }
+
   private static Map<Integer, InetSocketAddress> dns(final int workersCount) {
-    return IntStream.range(TestStage.START_WORKER_PORT, TestStage.START_WORKER_PORT + workersCount)
+    return IntStream.range(TestStand.START_WORKER_PORT, TestStand.START_WORKER_PORT + workersCount)
             .boxed().collect(Collectors.toMap(Function.identity(),
                     Unchecked.function(port -> new InetSocketAddress(InetAddress.getLocalHost(), port))));
   }
@@ -102,91 +174,28 @@ public final class TestStage implements Closeable {
     return result;
   }
 
+  @SuppressWarnings("TypeMayBeWeakened")
+  private static ActorSelection front(final ActorSystem system,
+                                      final int id,
+                                      final InetSocketAddress address) {
+    final ActorPath front = MyPaths.front(id, address);
+    return system.actorSelection(front);
+  }
+
   private void deployPartitioning() throws Exception {
-    try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStage.ZK_STRING)) {
+    try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStand.ZK_STRING)) {
       zkConfigurationDeployer.createDirs();
       zkConfigurationDeployer.pushDNS(this.dns);
       zkConfigurationDeployer.pushFrontMappings(this.fronts);
-      zkConfigurationDeployer.pushRangeMappings(this.workers);
     }
   }
 
   private Collection<WorkerApplication> startWorkers() {
     final Set<WorkerApplication> apps = this.dns.entrySet().stream()
-            .map(f -> new WorkerApplication(f.getKey(), f.getValue(), TestStage.ZK_STRING))
+            .map(f -> new WorkerApplication(f.getKey(), f.getValue(), TestStand.ZK_STRING))
             .collect(Collectors.toSet());
 
     apps.forEach(WorkerApplication::run);
     return apps;
-  }
-
-  public Set<Integer> fronts() {
-    return Collections.unmodifiableSet(this.fronts);
-  }
-
-  @Override
-  public void close() {
-    try {
-      Files.newDirectoryStream(Paths.get("zookeeper/version-2")).forEach(Unchecked.consumer(Files::delete));
-      // TODO: 5/2/17 Graceful stop
-      this.localSystem.shutdown();
-
-      this.workerApplication.forEach(WorkerApplication::shutdown);
-      this.workerApplication.clear();
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public <T> ActorPath wrap(final Queue<T> collection) {
-    try {
-      final String id = UUID.randomUUID().toString();
-      final ActorRef consumerActor = this.localSystem.actorOf(CollectorActor.props(collection), id);
-      final Address add = Address.apply("akka.tcp", "requester",
-              InetAddress.getLocalHost().getHostName(),
-              TestStage.LOCAL_SYSTEM_PORT);
-      return RootActorPath.apply(add, "/")
-              .$div("user")
-              .$div(id);
-    } catch (final UnknownHostException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public void deploy(final TheGraph theGraph) {
-    final long startTs = System.nanoTime();
-    final TickInfo tickInfo = new TickInfo(
-            theGraph,
-            this.workers.keySet().stream().findAny().orElseThrow(RuntimeException::new),
-            startTs,
-            startTs + TimeUnit.SECONDS.toNanos(30),
-            TimeUnit.MILLISECONDS.toNanos(100)
-    );
-    try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStage.ZK_STRING)) {
-      zkConfigurationDeployer.pushTick(tickInfo);
-      TimeUnit.SECONDS.sleep(2);
-    } catch (final Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public Consumer<Object> randomFrontConsumer() {
-    final List<Consumer<Object>> result = new ArrayList<>();
-
-    for (final int frontId : this.fronts) {
-      final ActorSelection frontActor = TestStage.front(this.localSystem, this.dns.get(frontId));
-      final Consumer<Object> consumer = obj -> frontActor.tell(new RawData<>(obj), ActorRef.noSender());
-      result.add(consumer);
-    }
-
-    final Random rd = new Random();
-    return obj -> result.get(rd.nextInt(result.size())).accept(obj);
-  }
-
-  @SuppressWarnings("TypeMayBeWeakened")
-  private static ActorSelection front(final ActorSystem system,
-                                      final InetSocketAddress address) {
-    final ActorPath front = MyPaths.front(address);
-    return system.actorSelection(front);
   }
 }

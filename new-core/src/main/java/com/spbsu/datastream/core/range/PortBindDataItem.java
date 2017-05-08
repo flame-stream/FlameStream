@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.tick;
+package com.spbsu.datastream.core.range;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.InPort;

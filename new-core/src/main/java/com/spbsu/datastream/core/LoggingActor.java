@@ -22,13 +22,13 @@ public abstract class LoggingActor extends UntypedActor {
 
   @Override
   public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
-    this.LOG().error("Restarting, reason: {}, message: {}", reason, message);
+    this.LOG().error("Restarting, reason: {}, payload: {}", reason, message);
     super.preRestart(reason, message);
   }
 
   @Override
   public void unhandled(final Object message) {
-    this.LOG().error("Can't handle message: {}", message);
+    this.LOG().error("Can't handle payload: {}", message);
     super.unhandled(message);
   }
 

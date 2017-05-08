@@ -17,7 +17,7 @@ public final class LifecycleWatcher extends LoggingActor {
 
   @Override
   public void onReceive(final Object message) throws Throwable {
-    this.LOG.debug("Got message: {}", message);
+    this.LOG.debug("Got payload: {}", message);
 
     if (message instanceof WatchedEvent) {
       final WatchedEvent event = (WatchedEvent) message;

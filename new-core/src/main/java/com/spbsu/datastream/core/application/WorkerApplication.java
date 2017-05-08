@@ -78,7 +78,7 @@ public final class WorkerApplication {
       this.zk = new ZooKeeper(this.zkConnectString, 5000,
               event -> watcher.tell(event, null));
 
-      final ActorRef concierge = this.system.actorOf(NodeConcierge.props(this.id, this.host, this.zk), "root");
+      final ActorRef concierge = this.system.actorOf(NodeConcierge.props(this.id, this.zk), String.valueOf(id));
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }

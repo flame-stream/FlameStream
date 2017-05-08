@@ -8,64 +8,75 @@ import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.node.TickInfo;
-import scala.concurrent.duration.FiniteDuration;
+import com.spbsu.datastream.core.tick.TickInfo;
 
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 
 public final class FrontActor extends LoggingActor {
-  private final ActorRef rootRouter;
+  private final ActorRef dns;
   private final int id;
 
   private final TreeMap<Long, ActorRef> tickFronts = new TreeMap<>();
 
-  public static Props props(final ActorRef remoteRouter, final int id) {
-    return Props.create(FrontActor.class, remoteRouter, id);
+  public static Props props(final ActorRef dns, final int id) {
+    return Props.create(FrontActor.class, dns, id);
   }
 
-  private FrontActor(final ActorRef rootRouter, final int id) {
-    this.rootRouter = rootRouter;
+  private FrontActor(final ActorRef dns, final int id) {
+    this.dns = dns;
     this.id = id;
   }
 
   @Override
   public void onReceive(final Object message) throws Throwable {
+    this.LOG().debug("Received: {}", message);
     if (message instanceof RawData) {
       final Object data = ((RawData<?>) message).payload();
-
-      final GlobalTime globalTime = new GlobalTime(System.nanoTime(), this.id);
-      final Meta now = new Meta(globalTime);
-      final DataItem<?> dataItem = new PayloadDataItem<>(now, data);
-
-      final long tick = this.tickFronts.floorKey(globalTime.time());
-
-      final ActorRef tickFront = this.tickFronts.get(tick);
-      tickFront.tell(dataItem, ActorRef.noSender());
+      this.redirectItem(data);
     } else if (message instanceof TickInfo) {
-      final TickInfo deploy = (TickInfo) message;
-      this.LOG().info("Deploying for startTs: {}", deploy);
-
-      final InPort target = deploy.graph().frontBindings().get(this.id);
-
-      final ActorRef tickFront = this.context().actorOf(TickFrontActor.props(this.rootRouter,
-              deploy.ackerRange(),
-              target,
-              this.id,
-              deploy.startTs(),
-              deploy.window()),
-              Long.toString(deploy.startTs()));
-
-      this.tickFronts.putIfAbsent(deploy.startTs(), tickFront);
-
-      this.context().system().scheduler().schedule(
-              FiniteDuration.apply(0, TimeUnit.NANOSECONDS),
-              FiniteDuration.apply(deploy.window(), TimeUnit.NANOSECONDS),
-              () -> tickFront.tell(System.nanoTime(), ActorRef.noSender()),
-              this.context().system().dispatcher()
-      );
+      final TickInfo info = (TickInfo) message;
+      this.createTick(info);
+    } else if (message instanceof String) {
+      this.sender().tell(System.nanoTime(), ActorRef.noSender());
     } else {
       this.unhandled(message);
     }
   }
+
+  private void createTick(final TickInfo tickInfo) {
+    this.LOG().info("Deploying for startTs: {}", tickInfo);
+
+    final InPort target = tickInfo.graph().frontBindings().get(this.id);
+
+    final ActorRef tickFront = this.context().actorOf(TickFrontActor.props(this.dns,
+            target,
+            this.id,
+            tickInfo),
+            Long.toString(tickInfo.startTs()));
+
+    this.tickFronts.put(tickInfo.startTs(), tickFront);
+  }
+
+  private void redirectItem(final Object data) {
+    final GlobalTime globalTime = new GlobalTime(System.nanoTime(), this.id);
+    final Meta now = new Meta(globalTime);
+    final DataItem<?> dataItem = new PayloadDataItem<>(now, data);
+
+    final long tick = this.tickFronts.floorKey(globalTime.time());
+
+    final ActorRef tickFront = this.tickFronts.get(tick);
+    tickFront.tell(dataItem, ActorRef.noSender());
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+

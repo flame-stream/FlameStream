@@ -2,7 +2,7 @@ package com.spbsu.datastream.core.graph;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
-import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
+import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
 /**
  * AtomicGraph - graph without inner down or upstreams

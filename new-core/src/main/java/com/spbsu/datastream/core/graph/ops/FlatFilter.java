@@ -7,7 +7,7 @@ import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
-import com.spbsu.datastream.core.tick.atomic.AtomicHandle;
+import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 import org.jooq.lambda.Seq;
 
 import java.util.Collections;

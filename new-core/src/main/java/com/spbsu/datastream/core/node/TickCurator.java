@@ -5,6 +5,7 @@ import akka.actor.Props;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.configuration.KryoInfoSerializer;
 import com.spbsu.datastream.core.configuration.TickInfoSerializer;
+import com.spbsu.datastream.core.tick.TickInfo;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -35,7 +36,7 @@ public final class TickCurator extends LoggingActor {
     this.fetchTicks();
   }
 
-  public void fetchTicks() throws Exception {
+  private void fetchTicks() throws Exception {
     final List<String> ticks = this.zooKeeper.getChildren("/ticks", this.selfWatcher());
 
     for (final String tick : ticks) {

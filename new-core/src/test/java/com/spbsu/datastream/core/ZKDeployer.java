@@ -1,10 +1,9 @@
 package com.spbsu.datastream.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.configuration.KryoInfoSerializer;
 import com.spbsu.datastream.core.configuration.TickInfoSerializer;
-import com.spbsu.datastream.core.node.TickInfo;
+import com.spbsu.datastream.core.tick.TickInfo;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooKeeper;
@@ -17,7 +16,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
 
-public final class ZKDeployer implements Closeable {
+final class ZKDeployer implements Closeable {
   private final Logger LOG = LoggerFactory.getLogger(ZKDeployer.class);
 
   private final ObjectMapper mapper = new ObjectMapper();
@@ -40,10 +39,6 @@ public final class ZKDeployer implements Closeable {
             this.mapper.writeValueAsBytes(fronts),
             ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT);
-  }
-
-  public void pushRangeMappings(final Map<HashRange, Integer> ranges) throws Exception {
-    this.zooKeeper.create("/ranges", this.mapper.writeValueAsBytes(ranges), ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
   }
 
   public void pushTick(final TickInfo tickInfo) throws Exception {

@@ -8,11 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public final class ZooKeeperApplication {
-  public static void main(final String... args) throws IOException {
-    new ZooKeeperApplication().run();
-  }
-
+public final class ZooKeeperApplication extends ZooKeeperServerMain {
   public void run() throws IOException {
     final QuorumPeerConfig quorumConfig = new QuorumPeerConfig();
 
@@ -24,10 +20,14 @@ public final class ZooKeeperApplication {
       throw new RuntimeException(e);
     }
 
-    final ZooKeeperServerMain zooKeeperServer = new ZooKeeperServerMain();
     final ServerConfig serverConfig = new ServerConfig();
     serverConfig.readFrom(quorumConfig);
 
-    zooKeeperServer.runFromConfig(serverConfig);
+    this.runFromConfig(serverConfig);
+  }
+
+  @Override
+  public void shutdown() {
+    super.shutdown();
   }
 }

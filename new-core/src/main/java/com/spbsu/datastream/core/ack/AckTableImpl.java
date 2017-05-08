@@ -33,18 +33,25 @@ public final class AckTableImpl implements AckTable {
 
   private final long window;
 
+  private long waitingFor;
+
   public AckTableImpl(final long startTs, final long window) {
     this.startTs = startTs;
     this.window = window;
     this.table = new TreeMap<>();
     this.table.put(startTs, new AckEntry(false, 0));
+    this.waitingFor = startTs;
   }
 
   @Override
   public void report(final long windowHead, final long xor) {
-    assert (windowHead - this.startTs) % this.window == 0;
-    this.table.computeIfPresent(windowHead, (ts, entry) -> new AckEntry(true, entry.xor() ^ xor));
-    this.table.putIfAbsent(windowHead, new AckEntry(true, xor));
+    if (windowHead == this.waitingFor) {
+      this.table.computeIfPresent(windowHead, (ts, entry) -> new AckEntry(true, entry.xor() ^ xor));
+      this.table.putIfAbsent(windowHead, new AckEntry(true, xor));
+      this.waitingFor += this.window;
+    } else {
+      throw new IllegalArgumentException("Not monotonic reports. Expected: " + this.waitingFor + ", got: " + windowHead);
+    }
   }
 
   @Override

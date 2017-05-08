@@ -1,99 +1,143 @@
 package com.spbsu.datastream.core.front;
 
 import akka.actor.ActorRef;
+import akka.actor.Cancellable;
 import akka.actor.Props;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.FrontReport;
-import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.range.AddressedMessage;
-import com.spbsu.datastream.core.tick.PortBindDataItem;
+import com.spbsu.datastream.core.node.UnresolvedMessage;
+import com.spbsu.datastream.core.range.HashedMessage;
+import com.spbsu.datastream.core.range.PortBindDataItem;
+import com.spbsu.datastream.core.tick.TickInfo;
+import com.spbsu.datastream.core.tick.TickMessage;
+import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
+
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 final class TickFrontActor extends LoggingActor {
-  private final ActorRef rootRouter;
+  private final ActorRef dns;
   private final InPort target;
   private final int frontId;
-  private final HashRange ackLocation;
 
-  private final long tick;
-  private final long window;
-  private final long startTs;
+  private final TickInfo tickInfo;
 
+  private Cancellable pingMe;
 
-  public static Props props(final ActorRef rootRouter,
-                            final HashRange ackLocation,
+  public static Props props(final ActorRef dns,
                             final InPort target,
                             final int frontId,
-                            final long tick,
-                            final long window) {
-    return Props.create(TickFrontActor.class, rootRouter, ackLocation, target, frontId, tick, window);
+                            final TickInfo info) {
+    return Props.create(TickFrontActor.class, dns, target, frontId, info);
   }
 
-  private TickFrontActor(final ActorRef rootRouter,
-                         final HashRange ackLocation,
+  private TickFrontActor(final ActorRef dns,
                          final InPort target,
                          final int frontId,
-                         final long tick,
-                         final long window) {
-    this.rootRouter = rootRouter;
-    this.ackLocation = ackLocation;
+                         final TickInfo info) {
+    this.dns = dns;
     this.target = target;
     this.frontId = frontId;
-    this.tick = tick;
-    this.window = window;
+    this.tickInfo = info;
 
-    this.startTs = tick;
-    this.currentWindowHead = this.startTs;
+    this.currentWindowHead = this.tickInfo.startTs();
+  }
+
+  @Override
+  public void preStart() throws Exception {
+    super.preStart();
+    final FiniteDuration start = Duration.create(Math.max(this.tickInfo.startTs() - System.nanoTime(), 0), TimeUnit.NANOSECONDS);
+
+    this.pingMe = this.context().system().scheduler().schedule(
+            start,
+            FiniteDuration.apply(this.tickInfo.window(), TimeUnit.NANOSECONDS),
+            this.self(),
+            "REMIND YOUR PARENT TO PING YOU",
+            this.context().system().dispatcher(),
+            ActorRef.noSender()
+    );
+  }
+
+  @Override
+  public void postStop() throws Exception {
+    super.postStop();
+    this.pingMe.cancel();
+  }
+
+  @Override
+  public void onReceive(final Object message) throws Throwable {
+    this.LOG().debug("Received: {}", message);
+    if (message instanceof DataItem) {
+      final DataItem<?> item = (DataItem<?>) message;
+      this.dispatchItem(item);
+    } else if (message instanceof String) {
+      this.context().parent().tell("PING ME", this.self());
+    } else if (message instanceof Long) {
+      final long ping = (long) message;
+      this.processPing(ping);
+    }
+  }
+
+  private void processPing(final long ping) {
+    if (ping >= this.tickInfo.stopTs()) {
+      this.reportUpTo(this.tickInfo.stopTs());
+      this.context().stop(this.self());
+    } else if (ping >= this.currentWindowHead + this.tickInfo.window()) {
+      this.reportUpTo(this.lower(ping));
+    }
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  @Override
-  public void onReceive(final Object message) throws Throwable {
-    if (message instanceof DataItem) {
-      final DataItem<?> item = (DataItem<?>) message;
+  private void dispatchItem(final DataItem<?> item) {
+    final HashFunction hashFunction = this.target.hashFunction();
+    final int hash = hashFunction.applyAsInt(item.payload());
 
-      final HashFunction hashFunction = this.target.hashFunction();
-      final int hash = hashFunction.applyAsInt(item.payload());
+    final int receiver = this.tickInfo.hashMapping().entrySet().stream().filter(e -> e.getKey().contains(hash))
+            .map(Map.Entry::getValue).findAny().orElseThrow(NoSuchElementException::new);
 
-      // TODO: 4/28/17 bookkeeping
-      this.rootRouter.tell(new AddressedMessage<>(new PortBindDataItem(item, this.target), hash, this.tick),
-              ActorRef.noSender());
+    final UnresolvedMessage<TickMessage<HashedMessage<PortBindDataItem>>> message = new UnresolvedMessage<>(receiver,
+            new TickMessage<>(this.tickInfo.startTs(),
+                    new HashedMessage<>(hash,
+                            new PortBindDataItem(item, this.target))));
 
-      this.report(item.meta().globalTime().time(), item.ack());
-    } else if (message instanceof Long) {
-      final long currentTime = (long) message;
-      if (currentTime > this.currentWindowHead + this.window) {
-        this.reportUpTo(this.lower(currentTime));
-      }
-    }
+    this.dns.tell(message, ActorRef.noSender());
+
+    this.report(item.meta().globalTime().time(), item.ack());
   }
 
   private long currentWindowHead;
   private long currentXor = 0;
 
   private long lower(final long ts) {
-    return this.startTs + this.window * ((ts - this.startTs) / this.window);
+    return this.tickInfo.startTs() + this.tickInfo.window() * ((ts - this.tickInfo.startTs()) / this.tickInfo.window());
   }
 
-
   private void report(final long time, final long xor) {
-    if (time >= this.currentWindowHead + this.window) {
+    if (time >= this.currentWindowHead + this.tickInfo.window()) {
       this.reportUpTo(this.lower(time));
     }
     this.currentXor ^= xor;
   }
 
   private void reportUpTo(final long windowHead) {
-    for (; this.currentWindowHead < windowHead; this.currentWindowHead += this.window, this.currentXor = 0) {
+    for (; this.currentWindowHead < windowHead; this.currentWindowHead += this.tickInfo.window(), this.currentXor = 0) {
       this.closeWindow(this.currentWindowHead, this.currentXor);
     }
   }
 
   private void closeWindow(final long windowHead, final long xor) {
     final FrontReport report = new FrontReport(new GlobalTime(windowHead, this.frontId), xor);
-    this.rootRouter.tell(new AddressedMessage<>(report, this.ackLocation.from(), this.tick), ActorRef.noSender());
+    this.LOG().debug("Closing window {}", report);
+    final UnresolvedMessage<TickMessage<FrontReport>> message = new UnresolvedMessage<>(this.tickInfo.ackerLocation(),
+            new TickMessage<>(this.tickInfo.startTs(),
+                    report));
+
+    this.dns.tell(message, ActorRef.noSender());
   }
 }

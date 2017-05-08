@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.tick.atomic;
+package com.spbsu.datastream.core.range.atomic;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorPath;
@@ -9,33 +9,38 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.RoutingException;
 import com.spbsu.datastream.core.ack.Ack;
-import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
-import com.spbsu.datastream.core.range.AddressedMessage;
-import com.spbsu.datastream.core.tick.PortBindDataItem;
-import com.spbsu.datastream.core.tick.TickContext;
+import com.spbsu.datastream.core.tick.TickInfo;
+import com.spbsu.datastream.core.node.UnresolvedMessage;
+import com.spbsu.datastream.core.range.HashedMessage;
+import com.spbsu.datastream.core.range.PortBindDataItem;
+import com.spbsu.datastream.core.tick.TickMessage;
 import org.iq80.leveldb.DB;
-import org.iq80.leveldb.Options;
-import org.iq80.leveldb.impl.DbImpl;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 public final class AtomicHandleImpl implements AtomicHandle {
-  private final TickContext tickContext;
-  private final ActorContext context;
+  private final TickInfo tickInfo;
+  private final ActorRef dns;
   private final DB db;
+  private final ActorContext context;
 
-  public AtomicHandleImpl(final DB db, final TickContext tickContext, final ActorContext context) {
-    this.tickContext = tickContext;
-    this.context = context;
+  public AtomicHandleImpl(final TickInfo tickInfo,
+                          final ActorRef dns,
+                          final DB db,
+                          final ActorContext context) {
+    this.tickInfo = tickInfo;
+    this.dns = dns;
     this.db = db;
+    this.context = context;
   }
 
   @Override
@@ -45,30 +50,37 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void push(final OutPort out, final DataItem<?> result) {
-    final Optional<InPort> destination = Optional.ofNullable(this.tickContext.tickInfo().graph().graph().downstreams().get(out));
+    final Optional<InPort> destination = Optional.ofNullable(this.tickInfo.graph().graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
     @SuppressWarnings("rawtypes") final HashFunction hashFunction = address.hashFunction();
 
     @SuppressWarnings("unchecked") final int hash = hashFunction.applyAsInt(result.payload());
+    final int receiver = this.tickInfo.hashMapping().entrySet().stream().filter(e -> e.getKey().contains(hash))
+            .map(Map.Entry::getValue).findAny().orElseThrow(NoSuchElementException::new);
 
-    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(new PortBindDataItem(result, address), hash, this.tickContext.tickInfo().startTs());
+    final UnresolvedMessage<TickMessage<HashedMessage<PortBindDataItem>>> message = new UnresolvedMessage<>(receiver,
+            new TickMessage<>(this.tickInfo.startTs(),
+                    new HashedMessage<>(hash,
+                            new PortBindDataItem(result, address))));
     this.ack(result);
-    this.tickContext.rootRouter().tell(addressedMessage, ActorRef.noSender());
+    this.dns.tell(message, ActorRef.noSender());
   }
 
   @Override
   public void ack(final DataItem<?> item) {
-    final int hash = this.tickContext.tickInfo().ackerRange().from();
+    final int id = this.tickInfo.ackerLocation();
 
-    final AddressedMessage<?> addressedMessage = new AddressedMessage<>(new Ack(item.ack(), item.meta().globalTime()), hash, this.tickContext.tickInfo().startTs());
-    this.tickContext.rootRouter().tell(addressedMessage, ActorRef.noSender());
+    final UnresolvedMessage<TickMessage<Ack>> message = new UnresolvedMessage<>(id,
+            new TickMessage<>(this.tickInfo.startTs(),
+                    new Ack(item.ack(), item.meta().globalTime())));
+    this.dns.tell(message, ActorRef.noSender());
   }
 
   @Override
   public Optional<Object> loadState(final InPort inPort) {
     final byte[] key = Longs.toByteArray(inPort.id());
-    final byte[] value = db.get(key);
+    final byte[] value = this.db.get(key);
     if (value != null) {
       final ByteArrayInputStream in = new ByteArrayInputStream(value);
       try {
@@ -96,8 +108,8 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
       final byte[] value = bos.toByteArray();
       bos.close();
-      db.put(key, value);
-    } catch (IOException e) {
+      this.db.put(key, value);
+    } catch (final IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -105,11 +117,6 @@ public final class AtomicHandleImpl implements AtomicHandle {
   @Override
   public void removeState(final InPort inPort) {
     final byte[] key = Longs.toByteArray(inPort.id());
-    db.delete(key);
-  }
-
-  @Override
-  public HashRange localRange() {
-    return this.tickContext.localRange();
+    this.db.delete(key);
   }
 }
