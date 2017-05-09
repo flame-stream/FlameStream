@@ -5,13 +5,13 @@ import akka.actor.Props;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.configuration.HashRange;
-import com.spbsu.datastream.core.tick.TickInfo;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
+import com.spbsu.datastream.core.range.HashedMessage;
+import com.spbsu.datastream.core.tick.TickInfo;
 import com.spbsu.datastream.core.tick.TickMessage;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 public final class AckActor extends LoggingActor {
   private final AckLedger ledger;
@@ -53,9 +53,13 @@ public final class AckActor extends LoggingActor {
   }
 
   private void committing(final Object message) {
+    this.LOG().debug("Received: {}", message);
     if (message instanceof CommitDone) {
       final HashRange committer = ((CommitDone) message).committer();
       this.committers.add(committer);
+      if (this.committers.equals(this.tickInfo.hashMapping().keySet())) {
+        this.LOG().info("COOOOMMMMITTTITITITITITI");
+      }
     } else {
       this.unhandled(message);
     }
@@ -76,11 +80,11 @@ public final class AckActor extends LoggingActor {
 
   private void sendCommit() {
     this.LOG().info("Committing");
-    this.dns.tell(new UnresolvedMessage<>(new TickMessage<>(this.tickInfo.startTs(), new Commit())), ActorRef.noSender());
+    this.dns.tell(new UnresolvedMessage<>(new TickMessage<>(this.tickInfo.startTs(), new HashedMessage<>(new Commit()))), ActorRef.noSender());
   }
 
   private void sendMinUpdates(final GlobalTime min) {
     this.LOG().debug("New min time: {}", min);
-    this.dns.tell(new UnresolvedMessage<>(new TickMessage<>(this.tickInfo.startTs(), new MinTimeUpdate(min))), ActorRef.noSender());
+    this.dns.tell(new UnresolvedMessage<>(new TickMessage<>(this.tickInfo.startTs(), new HashedMessage<>(new MinTimeUpdate(min)))), ActorRef.noSender());
   }
 }

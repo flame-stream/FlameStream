@@ -39,19 +39,23 @@ final class DNSRouter extends LoggingActor {
       if (unresolvedMessage.destination() == this.localId) {
         this.localRouter.tell(unresolvedMessage.payload(), this.sender());
       } else {
-        if (unresolvedMessage.isBroadcast()) {
-          this.dns.forEach((key, value) -> value.tell(new UnresolvedMessage<>(key, unresolvedMessage.payload()), this.sender()));
-        } else {
-          final ActorSelection receiver = this.dns.get(unresolvedMessage.destination());
-          if (receiver != null) {
-            receiver.tell(message, this.sender());
-          } else {
-            this.unhandled(message);
-          }
-        }
+        this.sendRemote(unresolvedMessage);
       }
     } else {
       this.unhandled(message);
+    }
+  }
+
+  private void sendRemote(final UnresolvedMessage<?> message) {
+    if (message.isBroadcast()) {
+      this.dns.forEach((key, value) -> value.tell(new UnresolvedMessage<>(key, message.payload()), this.sender()));
+    } else {
+      final ActorSelection receiver = this.dns.get(message.destination());
+      if (receiver != null) {
+        receiver.tell(message, this.sender());
+      } else {
+        this.unhandled(message);
+      }
     }
   }
 

@@ -14,7 +14,11 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.Options;
+import org.iq80.leveldb.impl.DbImpl;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -27,6 +31,7 @@ public final class NodeConcierge extends LoggingActor {
   private final ZooKeeper zooKeeper;
   private final int id;
 
+  private DB db;
   private ActorRef dnsRouter;
   private ActorRef tickRouter;
 
@@ -45,10 +50,12 @@ public final class NodeConcierge extends LoggingActor {
   public void preStart() throws Exception {
     super.preStart();
 
+    this.db = new DbImpl(new Options().createIfMissing(true), new File("./leveldb/" + this.id));
+
     final Map<Integer, InetSocketAddress> dns = this.fetchDNS();
     this.LOG.info("DNS fetched: {}", dns);
 
-    this.tickRouter = this.context().actorOf(TickRouter.props());
+    this.tickRouter = this.context().actorOf(TickRouter.props(), "tickRouter");
     this.dnsRouter = this.context().actorOf(DNSRouter.props(dns, this.tickRouter, this.id), "dns");
 
     final Set<Integer> fronts = this.fetchFronts();
@@ -65,7 +72,7 @@ public final class NodeConcierge extends LoggingActor {
   public void onReceive(final Object message) throws Throwable {
     if (message instanceof TickInfo) {
       final TickInfo tickInfo = (TickInfo) message;
-      final ActorRef tickConcierge = this.context().actorOf(TickConcierge.props(tickInfo, this.id, this.dnsRouter), String.valueOf(tickInfo.startTs()));
+      final ActorRef tickConcierge = this.context().actorOf(TickConcierge.props(tickInfo, this.db, this.id, this.dnsRouter), String.valueOf(tickInfo.startTs()));
       this.tickRouter.tell(new TickRouter.RegisterTick(tickInfo.startTs(), tickConcierge), ActorRef.noSender());
 
       if (this.front != null) {

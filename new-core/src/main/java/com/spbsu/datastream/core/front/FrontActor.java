@@ -44,7 +44,7 @@ public final class FrontActor extends LoggingActor {
   }
 
   private void createTick(final TickInfo tickInfo) {
-    this.LOG().info("Deploying for startTs: {}", tickInfo);
+    this.LOG().info("Creating tickFront for startTs: {}", tickInfo);
 
     final InPort target = tickInfo.graph().frontBindings().get(this.id);
 

@@ -10,7 +10,7 @@ public final class FrontReport {
 
   /***
    * @param globalTime start time of the report.
-   * @param xor xor of the dataItem acks, generated in the window [globalTime, globalTime + dt]
+   * @param xor xor of the dataItem acks, generated in the window [globalTime, globalTime + window]
    */
   public FrontReport(final GlobalTime globalTime, final long xor) {
     this.globalTime = globalTime;

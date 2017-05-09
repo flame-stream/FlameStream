@@ -11,7 +11,7 @@ import com.spbsu.datastream.core.ack.FrontReport;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
 import com.spbsu.datastream.core.range.HashedMessage;
-import com.spbsu.datastream.core.range.PortBindDataItem;
+import com.spbsu.datastream.core.range.atomic.PortBindDataItem;
 import com.spbsu.datastream.core.tick.TickInfo;
 import com.spbsu.datastream.core.tick.TickMessage;
 import scala.concurrent.duration.Duration;

@@ -11,13 +11,14 @@ import com.spbsu.datastream.core.application.ZooKeeperApplication;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.front.RawData;
 import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.node.MyPaths;
 import com.spbsu.datastream.core.tick.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.apache.commons.io.FileUtils;
 import org.jooq.lambda.Unchecked;
 
 import java.io.Closeable;
+import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -68,7 +69,8 @@ final class TestStand implements Closeable {
               .withFallback(ConfigFactory.load("remote"));
       this.localSystem = ActorSystem.create("requester", config);
 
-      Files.newDirectoryStream(Paths.get("target/zookeeper/version-2")).forEach(Unchecked.consumer(Files::delete));
+      FileUtils.deleteDirectory(new File("zookeeper"));
+      FileUtils.deleteDirectory(new File("leveldb"));
       this.zk = new ZooKeeperApplication();
       this.zkThread = new Thread(Unchecked.runnable(this.zk::run));
       this.zkThread.start();
@@ -116,25 +118,25 @@ final class TestStand implements Closeable {
   }
 
   public void deploy(final TheGraph theGraph) {
-    final long startTs = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+    final long startTs = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
     final TickInfo tickInfo = new TickInfo(
             theGraph,
             this.workers.values().stream().findAny().orElseThrow(RuntimeException::new),
             this.workers,
             startTs,
-            startTs + TimeUnit.MINUTES.toNanos(30),
-            TimeUnit.MILLISECONDS.toNanos(100)
+            startTs + TimeUnit.SECONDS.toNanos(10),
+            TimeUnit.MILLISECONDS.toNanos(10)
     );
     try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStand.ZK_STRING)) {
       zkConfigurationDeployer.pushTick(tickInfo);
-      TimeUnit.SECONDS.sleep(4);
+      TimeUnit.SECONDS.sleep(1);
     } catch (final Exception e) {
       throw new RuntimeException(e);
     }
   }
 
   public void waitTick() throws InterruptedException {
-    TimeUnit.SECONDS.sleep(30);
+    TimeUnit.SECONDS.sleep(10);
   }
 
   public Consumer<Object> randomFrontConsumer() {
@@ -178,8 +180,12 @@ final class TestStand implements Closeable {
   private static ActorSelection front(final ActorSystem system,
                                       final int id,
                                       final InetSocketAddress address) {
-    final ActorPath front = MyPaths.front(id, address);
-    return system.actorSelection(front);
+    final Address add = Address.apply("akka.tcp", "worker", address.getAddress().getHostName(), address.getPort());
+    final ActorPath path = RootActorPath.apply(add, "/")
+            .$div("user")
+            .$div(String.valueOf(id))
+            .$div("front");
+    return system.actorSelection(path);
   }
 
   private void deployPartitioning() throws Exception {

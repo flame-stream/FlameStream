@@ -6,7 +6,7 @@ import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.graph.ops.StatelessFilter;
+import com.spbsu.datastream.core.graph.ops.StatelessMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -24,26 +25,26 @@ public final class IdentityTest {
 
   @Test
   public void emptyTest() throws InterruptedException {
-    try (TestStand stage = new TestStand(10)) {
+    try (TestStand stage = new TestStand(4)) {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(IdentityTest.graph(stage.fronts(), stage.wrap(result)));
+      stage.deploy(IdentityTest.multiGraph(stage.fronts(), stage.wrap(result)));
 
       final List<Integer> source = new Random().ints(5000).boxed().collect(Collectors.toList());
-      source.forEach(stage.randomFrontConsumer());
-
+      final Consumer<Object> sink = stage.randomFrontConsumer();
+      source.forEach(sink);
       stage.waitTick();
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }
   }
 
-  private static TheGraph graph(final Collection<Integer> fronts, final ActorPath consumer) {
-    final StatelessFilter<Integer, Integer> filter1 = new StatelessFilter<>(new HumbleFiler(-1), HashFunction.OBJECT_HASH);
-    final StatelessFilter<Integer, Integer> filter2 = new StatelessFilter<>(new HumbleFiler(-2), HashFunction.OBJECT_HASH);
-    final StatelessFilter<Integer, Integer> filter3 = new StatelessFilter<>(new HumbleFiler(-3), HashFunction.OBJECT_HASH);
-    final StatelessFilter<Integer, Integer> filter4 = new StatelessFilter<>(new HumbleFiler(-4), HashFunction.OBJECT_HASH);
+  private static TheGraph multiGraph(final Collection<Integer> fronts, final ActorPath consumer) {
+    final StatelessMap<Integer, Integer> filter1 = new StatelessMap<>(new HumbleFiler(-1), HashFunction.OBJECT_HASH);
+    final StatelessMap<Integer, Integer> filter2 = new StatelessMap<>(new HumbleFiler(-2), HashFunction.OBJECT_HASH);
+    final StatelessMap<Integer, Integer> filter3 = new StatelessMap<>(new HumbleFiler(-3), HashFunction.OBJECT_HASH);
+    final StatelessMap<Integer, Integer> filter4 = new StatelessMap<>(new HumbleFiler(-4), HashFunction.OBJECT_HASH);
     final PreSinkMetaFilter<Integer> metaFilter = new PreSinkMetaFilter<>(HashFunction.OBJECT_HASH);
     final RemoteActorConsumer<Integer> sink = new RemoteActorConsumer<>(consumer);
 

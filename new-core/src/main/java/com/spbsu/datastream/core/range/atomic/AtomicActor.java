@@ -1,12 +1,12 @@
 package com.spbsu.datastream.core.range.atomic;
 
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.Commit;
 import com.spbsu.datastream.core.ack.MinTimeUpdate;
 import com.spbsu.datastream.core.graph.AtomicGraph;
-import com.spbsu.datastream.core.range.CommitCollector;
-import com.spbsu.datastream.core.range.PortBindDataItem;
+import com.spbsu.datastream.core.range.AtomicCommitDone;
 
 public final class AtomicActor extends LoggingActor {
   private final AtomicGraph atomic;
@@ -38,7 +38,9 @@ public final class AtomicActor extends LoggingActor {
       this.onMinTimeUpdate((MinTimeUpdate) message);
     } else if (message instanceof Commit) {
       this.atomic.onCommit(this.handle);
-      this.sender().tell(new CommitCollector.AtomicCommitDone(), this.self());
+      this.context().parent().tell(new AtomicCommitDone(this.atomic), ActorRef.noSender());
+      this.LOG().info("Commit done");
+      this.context().stop(this.self());
     } else {
       this.unhandled(message);
     }

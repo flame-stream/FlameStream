@@ -10,4 +10,10 @@ public final class RawData<T> {
   public T payload() {
     return this.payload;
   }
+
+  @Override
+  public String toString() {
+    return "RawData{" + "payload=" + this.payload +
+            '}';
+  }
 }

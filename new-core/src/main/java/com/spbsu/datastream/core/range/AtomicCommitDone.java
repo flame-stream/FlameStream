@@ -1,0 +1,21 @@
+package com.spbsu.datastream.core.range;
+
+import com.spbsu.datastream.core.graph.AtomicGraph;
+
+public final class AtomicCommitDone {
+  private final AtomicGraph atomicGraph;
+
+  public AtomicCommitDone(final AtomicGraph atomicGraph) {
+    this.atomicGraph = atomicGraph;
+  }
+
+  public AtomicGraph graph() {
+    return this.atomicGraph;
+  }
+
+  @Override
+  public String toString() {
+    return "AtomicCommitDone{" + "atomicGraph=" + this.atomicGraph +
+            '}';
+  }
+}

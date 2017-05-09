@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.range;
+package com.spbsu.datastream.core.range.atomic;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.InPort;

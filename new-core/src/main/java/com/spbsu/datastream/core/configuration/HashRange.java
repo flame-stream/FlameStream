@@ -16,14 +16,6 @@ public final class HashRange {
     return this.from <= hash && hash < this.to;
   }
 
-  public int from() {
-    return this.from;
-  }
-
-  public int to() {
-    return this.to;
-  }
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

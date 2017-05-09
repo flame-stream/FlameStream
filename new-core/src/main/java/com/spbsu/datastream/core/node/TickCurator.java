@@ -6,6 +6,7 @@ import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.configuration.KryoInfoSerializer;
 import com.spbsu.datastream.core.configuration.TickInfoSerializer;
 import com.spbsu.datastream.core.tick.TickInfo;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -36,7 +37,7 @@ public final class TickCurator extends LoggingActor {
     this.fetchTicks();
   }
 
-  private void fetchTicks() throws Exception {
+  private void fetchTicks() throws KeeperException, InterruptedException {
     final List<String> ticks = this.zooKeeper.getChildren("/ticks", this.selfWatcher());
 
     for (final String tick : ticks) {
@@ -54,7 +55,7 @@ public final class TickCurator extends LoggingActor {
   }
 
   @Override
-  public void onReceive(final Object message) throws Exception {
+  public void onReceive(final Object message) throws KeeperException, InterruptedException {
     if (message instanceof WatchedEvent) {
       final WatchedEvent event = (WatchedEvent) message;
       if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {

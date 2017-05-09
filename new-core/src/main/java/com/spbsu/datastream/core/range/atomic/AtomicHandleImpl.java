@@ -14,7 +14,6 @@ import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.tick.TickInfo;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
 import com.spbsu.datastream.core.range.HashedMessage;
-import com.spbsu.datastream.core.range.PortBindDataItem;
 import com.spbsu.datastream.core.tick.TickMessage;
 import org.iq80.leveldb.DB;
 

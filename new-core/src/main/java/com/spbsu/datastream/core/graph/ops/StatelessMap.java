@@ -13,13 +13,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-public final class StatelessFilter<T, R> extends AbstractAtomicGraph {
+public final class StatelessMap<T, R> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
   private final Function<T, R> function;
 
-  public StatelessFilter(final Function<T, R> function, final HashFunction<? super T> hash) {
+  public StatelessMap(final Function<T, R> function, final HashFunction<? super T> hash) {
     this.inPort = new InPort(hash);
     this.function = function;
   }
