@@ -17,6 +17,7 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -30,22 +31,11 @@ public final class GroupingTest {
 
   @Test
   public void withoutReordering() {
-    final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
-
-    final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
-
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
-
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
 
-    grouping.onStart(handle);
-    grouping.onPush(grouping.inPort(), x1, handle);
-    grouping.onPush(grouping.inPort(), x2, handle);
-    grouping.onPush(grouping.inPort(), x3, handle);
-
-    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
+    final List<GroupingResult<String>> actualResult = this.groupMe(Arrays.asList(x1, x2, x3), 2);
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
@@ -59,23 +49,36 @@ public final class GroupingTest {
   }
 
   @Test
+  public void cycleSimulation() {
+    final Meta x1Meta = new Meta(new GlobalTime(1, 1));
+
+    final DataItem<String> x1 = new PayloadDataItem<>(x1Meta, "v1");
+    final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
+    final DataItem<String> x1Prime = new PayloadDataItem<>(new Meta(x1Meta, 2), "state");
+
+    final List<GroupingResult<String>> actualResult = this.groupMe(Arrays.asList(x1, x2, x1Prime), 2);
+    final List<GroupingResult<String>> expectedResult = new ArrayList<>();
+
+    final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
+    final GroupingResult<String> y2 = new GroupingResult<>(Arrays.asList(x1.payload(), x2.payload()), 1);
+    final GroupingResult<String> y3 = new GroupingResult<>(Arrays.asList(x1.payload(), x1Prime.payload()), 1);
+    final GroupingResult<String> y4 = new GroupingResult<>(Arrays.asList(x1Prime.payload(), x2.payload()), 1);
+
+    expectedResult.add(y1);
+    expectedResult.add(y2);
+    expectedResult.add(y3);
+    expectedResult.add(y4);
+
+    Assert.assertEquals(actualResult, expectedResult);
+  }
+
+  @Test
   public void headReordering() {
-    final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
-
-    final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
-
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
-
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
 
-    grouping.onStart(handle);
-    grouping.onPush(grouping.inPort(), x2, handle);
-    grouping.onPush(grouping.inPort(), x1, handle);
-    grouping.onPush(grouping.inPort(), x3, handle);
-
-    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
+    final List<GroupingResult<String>> actualResult = this.groupMe(Arrays.asList(x2, x1, x3), 2);
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x2.payload()), 1);
@@ -93,22 +96,11 @@ public final class GroupingTest {
 
   @Test
   public void tailReordering() {
-    final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
-
-    final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
-
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
-
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
 
-    grouping.onStart(handle);
-    grouping.onPush(grouping.inPort(), x1, handle);
-    grouping.onPush(grouping.inPort(), x3, handle);
-    grouping.onPush(grouping.inPort(), x2, handle);
-
-    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
+    final List<GroupingResult<String>> actualResult = this.groupMe(Arrays.asList(x1, x3, x2), 2);
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
@@ -126,22 +118,11 @@ public final class GroupingTest {
 
   @Test
   public void reverseReordering() {
-    final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
-
-    final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
-
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
-
-    final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
-    final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
+    final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
+    final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
 
-    grouping.onStart(handle);
-    grouping.onPush(grouping.inPort(), x3, handle);
-    grouping.onPush(grouping.inPort(), x2, handle);
-    grouping.onPush(grouping.inPort(), x1, handle);
-
-    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
+    final List<GroupingResult<String>> actualResult = this.groupMe(Arrays.asList(x3, x2, x1), 2);
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x3.payload()), 1);
@@ -163,12 +144,6 @@ public final class GroupingTest {
 
   @Test
   public void reorderingWithInvalidating() {
-    final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), 2);
-
-    final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
-
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
-
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
 
@@ -176,13 +151,7 @@ public final class GroupingTest {
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(x3Meta, 1), "v3");
     final DataItem<String> x3Prime = new PayloadDataItem<>(new Meta(x3Meta, 2), "v3Prime");
 
-    grouping.onStart(handle);
-    grouping.onPush(grouping.inPort(), x1, handle);
-    grouping.onPush(grouping.inPort(), x2, handle);
-    grouping.onPush(grouping.inPort(), x3, handle);
-    grouping.onPush(grouping.inPort(), x3Prime, handle);
-
-    final List<GroupingResult<String>> actualResult = out.stream().map(DataItem::payload).collect(Collectors.toList());
+    final List<GroupingResult<String>> actualResult = this.groupMe(Arrays.asList(x1, x2, x3, x3Prime), 2);
     final List<GroupingResult<String>> expectedResult = new ArrayList<>();
 
     final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
@@ -204,22 +173,12 @@ public final class GroupingTest {
   public void shuffleReordering() {
     final int window = 6;
 
-    final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), window);
-
-    final List<DataItem<GroupingResult<String>>> out = new ArrayList<>();
-
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<GroupingResult<String>>) di));
-
     final List<DataItem<String>> input = IntStream.range(0, 1000)
             .mapToObj(i -> new PayloadDataItem<>(new Meta(new GlobalTime(i, 1)), "v" + i))
             .collect(Collectors.toList());
 
     final List<DataItem<String>> shuffledInput = new ArrayList<>(input);
-
     Collections.shuffle(shuffledInput, new Random(2));
-
-    grouping.onStart(handle);
-    shuffledInput.forEach(di -> grouping.onPush(grouping.inPort(), di, handle));
 
     final Set<GroupingResult<String>> mustHave = Seq.seq(input)
             .map(DataItem::payload)
@@ -231,6 +190,18 @@ public final class GroupingTest {
     //this.LOG.debug("Got: {}", out.stream().map(DataItem::payload).collect(Collectors.toList()));
     //this.LOG.debug("Must have: {}", mustHave);
 
-    Assert.assertTrue(out.stream().map(DataItem::payload).collect(Collectors.toSet()).containsAll(mustHave), "Result must contain expected elements");
+    Assert.assertTrue(new HashSet<>(this.groupMe(shuffledInput, window)).containsAll(mustHave), "Result must contain expected elements");
+  }
+
+  private <T> List<GroupingResult<T>> groupMe(final Iterable<DataItem<T>> input, final int window) {
+    final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), window);
+
+    final List<GroupingResult<T>> out = new ArrayList<>();
+
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((GroupingResult<T>) di.payload()));
+
+    grouping.onStart(handle);
+    input.forEach(in -> grouping.onPush(grouping.inPort(), in, handle));
+    return out;
   }
 }
