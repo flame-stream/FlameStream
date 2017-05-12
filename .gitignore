@@ -69,3 +69,5 @@ hs_err_pid*
 /.idea/
 /zookeeper/
 /leveldb/
+/new-core/leveldb/
+/new-core/zookeeper/
