@@ -69,19 +69,19 @@ public final class NodeConcierge extends LoggingActor {
   }
 
   @Override
-  public void onReceive(final Object message) throws Throwable {
-    if (message instanceof TickInfo) {
-      final TickInfo tickInfo = (TickInfo) message;
-      final ActorRef tickConcierge = this.context().actorOf(TickConcierge.props(tickInfo, this.db, this.id, this.dnsRouter), String.valueOf(tickInfo.startTs()));
-      this.tickRouter.tell(new TickRouter.RegisterTick(tickInfo.startTs(), tickConcierge), ActorRef.noSender());
+  public Receive createReceive() {
+    return this.receiveBuilder().match(TickInfo.class, this::onNewTick).build();
+  }
 
-      if (this.front != null) {
-        this.front.tell(message, ActorRef.noSender());
-      }
-    } else {
-      this.unhandled(message);
+  private void onNewTick(TickInfo tickInfo) {
+    final ActorRef tickConcierge = this.context().actorOf(TickConcierge.props(tickInfo, this.db, this.id, this.dnsRouter), String.valueOf(tickInfo.startTs()));
+    this.tickRouter.tell(new TickRouter.RegisterTick(tickInfo.startTs(), tickConcierge), ActorRef.noSender());
+
+    if (this.front != null) {
+      this.front.tell(tickInfo, ActorRef.noSender());
     }
   }
+
 
   private Map<Integer, InetSocketAddress> fetchDNS() throws IOException, KeeperException, InterruptedException {
     final String path = "/dns";

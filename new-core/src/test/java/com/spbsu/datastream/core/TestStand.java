@@ -89,7 +89,8 @@ final class TestStand implements Closeable {
       this.zk.shutdown();
       this.zkThread.join();
 
-      this.localSystem.shutdown();
+      // TODO: 5/18/17  
+      //this.localSystem.shutdown();
 
       this.workerApplication.forEach(WorkerApplication::shutdown);
       this.workerApplication.clear();

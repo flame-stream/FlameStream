@@ -37,6 +37,11 @@ public final class TickCurator extends LoggingActor {
     this.fetchTicks();
   }
 
+  @Override
+  public Receive createReceive() {
+    return this.receiveBuilder().match(WatchedEvent.class, this::onEvent).build();
+  }
+
   private void fetchTicks() throws KeeperException, InterruptedException {
     final List<String> ticks = this.zooKeeper.getChildren("/ticks", this.selfWatcher());
 
@@ -54,17 +59,11 @@ public final class TickCurator extends LoggingActor {
     return event -> this.self().tell(event, this.self());
   }
 
-  @Override
-  public void onReceive(final Object message) throws KeeperException, InterruptedException {
-    if (message instanceof WatchedEvent) {
-      final WatchedEvent event = (WatchedEvent) message;
-      if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
-        this.fetchTicks();
-      } else {
-        this.unhandled(message);
-      }
+  private void onEvent(WatchedEvent event) throws KeeperException, InterruptedException {
+    if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+      this.fetchTicks();
     } else {
-      this.unhandled(message);
+      this.LOG().warning("Unexpected event {}", event);
     }
   }
 }

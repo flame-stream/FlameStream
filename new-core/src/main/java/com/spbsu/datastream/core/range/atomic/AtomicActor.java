@@ -27,25 +27,23 @@ public final class AtomicActor extends LoggingActor {
     super.preStart();
   }
 
-  @SuppressWarnings("ChainOfInstanceofChecks")
-  public void onReceive(final Object message) throws Throwable {
-    this.LOG().debug("Received {}", message);
-
-    if (message instanceof PortBindDataItem) {
-      this.onAddressedMessage((PortBindDataItem) message);
-    } else if (message instanceof MinTimeUpdate) {
-      this.onMinTimeUpdate((MinTimeUpdate) message);
-    } else if (message instanceof Commit) {
-      this.atomic.onCommit(this.handle);
-      this.context().parent().tell(new AtomicCommitDone(this.atomic), ActorRef.noSender());
-      this.LOG().info("Commit done");
-      this.context().stop(this.self());
-    } else {
-      this.unhandled(message);
-    }
+  @Override
+  public Receive createReceive() {
+    return this.receiveBuilder()
+            .match(PortBindDataItem.class, this::onAddressedMessage)
+            .match(MinTimeUpdate.class, this::onMinTimeUpdate)
+            .match(Commit.class, this::onCommit)
+            .build();
   }
 
-  private void onAddressedMessage(final PortBindDataItem message) {
+  private void onCommit(Commit commit) {
+    this.atomic.onCommit(this.handle);
+    this.context().parent().tell(new AtomicCommitDone(this.atomic), ActorRef.noSender());
+    this.LOG().info("Commit done");
+    this.context().stop(this.self());
+  }
+
+  private void onAddressedMessage(PortBindDataItem message) {
     this.atomic.onPush(message.inPort(), message.payload(), this.handle);
     this.handle.ack(message.payload());
   }

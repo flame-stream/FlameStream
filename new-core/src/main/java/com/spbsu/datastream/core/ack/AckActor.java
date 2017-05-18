@@ -36,36 +36,26 @@ public final class AckActor extends LoggingActor {
   }
 
   @Override
-  public void onReceive(final Object message) {
-    if (message instanceof FrontReport) {
-      final FrontReport report = (FrontReport) message;
-      this.LOG().debug("Front report received: {}", report);
-      this.ledger.report(report.globalTime(), report.xor());
-    } else if (message instanceof Ack) {
-      final Ack ack = (Ack) message;
-      this.ledger.ack(ack.time(), ack.xor());
-      this.LOG().debug("Ack received: {}", ack);
-    } else {
-      this.unhandled(message);
-    }
-
-    this.checkTime();
+  public Receive createReceive() {
+    return this.receiveBuilder()
+            .match(AckerReport.class, this::handleReport)
+            .match(Ack.class, this::handleAck)
+            .build();
   }
 
-  private void committing(final Object message) {
-    this.LOG().debug("Received: {}", message);
-    if (message instanceof CommitDone) {
-      final HashRange committer = ((CommitDone) message).committer();
-      this.committers.add(committer);
-      if (this.committers.equals(this.tickInfo.hashMapping().keySet())) {
-        this.LOG().info("COOOOMMMMITTTITITITITITI");
-      }
-    } else {
-      this.unhandled(message);
-    }
+  private void handleReport(final AckerReport report) {
+    this.LOG().debug("Front report received: {}", report);
+    this.ledger.report(report.globalTime(), report.xor());
+    this.checkLedgerTime();
   }
 
-  private void checkTime() {
+  private void handleAck(final Ack ack) {
+    this.LOG().debug("Ack received: {}", ack);
+    this.ledger.ack(ack.time(), ack.xor());
+    this.checkLedgerTime();
+  }
+
+  private void checkLedgerTime() {
     final GlobalTime ledgerMin = this.ledger.min();
     if (ledgerMin.compareTo(this.currentMin) > 0) {
       this.currentMin = ledgerMin;
@@ -74,7 +64,16 @@ public final class AckActor extends LoggingActor {
 
     if (ledgerMin.time() >= this.tickInfo.stopTs()) {
       this.sendCommit();
-      this.getContext().become(this::committing);
+      this.getContext().become(this.receiveBuilder().match(CommitDone.class, this::handleDone).build());
+    }
+  }
+
+  private void handleDone(final CommitDone commitDone) {
+    this.LOG().debug("Received: {}", commitDone);
+    final HashRange committer = commitDone.committer();
+    this.committers.add(committer);
+    if (this.committers.equals(this.tickInfo.hashMapping().keySet())) {
+      this.LOG().info("COOOOMMMMITTTITITITITITI");
     }
   }
 

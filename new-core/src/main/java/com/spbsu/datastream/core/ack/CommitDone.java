@@ -1,9 +1,9 @@
 package com.spbsu.datastream.core.ack;
 
+import com.spbsu.datastream.core.AckerMessage;
 import com.spbsu.datastream.core.configuration.HashRange;
 
-public final class
-CommitDone {
+public final class CommitDone implements AckerMessage {
   private final HashRange participant;
 
   public CommitDone(final HashRange participant) {

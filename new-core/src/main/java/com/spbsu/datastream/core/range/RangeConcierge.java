@@ -53,22 +53,30 @@ public final class RangeConcierge extends LoggingActor {
   }
 
   @Override
-  public void onReceive(final Object message) throws Throwable {
-    this.LOG().debug("Received: {}", message);
-    if (message instanceof PortBindDataItem) {
-      final PortBindDataItem portBindDataItem = (PortBindDataItem) message;
-      final ActorRef route = this.routingTable.getOrDefault(portBindDataItem.inPort(), this.context().system().deadLetters());
-      route.tell(message, ActorRef.noSender());
-    } else if (message instanceof MinTimeUpdate) {
-      this.routingTable.values().forEach(atomic -> atomic.tell(message, ActorRef.noSender()));
-    } else if (message instanceof Commit) {
-      this.initializedGraph.values().forEach(atom -> atom.tell(message, ActorRef.noSender()));
-    } else if (message instanceof AtomicCommitDone) {
-      final AtomicCommitDone done = (AtomicCommitDone) message;
-      this.processCommitDone(done.graph());
-    } else {
-      this.unhandled(message);
-    }
+  public Receive createReceive() {
+    return this.receiveBuilder()
+            .match(PortBindDataItem.class, this::routeToPort)
+            .match(MinTimeUpdate.class, this::broadcast)
+            .match(Commit.class, this::handleCommit)
+            .build();
+
+  }
+
+  private void handleCommit(Commit commit) {
+    this.initializedGraph.values().forEach(atom -> atom.tell(commit, this.sender()));
+
+    this.getContext().become(this.receiveBuilder()
+            .match(AtomicCommitDone.class, cd -> this.processCommitDone(cd.graph()))
+            .build());
+  }
+
+  private void routeToPort(PortBindDataItem portBindDataItem) {
+    final ActorRef route = this.routingTable.getOrDefault(portBindDataItem.inPort(), this.context().system().deadLetters());
+    route.tell(portBindDataItem, this.sender());
+  }
+
+  private void broadcast(Object message) {
+    this.routingTable.values().forEach(atomic -> atomic.tell(message, ActorRef.noSender()));
   }
 
   private void processCommitDone(final AtomicGraph atomicGraph) {

@@ -1,9 +1,11 @@
 package com.spbsu.datastream.core.node;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.tick.TickMessage;
+import org.omg.CORBA.TIMEOUT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,20 +17,21 @@ final class TickRouter extends LoggingActor {
     return Props.create(TickRouter.class);
   }
 
-
   @Override
-  public void onReceive(final Object message) throws Throwable {
-    if (message instanceof TickMessage) {
-      final TickMessage<?> tickMessage = (TickMessage<?>) message;
-      final ActorRef receiver = this.ticks.getOrDefault(tickMessage.tick(), this.context().system().deadLetters());
-      receiver.tell(tickMessage.payload(), this.sender());
-    } else if (message instanceof RegisterTick) {
-      // TODO: 5/8/17 DEREGISTER TICKS
-      final RegisterTick tick = (RegisterTick) message;
-      this.ticks.putIfAbsent(tick.tick(), tick.tickConcierge());
-    } else {
-      this.unhandled(message);
-    }
+  public Receive createReceive() {
+    return this.receiveBuilder()
+            .match(TickMessage.class, this::handleTickMessage)
+            .match(RegisterTick.class, this::registerTick)
+            .build();
+  }
+
+  private void registerTick(RegisterTick tick) {
+    this.ticks.putIfAbsent(tick.tick(), tick.tickConcierge());
+  }
+
+  private void handleTickMessage(TickMessage<?> tickMessage) {
+    final ActorRef receiver = this.ticks.getOrDefault(tickMessage.tick(), this.context().system().deadLetters());
+    receiver.tell(tickMessage.payload(), this.sender());
   }
 
   public static final class RegisterTick {

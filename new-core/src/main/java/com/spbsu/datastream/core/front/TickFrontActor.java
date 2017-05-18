@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.front;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Cancellable;
 import akka.actor.Props;
@@ -7,13 +8,14 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.LoggingActor;
-import com.spbsu.datastream.core.ack.FrontReport;
+import com.spbsu.datastream.core.ack.AckerReport;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
 import com.spbsu.datastream.core.range.HashedMessage;
 import com.spbsu.datastream.core.range.atomic.PortBindDataItem;
 import com.spbsu.datastream.core.tick.TickInfo;
 import com.spbsu.datastream.core.tick.TickMessage;
+import com.sun.xml.internal.rngom.digested.DInterleavePattern;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -71,17 +73,11 @@ final class TickFrontActor extends LoggingActor {
   }
 
   @Override
-  public void onReceive(final Object message) throws Throwable {
-    this.LOG().debug("Received: {}", message);
-    if (message instanceof DataItem) {
-      final DataItem<?> item = (DataItem<?>) message;
-      this.dispatchItem(item);
-    } else if (message instanceof String) {
-      this.context().parent().tell("PING ME", this.self());
-    } else if (message instanceof Long) {
-      final long ping = (long) message;
-      this.processPing(ping);
-    }
+  public Receive createReceive() {
+    return this.receiveBuilder()
+            .match(DataItem.class, this::dispatchItem)
+            .match(String.class, m -> this.context().parent().tell("PING ME", this.self()))
+            .match(Long.class, this::processPing).build();
   }
 
   private void processPing(final long ping) {
@@ -132,9 +128,9 @@ final class TickFrontActor extends LoggingActor {
   }
 
   private void closeWindow(final long windowHead, final long xor) {
-    final FrontReport report = new FrontReport(new GlobalTime(windowHead, this.frontId), xor);
+    final AckerReport report = new AckerReport(new GlobalTime(windowHead, this.frontId), xor);
     this.LOG().debug("Closing window {}", report);
-    final UnresolvedMessage<TickMessage<FrontReport>> message = new UnresolvedMessage<>(this.tickInfo.ackerLocation(),
+    final UnresolvedMessage<TickMessage<AckerReport>> message = new UnresolvedMessage<>(this.tickInfo.ackerLocation(),
             new TickMessage<>(this.tickInfo.startTs(),
                     report));
 

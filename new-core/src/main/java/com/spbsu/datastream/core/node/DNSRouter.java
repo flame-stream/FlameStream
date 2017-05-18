@@ -32,17 +32,17 @@ final class DNSRouter extends LoggingActor {
   }
 
   @Override
-  public void onReceive(final Object message) throws Throwable {
+  public Receive createReceive() {
+    return this.receiveBuilder().match(UnresolvedMessage.class, this::onUnresolved).build();
+  }
+
+
+  private void onUnresolved(UnresolvedMessage<?> message) {
     this.LOG().debug("Received: {}", message);
-    if (message instanceof UnresolvedMessage) {
-      final UnresolvedMessage<?> unresolvedMessage = (UnresolvedMessage<?>) message;
-      if (unresolvedMessage.destination() == this.localId) {
-        this.localRouter.tell(unresolvedMessage.payload(), this.sender());
-      } else {
-        this.sendRemote(unresolvedMessage);
-      }
+    if (message.destination() == this.localId) {
+      this.localRouter.tell(message.payload(), this.sender());
     } else {
-      this.unhandled(message);
+      this.sendRemote(message);
     }
   }
 

@@ -1,11 +1,12 @@
 package com.spbsu.datastream.core;
 
-import akka.actor.UntypedActor;
+import akka.actor.AbstractActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import scala.Option;
 
-public abstract class LoggingActor extends UntypedActor {
+import java.util.Optional;
+
+public abstract class LoggingActor extends AbstractActor {
   private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
 
   @Override
@@ -21,7 +22,7 @@ public abstract class LoggingActor extends UntypedActor {
   }
 
   @Override
-  public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
+  public void preRestart(final Throwable reason, final Optional<Object> message) throws Exception {
     this.LOG().error("Restarting, reason: {}, payload: {}", reason, message);
     super.preRestart(reason, message);
   }

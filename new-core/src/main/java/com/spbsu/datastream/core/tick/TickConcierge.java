@@ -2,11 +2,12 @@ package com.spbsu.datastream.core.tick;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import com.spbsu.datastream.core.AckerMessage;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.Ack;
 import com.spbsu.datastream.core.ack.AckActor;
+import com.spbsu.datastream.core.ack.AckerReport;
 import com.spbsu.datastream.core.ack.CommitDone;
-import com.spbsu.datastream.core.ack.FrontReport;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.range.HashedMessage;
 import com.spbsu.datastream.core.range.RangeConcierge;
@@ -44,6 +45,13 @@ public final class TickConcierge extends LoggingActor {
     }
   }
 
+  @Override
+  public Receive createReceive() {
+    return this.receiveBuilder().match(HashedMessage.class, this::routeHashedMessage)
+            .match(AckerMessage.class, m -> this.acker.forward(m, this.getContext()))
+            .build();
+  }
+
   private ActorRef rangeConcierge(final HashRange range) {
     return this.context().actorOf(RangeConcierge.props(this.info, this.dns, range, db), range.toString());
   }
@@ -56,20 +64,6 @@ public final class TickConcierge extends LoggingActor {
   private Collection<HashRange> myRanges(final Map<HashRange, Integer> mappings) {
     return mappings.entrySet().stream().filter(e -> e.getValue().equals(this.localId))
             .map(Map.Entry::getKey).collect(Collectors.toSet());
-  }
-
-
-  @Override
-  public void onReceive(final Object message) throws Throwable {
-    this.LOG().debug("Received {}", message);
-    if (message instanceof HashedMessage) {
-      final HashedMessage<?> hashedMessage = (HashedMessage<?>) message;
-      this.routeHashedMessage(hashedMessage);
-    } else if (message instanceof FrontReport || message instanceof Ack || message instanceof CommitDone) {
-      this.acker.tell(message, this.sender());
-    } else {
-      this.unhandled(message);
-    }
   }
 
   // TODO: 5/9/17 do it with akka routing

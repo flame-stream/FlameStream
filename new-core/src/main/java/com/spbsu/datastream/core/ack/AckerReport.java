@@ -1,8 +1,9 @@
 package com.spbsu.datastream.core.ack;
 
+import com.spbsu.datastream.core.AckerMessage;
 import com.spbsu.datastream.core.GlobalTime;
 
-public final class FrontReport {
+public final class AckerReport implements AckerMessage {
 
   private final GlobalTime globalTime;
 
@@ -12,7 +13,7 @@ public final class FrontReport {
    * @param globalTime start time of the report.
    * @param xor xor of the dataItem acks, generated in the window [globalTime, globalTime + window]
    */
-  public FrontReport(final GlobalTime globalTime, final long xor) {
+  public AckerReport(final GlobalTime globalTime, final long xor) {
     this.globalTime = globalTime;
     this.xor = xor;
   }
@@ -27,7 +28,7 @@ public final class FrontReport {
 
   @Override
   public String toString() {
-    return "FrontReport{" + "globalTime=" + this.globalTime +
+    return "AckerReport{" + "globalTime=" + this.globalTime +
             ", xor=" + this.xor +
             '}';
   }

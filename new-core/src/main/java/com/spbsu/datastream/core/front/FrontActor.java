@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.front;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.DataItem;
@@ -28,20 +29,17 @@ public final class FrontActor extends LoggingActor {
   }
 
   @Override
-  public void onReceive(final Object message) throws Throwable {
-    this.LOG().debug("Received: {}", message);
-    if (message instanceof RawData) {
-      final Object data = ((RawData<?>) message).payload();
-      this.redirectItem(data);
-    } else if (message instanceof TickInfo) {
-      final TickInfo info = (TickInfo) message;
-      this.createTick(info);
-    } else if (message instanceof String) {
-      this.sender().tell(System.nanoTime(), ActorRef.noSender());
-    } else {
-      this.unhandled(message);
-    }
+  public Receive createReceive() {
+    return this.receiveBuilder()
+            .match(RawData.class, this::redirectItem)
+            .match(TickInfo.class, this::createTick)
+            .match(String.class, this::onPing).build();
   }
+
+  private void onPing(final String ping) {
+    this.sender().tell(System.nanoTime(), ActorRef.noSender());
+  }
+
 
   private void createTick(final TickInfo tickInfo) {
     this.LOG().info("Creating tickFront for startTs: {}", tickInfo);
@@ -57,10 +55,10 @@ public final class FrontActor extends LoggingActor {
     this.tickFronts.put(tickInfo.startTs(), tickFront);
   }
 
-  private void redirectItem(final Object data) {
+  private void redirectItem(final RawData<?> data) {
     final GlobalTime globalTime = new GlobalTime(System.nanoTime(), this.id);
     final Meta now = new Meta(globalTime);
-    final DataItem<?> dataItem = new PayloadDataItem<>(now, data);
+    final DataItem<?> dataItem = new PayloadDataItem<>(now, data.payload());
 
     final long tick = this.tickFronts.floorKey(globalTime.time());
 

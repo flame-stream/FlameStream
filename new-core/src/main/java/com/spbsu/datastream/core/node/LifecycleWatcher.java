@@ -16,19 +16,18 @@ public final class LifecycleWatcher extends LoggingActor {
   }
 
   @Override
-  public void onReceive(final Object message) throws Throwable {
-    this.LOG.debug("Got payload: {}", message);
+  public Receive createReceive() {
+    return this.receiveBuilder().match(WatchedEvent.class, LifecycleWatcher::onWatchedEvent).build();
+  }
 
-    if (message instanceof WatchedEvent) {
-      final WatchedEvent event = (WatchedEvent) message;
-      if (event.getType() == Event.EventType.None) {
-        final Event.KeeperState state = event.getState();
-        if (state == Event.KeeperState.Expired) {
-          System.err.print(event);
-          System.err.flush();
-          // TODO: 3/26/17 DO NOT EXIT HERE
-          System.exit(1);
-        }
+  private static void onWatchedEvent(final WatchedEvent event) {
+    if (event.getType() == Event.EventType.None) {
+      final Event.KeeperState state = event.getState();
+      if (state == Event.KeeperState.Expired) {
+        System.err.print(event);
+        System.err.flush();
+        // TODO: 3/26/17 DO NOT EXIT HERE
+        System.exit(1);
       }
     }
   }
