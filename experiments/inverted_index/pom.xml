@@ -2,23 +2,36 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>datastreams-parent</artifactId>
+        <groupId>com.spbsu.datastreams</groupId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../../parent</relativePath>
+    </parent>
+
+    <artifactId>inverted_index</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
     <properties>
         <flink.version>1.2.0</flink.version>
     </properties>
 
-    <parent>
-        <artifactId>datastreams-experiments</artifactId>
-        <groupId>com.spbsu.datastreams</groupId>
-        <version>1.0-SNAPSHOT</version>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
-
-    <artifactId>inverted_index</artifactId>
-
     <dependencies>
         <dependency>
             <groupId>com.spbsu.datastreams</groupId>
+            <artifactId>wikiforia-parser</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.spbsu.datastreams</groupId>
             <artifactId>datastreams-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.spbsu.datastreams</groupId>
+            <artifactId>datastreams-commons</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -41,16 +54,10 @@
             <artifactId>flink-clients_2.11</artifactId>
             <version>${flink.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-slf4j_2.11</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.spbsu.datastreams</groupId>
-            <artifactId>wikiforia-parser</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
-
 </project>

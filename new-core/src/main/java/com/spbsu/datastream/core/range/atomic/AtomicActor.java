@@ -28,7 +28,6 @@ public final class AtomicActor extends LoggingActor {
   }
 
   @SuppressWarnings("ChainOfInstanceofChecks")
-  @Override
   public void onReceive(final Object message) throws Throwable {
     this.LOG().debug("Received {}", message);
 

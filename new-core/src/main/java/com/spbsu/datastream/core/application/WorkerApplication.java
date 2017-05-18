@@ -86,7 +86,7 @@ public final class WorkerApplication {
 
   public void shutdown() {
     // TODO: 5/2/17 Graceful stop
-    this.system.shutdown();
+    //this.system.dispatcher().execute(this.system.terminate());
     try {
       this.zk.close();
     } catch (final InterruptedException e) {

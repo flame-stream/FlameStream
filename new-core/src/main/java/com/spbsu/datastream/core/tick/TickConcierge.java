@@ -11,7 +11,6 @@ import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.range.HashedMessage;
 import com.spbsu.datastream.core.range.RangeConcierge;
 import org.iq80.leveldb.DB;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -26,7 +25,6 @@ public final class TickConcierge extends LoggingActor {
 
   private final Map<HashRange, ActorRef> concierges;
 
-  @Nullable
   private final ActorRef acker;
 
   private TickConcierge(final TickInfo tickInfo,
