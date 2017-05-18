@@ -28,7 +28,8 @@ public final class LinearCollector implements BarrierCollector {
     this.invalidationPool.putIfAbsent(item.meta().globalTime(), new ArrayList<>());
 
     this.invalidationPool.computeIfPresent(item.meta().globalTime(), (key, oldList) -> {
-      oldList.removeIf(di -> di.meta().isInvalidatedBy(item.meta()));
+       //FIXME: 5/18/17
+      //oldList.removeIf(di -> di.meta().isInvalidatedBy(item.meta()));
       oldList.add(item);
       return oldList;
     });

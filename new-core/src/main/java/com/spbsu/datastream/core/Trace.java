@@ -1,12 +1,16 @@
 package com.spbsu.datastream.core;
 
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Objects;
+import java.util.function.Function;
 
 @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
 public final class Trace implements Comparable<Trace> {
   //Inner representation is a subject for a discussion and/or an optimization
   public static final Trace EMPTY_TRACE = new Trace();
+
 
   private final LocalEvent[] trace;
 
@@ -29,15 +33,6 @@ public final class Trace implements Comparable<Trace> {
 
   public int size() {
     return this.trace.length;
-  }
-
-  public boolean isInvalidatedBy(Trace that) {
-    for (int i = 0; i < Math.min(this.size(), that.size()); ++i) {
-      if (!this.eventAt(i).equals(that.eventAt(i))) {
-        return this.eventAt(i).localTime() < that.eventAt(i).localTime();
-      }
-    }
-    return false;
   }
 
   @Override

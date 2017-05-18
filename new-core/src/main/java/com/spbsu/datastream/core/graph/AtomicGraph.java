@@ -17,9 +17,6 @@ public interface AtomicGraph extends Graph {
   default void onCommit(AtomicHandle handle) {
   }
 
-  default void onRecover(AtomicHandle handle) {
-  }
-
   default void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
   }
 }

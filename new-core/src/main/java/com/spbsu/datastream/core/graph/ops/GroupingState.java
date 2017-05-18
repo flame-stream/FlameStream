@@ -3,7 +3,6 @@ package com.spbsu.datastream.core.graph.ops;
 import com.spbsu.datastream.core.DataItem;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -12,9 +11,7 @@ import java.util.function.Consumer;
  * Time: 12:16
  */
 public interface GroupingState<T> {
-  Optional<List<DataItem<T>>> get(DataItem<T> item);
-
-  void put(List<DataItem<T>> dataItems);
+  List<DataItem<T>> getGroupFor(DataItem<T> item);
 
   void forEach(Consumer<List<DataItem<T>>> procedure);
 }

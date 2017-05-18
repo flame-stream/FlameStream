@@ -45,6 +45,8 @@ public final class GroupingTest {
     expectedResult.add(y1);
     expectedResult.add(y2);
     expectedResult.add(y3);
+    System.out.println(actualResult);
+    System.out.println(expectedResult);
     Assert.assertEquals(actualResult, expectedResult);
   }
 

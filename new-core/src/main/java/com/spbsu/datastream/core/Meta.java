@@ -35,10 +35,6 @@ public final class Meta implements Comparable<Meta> {
     return this.trace;
   }
 
-  public boolean isInvalidatedBy(Meta that) {
-    return this.globalTime().equals(that.globalTime()) && this.trace().isInvalidatedBy(that.trace());
-  }
-
   @Override
   public int compareTo(Meta that) {
     return Meta.COMPARATOR.compare(this, that);

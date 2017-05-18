@@ -6,11 +6,8 @@ import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 /**
  * User: Artem
@@ -27,57 +24,36 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
   }
 
   @Override
-  public Optional<List<DataItem<T>>> get(DataItem<T> item) {
+  public List<DataItem<T>> getGroupFor(DataItem<T> item) {
     final long hashValue = this.hash.hash(item.payload());
     final Object obj = this.buffers.get(hashValue);
-    if (obj == null)
-      return Optional.empty();
-
-    final List<?> list = (List<?>) obj;
-    if (list.get(0) instanceof List) {
-      //noinspection unchecked
-      final List<List<DataItem<T>>> container = (List<List<DataItem<T>>>) list;
-      return this.searchBucket(item, container);
-    } else {
-      //noinspection unchecked
-      return Optional.of((List<DataItem<T>>) list);
-    }
-  }
-
-  @Override
-  public void put(List<DataItem<T>> dataItems) {
-    if (dataItems.isEmpty()) {
-      throw new IllegalArgumentException("List of data items is empty");
-    }
-
-    final DataItem<T> dataItem = dataItems.get(0);
-    final long hashValue = this.hash.hash(dataItem.payload());
-    final Object obj = this.buffers.get(hashValue);
     if (obj == null) {
-      this.buffers.put(hashValue, dataItems);
+      final List<DataItem<T>> newBucket = new ArrayList<>();
+      this.buffers.put(hashValue, newBucket);
+      return newBucket;
     } else {
       final List<?> list = (List<?>) obj;
       if (list.get(0) instanceof List) {
         //noinspection unchecked
-        final List<List<DataItem<T>>> buckets = (List<List<DataItem<T>>>) list;
-        final List<DataItem<T>> group = this.searchBucket(dataItem, buckets).orElse(null);
-        if (group != null) {
-          group.clear();
-          group.addAll(dataItems);
+        final List<List<DataItem<T>>> container = (List<List<DataItem<T>>>) list;
+        final List<DataItem<T>> result = this.searchBucket(item, container);
+        if (result.isEmpty()) {
+          container.add(result);
+          return result;
         } else {
-          buckets.add(dataItems);
+          return result;
         }
       } else {
-        //noinspection unchecked
-        final List<DataItem<T>> group = (List<DataItem<T>>) list;
-        if (this.hash.equal(group.get(0).payload(), dataItem.payload())) {
-          group.clear();
-          group.addAll(dataItems);
+        final List<DataItem<T>> singleBucket = (List<DataItem<T>>) list;
+        if (this.hash.equal(singleBucket.get(0).payload(), item.payload())) {
+          return singleBucket;
         } else {
-          final List<List<DataItem<T>>> buckets = new ArrayList<>();
-          buckets.add(group);
-          buckets.add(dataItems);
-          this.buffers.put(hashValue, buckets);
+          final List<List<DataItem<T>>> container = new ArrayList<>();
+          container.add(singleBucket);
+          final List<DataItem<T>> newList = new ArrayList<>();
+          container.add(newList);
+          this.buffers.put(hashValue, container);
+          return newList;
         }
       }
     }
@@ -99,9 +75,10 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
     });
   }
 
-  private Optional<List<DataItem<T>>> searchBucket(DataItem<T> item, List<List<DataItem<T>>> container) {
-    return Stream.of(container)
-            .flatMap(Collection::stream)
-            .filter(bucket -> this.hash.equal(bucket.get(0).payload(), item.payload())).findAny();
+  private List<DataItem<T>> searchBucket(DataItem<T> item, List<List<DataItem<T>>> container) {
+    return container.stream()
+            .filter(bucket -> this.hash.equal(bucket.get(0).payload(), item.payload()))
+            .findAny()
+            .orElse(new ArrayList<>());
   }
 }
