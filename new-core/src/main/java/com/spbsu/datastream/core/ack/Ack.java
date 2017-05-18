@@ -1,9 +1,8 @@
 package com.spbsu.datastream.core.ack;
 
-import com.spbsu.datastream.core.AckerMessage;
 import com.spbsu.datastream.core.GlobalTime;
 
-public final class Ack implements AckerMessage {
+public final class Ack {
   private final long xor;
 
   private final GlobalTime time;

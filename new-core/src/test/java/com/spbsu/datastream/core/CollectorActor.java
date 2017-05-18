@@ -15,6 +15,7 @@ final class CollectorActor<T> extends LoggingActor {
     this.queue = queue;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Receive createReceive() {
     return this.receiveBuilder()

@@ -2,6 +2,8 @@ package com.spbsu.datastream.core.range;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import com.spbsu.datastream.core.AckerMessage;
+import com.spbsu.datastream.core.AtomicMessage;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.Commit;
 import com.spbsu.datastream.core.ack.CommitDone;
@@ -12,9 +14,7 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
 import com.spbsu.datastream.core.range.atomic.AtomicActor;
 import com.spbsu.datastream.core.range.atomic.AtomicHandleImpl;
-import com.spbsu.datastream.core.range.atomic.PortBindDataItem;
 import com.spbsu.datastream.core.tick.TickInfo;
-import com.spbsu.datastream.core.tick.TickMessage;
 import org.iq80.leveldb.DB;
 
 import java.util.Collection;
@@ -55,7 +55,7 @@ public final class RangeConcierge extends LoggingActor {
   @Override
   public Receive createReceive() {
     return this.receiveBuilder()
-            .match(PortBindDataItem.class, this::routeToPort)
+            .match(AtomicMessage.class, this::routeToPort)
             .match(MinTimeUpdate.class, this::broadcast)
             .match(Commit.class, this::handleCommit)
             .build();
@@ -70,21 +70,21 @@ public final class RangeConcierge extends LoggingActor {
             .build());
   }
 
-  private void routeToPort(PortBindDataItem portBindDataItem) {
-    final ActorRef route = this.routingTable.getOrDefault(portBindDataItem.inPort(), this.context().system().deadLetters());
-    route.tell(portBindDataItem, this.sender());
+  private void routeToPort(AtomicMessage<?> atomicMessage) {
+    final ActorRef route = this.routingTable.getOrDefault(atomicMessage.port(), this.context().system().deadLetters());
+    route.tell(atomicMessage, this.sender());
   }
 
   private void broadcast(Object message) {
-    this.routingTable.values().forEach(atomic -> atomic.tell(message, ActorRef.noSender()));
+    this.routingTable.values().forEach(atomic -> atomic.tell(message, this.sender()));
   }
 
   private void processCommitDone(AtomicGraph atomicGraph) {
     this.initializedGraph.remove(atomicGraph);
     if (this.initializedGraph.isEmpty()) {
       this.dns.tell(new UnresolvedMessage<>(this.tickInfo.ackerLocation(),
-              new TickMessage<>(this.tickInfo.startTs(),
-                      new CommitDone(this.myRange))), ActorRef.noSender());
+                      new AckerMessage<>(new CommitDone(this.myRange), this.tickInfo.startTs())),
+              this.self());
       this.LOG().info("Commit done");
       this.context().stop(this.self());
     }

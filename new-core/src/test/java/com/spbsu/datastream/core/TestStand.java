@@ -22,8 +22,6 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,7 +56,7 @@ final class TestStand implements Closeable {
   private final Thread zkThread;
   private final ActorSystem localSystem;
 
-  public TestStand(int workersCount) {
+  TestStand(int workersCount) {
     this.dns = TestStand.dns(workersCount);
     this.workers = TestStand.workers(this.dns.keySet());
     this.fronts = this.dns.keySet();

@@ -12,6 +12,14 @@ public final class HashRange {
     this.to = to;
   }
 
+  public int from() {
+    return this.from;
+  }
+
+  public int to() {
+    return this.to;
+  }
+
   public boolean contains(int hash) {
     return this.from <= hash && hash < this.to;
   }

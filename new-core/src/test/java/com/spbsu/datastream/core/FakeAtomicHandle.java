@@ -31,6 +31,7 @@ public final class FakeAtomicHandle implements AtomicHandle {
 
   }
 
+  @Override
   public Optional<Object> loadState(InPort inPort) {
     return Optional.empty();
   }

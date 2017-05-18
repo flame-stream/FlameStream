@@ -5,16 +5,16 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import com.google.common.primitives.Longs;
+import com.spbsu.datastream.core.AckerMessage;
+import com.spbsu.datastream.core.AtomicMessage;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.RoutingException;
 import com.spbsu.datastream.core.ack.Ack;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
-import com.spbsu.datastream.core.tick.TickInfo;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
-import com.spbsu.datastream.core.range.HashedMessage;
-import com.spbsu.datastream.core.tick.TickMessage;
+import com.spbsu.datastream.core.tick.TickInfo;
 import org.iq80.leveldb.DB;
 
 import java.io.ByteArrayInputStream;
@@ -58,22 +58,19 @@ public final class AtomicHandleImpl implements AtomicHandle {
     final int receiver = this.tickInfo.hashMapping().entrySet().stream().filter(e -> e.getKey().contains(hash))
             .map(Map.Entry::getValue).findAny().orElseThrow(NoSuchElementException::new);
 
-    final UnresolvedMessage<TickMessage<HashedMessage<PortBindDataItem>>> message = new UnresolvedMessage<>(receiver,
-            new TickMessage<>(this.tickInfo.startTs(),
-                    new HashedMessage<>(hash,
-                            new PortBindDataItem(result, address))));
+    final UnresolvedMessage<AtomicMessage<?>> message = new UnresolvedMessage<>(receiver,
+            new AtomicMessage<>(this.tickInfo.startTs(), hash, address, result));
     this.ack(result);
-    this.dns.tell(message, ActorRef.noSender());
+    this.dns.tell(message, this.context.self());
   }
 
   @Override
   public void ack(DataItem<?> item) {
     final int id = this.tickInfo.ackerLocation();
 
-    final UnresolvedMessage<TickMessage<Ack>> message = new UnresolvedMessage<>(id,
-            new TickMessage<>(this.tickInfo.startTs(),
-                    new Ack(item.ack(), item.meta().globalTime())));
-    this.dns.tell(message, ActorRef.noSender());
+    final UnresolvedMessage<AckerMessage<?>> message = new UnresolvedMessage<>(id,
+            new AckerMessage<>(new Ack(item.ack(), item.meta().globalTime()), this.tickInfo.startTs()));
+    this.dns.tell(message, this.context.self());
   }
 
   @Override

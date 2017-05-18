@@ -1,9 +1,10 @@
 package com.spbsu.datastream.core.front;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Cancellable;
 import akka.actor.Props;
+import com.spbsu.datastream.core.AckerMessage;
+import com.spbsu.datastream.core.AtomicMessage;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.HashFunction;
@@ -11,11 +12,7 @@ import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.AckerReport;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
-import com.spbsu.datastream.core.range.HashedMessage;
-import com.spbsu.datastream.core.range.atomic.PortBindDataItem;
 import com.spbsu.datastream.core.tick.TickInfo;
-import com.spbsu.datastream.core.tick.TickMessage;
-import com.sun.xml.internal.rngom.digested.DInterleavePattern;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -62,7 +59,7 @@ final class TickFrontActor extends LoggingActor {
             this.self(),
             "REMIND YOUR PARENT TO PING YOU",
             this.context().system().dispatcher(),
-            ActorRef.noSender()
+            this.self()
     );
   }
 
@@ -97,12 +94,10 @@ final class TickFrontActor extends LoggingActor {
     final int receiver = this.tickInfo.hashMapping().entrySet().stream().filter(e -> e.getKey().contains(hash))
             .map(Map.Entry::getValue).findAny().orElseThrow(NoSuchElementException::new);
 
-    final UnresolvedMessage<TickMessage<HashedMessage<PortBindDataItem>>> message = new UnresolvedMessage<>(receiver,
-            new TickMessage<>(this.tickInfo.startTs(),
-                    new HashedMessage<>(hash,
-                            new PortBindDataItem(item, this.target))));
+    final UnresolvedMessage<AtomicMessage<?>> message = new UnresolvedMessage<>(receiver,
+            new AtomicMessage<>(this.tickInfo.startTs(), hash, this.target, item));
 
-    this.dns.tell(message, ActorRef.noSender());
+    this.dns.tell(message, this.self());
 
     this.report(item.meta().globalTime().time(), item.ack());
   }
@@ -130,10 +125,10 @@ final class TickFrontActor extends LoggingActor {
   private void closeWindow(long windowHead, long xor) {
     final AckerReport report = new AckerReport(new GlobalTime(windowHead, this.frontId), xor);
     this.LOG().debug("Closing window {}", report);
-    final UnresolvedMessage<TickMessage<AckerReport>> message = new UnresolvedMessage<>(this.tickInfo.ackerLocation(),
-            new TickMessage<>(this.tickInfo.startTs(),
-                    report));
+    final UnresolvedMessage<AckerMessage<AckerReport>> message = new UnresolvedMessage<>(
+            this.tickInfo.ackerLocation(),
+            new AckerMessage<>(report, this.tickInfo.startTs()));
 
-    this.dns.tell(message, ActorRef.noSender());
+    this.dns.tell(message, this.self());
   }
 }

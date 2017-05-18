@@ -50,7 +50,7 @@ public final class TickCurator extends LoggingActor {
         final byte[] data = this.zooKeeper.getData("/ticks/" + tick, false, null);
         final TickInfo tickInfo = this.serializer.deserialize(data);
         this.seenTicks.putIfAbsent(Long.valueOf(tick), tickInfo);
-        this.notify.tell(tickInfo, ActorRef.noSender());
+        this.notify.tell(tickInfo, this.sender());
       }
     }
   }

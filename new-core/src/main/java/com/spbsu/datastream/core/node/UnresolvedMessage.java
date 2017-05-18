@@ -1,6 +1,8 @@
 package com.spbsu.datastream.core.node;
 
-public final class UnresolvedMessage<T> {
+import com.spbsu.datastream.core.Message;
+
+public final class UnresolvedMessage<T extends Message<?>> {
   private final int destination;
   private final T payload;
   private final boolean broadcast;

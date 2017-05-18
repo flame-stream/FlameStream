@@ -75,10 +75,10 @@ public final class NodeConcierge extends LoggingActor {
 
   private void onNewTick(TickInfo tickInfo) {
     final ActorRef tickConcierge = this.context().actorOf(TickConcierge.props(tickInfo, this.db, this.id, this.dnsRouter), String.valueOf(tickInfo.startTs()));
-    this.tickRouter.tell(new TickRouter.RegisterTick(tickInfo.startTs(), tickConcierge), ActorRef.noSender());
+    this.tickRouter.tell(new TickRouter.RegisterTick(tickInfo.startTs(), tickConcierge), this.self());
 
     if (this.front != null) {
-      this.front.tell(tickInfo, ActorRef.noSender());
+      this.front.tell(tickInfo, this.self());
     }
   }
 

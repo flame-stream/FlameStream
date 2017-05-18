@@ -1,17 +1,14 @@
 package com.spbsu.datastream.core.node;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.LoggingActor;
-import com.spbsu.datastream.core.tick.TickMessage;
-import org.omg.CORBA.TIMEOUT;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.spbsu.datastream.core.Message;
+import gnu.trove.map.TLongObjectMap;
+import gnu.trove.map.hash.TLongObjectHashMap;
 
 final class TickRouter extends LoggingActor {
-  private final Map<Long, ActorRef> ticks = new HashMap<>();
+  private final TLongObjectMap<ActorRef> ticks = new TLongObjectHashMap<>();
 
   public static Props props() {
     return Props.create(TickRouter.class);
@@ -20,7 +17,7 @@ final class TickRouter extends LoggingActor {
   @Override
   public Receive createReceive() {
     return this.receiveBuilder()
-            .match(TickMessage.class, this::handleTickMessage)
+            .match(Message.class, this::handleTickMessage)
             .match(RegisterTick.class, this::registerTick)
             .build();
   }
@@ -29,9 +26,13 @@ final class TickRouter extends LoggingActor {
     this.ticks.putIfAbsent(tick.tick(), tick.tickConcierge());
   }
 
-  private void handleTickMessage(TickMessage<?> tickMessage) {
-    final ActorRef receiver = this.ticks.getOrDefault(tickMessage.tick(), this.context().system().deadLetters());
-    receiver.tell(tickMessage.payload(), this.sender());
+  private void handleTickMessage(Message<?> tickMessage) {
+    final ActorRef receiver = this.ticks.get(tickMessage.tick());
+    if (receiver != null) {
+      receiver.tell(tickMessage, this.sender());
+    } else {
+      this.LOG().error("Unknown tick {}", tickMessage.tick());
+    }
   }
 
   public static final class RegisterTick {

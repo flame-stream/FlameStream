@@ -23,7 +23,7 @@ final class ZKDeployer implements Closeable {
   private final TickInfoSerializer serializer = new KryoInfoSerializer();
   private final ZooKeeper zooKeeper;
 
-  public ZKDeployer(String zkString) throws IOException {
+  ZKDeployer(String zkString) throws IOException {
     this.zooKeeper = new ZooKeeper(zkString, 5000, e -> this.LOG.info("Init zookeeper ZKEvent: {}", e));
   }
 

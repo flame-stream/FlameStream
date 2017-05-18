@@ -1,7 +1,7 @@
 package com.spbsu.datastream.core.range.atomic;
 
-import akka.actor.ActorRef;
 import akka.actor.Props;
+import com.spbsu.datastream.core.AtomicMessage;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.Commit;
 import com.spbsu.datastream.core.ack.MinTimeUpdate;
@@ -30,7 +30,7 @@ public final class AtomicActor extends LoggingActor {
   @Override
   public Receive createReceive() {
     return this.receiveBuilder()
-            .match(PortBindDataItem.class, this::onAddressedMessage)
+            .match(AtomicMessage.class, this::onAtomicMessage)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
             .match(Commit.class, this::onCommit)
             .build();
@@ -38,13 +38,13 @@ public final class AtomicActor extends LoggingActor {
 
   private void onCommit(Commit commit) {
     this.atomic.onCommit(this.handle);
-    this.context().parent().tell(new AtomicCommitDone(this.atomic), ActorRef.noSender());
+    this.context().parent().tell(new AtomicCommitDone(this.atomic), this.self());
     this.LOG().info("Commit done");
     this.context().stop(this.self());
   }
 
-  private void onAddressedMessage(PortBindDataItem message) {
-    this.atomic.onPush(message.inPort(), message.payload(), this.handle);
+  private void onAtomicMessage(AtomicMessage<?> message) {
+    this.atomic.onPush(message.port(), message.payload(), this.handle);
     this.handle.ack(message.payload());
   }
 

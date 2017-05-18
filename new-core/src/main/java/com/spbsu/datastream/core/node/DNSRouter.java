@@ -7,13 +7,14 @@ import akka.actor.Address;
 import akka.actor.Props;
 import akka.actor.RootActorPath;
 import com.spbsu.datastream.core.LoggingActor;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 final class DNSRouter extends LoggingActor {
-  private final Map<Integer, ActorSelection> dns;
+  private final TIntObjectMap<ActorSelection> dns;
   private final ActorRef localRouter;
   private final int localId;
 
@@ -26,7 +27,9 @@ final class DNSRouter extends LoggingActor {
   private DNSRouter(Map<Integer, InetSocketAddress> dns,
                     ActorRef localRouter,
                     int localId) {
-    this.dns = dns.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> this.selectionFor(e.getKey(), e.getValue())));
+    this.dns = new TIntObjectHashMap<>();
+    dns.forEach((i, addr) -> this.dns.put(i, this.selectionFor(i, addr)));
+
     this.localRouter = localRouter;
     this.localId = localId;
   }
@@ -48,13 +51,16 @@ final class DNSRouter extends LoggingActor {
 
   private void sendRemote(UnresolvedMessage<?> message) {
     if (message.isBroadcast()) {
-      this.dns.forEach((key, value) -> value.tell(new UnresolvedMessage<>(key, message.payload()), this.sender()));
+      this.dns.forEachEntry((key, value) -> {
+        value.tell(new UnresolvedMessage<>(key, message.payload()), this.sender());
+        return true;
+      });
     } else {
       final ActorSelection receiver = this.dns.get(message.destination());
       if (receiver != null) {
         receiver.tell(message, this.sender());
       } else {
-        this.unhandled(message);
+        this.LOG().error("Unknown destanation {}", message.destination());
       }
     }
   }

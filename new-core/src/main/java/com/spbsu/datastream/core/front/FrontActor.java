@@ -1,6 +1,5 @@
 package com.spbsu.datastream.core.front;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.DataItem;
@@ -37,7 +36,7 @@ public final class FrontActor extends LoggingActor {
   }
 
   private void onPing(String ping) {
-    this.sender().tell(System.nanoTime(), ActorRef.noSender());
+    this.sender().tell(System.nanoTime(), this.self());
   }
 
 
@@ -63,7 +62,7 @@ public final class FrontActor extends LoggingActor {
     final long tick = this.tickFronts.floorKey(globalTime.time());
 
     final ActorRef tickFront = this.tickFronts.get(tick);
-    tickFront.tell(dataItem, ActorRef.noSender());
+    tickFront.tell(dataItem, this.self());
   }
 }
 

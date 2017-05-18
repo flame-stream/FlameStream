@@ -174,7 +174,6 @@ public final class GroupingTest {
 
   @Test
   public void shuffleReordering() {
-    final int window = 6;
 
     final List<DataItem<String>> input = IntStream.range(0, 1000)
             .mapToObj(i -> new PayloadDataItem<>(new Meta(new GlobalTime(i, 1)), "v" + i))
@@ -183,6 +182,7 @@ public final class GroupingTest {
     final List<DataItem<String>> shuffledInput = new ArrayList<>(input);
     Collections.shuffle(shuffledInput, new Random(2));
 
+    final int window = 6;
     final Set<GroupingResult<String>> mustHave = Seq.seq(input)
             .map(DataItem::payload)
             .sliding(window)

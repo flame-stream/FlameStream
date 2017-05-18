@@ -3,19 +3,17 @@ package com.spbsu.datastream.core.tick;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.AckerMessage;
+import com.spbsu.datastream.core.AtomicMessage;
+import com.spbsu.datastream.core.BroadcastMessage;
 import com.spbsu.datastream.core.LoggingActor;
-import com.spbsu.datastream.core.ack.Ack;
+import com.spbsu.datastream.core.Message;
 import com.spbsu.datastream.core.ack.AckActor;
-import com.spbsu.datastream.core.ack.AckerReport;
-import com.spbsu.datastream.core.ack.CommitDone;
 import com.spbsu.datastream.core.configuration.HashRange;
-import com.spbsu.datastream.core.range.HashedMessage;
 import com.spbsu.datastream.core.range.RangeConcierge;
 import org.iq80.leveldb.DB;
 
-import java.util.Collection;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public final class TickConcierge extends LoggingActor {
@@ -24,7 +22,7 @@ public final class TickConcierge extends LoggingActor {
   private final int localId;
   private final DB db;
 
-  private final Map<HashRange, ActorRef> concierges;
+  private final TreeMap<Integer, ActorRef> concierges;
 
   private final ActorRef acker;
 
@@ -35,8 +33,9 @@ public final class TickConcierge extends LoggingActor {
     this.dns = dns;
     this.localId = localId;
 
-    this.concierges = this.myRanges(tickInfo.hashMapping()).stream()
-            .collect(Collectors.toMap(Function.identity(), this::rangeConcierge));
+    this.concierges = new TreeMap<>();
+    this.myRanges(tickInfo.hashMapping())
+            .forEach(range -> this.concierges.put(range.from(), this.rangeConcierge(range)));
     this.db = db;
     if (tickInfo.ackerLocation() == localId) {
       this.acker = this.context().actorOf(AckActor.props(tickInfo, dns), "acker");
@@ -47,13 +46,14 @@ public final class TickConcierge extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder().match(HashedMessage.class, this::routeHashedMessage)
-            .match(AckerMessage.class, m -> this.acker.forward(m, this.getContext()))
+    return this.receiveBuilder().match(AtomicMessage.class, this::routeAtomicMessage)
+            .match(AckerMessage.class, m -> this.acker.forward(m.payload(), this.getContext()))
+            .match(BroadcastMessage.class, this::broadcast)
             .build();
   }
 
   private ActorRef rangeConcierge(HashRange range) {
-    return this.context().actorOf(RangeConcierge.props(this.info, this.dns, range, db), range.toString());
+    return this.context().actorOf(RangeConcierge.props(this.info, this.dns, range, this.db), range.toString());
   }
 
   public static Props props(TickInfo tickInfo, DB db, int localId,
@@ -61,19 +61,18 @@ public final class TickConcierge extends LoggingActor {
     return Props.create(TickConcierge.class, tickInfo, localId, dns, db);
   }
 
-  private Collection<HashRange> myRanges(Map<HashRange, Integer> mappings) {
+  private Iterable<HashRange> myRanges(Map<HashRange, Integer> mappings) {
     return mappings.entrySet().stream().filter(e -> e.getValue().equals(this.localId))
             .map(Map.Entry::getKey).collect(Collectors.toSet());
   }
 
-  // TODO: 5/9/17 do it with akka routing
-  private void routeHashedMessage(HashedMessage<?> hashedMessage) {
-    if (hashedMessage.isBroadcast()) {
-      this.concierges.values().forEach(v -> v.tell(hashedMessage.payload(), this.sender()));
-    } else {
-      final ActorRef receiver = this.concierges.entrySet().stream().filter(e -> e.getKey().contains(hashedMessage.hash()))
-              .map(Map.Entry::getValue).findAny().orElse(this.context().system().deadLetters());
-      receiver.tell(hashedMessage.payload(), this.sender());
-    }
+  private void broadcast(Message<?> broadcastMessage) {
+    this.concierges.values().forEach(v -> v.tell(broadcastMessage.payload(), this.sender()));
+  }
+
+  private void routeAtomicMessage(AtomicMessage<?> atomicMessage) {
+    final ActorRef receiver = this.concierges
+            .floorEntry(atomicMessage.hash()).getValue();
+    receiver.tell(atomicMessage, this.sender());
   }
 }
