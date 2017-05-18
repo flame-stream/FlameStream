@@ -16,11 +16,14 @@ import org.apache.commons.cli.ParseException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.TimeoutException;
 
 public final class WorkerApplication {
   private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
@@ -88,8 +91,9 @@ public final class WorkerApplication {
     // TODO: 5/2/17 Graceful stop
     //this.system.dispatcher().execute(this.system.terminate());
     try {
+      Await.ready(this.system.terminate(), Duration.Inf());
       this.zk.close();
-    } catch (InterruptedException e) {
+    } catch (InterruptedException | TimeoutException e) {
       throw new RuntimeException(e);
     }
   }

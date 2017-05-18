@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -29,12 +30,12 @@ public final class IdentityTest {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(IdentityTest.multiGraph(stage.fronts(), stage.wrap(result)));
+      stage.deploy(IdentityTest.multiGraph(stage.fronts(), stage.wrap(result)), 15, TimeUnit.SECONDS);
 
       final List<Integer> source = new Random().ints(5000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();
       source.forEach(sink);
-      stage.waitTick();
+      stage.waitTick(15, TimeUnit.SECONDS);
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }

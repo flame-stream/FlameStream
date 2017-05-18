@@ -16,6 +16,8 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.io.FileUtils;
 import org.jooq.lambda.Unchecked;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
 
 import java.io.Closeable;
 import java.io.File;
@@ -34,6 +36,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -87,12 +90,11 @@ final class TestStand implements Closeable {
       this.zk.shutdown();
       this.zkThread.join();
 
-      // TODO: 5/18/17  
-      //this.localSystem.shutdown();
+      Await.ready(this.localSystem.terminate(), Duration.Inf());
 
       this.workerApplication.forEach(WorkerApplication::shutdown);
       this.workerApplication.clear();
-    } catch (InterruptedException e) {
+    } catch (InterruptedException | TimeoutException e) {
       throw new RuntimeException(e);
     }
   }
@@ -116,14 +118,14 @@ final class TestStand implements Closeable {
     }
   }
 
-  public void deploy(TheGraph theGraph) {
+  public void deploy(TheGraph theGraph, int delay, TimeUnit units) {
     final long startTs = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
     final TickInfo tickInfo = new TickInfo(
             theGraph,
             this.workers.values().stream().findAny().orElseThrow(RuntimeException::new),
             this.workers,
             startTs,
-            startTs + TimeUnit.SECONDS.toNanos(10),
+            startTs + units.toNanos(delay),
             TimeUnit.MILLISECONDS.toNanos(10)
     );
     try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStand.ZK_STRING)) {
@@ -134,8 +136,8 @@ final class TestStand implements Closeable {
     }
   }
 
-  public void waitTick() throws InterruptedException {
-    TimeUnit.SECONDS.sleep(10);
+  public void waitTick(int delay, TimeUnit unit) throws InterruptedException {
+    unit.sleep(delay);
   }
 
   public Consumer<Object> randomFrontConsumer() {

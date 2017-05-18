@@ -23,6 +23,7 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
     this.hash = hash;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public List<DataItem<T>> getGroupFor(DataItem<T> item) {
     final long hashValue = this.hash.hash(item.payload());
@@ -34,28 +35,35 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
     } else {
       final List<?> list = (List<?>) obj;
       if (list.get(0) instanceof List) {
-        //noinspection unchecked
         final List<List<DataItem<T>>> container = (List<List<DataItem<T>>>) list;
-        final List<DataItem<T>> result = this.searchBucket(item, container);
-        if (result.isEmpty()) {
-          container.add(result);
-          return result;
-        } else {
-          return result;
-        }
+        return this.getFromContainer(item, container);
       } else {
-        final List<DataItem<T>> singleBucket = (List<DataItem<T>>) list;
-        if (this.hash.equal(singleBucket.get(0).payload(), item.payload())) {
-          return singleBucket;
-        } else {
-          final List<List<DataItem<T>>> container = new ArrayList<>();
-          container.add(singleBucket);
-          final List<DataItem<T>> newList = new ArrayList<>();
-          container.add(newList);
-          this.buffers.put(hashValue, container);
-          return newList;
-        }
+        final List<DataItem<T>> bucket = (List<DataItem<T>>) list;
+        return this.getFromBucket(item, bucket);
       }
+    }
+  }
+
+  private List<DataItem<T>> getFromContainer(DataItem<T> item, List<List<DataItem<T>>> container) {
+    final List<DataItem<T>> result = this.searchBucket(item, container);
+    if (result.isEmpty()) {
+      container.add(result);
+      return result;
+    } else {
+      return result;
+    }
+  }
+
+  private List<DataItem<T>> getFromBucket(DataItem<T> item, List<DataItem<T>> bucket) {
+    if (this.hash.equal(bucket.get(0).payload(), item.payload())) {
+      return bucket;
+    } else {
+      final List<List<DataItem<T>>> container = new ArrayList<>();
+      container.add(bucket);
+      final List<DataItem<T>> newList = new ArrayList<>();
+      container.add(newList);
+      this.buffers.put(this.hash.applyAsInt(item.payload()), container);
+      return newList;
     }
   }
 

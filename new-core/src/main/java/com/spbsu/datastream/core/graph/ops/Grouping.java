@@ -86,7 +86,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
 
-  private static final Comparator<Trace> INVALIDATION_COMPARATOR = (t0, t1) -> {
+  public static final Comparator<Trace> INVALIDATION_COMPARATOR = (t0, t1) -> {
     for (int i = 0; i < Math.min(t0.size(), t1.size()); ++i) {
       if (!t0.eventAt(i).equals(t1.eventAt(i))) {
         return Long.compare(t0.eventAt(i).localTime(), t1.eventAt(i).localTime());
@@ -110,13 +110,13 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     return Integer.compare(t0.size(), t1.size());
   };
 
-  private final Comparator<DataItem<T>> itemComparator = Comparator
-          .comparing((DataItem<T> di) -> di.meta().globalTime())
-          .thenComparing((DataItem<T> di) -> di.meta().trace(),
+  private static final Comparator<DataItem<?>> itemComparator = Comparator
+          .comparing((DataItem<?> di) -> di.meta().globalTime())
+          .thenComparing((DataItem<?> di) -> di.meta().trace(),
                   Grouping.INVALIDATION_IGNORING_COMPARATOR);
 
-  private final Comparator<DataItem<T>> itemInvalidationComparator = Comparator
-          .comparing((DataItem<T> di) -> di.meta().trace(), Grouping.INVALIDATION_COMPARATOR);
+  private static final Comparator<DataItem<?>> itemInvalidationComparator = Comparator
+          .comparing((DataItem<?> di) -> di.meta().trace(), Grouping.INVALIDATION_COMPARATOR);
 
 
   @Override

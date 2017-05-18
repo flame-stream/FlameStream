@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core;
 
 import akka.actor.Props;
+import com.spbsu.datastream.core.front.RawData;
 
 import java.util.Queue;
 
@@ -19,6 +20,6 @@ final class CollectorActor<T> extends LoggingActor {
   @Override
   public Receive createReceive() {
     return this.receiveBuilder()
-            .matchAny(m -> this.queue.offer((T) m)).build();
+            .match(RawData.class, m -> this.queue.offer((T) m.payload())).build();
   }
 }

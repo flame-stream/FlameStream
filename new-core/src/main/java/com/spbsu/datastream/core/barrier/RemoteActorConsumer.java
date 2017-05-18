@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.front.RawData;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -48,7 +49,7 @@ public final class RemoteActorConsumer<T> extends AbstractAtomicGraph {
   }
 
   private void consume(DataItem<PreSinkMetaElement<T>> di) {
-    this.actor.tell(di.payload().payload(), ActorRef.noSender());
+    this.actor.tell(new RawData<>(di.payload().payload()), ActorRef.noSender());
   }
 
   @Override

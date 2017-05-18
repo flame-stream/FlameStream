@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.graph.ops.Grouping;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -28,8 +29,7 @@ public final class LinearCollector implements BarrierCollector {
     this.invalidationPool.putIfAbsent(item.meta().globalTime(), new ArrayList<>());
 
     this.invalidationPool.computeIfPresent(item.meta().globalTime(), (key, oldList) -> {
-       //FIXME: 5/18/17
-      //oldList.removeIf(di -> di.meta().isInvalidatedBy(item.meta()));
+      oldList.removeIf(di -> Grouping.INVALIDATION_COMPARATOR.compare(item.meta().trace(), di.meta().trace()) > 1);
       oldList.add(item);
       return oldList;
     });
