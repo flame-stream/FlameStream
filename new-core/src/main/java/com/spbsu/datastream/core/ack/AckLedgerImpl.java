@@ -1,30 +1,17 @@
 package com.spbsu.datastream.core.ack;
 
 import com.spbsu.datastream.core.GlobalTime;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public final class AckLedgerImpl implements AckLedger {
-  private static final Comparator<Map.Entry<Integer, AckTable>> COMPARATOR = Comparator
-          .comparingLong((Map.Entry<Integer, AckTable> e) -> e.getValue().min())
-          .thenComparingInt(Map.Entry::getKey);
+  private final TIntObjectMap<AckTable> tables = new TIntObjectHashMap<>();
 
-  private final long startTs;
-
-  private final long window;
-
-  private final Map<Integer, AckTable> tables;
-
-  public AckLedgerImpl(long startTime, long window, Collection<Integer> fronts) {
-    this.startTs = startTime;
-    this.window = window;
-    this.tables = fronts.stream()
-            .collect(Collectors.toMap(Function.identity(), h -> new AckTableImpl(startTime, window)));
+  AckLedgerImpl(long startTs, long window, Iterable<Integer> fronts) {
+    fronts.forEach(i -> this.tables.put(i, new AckTableImpl(startTs, window)));
   }
 
   @Override
@@ -34,29 +21,22 @@ public final class AckLedgerImpl implements AckLedger {
 
   @Override
   public GlobalTime min() {
-    return this.tables.entrySet().stream()
-            .min(AckLedgerImpl.COMPARATOR)
-            .map(e -> new GlobalTime(e.getValue().min(), e.getKey()))
-            .orElseThrow(IllegalStateException::new);
+    final int[] frontMin = {Integer.MAX_VALUE};
+    final long[] timeMin = {Long.MAX_VALUE};
+    this.tables.forEachEntry((f, table) -> {
+      final long tmpMin = table.min();
+      if (tmpMin < timeMin[0] || tmpMin == timeMin[0] && f < frontMin[0]) {
+        frontMin[0] = f;
+        timeMin[0] = tmpMin;
+      }
+      return true;
+    });
+
+    return new GlobalTime(timeMin[0], frontMin[0]);
   }
 
   @Override
   public void ack(GlobalTime windowHead, long xor) {
     this.tables.get(windowHead.front()).ack(windowHead.time(), xor);
-  }
-
-  @Override
-  public Set<Integer> initHashes() {
-    return this.tables.keySet();
-  }
-
-  @Override
-  public long startTs() {
-    return this.startTs;
-  }
-
-  @Override
-  public long window() {
-    return this.window;
   }
 }

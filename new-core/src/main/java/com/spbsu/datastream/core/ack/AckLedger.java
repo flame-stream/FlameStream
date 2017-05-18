@@ -10,10 +10,4 @@ interface AckLedger {
   GlobalTime min();
 
   void ack(GlobalTime windowHead, long xor);
-
-  Set<Integer> initHashes();
-
-  long startTs();
-
-  long window();
 }

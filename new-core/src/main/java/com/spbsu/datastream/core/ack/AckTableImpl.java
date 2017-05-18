@@ -4,6 +4,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 public final class AckTableImpl implements AckTable {
+
   private static final class AckEntry {
     private final boolean isReported;
 

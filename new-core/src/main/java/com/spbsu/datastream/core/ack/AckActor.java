@@ -26,8 +26,6 @@ public final class AckActor extends LoggingActor {
             tickInfo.graph().frontBindings().keySet());
     this.tickInfo = tickInfo;
     this.dns = dns;
-
-    this.LOG().info("Acker initiated: startTs:{}, window: {}, fronts: {}", this.ledger.startTs(), this.ledger.window(), this.ledger.initHashes());
   }
 
   public static Props props(TickInfo tickInfo, ActorRef dns) {
