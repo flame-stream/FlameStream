@@ -32,10 +32,10 @@ public final class AtomicHandleImpl implements AtomicHandle {
   private final DB db;
   private final ActorContext context;
 
-  public AtomicHandleImpl(final TickInfo tickInfo,
-                          final ActorRef dns,
-                          final DB db,
-                          final ActorContext context) {
+  public AtomicHandleImpl(TickInfo tickInfo,
+                          ActorRef dns,
+                          DB db,
+                          ActorContext context) {
     this.tickInfo = tickInfo;
     this.dns = dns;
     this.db = db;
@@ -43,12 +43,12 @@ public final class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public ActorSelection actorSelection(final ActorPath path) {
+  public ActorSelection actorSelection(ActorPath path) {
     return this.context.actorSelection(path);
   }
 
   @Override
-  public void push(final OutPort out, final DataItem<?> result) {
+  public void push(OutPort out, DataItem<?> result) {
     final Optional<InPort> destination = Optional.ofNullable(this.tickInfo.graph().graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
@@ -67,7 +67,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public void ack(final DataItem<?> item) {
+  public void ack(DataItem<?> item) {
     final int id = this.tickInfo.ackerLocation();
 
     final UnresolvedMessage<TickMessage<Ack>> message = new UnresolvedMessage<>(id,
@@ -77,7 +77,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public Optional<Object> loadState(final InPort inPort) {
+  public Optional<Object> loadState(InPort inPort) {
     final byte[] key = Longs.toByteArray(inPort.id());
     final byte[] value = this.db.get(key);
     if (value != null) {
@@ -97,7 +97,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
   }
 
   @Override
-  public void saveState(final InPort inPort, final Object state) {
+  public void saveState(InPort inPort, Object state) {
     final byte[] key = Longs.toByteArray(inPort.id());
     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
     try {
@@ -108,13 +108,13 @@ public final class AtomicHandleImpl implements AtomicHandle {
       final byte[] value = bos.toByteArray();
       bos.close();
       this.db.put(key, value);
-    } catch (final IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
   @Override
-  public void removeState(final InPort inPort) {
+  public void removeState(InPort inPort) {
     final byte[] key = Longs.toByteArray(inPort.id());
     this.db.delete(key);
   }

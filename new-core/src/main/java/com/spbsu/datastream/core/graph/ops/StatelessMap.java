@@ -19,7 +19,7 @@ public final class StatelessMap<T, R> extends AbstractAtomicGraph {
 
   private final Function<T, R> function;
 
-  public StatelessMap(final Function<T, R> function, final HashFunction<? super T> hash) {
+  public StatelessMap(Function<T, R> function, HashFunction<? super T> hash) {
     this.inPort = new InPort(hash);
     this.function = function;
   }
@@ -29,7 +29,7 @@ public final class StatelessMap<T, R> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
     @SuppressWarnings("unchecked")
     final R res = this.function.apply((T) item.payload());
 

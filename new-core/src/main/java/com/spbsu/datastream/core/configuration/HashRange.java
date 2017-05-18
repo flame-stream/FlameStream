@@ -7,17 +7,17 @@ public final class HashRange {
 
   private final int to;
 
-  public HashRange(final int from, final int to) {
+  public HashRange(int from, int to) {
     this.from = from;
     this.to = to;
   }
 
-  public boolean contains(final int hash) {
+  public boolean contains(int hash) {
     return this.from <= hash && hash < this.to;
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }

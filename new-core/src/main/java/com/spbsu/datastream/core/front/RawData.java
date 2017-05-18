@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.front;
 public final class RawData<T> {
   private final T payload;
 
-  public RawData(final T payload) {
+  public RawData(T payload) {
     this.payload = payload;
   }
 

@@ -11,7 +11,7 @@ public final class TheGraph {
 
   private final Map<Integer, InPort> frontBindings;
 
-  public TheGraph(final Graph graph, final Map<Integer, InPort> frontBindings) {
+  public TheGraph(Graph graph, Map<Integer, InPort> frontBindings) {
     TheGraph.assertFrontMapping(graph, frontBindings);
 
     this.composedGraph = graph.flattened();
@@ -26,8 +26,8 @@ public final class TheGraph {
     return Collections.unmodifiableMap(this.frontBindings);
   }
 
-  private static void assertFrontMapping(final Graph tail,
-                                         final Map<Integer, InPort> frontDownstreams) {
+  private static void assertFrontMapping(Graph tail,
+                                         Map<Integer, InPort> frontDownstreams) {
     final Set<InPort> bindPorts = new HashSet<>(frontDownstreams.values());
     final Set<InPort> freePorts = new HashSet<>(tail.inPorts());
 

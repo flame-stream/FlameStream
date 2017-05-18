@@ -14,7 +14,7 @@ public final class InPort {
   private final long id;
   private final HashFunction<?> hashFunction;
 
-  public InPort(final HashFunction<?> function) {
+  public InPort(HashFunction<?> function) {
     this.id = (System.currentTimeMillis() << InPort.OFFSET) + (InPort.RANDOM.nextLong() & InPort.RAND_MASK);
     this.hashFunction = function;
   }
@@ -35,7 +35,7 @@ public final class InPort {
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }

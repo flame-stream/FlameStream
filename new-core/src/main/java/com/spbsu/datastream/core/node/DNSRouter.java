@@ -17,15 +17,15 @@ final class DNSRouter extends LoggingActor {
   private final ActorRef localRouter;
   private final int localId;
 
-  public static Props props(final Map<Integer, InetSocketAddress> dns,
-                            final ActorRef localRouter,
-                            final int localId) {
+  public static Props props(Map<Integer, InetSocketAddress> dns,
+                            ActorRef localRouter,
+                            int localId) {
     return Props.create(DNSRouter.class, dns, localRouter, localId);
   }
 
-  private DNSRouter(final Map<Integer, InetSocketAddress> dns,
-                    final ActorRef localRouter,
-                    final int localId) {
+  private DNSRouter(Map<Integer, InetSocketAddress> dns,
+                    ActorRef localRouter,
+                    int localId) {
     this.dns = dns.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> this.selectionFor(e.getKey(), e.getValue())));
     this.localRouter = localRouter;
     this.localId = localId;
@@ -46,7 +46,7 @@ final class DNSRouter extends LoggingActor {
     }
   }
 
-  private void sendRemote(final UnresolvedMessage<?> message) {
+  private void sendRemote(UnresolvedMessage<?> message) {
     if (message.isBroadcast()) {
       this.dns.forEach((key, value) -> value.tell(new UnresolvedMessage<>(key, message.payload()), this.sender()));
     } else {
@@ -59,7 +59,7 @@ final class DNSRouter extends LoggingActor {
     }
   }
 
-  private ActorSelection selectionFor(final int id, final InetSocketAddress address) {
+  private ActorSelection selectionFor(int id, InetSocketAddress address) {
     // TODO: 5/8/17 Properly resolve ActorRef
     final Address add = Address.apply("akka.tcp", "worker", address.getAddress().getHostName(), address.getPort());
     final ActorPath path = RootActorPath.apply(add, "/")

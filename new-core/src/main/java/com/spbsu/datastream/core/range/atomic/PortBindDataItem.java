@@ -8,7 +8,7 @@ public final class PortBindDataItem {
 
   private final InPort inPort;
 
-  public PortBindDataItem(final DataItem<?> payload, final InPort inPort) {
+  public PortBindDataItem(DataItem<?> payload, InPort inPort) {
     this.payload = payload;
     this.inPort = inPort;
   }

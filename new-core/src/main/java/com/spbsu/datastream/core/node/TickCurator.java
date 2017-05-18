@@ -22,12 +22,12 @@ public final class TickCurator extends LoggingActor {
 
   private final Map<Long, TickInfo> seenTicks = new HashMap<>();
 
-  private TickCurator(final ZooKeeper zooKeeper, final ActorRef notify) {
+  private TickCurator(ZooKeeper zooKeeper, ActorRef notify) {
     this.zooKeeper = zooKeeper;
     this.notify = notify;
   }
 
-  public static Props props(final ZooKeeper zooKeeper, final ActorRef notify) {
+  public static Props props(ZooKeeper zooKeeper, ActorRef notify) {
     return Props.create(TickCurator.class, zooKeeper, notify);
   }
 
@@ -45,7 +45,7 @@ public final class TickCurator extends LoggingActor {
   private void fetchTicks() throws KeeperException, InterruptedException {
     final List<String> ticks = this.zooKeeper.getChildren("/ticks", this.selfWatcher());
 
-    for (final String tick : ticks) {
+    for (String tick : ticks) {
       if (!this.seenTicks.containsKey(Long.valueOf(tick))) {
         final byte[] data = this.zooKeeper.getData("/ticks/" + tick, false, null);
         final TickInfo tickInfo = this.serializer.deserialize(data);

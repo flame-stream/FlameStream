@@ -19,13 +19,13 @@ public final class Filter<T> extends AbstractAtomicGraph {
 
   private final Predicate<T> predicate;
 
-  public Filter(final Predicate<T> predicate, final HashFunction<? super T> hash) {
+  public Filter(Predicate<T> predicate, HashFunction<? super T> hash) {
     this.inPort = new InPort(hash);
     this.predicate = predicate;
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
     @SuppressWarnings("unchecked") final boolean ok = this.predicate.test((T) item.payload());
 
     if (ok) {

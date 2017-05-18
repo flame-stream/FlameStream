@@ -16,12 +16,12 @@ public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
-  public PreSinkMetaFilter(final HashFunction<? super T> hashFunction) {
+  public PreSinkMetaFilter(HashFunction<? super T> hashFunction) {
     this.inPort = new InPort(hashFunction);
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handle) {
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     final DataItem<?> newItem = new PayloadDataItem<>(
             new Meta(item.meta(), this.incrementLocalTimeAndGet()),
             new PreSinkMetaElement<>(item.payload(), PreSinkMetaFilter.jenkinsHash(item.meta().globalTime().front())));
@@ -29,7 +29,7 @@ public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
   }
 
   @SuppressWarnings({"UnnecessaryParentheses", "MagicNumber"})
-  private static int jenkinsHash(final int value) {
+  private static int jenkinsHash(int value) {
     int a = value;
     a = (a + 0x7ed55d16) + (a << 12);
     a = (a ^ 0xc761c23c) ^ (a >> 19);

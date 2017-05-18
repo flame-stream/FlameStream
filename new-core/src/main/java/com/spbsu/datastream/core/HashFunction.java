@@ -5,25 +5,25 @@ import java.util.function.ToIntFunction;
 public interface HashFunction<T> extends ToIntFunction<T> {
   HashFunction<Object> OBJECT_HASH = new HashFunction<Object>() {
     @Override
-    public boolean equal(final Object o1, final Object o2) {
+    public boolean equal(Object o1, Object o2) {
       return o1.hashCode() == o2.hashCode();
     }
 
     @Override
-    public int hash(final Object value) {
+    public int hash(Object value) {
       return value.hashCode();
     }
   };
 
-  static <T> HashFunction<T> constantHash(final int hash) {
+  static <T> HashFunction<T> constantHash(int hash) {
     return new HashFunction<T>() {
       @Override
-      public boolean equal(final T o1, final T o2) {
+      public boolean equal(T o1, T o2) {
         return true;
       }
 
       @Override
-      public int hash(final T value) {
+      public int hash(T value) {
         return hash;
       }
     };
@@ -34,7 +34,7 @@ public interface HashFunction<T> extends ToIntFunction<T> {
   int hash(T value);
 
   @Override
-  default int applyAsInt(final T value) {
+  default int applyAsInt(T value) {
     return this.hash(value);
   }
 }

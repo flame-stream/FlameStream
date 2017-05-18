@@ -8,7 +8,7 @@ public final class Ack implements AckerMessage {
 
   private final GlobalTime time;
 
-  public Ack(final long xor, final GlobalTime time) {
+  public Ack(long xor, GlobalTime time) {
     this.xor = xor;
     this.time = time;
   }

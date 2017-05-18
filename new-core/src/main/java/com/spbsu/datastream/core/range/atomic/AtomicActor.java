@@ -12,12 +12,12 @@ public final class AtomicActor extends LoggingActor {
   private final AtomicGraph atomic;
   private final AtomicHandle handle;
 
-  private AtomicActor(final AtomicGraph atomic, final AtomicHandle handle) {
+  private AtomicActor(AtomicGraph atomic, AtomicHandle handle) {
     this.atomic = atomic;
     this.handle = handle;
   }
 
-  public static Props props(final AtomicGraph atomic, final AtomicHandle handle) {
+  public static Props props(AtomicGraph atomic, AtomicHandle handle) {
     return Props.create(AtomicActor.class, atomic, handle);
   }
 
@@ -48,7 +48,7 @@ public final class AtomicActor extends LoggingActor {
     this.handle.ack(message.payload());
   }
 
-  private void onMinTimeUpdate(final MinTimeUpdate message) {
+  private void onMinTimeUpdate(MinTimeUpdate message) {
     this.atomic.onMinGTimeUpdate(message.minTime(), this.handle);
   }
 }

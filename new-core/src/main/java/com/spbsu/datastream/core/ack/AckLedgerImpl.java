@@ -20,7 +20,7 @@ public final class AckLedgerImpl implements AckLedger {
 
   private final Map<Integer, AckTable> tables;
 
-  public AckLedgerImpl(final long startTime, final long window, final Collection<Integer> fronts) {
+  public AckLedgerImpl(long startTime, long window, Collection<Integer> fronts) {
     this.startTs = startTime;
     this.window = window;
     this.tables = fronts.stream()
@@ -28,7 +28,7 @@ public final class AckLedgerImpl implements AckLedger {
   }
 
   @Override
-  public void report(final GlobalTime windowHead, final long xor) {
+  public void report(GlobalTime windowHead, long xor) {
     this.tables.get(windowHead.front()).report(windowHead.time(), xor);
   }
 
@@ -41,7 +41,7 @@ public final class AckLedgerImpl implements AckLedger {
   }
 
   @Override
-  public void ack(final GlobalTime windowHead, final long xor) {
+  public void ack(GlobalTime windowHead, long xor) {
     this.tables.get(windowHead.front()).ack(windowHead.time(), xor);
   }
 

@@ -21,7 +21,7 @@ public final class RemoteActorConsumer<T> extends AbstractAtomicGraph {
 
   private ActorSelection actor;
 
-  public RemoteActorConsumer(final ActorPath path) {
+  public RemoteActorConsumer(ActorPath path) {
     this.path = path;
     this.inPort = new InPort(PreSinkMetaElement.HASH_FUNCTION);
   }
@@ -31,23 +31,23 @@ public final class RemoteActorConsumer<T> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onStart(final AtomicHandle handle) {
+  public void onStart(AtomicHandle handle) {
     this.actor = handle.actorSelection(this.path);
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handle) {
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     this.collector.enqueue(item);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public void onMinGTimeUpdate(final GlobalTime globalTime, final AtomicHandle handle) {
+  public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
     this.collector.update(globalTime);
     this.collector.release(di -> this.consume((DataItem<PreSinkMetaElement<T>>) di));
   }
 
-  private void consume(final DataItem<PreSinkMetaElement<T>> di) {
+  private void consume(DataItem<PreSinkMetaElement<T>> di) {
     this.actor.tell(di.payload().payload(), ActorRef.noSender());
   }
 

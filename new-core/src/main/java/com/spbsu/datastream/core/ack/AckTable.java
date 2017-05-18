@@ -9,5 +9,5 @@ interface AckTable {
 
   void report(long windowHead, long xor);
 
-  void ack(final long windowHead, final long xor);
+  void ack(long windowHead, long xor);
 }

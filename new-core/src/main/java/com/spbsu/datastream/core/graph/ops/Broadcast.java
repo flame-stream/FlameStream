@@ -18,14 +18,14 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final List<OutPort> broadcastPorts;
 
-  public Broadcast(final HashFunction<? super T> hash, final int shape) {
+  public Broadcast(HashFunction<? super T> hash, int shape) {
     this.inPort = new InPort(hash);
     this.broadcastPorts = Stream.generate(OutPort::new).limit((long) shape)
             .collect(Collectors.toList());
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handle) {
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     final List<OutPort> outPorts = this.outPorts();
 
     for (int i = 0; i < outPorts.size(); ++i) {

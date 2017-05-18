@@ -10,7 +10,7 @@ public final class PayloadDataItem<T> implements DataItem<T> {
 
   private final long ackHashCode;
 
-  public PayloadDataItem(final Meta meta, final T payload) {
+  public PayloadDataItem(Meta meta, T payload) {
     this.payload = payload;
     this.meta = meta;
     this.ackHashCode = ThreadLocalRandom.current().nextLong();
@@ -39,7 +39,7 @@ public final class PayloadDataItem<T> implements DataItem<T> {
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || this.getClass() != o.getClass()) return false;
     final PayloadDataItem<?> that = (PayloadDataItem<?>) o;

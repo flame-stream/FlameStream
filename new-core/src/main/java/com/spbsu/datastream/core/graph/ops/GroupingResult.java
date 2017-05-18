@@ -11,12 +11,12 @@ import java.util.Objects;
 public final class GroupingResult<T> {
   public static final HashFunction<GroupingResult> HASH_FUNCTION = new HashFunction<GroupingResult>() {
     @Override
-    public boolean equal(final GroupingResult o1, final GroupingResult o2) {
+    public boolean equal(GroupingResult o1, GroupingResult o2) {
       return o1.rootHash() == o2.rootHash();
     }
 
     @Override
-    public int hash(final GroupingResult value) {
+    public int hash(GroupingResult value) {
       return value.rootHash();
     }
   };
@@ -24,7 +24,7 @@ public final class GroupingResult<T> {
   private final int hash;
   private final List<T> payload;
 
-  public GroupingResult(final List<T> payload, final int hash) {
+  public GroupingResult(List<T> payload, int hash) {
     this.payload = new ArrayList<>(payload);
     this.hash = hash;
   }
@@ -43,7 +43,7 @@ public final class GroupingResult<T> {
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || this.getClass() != o.getClass()) return false;
     final GroupingResult<?> that = (GroupingResult<?>) o;

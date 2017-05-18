@@ -11,7 +11,7 @@ public final class GlobalTime implements Comparable<GlobalTime> {
 
   private final int front;
 
-  public GlobalTime(final long time, final int front) {
+  public GlobalTime(long time, int front) {
     this.time = time;
     this.front = front;
   }
@@ -25,14 +25,14 @@ public final class GlobalTime implements Comparable<GlobalTime> {
   }
 
   @Override
-  public int compareTo(final GlobalTime that) {
+  public int compareTo(GlobalTime that) {
     return Comparator.comparingLong(GlobalTime::time)
             .thenComparingInt(GlobalTime::front)
             .compare(this, that);
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || this.getClass() != o.getClass()) return false;
     final GlobalTime that = (GlobalTime) o;

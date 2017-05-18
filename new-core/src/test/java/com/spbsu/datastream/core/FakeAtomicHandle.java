@@ -12,36 +12,36 @@ import java.util.function.BiConsumer;
 public final class FakeAtomicHandle implements AtomicHandle {
   private final BiConsumer<OutPort, DataItem<?>> pushConsumer;
 
-  public FakeAtomicHandle(final BiConsumer<OutPort, DataItem<?>> pushConsumer) {
+  public FakeAtomicHandle(BiConsumer<OutPort, DataItem<?>> pushConsumer) {
     this.pushConsumer = pushConsumer;
   }
 
   @Override
-  public ActorSelection actorSelection(final ActorPath path) {
+  public ActorSelection actorSelection(ActorPath path) {
     return null;
   }
 
   @Override
-  public void push(final OutPort out, final DataItem<?> result) {
+  public void push(OutPort out, DataItem<?> result) {
     this.pushConsumer.accept(out, result);
   }
 
   @Override
-  public void ack(final DataItem<?> item) {
+  public void ack(DataItem<?> item) {
 
   }
 
-  public Optional<Object> loadState(final InPort inPort) {
+  public Optional<Object> loadState(InPort inPort) {
     return Optional.empty();
   }
 
   @Override
-  public void saveState(final InPort inPort, final Object state) {
+  public void saveState(InPort inPort, Object state) {
     throw new UnsupportedOperationException("Saving of the grouping state has not implemented yet");
   }
 
   @Override
-  public void removeState(final InPort inPort) {
+  public void removeState(InPort inPort) {
     throw new UnsupportedOperationException("Removing of the grouping state has not implemented yet");
   }
 }

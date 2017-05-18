@@ -33,10 +33,10 @@ public final class RangeConcierge extends LoggingActor {
   private final Map<InPort, ActorRef> routingTable;
   private final DB db;
 
-  private RangeConcierge(final TickInfo tickInfo,
-                         final ActorRef dns,
-                         final HashRange myRange,
-                         final DB db) {
+  private RangeConcierge(TickInfo tickInfo,
+                         ActorRef dns,
+                         HashRange myRange,
+                         DB db) {
     this.tickInfo = tickInfo;
     this.db = db;
     this.dns = dns;
@@ -47,8 +47,8 @@ public final class RangeConcierge extends LoggingActor {
     this.routingTable = RangeConcierge.withFlattenedKey(this.initializedGraph);
   }
 
-  public static Props props(final TickInfo info, final ActorRef dns, final HashRange myRange,
-                            final DB db) {
+  public static Props props(TickInfo info, ActorRef dns, HashRange myRange,
+                            DB db) {
     return Props.create(RangeConcierge.class, info, dns, myRange, db);
   }
 
@@ -79,7 +79,7 @@ public final class RangeConcierge extends LoggingActor {
     this.routingTable.values().forEach(atomic -> atomic.tell(message, ActorRef.noSender()));
   }
 
-  private void processCommitDone(final AtomicGraph atomicGraph) {
+  private void processCommitDone(AtomicGraph atomicGraph) {
     this.initializedGraph.remove(atomicGraph);
     if (this.initializedGraph.isEmpty()) {
       this.dns.tell(new UnresolvedMessage<>(this.tickInfo.ackerLocation(),
@@ -90,21 +90,21 @@ public final class RangeConcierge extends LoggingActor {
     }
   }
 
-  private static Map<InPort, ActorRef> withFlattenedKey(final Map<AtomicGraph, ActorRef> map) {
+  private static Map<InPort, ActorRef> withFlattenedKey(Map<AtomicGraph, ActorRef> map) {
     final Map<InPort, ActorRef> result = new HashMap<>();
-    for (final Map.Entry<AtomicGraph, ActorRef> e : map.entrySet()) {
-      for (final InPort port : e.getKey().inPorts()) {
+    for (Map.Entry<AtomicGraph, ActorRef> e : map.entrySet()) {
+      for (InPort port : e.getKey().inPorts()) {
         result.put(port, e.getValue());
       }
     }
     return result;
   }
 
-  private Map<AtomicGraph, ActorRef> initializedAtomics(final Collection<? extends AtomicGraph> atomicGraphs) {
+  private Map<AtomicGraph, ActorRef> initializedAtomics(Collection<? extends AtomicGraph> atomicGraphs) {
     return atomicGraphs.stream().collect(Collectors.toMap(Function.identity(), this::actorForAtomic));
   }
 
-  private ActorRef actorForAtomic(final AtomicGraph atomic) {
+  private ActorRef actorForAtomic(AtomicGraph atomic) {
     final String id = UUID.randomUUID().toString();
     return this.context().actorOf(AtomicActor.props(atomic, new AtomicHandleImpl(this.tickInfo, this.dns, this.db, this.context())), id);
   }

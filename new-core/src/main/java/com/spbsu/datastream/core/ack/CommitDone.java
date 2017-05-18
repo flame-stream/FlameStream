@@ -6,7 +6,7 @@ import com.spbsu.datastream.core.configuration.HashRange;
 public final class CommitDone implements AckerMessage {
   private final HashRange participant;
 
-  public CommitDone(final HashRange participant) {
+  public CommitDone(HashRange participant) {
     this.participant = participant;
   }
 

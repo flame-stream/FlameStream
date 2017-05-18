@@ -5,13 +5,13 @@ public final class HashedMessage<T> {
   private final T payload;
   private final boolean broadcast;
 
-  public HashedMessage(final int hash, final T payload) {
+  public HashedMessage(int hash, T payload) {
     this.hash = hash;
     this.payload = payload;
     this.broadcast = false;
   }
 
-  public HashedMessage(final T payload) {
+  public HashedMessage(T payload) {
     this.hash = -1;
     this.payload = payload;
     this.broadcast = true;

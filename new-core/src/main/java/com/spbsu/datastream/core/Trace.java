@@ -13,16 +13,16 @@ public final class Trace implements Comparable<Trace> {
     this.trace = new LocalEvent[0];
   }
 
-  public Trace(final LocalEvent localEvent) {
+  public Trace(LocalEvent localEvent) {
     this.trace = new LocalEvent[]{localEvent};
   }
 
-  public Trace(final Trace trace, final LocalEvent newLocalEvent) {
+  public Trace(Trace trace, LocalEvent newLocalEvent) {
     this.trace = Arrays.copyOf(trace.trace, trace.trace.length + 1);
     this.trace[this.trace.length - 1] = newLocalEvent;
   }
 
-  public LocalEvent eventAt(final int position) {
+  public LocalEvent eventAt(int position) {
     return this.trace[position];
   }
 
@@ -30,7 +30,7 @@ public final class Trace implements Comparable<Trace> {
     return this.trace.length;
   }
 
-  public boolean isInvalidatedBy(final Trace that) {
+  public boolean isInvalidatedBy(Trace that) {
     for (int i = 0; i < Math.min(this.size(), that.size()); ++i) {
       if (!this.eventAt(i).equals(that.eventAt(i))) {
         return this.eventAt(i).localTime() < that.eventAt(i).localTime();
@@ -40,7 +40,7 @@ public final class Trace implements Comparable<Trace> {
   }
 
   @Override
-  public int compareTo(final Trace that) {
+  public int compareTo(Trace that) {
     for (int i = 0; i < Math.min(that.trace.length, this.trace.length); ++i) {
 
       final int compare = this.eventAt(i).compareTo(that.eventAt(i));
@@ -53,7 +53,7 @@ public final class Trace implements Comparable<Trace> {
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }

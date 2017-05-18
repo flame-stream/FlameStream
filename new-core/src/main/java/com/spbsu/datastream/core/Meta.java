@@ -8,17 +8,17 @@ public final class Meta implements Comparable<Meta> {
 
   private final Trace trace;
 
-  public Meta(final GlobalTime globalTime) {
+  public Meta(GlobalTime globalTime) {
     this.globalTime = globalTime;
     this.trace = Trace.EMPTY_TRACE;
   }
 
-  public Meta(final Meta oldMeta, final int newLocalTime) {
+  public Meta(Meta oldMeta, int newLocalTime) {
     this.globalTime = oldMeta.globalTime();
     this.trace = new Trace(oldMeta.trace(), new LocalEvent(newLocalTime));
   }
 
-  public Meta(final Meta oldMeta, final int newLocalTime, final int childId) {
+  public Meta(Meta oldMeta, int newLocalTime, int childId) {
     this.globalTime = oldMeta.globalTime();
     this.trace = new Trace(oldMeta.trace(), new LocalEvent(newLocalTime, childId));
   }
@@ -31,19 +31,19 @@ public final class Meta implements Comparable<Meta> {
     return this.trace;
   }
 
-  public boolean isInvalidatedBy(final Meta that) {
+  public boolean isInvalidatedBy(Meta that) {
     return this.globalTime().equals(that.globalTime()) && this.trace().isInvalidatedBy(that.trace());
   }
 
   @Override
-  public int compareTo(final Meta that) {
+  public int compareTo(Meta that) {
     return Comparator.comparing(Meta::globalTime)
             .thenComparing(Meta::trace)
             .compare(this, that);
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || this.getClass() != o.getClass()) return false;
     final Meta meta = (Meta) o;

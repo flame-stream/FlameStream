@@ -21,7 +21,7 @@ public interface Graph {
    * @return a Graph representing the fusion of `this` and `that`
    **/
 
-  default Graph fuse(final Graph that, final OutPort from, final InPort to) {
+  default Graph fuse(Graph that, OutPort from, InPort to) {
     return this.compose(that).wire(from, to);
   }
 
@@ -32,7 +32,7 @@ public interface Graph {
    * @return a Graph that represents the composition of `this` and `that`
    **/
 
-  default Graph compose(final Graph that) {
+  default Graph compose(Graph that) {
     final HashSet<Graph> graphs = new HashSet<>();
     graphs.add(this);
     graphs.add(that);
@@ -47,7 +47,7 @@ public interface Graph {
    * @param to   the InPort to wire
    * @return a new Graph with the ports wired
    */
-  default Graph wire(final OutPort from, final InPort to) {
+  default Graph wire(OutPort from, InPort to) {
     return new ComposedGraphImpl<>(this, from, to);
   }
 

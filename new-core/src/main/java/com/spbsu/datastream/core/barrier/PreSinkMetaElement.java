@@ -7,12 +7,12 @@ import java.util.Objects;
 final class PreSinkMetaElement<T> {
   static final HashFunction<PreSinkMetaElement<?>> HASH_FUNCTION = new HashFunction<PreSinkMetaElement<?>>() {
     @Override
-    public boolean equal(final PreSinkMetaElement<?> o1, final PreSinkMetaElement<?> o2) {
+    public boolean equal(PreSinkMetaElement<?> o1, PreSinkMetaElement<?> o2) {
       return Objects.equals(o1.metaHash(), o2.metaHash());
     }
 
     @Override
-    public int hash(final PreSinkMetaElement<?> value) {
+    public int hash(PreSinkMetaElement<?> value) {
       return value.metaHash();
     }
   };
@@ -21,7 +21,7 @@ final class PreSinkMetaElement<T> {
 
   private final int metaHash;
 
-  PreSinkMetaElement(final T payload, final int metaHash) {
+  PreSinkMetaElement(T payload, int metaHash) {
     this.payload = payload;
     this.metaHash = metaHash;
   }

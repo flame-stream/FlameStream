@@ -17,14 +17,14 @@ public final class LinearCollector implements BarrierCollector {
   private final Queue<DataItem<?>> released = new ArrayDeque<>();
 
   @Override
-  public void update(final GlobalTime minTime) {
+  public void update(GlobalTime minTime) {
     this.invalidationPool.headMap(minTime)
             .values().stream().flatMap(List::stream).forEach(this.released::add);
     this.invalidationPool.headMap(minTime).clear();
   }
 
   @Override
-  public void enqueue(final DataItem<?> item) {
+  public void enqueue(DataItem<?> item) {
     this.invalidationPool.putIfAbsent(item.meta().globalTime(), new ArrayList<>());
 
     this.invalidationPool.computeIfPresent(item.meta().globalTime(), (key, oldList) -> {
@@ -35,7 +35,7 @@ public final class LinearCollector implements BarrierCollector {
   }
 
   @Override
-  public void release(final Consumer<DataItem<?>> consumer) {
+  public void release(Consumer<DataItem<?>> consumer) {
     this.released.forEach(consumer);
     this.released.clear();
   }

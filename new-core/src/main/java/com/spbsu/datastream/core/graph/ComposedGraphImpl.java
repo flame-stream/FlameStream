@@ -17,18 +17,18 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
 
   private final Set<T> subGraphs;
 
-  public ComposedGraphImpl(final Set<T> graphs) {
+  public ComposedGraphImpl(Set<T> graphs) {
     this(graphs, Collections.emptyMap());
   }
 
-  ComposedGraphImpl(final T graph,
-                    final OutPort from,
-                    final InPort to) {
+  ComposedGraphImpl(T graph,
+                    OutPort from,
+                    InPort to) {
     this(Collections.singleton(graph), Collections.singletonMap(from, to));
   }
 
-  private ComposedGraphImpl(final Set<T> graphs,
-                            final Map<OutPort, InPort> wires) {
+  private ComposedGraphImpl(Set<T> graphs,
+                            Map<OutPort, InPort> wires) {
     ComposedGraphImpl.assertCorrectWires(graphs, wires);
 
     this.subGraphs = new HashSet<>(graphs);
@@ -79,12 +79,12 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
     return Collections.unmodifiableMap(this.downstreams);
   }
 
-  private static void assertCorrectWires(final Collection<? extends Graph> graphs,
-                                         final Map<OutPort, InPort> wires) {
+  private static void assertCorrectWires(Collection<? extends Graph> graphs,
+                                         Map<OutPort, InPort> wires) {
     wires.forEach((from, to) -> ComposedGraphImpl.assertCorrectWire(graphs, from, to));
   }
 
-  private static void assertCorrectWire(final Collection<? extends Graph> graphs, final OutPort from, final InPort to) {
+  private static void assertCorrectWire(Collection<? extends Graph> graphs, OutPort from, InPort to) {
     if (graphs.stream().noneMatch(graph -> graph.outPorts().contains(from))) {
       throw new WiringException("Out ports of " + graphs + " hasn't got " + from);
     }

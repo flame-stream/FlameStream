@@ -17,24 +17,24 @@ public final class ConsumerBarrierSink<T> extends AbstractAtomicGraph {
 
   private final BarrierCollector collector = new LinearCollector();
 
-  public ConsumerBarrierSink(final Consumer<T> consumer) {
+  public ConsumerBarrierSink(Consumer<T> consumer) {
     this.consumer = consumer;
     this.inPort = new InPort(PreSinkMetaElement.HASH_FUNCTION);
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handle) {
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     this.collector.enqueue(item);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public void onMinGTimeUpdate(final GlobalTime globalTime, final AtomicHandle handle) {
+  public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
     this.collector.update(globalTime);
     this.collector.release(di -> this.consume((DataItem<PreSinkMetaElement<T>>) di));
   }
 
-  private void consume(final DataItem<PreSinkMetaElement<T>> di) {
+  private void consume(DataItem<PreSinkMetaElement<T>> di) {
     this.consumer.accept(di.payload().payload());
   }
 

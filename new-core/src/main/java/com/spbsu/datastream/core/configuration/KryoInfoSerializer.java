@@ -15,14 +15,14 @@ public final class KryoInfoSerializer implements TickInfoSerializer {
   }
 
   @Override
-  public byte[] serialize(final TickInfo tickInfo) {
+  public byte[] serialize(TickInfo tickInfo) {
     final ByteBufferOutput o = new ByteBufferOutput(1000, 20000);
     this.kryo.writeObject(o, tickInfo);
     return o.toBytes();
   }
 
   @Override
-  public TickInfo deserialize(final byte[] date) {
+  public TickInfo deserialize(byte[] date) {
     final ByteBufferInput input = new ByteBufferInput(date);
     return this.kryo.readObject(input, TickInfo.class);
   }

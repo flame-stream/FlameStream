@@ -37,12 +37,12 @@ public final class NodeConcierge extends LoggingActor {
 
   private ActorRef front;
 
-  private NodeConcierge(final int id, final ZooKeeper zooKeeper) {
+  private NodeConcierge(int id, ZooKeeper zooKeeper) {
     this.zooKeeper = zooKeeper;
     this.id = id;
   }
 
-  public static Props props(final int id, final ZooKeeper zooKeeper) {
+  public static Props props(int id, ZooKeeper zooKeeper) {
     return Props.create(NodeConcierge.class, id, zooKeeper);
   }
 

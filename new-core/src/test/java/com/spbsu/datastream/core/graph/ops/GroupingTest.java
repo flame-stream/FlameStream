@@ -196,7 +196,7 @@ public final class GroupingTest {
     Assert.assertTrue(new HashSet<>(GroupingTest.groupMe(shuffledInput, window)).containsAll(mustHave), "Result must contain expected elements");
   }
 
-  private static <T> List<GroupingResult<T>> groupMe(final Iterable<DataItem<T>> input, final int window) {
+  private static <T> List<GroupingResult<T>> groupMe(Iterable<DataItem<T>> input, int window) {
     final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), window);
 
     final List<GroupingResult<T>> out = new ArrayList<>();

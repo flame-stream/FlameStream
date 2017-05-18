@@ -23,25 +23,25 @@ final class ZKDeployer implements Closeable {
   private final TickInfoSerializer serializer = new KryoInfoSerializer();
   private final ZooKeeper zooKeeper;
 
-  public ZKDeployer(final String zkString) throws IOException {
+  public ZKDeployer(String zkString) throws IOException {
     this.zooKeeper = new ZooKeeper(zkString, 5000, e -> this.LOG.info("Init zookeeper ZKEvent: {}", e));
   }
 
-  public void pushDNS(final Map<Integer, InetSocketAddress> dns) throws Exception {
+  public void pushDNS(Map<Integer, InetSocketAddress> dns) throws Exception {
     this.zooKeeper.create("/dns",
             this.mapper.writeValueAsBytes(dns),
             ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT);
   }
 
-  public void pushFrontMappings(final Set<Integer> fronts) throws Exception {
+  public void pushFrontMappings(Set<Integer> fronts) throws Exception {
     this.zooKeeper.create("/fronts",
             this.mapper.writeValueAsBytes(fronts),
             ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT);
   }
 
-  public void pushTick(final TickInfo tickInfo) throws Exception {
+  public void pushTick(TickInfo tickInfo) throws Exception {
     this.zooKeeper.create("/ticks/" + tickInfo.startTs(), this.serializer.serialize(tickInfo),
             ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
     this.zooKeeper.create("/ticks/" + tickInfo.startTs() + "/ready", new byte[0],
@@ -55,7 +55,7 @@ final class ZKDeployer implements Closeable {
   public void close() {
     try {
       this.zooKeeper.close();
-    } catch (final InterruptedException e) {
+    } catch (InterruptedException e) {
       this.LOG.error("Smth bad happens during closing ZKDeployer", e);
       throw new RuntimeException(e);
     }

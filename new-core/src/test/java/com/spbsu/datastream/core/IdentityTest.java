@@ -40,7 +40,7 @@ public final class IdentityTest {
     }
   }
 
-  private static TheGraph multiGraph(final Collection<Integer> fronts, final ActorPath consumer) {
+  private static TheGraph multiGraph(Collection<Integer> fronts, ActorPath consumer) {
     final StatelessMap<Integer, Integer> filter1 = new StatelessMap<>(new HumbleFiler(-1), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter2 = new StatelessMap<>(new HumbleFiler(-2), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter3 = new StatelessMap<>(new HumbleFiler(-3), HashFunction.OBJECT_HASH);
@@ -62,12 +62,12 @@ public final class IdentityTest {
   public static final class HumbleFiler implements Function<Integer, Integer> {
     private final int factor;
 
-    public HumbleFiler(final int factor) {
+    public HumbleFiler(int factor) {
       this.factor = factor;
     }
 
     @Override
-    public Integer apply(final Integer s) {
+    public Integer apply(Integer s) {
       return s * this.factor;
     }
   }

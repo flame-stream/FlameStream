@@ -7,11 +7,11 @@ import java.util.Queue;
 final class CollectorActor<T> extends LoggingActor {
   private final Queue<T> queue;
 
-  public static <T> Props props(final Queue<T> queue) {
+  public static <T> Props props(Queue<T> queue) {
     return Props.create(CollectorActor.class, queue);
   }
 
-  private CollectorActor(final Queue<T> queue) {
+  private CollectorActor(Queue<T> queue) {
     this.queue = queue;
   }
 

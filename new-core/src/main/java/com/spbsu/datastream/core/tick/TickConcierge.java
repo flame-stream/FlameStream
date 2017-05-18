@@ -28,9 +28,9 @@ public final class TickConcierge extends LoggingActor {
 
   private final ActorRef acker;
 
-  private TickConcierge(final TickInfo tickInfo,
-                        final int localId,
-                        final ActorRef dns, final DB db) {
+  private TickConcierge(TickInfo tickInfo,
+                        int localId,
+                        ActorRef dns, DB db) {
     this.info = tickInfo;
     this.dns = dns;
     this.localId = localId;
@@ -52,22 +52,22 @@ public final class TickConcierge extends LoggingActor {
             .build();
   }
 
-  private ActorRef rangeConcierge(final HashRange range) {
+  private ActorRef rangeConcierge(HashRange range) {
     return this.context().actorOf(RangeConcierge.props(this.info, this.dns, range, db), range.toString());
   }
 
-  public static Props props(final TickInfo tickInfo, final DB db, final int localId,
-                            final ActorRef dns) {
+  public static Props props(TickInfo tickInfo, DB db, int localId,
+                            ActorRef dns) {
     return Props.create(TickConcierge.class, tickInfo, localId, dns, db);
   }
 
-  private Collection<HashRange> myRanges(final Map<HashRange, Integer> mappings) {
+  private Collection<HashRange> myRanges(Map<HashRange, Integer> mappings) {
     return mappings.entrySet().stream().filter(e -> e.getValue().equals(this.localId))
             .map(Map.Entry::getKey).collect(Collectors.toSet());
   }
 
   // TODO: 5/9/17 do it with akka routing
-  private void routeHashedMessage(final HashedMessage<?> hashedMessage) {
+  private void routeHashedMessage(HashedMessage<?> hashedMessage) {
     if (hashedMessage.isBroadcast()) {
       this.concierges.values().forEach(v -> v.tell(hashedMessage.payload(), this.sender()));
     } else {

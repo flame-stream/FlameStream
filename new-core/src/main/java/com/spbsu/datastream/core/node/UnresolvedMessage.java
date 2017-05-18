@@ -5,13 +5,13 @@ public final class UnresolvedMessage<T> {
   private final T payload;
   private final boolean broadcast;
 
-  public UnresolvedMessage(final int destination, final T payload) {
+  public UnresolvedMessage(int destination, T payload) {
     this.destination = destination;
     this.payload = payload;
     this.broadcast = false;
   }
 
-  public UnresolvedMessage(final T payload) {
+  public UnresolvedMessage(T payload) {
     this.destination = Integer.MAX_VALUE;
     this.payload = payload;
     this.broadcast = true;

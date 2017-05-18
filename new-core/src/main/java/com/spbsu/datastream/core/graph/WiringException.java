@@ -6,20 +6,20 @@ public class WiringException extends RuntimeException {
   public WiringException() {
   }
 
-  public WiringException(final String message) {
+  public WiringException(String message) {
     super(message);
   }
 
-  public WiringException(final String message, final Throwable cause) {
+  public WiringException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public WiringException(final Throwable cause) {
+  public WiringException(Throwable cause) {
     super(cause);
   }
 
-  protected WiringException(final String message, final Throwable cause, final boolean enableSuppression,
-                            final boolean writableStackTrace) {
+  protected WiringException(String message, Throwable cause, boolean enableSuppression,
+                            boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
   }
 }

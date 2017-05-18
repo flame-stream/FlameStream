@@ -9,7 +9,7 @@ public final class AckTableImpl implements AckTable {
 
     private final long xor;
 
-    private AckEntry(final boolean isReported, final long xor) {
+    private AckEntry(boolean isReported, long xor) {
       this.isReported = isReported;
       this.xor = xor;
     }
@@ -35,7 +35,7 @@ public final class AckTableImpl implements AckTable {
 
   private long waitingFor;
 
-  public AckTableImpl(final long startTs, final long window) {
+  public AckTableImpl(long startTs, long window) {
     this.startTs = startTs;
     this.window = window;
     this.table = new TreeMap<>();
@@ -44,7 +44,7 @@ public final class AckTableImpl implements AckTable {
   }
 
   @Override
-  public void report(final long windowHead, final long xor) {
+  public void report(long windowHead, long xor) {
     if (windowHead == this.waitingFor) {
       this.table.computeIfPresent(windowHead, (ts, entry) -> new AckEntry(true, entry.xor() ^ xor));
       this.table.putIfAbsent(windowHead, new AckEntry(true, xor));
@@ -55,7 +55,7 @@ public final class AckTableImpl implements AckTable {
   }
 
   @Override
-  public void ack(final long ts, final long xor) {
+  public void ack(long ts, long xor) {
     final long lowerBound = this.startTs + this.window * ((ts - this.startTs) / this.window);
 
     this.table.computeIfPresent(lowerBound, (t, entry) -> new AckEntry(entry.isReported(), entry.xor() ^ xor));

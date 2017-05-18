@@ -6,20 +6,20 @@ public class RoutingException extends RuntimeException {
   public RoutingException() {
   }
 
-  public RoutingException(final String message) {
+  public RoutingException(String message) {
     super(message);
   }
 
-  public RoutingException(final String message, final Throwable cause) {
+  public RoutingException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public RoutingException(final Throwable cause) {
+  public RoutingException(Throwable cause) {
     super(cause);
   }
 
-  protected RoutingException(final String message, final Throwable cause, final boolean enableSuppression,
-                             final boolean writableStackTrace) {
+  protected RoutingException(String message, Throwable cause, boolean enableSuppression,
+                             boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
   }
 }

@@ -18,12 +18,12 @@ public final class Merge<R> extends AbstractAtomicGraph {
   private final OutPort outPort = new OutPort();
 
   @SuppressWarnings("TypeMayBeWeakened")
-  public Merge(final List<HashFunction<?>> hashes) {
+  public Merge(List<HashFunction<?>> hashes) {
     this.inPorts = hashes.stream().map(InPort::new).collect(Collectors.toList());
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
     final DataItem<?> newItem = new PayloadDataItem<>(new Meta(item.meta(), this.incrementLocalTimeAndGet()),
             item.payload());
 

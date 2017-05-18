@@ -58,7 +58,7 @@ final class TestStand implements Closeable {
   private final Thread zkThread;
   private final ActorSystem localSystem;
 
-  public TestStand(final int workersCount) {
+  public TestStand(int workersCount) {
     this.dns = TestStand.dns(workersCount);
     this.workers = TestStand.workers(this.dns.keySet());
     this.fronts = this.dns.keySet();
@@ -78,7 +78,7 @@ final class TestStand implements Closeable {
       TimeUnit.SECONDS.sleep(1);
       this.deployPartitioning();
       this.workerApplication.addAll(this.startWorkers());
-    } catch (final Exception e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
@@ -94,7 +94,7 @@ final class TestStand implements Closeable {
 
       this.workerApplication.forEach(WorkerApplication::shutdown);
       this.workerApplication.clear();
-    } catch (final InterruptedException e) {
+    } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
@@ -103,7 +103,7 @@ final class TestStand implements Closeable {
     return Collections.unmodifiableSet(this.fronts);
   }
 
-  public <T> ActorPath wrap(final Queue<T> collection) {
+  public <T> ActorPath wrap(Queue<T> collection) {
     try {
       final String id = UUID.randomUUID().toString();
       final ActorRef consumerActor = this.localSystem.actorOf(CollectorActor.props(collection), id);
@@ -113,12 +113,12 @@ final class TestStand implements Closeable {
       return RootActorPath.apply(add, "/")
               .$div("user")
               .$div(id);
-    } catch (final UnknownHostException e) {
+    } catch (UnknownHostException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public void deploy(final TheGraph theGraph) {
+  public void deploy(TheGraph theGraph) {
     final long startTs = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
     final TickInfo tickInfo = new TickInfo(
             theGraph,
@@ -131,7 +131,7 @@ final class TestStand implements Closeable {
     try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStand.ZK_STRING)) {
       zkConfigurationDeployer.pushTick(tickInfo);
       TimeUnit.SECONDS.sleep(1);
-    } catch (final Exception e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
@@ -143,7 +143,7 @@ final class TestStand implements Closeable {
   public Consumer<Object> randomFrontConsumer() {
     final List<Consumer<Object>> result = new ArrayList<>();
 
-    for (final int frontId : this.fronts) {
+    for (int frontId : this.fronts) {
       final ActorSelection frontActor = TestStand.front(this.localSystem, frontId, this.dns.get(frontId));
       final Consumer<Object> consumer = obj -> frontActor.tell(new RawData<>(obj), ActorRef.noSender());
       result.add(consumer);
@@ -153,21 +153,21 @@ final class TestStand implements Closeable {
     return obj -> result.get(rd.nextInt(result.size())).accept(obj);
   }
 
-  private static Map<Integer, InetSocketAddress> dns(final int workersCount) {
+  private static Map<Integer, InetSocketAddress> dns(int workersCount) {
     return IntStream.range(TestStand.START_WORKER_PORT, TestStand.START_WORKER_PORT + workersCount)
             .boxed().collect(Collectors.toMap(Function.identity(),
                     Unchecked.function(port -> new InetSocketAddress(InetAddress.getLocalHost(), port))));
   }
 
   @SuppressWarnings("NumericCastThatLosesPrecision")
-  private static Map<HashRange, Integer> workers(final Collection<Integer> workers) {
+  private static Map<HashRange, Integer> workers(Collection<Integer> workers) {
     final Map<HashRange, Integer> result = new HashMap<>();
 
     final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / workers.size());
     long left = Integer.MIN_VALUE;
     long right = left + step;
 
-    for (final int workerId : workers) {
+    for (int workerId : workers) {
       result.put(new HashRange((int) left, (int) right), workerId);
 
       left += step;
@@ -178,9 +178,9 @@ final class TestStand implements Closeable {
   }
 
   @SuppressWarnings("TypeMayBeWeakened")
-  private static ActorSelection front(final ActorSystem system,
-                                      final int id,
-                                      final InetSocketAddress address) {
+  private static ActorSelection front(ActorSystem system,
+                                      int id,
+                                      InetSocketAddress address) {
     final Address add = Address.apply("akka.tcp", "worker", address.getAddress().getHostName(), address.getPort());
     final ActorPath path = RootActorPath.apply(add, "/")
             .$div("user")

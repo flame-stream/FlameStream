@@ -39,7 +39,7 @@ final class TickRouter extends LoggingActor {
 
     private final ActorRef tickConcierge;
 
-    public RegisterTick(final long tick, final ActorRef concierge) {
+    public RegisterTick(long tick, ActorRef concierge) {
       this.tick = tick;
       this.tickConcierge = concierge;
     }

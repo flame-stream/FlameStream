@@ -5,7 +5,7 @@ import com.spbsu.datastream.core.GlobalTime;
 public final class MinTimeUpdate {
   private final GlobalTime minTime;
 
-  public MinTimeUpdate(final GlobalTime minTime) {
+  public MinTimeUpdate(GlobalTime minTime) {
     this.minTime = minTime;
   }
 

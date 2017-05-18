@@ -32,13 +32,13 @@ public final class WorkerApplication {
   private ActorSystem system;
   private ZooKeeper zk;
 
-  public WorkerApplication(final int id, final InetSocketAddress host, final String zkConnectString) {
+  public WorkerApplication(int id, InetSocketAddress host, String zkConnectString) {
     this.id = id;
     this.host = host;
     this.zkConnectString = zkConnectString;
   }
 
-  public static void main(final String... args) throws UnknownHostException {
+  public static void main(String... args) throws UnknownHostException {
     final Options options = new Options();
     final Option idOpt = Option.builder("id").hasArg().argName("id").desc("worker id").required().build();
     final Option hostOpt = Option.builder("host").hasArg().argName("FQDN").desc("worker FQDN").required().build();
@@ -60,7 +60,7 @@ public final class WorkerApplication {
 
       final String connectingString = cmd.getOptionValue("zk");
       new WorkerApplication(id, socketAddress, connectingString).run();
-    } catch (final ParseException e) {
+    } catch (ParseException e) {
       WorkerApplication.LOG.error("Parsing failed", e);
       final HelpFormatter formatter = new HelpFormatter();
       formatter.printHelp("dataStreams", options);
@@ -79,7 +79,7 @@ public final class WorkerApplication {
               event -> watcher.tell(event, null));
 
       final ActorRef concierge = this.system.actorOf(NodeConcierge.props(this.id, this.zk), String.valueOf(id));
-    } catch (final IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -89,7 +89,7 @@ public final class WorkerApplication {
     //this.system.dispatcher().execute(this.system.terminate());
     try {
       this.zk.close();
-    } catch (final InterruptedException e) {
+    } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
   }

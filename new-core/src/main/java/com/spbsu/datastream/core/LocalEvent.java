@@ -10,12 +10,12 @@ public final class LocalEvent implements Comparable<LocalEvent> {
 
   private final int childId;
 
-  public LocalEvent(final int localTime) {
+  public LocalEvent(int localTime) {
     this.localTime = localTime;
     this.childId = 0;
   }
 
-  public LocalEvent(final int localTime, final int childId) {
+  public LocalEvent(int localTime, int childId) {
     this.localTime = localTime;
     this.childId = childId;
   }
@@ -29,14 +29,14 @@ public final class LocalEvent implements Comparable<LocalEvent> {
   }
 
   @Override
-  public int compareTo(final LocalEvent that) {
+  public int compareTo(LocalEvent that) {
     return Comparator.comparingInt(LocalEvent::localTime)
             .thenComparingInt(LocalEvent::childId)
             .compare(this, that);
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }

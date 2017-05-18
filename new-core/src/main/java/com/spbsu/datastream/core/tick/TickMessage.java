@@ -5,7 +5,7 @@ public final class TickMessage<T> {
 
   private final T payload;
 
-  public TickMessage(final long tick, final T payload) {
+  public TickMessage(long tick, T payload) {
     this.tick = tick;
     this.payload = payload;
   }

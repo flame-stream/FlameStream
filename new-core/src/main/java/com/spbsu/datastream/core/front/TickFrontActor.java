@@ -32,17 +32,17 @@ final class TickFrontActor extends LoggingActor {
 
   private Cancellable pingMe;
 
-  public static Props props(final ActorRef dns,
-                            final InPort target,
-                            final int frontId,
-                            final TickInfo info) {
+  public static Props props(ActorRef dns,
+                            InPort target,
+                            int frontId,
+                            TickInfo info) {
     return Props.create(TickFrontActor.class, dns, target, frontId, info);
   }
 
-  private TickFrontActor(final ActorRef dns,
-                         final InPort target,
-                         final int frontId,
-                         final TickInfo info) {
+  private TickFrontActor(ActorRef dns,
+                         InPort target,
+                         int frontId,
+                         TickInfo info) {
     this.dns = dns;
     this.target = target;
     this.frontId = frontId;
@@ -80,7 +80,7 @@ final class TickFrontActor extends LoggingActor {
             .match(Long.class, this::processPing).build();
   }
 
-  private void processPing(final long ping) {
+  private void processPing(long ping) {
     if (ping >= this.tickInfo.stopTs()) {
       this.reportUpTo(this.tickInfo.stopTs());
       this.context().stop(this.self());
@@ -90,7 +90,7 @@ final class TickFrontActor extends LoggingActor {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private void dispatchItem(final DataItem<?> item) {
+  private void dispatchItem(DataItem<?> item) {
     final HashFunction hashFunction = this.target.hashFunction();
     final int hash = hashFunction.applyAsInt(item.payload());
 
@@ -110,24 +110,24 @@ final class TickFrontActor extends LoggingActor {
   private long currentWindowHead;
   private long currentXor = 0;
 
-  private long lower(final long ts) {
+  private long lower(long ts) {
     return this.tickInfo.startTs() + this.tickInfo.window() * ((ts - this.tickInfo.startTs()) / this.tickInfo.window());
   }
 
-  private void report(final long time, final long xor) {
+  private void report(long time, long xor) {
     if (time >= this.currentWindowHead + this.tickInfo.window()) {
       this.reportUpTo(this.lower(time));
     }
     this.currentXor ^= xor;
   }
 
-  private void reportUpTo(final long windowHead) {
+  private void reportUpTo(long windowHead) {
     for (; this.currentWindowHead < windowHead; this.currentWindowHead += this.tickInfo.window(), this.currentXor = 0) {
       this.closeWindow(this.currentWindowHead, this.currentXor);
     }
   }
 
-  private void closeWindow(final long windowHead, final long xor) {
+  private void closeWindow(long windowHead, long xor) {
     final AckerReport report = new AckerReport(new GlobalTime(windowHead, this.frontId), xor);
     this.LOG().debug("Closing window {}", report);
     final UnresolvedMessage<TickMessage<AckerReport>> message = new UnresolvedMessage<>(this.tickInfo.ackerLocation(),

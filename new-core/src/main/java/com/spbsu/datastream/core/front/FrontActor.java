@@ -19,11 +19,11 @@ public final class FrontActor extends LoggingActor {
 
   private final TreeMap<Long, ActorRef> tickFronts = new TreeMap<>();
 
-  public static Props props(final ActorRef dns, final int id) {
+  public static Props props(ActorRef dns, int id) {
     return Props.create(FrontActor.class, dns, id);
   }
 
-  private FrontActor(final ActorRef dns, final int id) {
+  private FrontActor(ActorRef dns, int id) {
     this.dns = dns;
     this.id = id;
   }
@@ -36,12 +36,12 @@ public final class FrontActor extends LoggingActor {
             .match(String.class, this::onPing).build();
   }
 
-  private void onPing(final String ping) {
+  private void onPing(String ping) {
     this.sender().tell(System.nanoTime(), ActorRef.noSender());
   }
 
 
-  private void createTick(final TickInfo tickInfo) {
+  private void createTick(TickInfo tickInfo) {
     this.LOG().info("Creating tickFront for startTs: {}", tickInfo);
 
     final InPort target = tickInfo.graph().frontBindings().get(this.id);
@@ -55,7 +55,7 @@ public final class FrontActor extends LoggingActor {
     this.tickFronts.put(tickInfo.startTs(), tickFront);
   }
 
-  private void redirectItem(final RawData<?> data) {
+  private void redirectItem(RawData<?> data) {
     final GlobalTime globalTime = new GlobalTime(System.nanoTime(), this.id);
     final Meta now = new Meta(globalTime);
     final DataItem<?> dataItem = new PayloadDataItem<>(now, data.payload());

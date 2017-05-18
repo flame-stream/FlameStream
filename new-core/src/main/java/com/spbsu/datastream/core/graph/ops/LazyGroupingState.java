@@ -22,12 +22,12 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
   private final HashFunction<? super T> hash;
   private final TLongObjectMap<Object> buffers = new TLongObjectHashMap<>();
 
-  public LazyGroupingState(final HashFunction<? super T> hash) {
+  public LazyGroupingState(HashFunction<? super T> hash) {
     this.hash = hash;
   }
 
   @Override
-  public Optional<List<DataItem<T>>> get(final DataItem<T> item) {
+  public Optional<List<DataItem<T>>> get(DataItem<T> item) {
     final long hashValue = this.hash.hash(item.payload());
     final Object obj = this.buffers.get(hashValue);
     if (obj == null)
@@ -45,7 +45,7 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
   }
 
   @Override
-  public void put(final List<DataItem<T>> dataItems) {
+  public void put(List<DataItem<T>> dataItems) {
     if (dataItems.isEmpty()) {
       throw new IllegalArgumentException("List of data items is empty");
     }
@@ -84,7 +84,7 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
   }
 
   @Override
-  public void forEach(final Consumer<List<DataItem<T>>> consumer) {
+  public void forEach(Consumer<List<DataItem<T>>> consumer) {
     this.buffers.forEachValue(obj -> {
       final List<?> list = (List<?>) obj;
       if (list.get(0) instanceof List) {
@@ -99,7 +99,7 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
     });
   }
 
-  private Optional<List<DataItem<T>>> searchBucket(final DataItem<T> item, final List<List<DataItem<T>>> container) {
+  private Optional<List<DataItem<T>>> searchBucket(DataItem<T> item, List<List<DataItem<T>>> container) {
     return Stream.of(container)
             .flatMap(Collection::stream)
             .filter(bucket -> this.hash.equal(bucket.get(0).payload(), item.payload())).findAny();

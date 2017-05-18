@@ -9,7 +9,7 @@ interface AckLedger {
 
   GlobalTime min();
 
-  void ack(final GlobalTime windowHead, final long xor);
+  void ack(GlobalTime windowHead, long xor);
 
   Set<Integer> initHashes();
 

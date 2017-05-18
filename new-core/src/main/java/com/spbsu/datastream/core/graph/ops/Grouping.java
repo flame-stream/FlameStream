@@ -26,7 +26,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private static final Comparator<Meta> metaComparator = Comparator.comparing(Meta::globalTime)
           .thenComparing(Meta::trace, traceComparator);
 
-  public Grouping(final HashFunction<? super T> hash, final int window) {
+  public Grouping(HashFunction<? super T> hash, int window) {
     this.inPort = new InPort(hash);
     this.window = window;
     this.hash = hash;
@@ -34,12 +34,12 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onStart(final AtomicHandle handle) {
+  public void onStart(AtomicHandle handle) {
     this.state = new LazyGroupingState<>(this.hash);
   }
 
   @Override
-  public void onPush(final InPort inPort, final DataItem<?> item, final AtomicHandle handler) {
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
     //noinspection unchecked
     final DataItem<T> dataItem = (DataItem<T>) item;
     List<DataItem<T>> group = this.buffers.get(dataItem).orElse(null);
@@ -70,7 +70,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onCommit(final AtomicHandle handle) {
+  public void onCommit(AtomicHandle handle) {
     this.buffers.forEach(group -> {
       final List<DataItem<T>> windowedGroup = group.subList(this.window > 0 ? Math.max(0, group.size() - this.window + 1) : 0, group.size());
       if (!windowedGroup.isEmpty()) {
@@ -87,13 +87,13 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onRecover(final AtomicHandle handle) {
+  public void onRecover(AtomicHandle handle) {
     //noinspection unchecked
     this.state = (GroupingState<T>) handle.loadState(inPort).orElse(new LazyGroupingState<>(hash));
   }
 
   @Override
-  public void onMinGTimeUpdate(final GlobalTime globalTime, final AtomicHandle handle) {
+  public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
     //final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
     //  int removeIndex = 0;
     //  while (removeIndex < group.size() && metaComparator.compare(group.get(group.size() - removeIndex - 1).meta(), meta) > 0) {

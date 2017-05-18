@@ -20,7 +20,7 @@ public final class LifecycleWatcher extends LoggingActor {
     return this.receiveBuilder().match(WatchedEvent.class, LifecycleWatcher::onWatchedEvent).build();
   }
 
-  private static void onWatchedEvent(final WatchedEvent event) {
+  private static void onWatchedEvent(WatchedEvent event) {
     if (event.getType() == Event.EventType.None) {
       final Event.KeeperState state = event.getState();
       if (state == Event.KeeperState.Expired) {

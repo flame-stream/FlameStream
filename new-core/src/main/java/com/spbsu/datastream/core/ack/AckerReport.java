@@ -13,7 +13,7 @@ public final class AckerReport implements AckerMessage {
    * @param globalTime start time of the report.
    * @param xor xor of the dataItem acks, generated in the window [globalTime, globalTime + window]
    */
-  public AckerReport(final GlobalTime globalTime, final long xor) {
+  public AckerReport(GlobalTime globalTime, long xor) {
     this.globalTime = globalTime;
     this.xor = xor;
   }

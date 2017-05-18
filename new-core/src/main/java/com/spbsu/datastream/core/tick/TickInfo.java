@@ -20,12 +20,12 @@ public final class TickInfo {
 
   private final int ackerLocation;
 
-  public TickInfo(final TheGraph graph,
-                  final int ackerLocation,
-                  final Map<HashRange, Integer> hashMapping,
-                  final long startTs,
-                  final long stopTs,
-                  final long window) {
+  public TickInfo(TheGraph graph,
+                  int ackerLocation,
+                  Map<HashRange, Integer> hashMapping,
+                  long startTs,
+                  long stopTs,
+                  long window) {
     this.ackerLocation = ackerLocation;
     this.hashMapping = new HashMap<>(hashMapping);
     this.graph = graph;
