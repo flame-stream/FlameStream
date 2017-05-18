@@ -5,6 +5,9 @@ import java.util.Objects;
 
 public final class LocalEvent implements Comparable<LocalEvent> {
   //Inner representation is a subject for a discussion and/or an optimization
+  public static final Comparator<LocalEvent> COMPARATOR = Comparator
+          .comparingInt(LocalEvent::localTime)
+          .thenComparingInt(LocalEvent::childId);
 
   private final int localTime;
 
@@ -30,9 +33,7 @@ public final class LocalEvent implements Comparable<LocalEvent> {
 
   @Override
   public int compareTo(LocalEvent that) {
-    return Comparator.comparingInt(LocalEvent::localTime)
-            .thenComparingInt(LocalEvent::childId)
-            .compare(this, that);
+    return LocalEvent.COMPARATOR.compare(this, that);
   }
 
   @Override

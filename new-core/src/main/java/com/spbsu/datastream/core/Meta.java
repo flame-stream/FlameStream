@@ -4,6 +4,10 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public final class Meta implements Comparable<Meta> {
+  public static final Comparator<Meta> COMPARATOR = Comparator
+          .comparing(Meta::globalTime)
+          .thenComparing(Meta::trace);
+
   private final GlobalTime globalTime;
 
   private final Trace trace;
@@ -37,9 +41,7 @@ public final class Meta implements Comparable<Meta> {
 
   @Override
   public int compareTo(Meta that) {
-    return Comparator.comparing(Meta::globalTime)
-            .thenComparing(Meta::trace)
-            .compare(this, that);
+    return Meta.COMPARATOR.compare(this, that);
   }
 
   @Override

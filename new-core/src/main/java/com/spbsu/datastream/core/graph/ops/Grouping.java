@@ -1,6 +1,11 @@
 package com.spbsu.datastream.core.graph.ops;
 
-import com.spbsu.datastream.core.*;
+import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.Meta;
+import com.spbsu.datastream.core.PayloadDataItem;
+import com.spbsu.datastream.core.Trace;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -22,9 +27,9 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final GroupingState<T> buffers;
   private GroupingState<T> state;
 
-  private static final Comparator<Trace> traceComparator = Comparator.reverseOrder();
-  private static final Comparator<Meta> metaComparator = Comparator.comparing(Meta::globalTime)
-          .thenComparing(Meta::trace, traceComparator);
+  private static final Comparator<Trace> TRACE_COMPARATOR = Comparator.reverseOrder();
+  private static final Comparator<Meta> META_COMPARATOR = Comparator.comparing(Meta::globalTime)
+          .thenComparing(Meta::trace, Grouping.TRACE_COMPARATOR);
 
   public Grouping(HashFunction<? super T> hash, int window) {
     this.inPort = new InPort(hash);
@@ -45,7 +50,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     List<DataItem<T>> group = this.buffers.get(dataItem).orElse(null);
     if (group != null) { // look for time collision in the current tick
       int replayCount = 0;
-      while (replayCount < group.size() && metaComparator.compare(group.get(group.size() - replayCount - 1).meta(), dataItem.meta()) > 0) {
+      while (replayCount < group.size() && Grouping.META_COMPARATOR.compare(group.get(group.size() - replayCount - 1).meta(), dataItem.meta()) > 0) {
         replayCount++;
       }
       group.add(group.size() - replayCount, dataItem);

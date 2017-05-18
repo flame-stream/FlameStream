@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
 public final class Trace implements Comparable<Trace> {
