@@ -39,7 +39,7 @@ public final class SumTest {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
-      stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(result)), 15, TimeUnit.SECONDS);
+      stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(result::add)), 15, TimeUnit.SECONDS);
 
       final List<LongNumb> source = new Random().longs(2).mapToObj(LongNumb::new).collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();

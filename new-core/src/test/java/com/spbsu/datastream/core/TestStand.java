@@ -105,10 +105,10 @@ final class TestStand implements Closeable {
     return Collections.unmodifiableSet(this.fronts);
   }
 
-  public <T> ActorPath wrap(Queue<T> collection) {
+  public <T> ActorPath wrap(Consumer<T> collection) {
     try {
       final String id = UUID.randomUUID().toString();
-      final ActorRef consumerActor = this.localSystem.actorOf(CollectorActor.props(collection), id);
+      final ActorRef consumerActor = this.localSystem.actorOf(CollectingActor.props(collection), id);
       final Address add = Address.apply("akka.tcp", "requester",
               InetAddress.getLocalHost().getHostName(),
               TestStand.LOCAL_SYSTEM_PORT);

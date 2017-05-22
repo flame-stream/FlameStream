@@ -10,6 +10,7 @@ import com.spbsu.datastream.core.graph.ops.Grouping;
 import com.spbsu.datastream.core.graph.ops.StatelessMap;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
+import org.jooq.lambda.Unchecked;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -55,7 +56,7 @@ public final class GroupingAcceptanceTest {
       final Deque<List<Long>> result = new ArrayDeque<>();
 
       stage.deploy(GroupingAcceptanceTest.groupGraph(stage.fronts(),
-              stage.wrap(result),
+              stage.wrap(result::add),
               groupHash,
               filterHash), 15, TimeUnit.SECONDS);
 
@@ -65,6 +66,27 @@ public final class GroupingAcceptanceTest {
       stage.waitTick(15, TimeUnit.SECONDS);
 
       Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, groupHash));
+    }
+  }
+
+  @Test(enabled = false)
+  public void infiniteTest() throws InterruptedException {
+    try (TestStand stage = new TestStand(10, 10)) {
+
+      stage.deploy(GroupingAcceptanceTest.groupGraph(stage.fronts(),
+              stage.wrap(d -> {}),
+              HashFunction.uniformLimitedHash(100),
+              HashFunction.OBJECT_HASH), 15, TimeUnit.HOURS);
+
+      final Consumer<Object> sink = stage.randomFrontConsumer();
+
+      new Random().longs().boxed()
+              .forEach(Unchecked.consumer(l -> {
+                sink.accept(l);
+                Thread.sleep(1);
+              }));
+
+      stage.waitTick(15, TimeUnit.HOURS);
     }
   }
 

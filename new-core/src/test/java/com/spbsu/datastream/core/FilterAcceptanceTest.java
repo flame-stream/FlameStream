@@ -30,7 +30,7 @@ public final class FilterAcceptanceTest {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(FilterAcceptanceTest.multiGraph(stage.fronts(), stage.wrap(result)), 15, TimeUnit.SECONDS);
+      stage.deploy(FilterAcceptanceTest.multiGraph(stage.fronts(), stage.wrap(result::add)), 15, TimeUnit.SECONDS);
 
       final List<Integer> source = new Random().ints(5000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();
