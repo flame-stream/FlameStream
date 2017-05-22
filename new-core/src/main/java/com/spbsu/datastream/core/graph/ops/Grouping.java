@@ -12,11 +12,12 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"rawtypes", "ConditionalExpression"})
@@ -48,22 +49,21 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     final List<DataItem<T>> group = this.buffers.getGroupFor(dataItem);
     final int position = this.insert(group, dataItem);
     if (position != -1) {
-      this.replayAround(group, position, handle);
+      this.replayAround(position, group, handle);
     }
   }
 
-  private void replayAround(List<DataItem<T>> group, int position, AtomicHandle handle) {
+  private void replayAround(int position, List<DataItem<T>> group, AtomicHandle handle) {
     for (int right = position + 1; right <= Math.min(position + this.window, group.size()); ++right) {
       final int left = Math.max(right - this.window, 0);
-      this.play(group, left, right, handle);
+      this.pushSubGroup(group, left, right, handle);
     }
   }
 
-  private void play(List<DataItem<T>> group, int left, int right, AtomicHandle handle) {
+  private void pushSubGroup(List<DataItem<T>> group, int left, int right, AtomicHandle handle) {
     final List<DataItem<T>> outGroup = group.subList(left, right);
 
     final Meta meta = new Meta(outGroup.get(outGroup.size() - 1).meta(), this.incrementLocalTimeAndGet());
-    final int hashValue = this.hash.applyAsInt(group.get(0).payload());
     final List<T> groupingResult = outGroup.stream().map(DataItem::payload).collect(Collectors.toList());
 
     final DataItem<List<T>> result = new PayloadDataItem<>(meta, groupingResult);
@@ -71,9 +71,9 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   private int insert(List<DataItem<T>> group, DataItem<T> item) {
-    final int position = Collections.binarySearch(group, item, Grouping.itemComparator);
+    final int position = Collections.binarySearch(group, item, Grouping.ITEM_COMPARATOR);
     if (position >= 0) {
-      final int invalidationRelation = Grouping.itemInvalidationComparator.compare(item, group.get(position));
+      final int invalidationRelation = Grouping.ITEM_INVALIDATION_COMPARATOR.compare(item, group.get(position));
       if (invalidationRelation > 0) {
         group.set(position, item);
         return position;
@@ -85,7 +85,6 @@ public final class Grouping<T> extends AbstractAtomicGraph {
       return -(position + 1);
     }
   }
-
 
   public static final Comparator<Trace> INVALIDATION_COMPARATOR = (t0, t1) -> {
     for (int i = 0; i < Math.min(t0.size(), t1.size()); ++i) {
@@ -111,14 +110,13 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     return Integer.compare(t0.size(), t1.size());
   };
 
-  private static final Comparator<DataItem<?>> itemComparator = Comparator
+  private static final Comparator<DataItem<?>> ITEM_COMPARATOR = Comparator
           .comparing((DataItem<?> di) -> di.meta().globalTime())
           .thenComparing((DataItem<?> di) -> di.meta().trace(),
                   Grouping.INVALIDATION_IGNORING_COMPARATOR);
 
-  private static final Comparator<DataItem<?>> itemInvalidationComparator = Comparator
+  private static final Comparator<DataItem<?>> ITEM_INVALIDATION_COMPARATOR = Comparator
           .comparing((DataItem<?> di) -> di.meta().trace(), Grouping.INVALIDATION_COMPARATOR);
-
 
   @Override
   public void onCommit(AtomicHandle handle) {
@@ -127,16 +125,14 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   @Override
   public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-    // TODO: 5/18/17 COMPACT
-    //final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
-    //  int removeIndex = 0;
-    //  while (removeIndex < group.size() && metaComparator.compare(group.get(group.size() - removeIndex - 1).meta(), meta) > 0) {
-    //    removeIndex++;
-    //  }
-    //  group.subList(0, removeIndex).clear();
-    //};
-    //this.buffers.forEach(removeOldConsumer);
-    //this.state.forEach(removeOldConsumer);
+    final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
+      final ListIterator<DataItem<T>> removeIndex = group.listIterator();
+      while (removeIndex.nextIndex() < group.size() - this.window
+              && removeIndex.next().meta().globalTime().compareTo(globalTime) < 0) {
+        removeIndex.remove();
+      }
+    };
+    this.buffers.forEach(removeOldConsumer);
   }
 
   public InPort inPort() {
