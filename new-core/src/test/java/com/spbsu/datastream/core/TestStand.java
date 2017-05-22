@@ -59,10 +59,10 @@ final class TestStand implements Closeable {
   private final Thread zkThread;
   private final ActorSystem localSystem;
 
-  TestStand(int workersCount) {
+  TestStand(int workersCount, int frontCount) {
     this.dns = TestStand.dns(workersCount);
     this.workers = TestStand.workers(this.dns.keySet());
-    this.fronts = this.dns.keySet();
+    this.fronts = this.dns.keySet().stream().limit(frontCount).collect(Collectors.toSet());
 
     try {
       final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + TestStand.LOCAL_SYSTEM_PORT)
@@ -153,6 +153,11 @@ final class TestStand implements Closeable {
     return obj -> result.get(rd.nextInt(result.size())).accept(obj);
   }
 
+  public Consumer<Object> frontConsumer(int id) {
+    final ActorSelection frontActor = TestStand.front(this.localSystem, id, this.dns.get(id));
+    return obj -> frontActor.tell(new RawData<>(obj), ActorRef.noSender());
+  }
+
   private static Map<Integer, InetSocketAddress> dns(int workersCount) {
     return IntStream.range(TestStand.START_WORKER_PORT, TestStand.START_WORKER_PORT + workersCount)
             .boxed().collect(Collectors.toMap(Function.identity(),
@@ -193,7 +198,7 @@ final class TestStand implements Closeable {
     try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStand.ZK_STRING)) {
       zkConfigurationDeployer.createDirs();
       zkConfigurationDeployer.pushDNS(this.dns);
-      zkConfigurationDeployer.pushFrontMappings(this.fronts);
+      zkConfigurationDeployer.pushFronts(this.fronts);
     }
   }
 

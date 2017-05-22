@@ -22,15 +22,15 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public final class IdentityTest {
+public final class FilterAcceptanceTest {
 
   @Test
   public void emptyTest() throws InterruptedException {
-    try (TestStand stage = new TestStand(4)) {
+    try (TestStand stage = new TestStand(4, 4)) {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(IdentityTest.multiGraph(stage.fronts(), stage.wrap(result)), 15, TimeUnit.SECONDS);
+      stage.deploy(FilterAcceptanceTest.multiGraph(stage.fronts(), stage.wrap(result)), 15, TimeUnit.SECONDS);
 
       final List<Integer> source = new Random().ints(5000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();

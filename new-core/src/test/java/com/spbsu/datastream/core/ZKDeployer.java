@@ -34,7 +34,7 @@ final class ZKDeployer implements Closeable {
             CreateMode.PERSISTENT);
   }
 
-  public void pushFrontMappings(Set<Integer> fronts) throws Exception {
+  public void pushFronts(Set<Integer> fronts) throws Exception {
     this.zooKeeper.create("/fronts",
             this.mapper.writeValueAsBytes(fronts),
             ZKUtil.parseACLs("world:anyone:crdwa"),

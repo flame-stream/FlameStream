@@ -35,12 +35,12 @@ public final class GroupingTest {
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
 
-    final List<GroupingResult<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x2, x3), 2);
-    final List<GroupingResult<String>> expectedResult = new ArrayList<>();
+    final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x2, x3), 2);
+    final List<List<String>> expectedResult = new ArrayList<>();
 
-    final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
-    final GroupingResult<String> y2 = new GroupingResult<>(Arrays.asList(x1.payload(), x2.payload()), 1);
-    final GroupingResult<String> y3 = new GroupingResult<>(Arrays.asList(x2.payload(), x3.payload()), 1);
+    final List<String> y1 = Collections.singletonList(x1.payload());
+    final List<String> y2 = Arrays.asList(x1.payload(), x2.payload());
+    final List<String> y3 = Arrays.asList(x2.payload(), x3.payload());
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -58,13 +58,13 @@ public final class GroupingTest {
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
     final DataItem<String> x1Prime = new PayloadDataItem<>(new Meta(x1Meta, 2), "state");
 
-    final List<GroupingResult<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x2, x1Prime), 2);
-    final List<GroupingResult<String>> expectedResult = new ArrayList<>();
+    final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x2, x1Prime), 2);
+    final List<List<String>> expectedResult = new ArrayList<>();
 
-    final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
-    final GroupingResult<String> y2 = new GroupingResult<>(Arrays.asList(x1.payload(), x2.payload()), 1);
-    final GroupingResult<String> y3 = new GroupingResult<>(Arrays.asList(x1.payload(), x1Prime.payload()), 1);
-    final GroupingResult<String> y4 = new GroupingResult<>(Arrays.asList(x1Prime.payload(), x2.payload()), 1);
+    final List<String> y1 = Collections.singletonList(x1.payload());
+    final List<String> y2 = Arrays.asList(x1.payload(), x2.payload());
+    final List<String> y3 = Arrays.asList(x1.payload(), x1Prime.payload());
+    final List<String> y4 = Arrays.asList(x1Prime.payload(), x2.payload());
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -80,13 +80,13 @@ public final class GroupingTest {
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
 
-    final List<GroupingResult<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x2, x1, x3), 2);
-    final List<GroupingResult<String>> expectedResult = new ArrayList<>();
+    final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x2, x1, x3), 2);
+    final List<List<String>> expectedResult = new ArrayList<>();
 
-    final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x2.payload()), 1);
-    final GroupingResult<String> y2 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
-    final GroupingResult<String> y3 = new GroupingResult<>(Arrays.asList(x1.payload(), x2.payload()), 1);
-    final GroupingResult<String> y4 = new GroupingResult<>(Arrays.asList(x2.payload(), x3.payload()), 1);
+    final List<String> y1 = Collections.singletonList(x2.payload());
+    final List<String> y2 = Collections.singletonList(x1.payload());
+    final List<String> y3 = Arrays.asList(x1.payload(), x2.payload());
+    final List<String> y4 = Arrays.asList(x2.payload(), x3.payload());
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -102,13 +102,13 @@ public final class GroupingTest {
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(new GlobalTime(3, 1)), "v3");
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
 
-    final List<GroupingResult<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x3, x2), 2);
-    final List<GroupingResult<String>> expectedResult = new ArrayList<>();
+    final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x3, x2), 2);
+    final List<List<String>> expectedResult = new ArrayList<>();
 
-    final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
-    final GroupingResult<String> y2 = new GroupingResult<>(Arrays.asList(x1.payload(), x3.payload()), 1);
-    final GroupingResult<String> y3 = new GroupingResult<>(Arrays.asList(x1.payload(), x2.payload()), 1);
-    final GroupingResult<String> y4 = new GroupingResult<>(Arrays.asList(x2.payload(), x3.payload()), 1);
+    final List<String> y1 = Collections.singletonList(x1.payload());
+    final List<String> y2 = Arrays.asList(x1.payload(), x3.payload());
+    final List<String> y3 = Arrays.asList(x1.payload(), x2.payload());
+    final List<String> y4 = Arrays.asList(x2.payload(), x3.payload());
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -124,16 +124,16 @@ public final class GroupingTest {
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
     final DataItem<String> x1 = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "v1");
 
-    final List<GroupingResult<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x3, x2, x1), 2);
-    final List<GroupingResult<String>> expectedResult = new ArrayList<>();
+    final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x3, x2, x1), 2);
+    final List<List<String>> expectedResult = new ArrayList<>();
 
-    final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x3.payload()), 1);
-    final GroupingResult<String> y2 = new GroupingResult<>(Collections.singletonList(x2.payload()), 1);
-    final GroupingResult<String> y3 = new GroupingResult<>(Arrays.asList(x2.payload(), x3.payload()), 1);
-    final GroupingResult<String> y4 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
-    final GroupingResult<String> y5 = new GroupingResult<>(Arrays.asList(x1.payload(), x2.payload()), 1);
+    final List<String> y1 = Collections.singletonList(x3.payload());
+    final List<String> y2 = Collections.singletonList(x2.payload());
+    final List<String> y3 = Arrays.asList(x2.payload(), x3.payload());
+    final List<String> y4 = Collections.singletonList(x1.payload());
+    final List<String> y5 = Arrays.asList(x1.payload(), x2.payload());
     //This pair shouldn't be replayed. Crucial optimization
-    //final GroupingResult<String> y6 = new GroupingResult<>(Arrays.asList(x2.payload(), x3.payload()), 1);
+    //final List<String> y6 = new List<>(Arrays.asList(x2.payload(), x3.payload()), 1);
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -154,16 +154,16 @@ public final class GroupingTest {
     final DataItem<String> x3 = new PayloadDataItem<>(new Meta(x3Meta, 1), "v3");
     final DataItem<String> x3Prime = new PayloadDataItem<>(new Meta(x3Meta, 2), "v3Prime");
 
-    final List<GroupingResult<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x2, x3, x3Prime), 2);
-    final List<GroupingResult<String>> expectedResult = new ArrayList<>();
+    final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x2, x3, x3Prime), 2);
+    final List<List<String>> expectedResult = new ArrayList<>();
 
-    final GroupingResult<String> y1 = new GroupingResult<>(Collections.singletonList(x1.payload()), 1);
-    final GroupingResult<String> y2 = new GroupingResult<>(Arrays.asList(x1.payload(), x2.payload()), 1);
-    final GroupingResult<String> y3 = new GroupingResult<>(Arrays.asList(x2.payload(), x3.payload()), 1);
-    final GroupingResult<String> y4 = new GroupingResult<>(Arrays.asList(x2.payload(), x3Prime.payload()), 1);
+    final List<String> y1 = Collections.singletonList(x1.payload());
+    final List<String> y2 = Arrays.asList(x1.payload(), x2.payload());
+    final List<String> y3 = Arrays.asList(x2.payload(), x3.payload());
+    final List<String> y4 = Arrays.asList(x2.payload(), x3Prime.payload());
     //Invalidation element should replace invalid
     // {@link com.spbsu.datastreams.core.Trace#isInvalidatedBy method}
-    //final GroupingResult<String> y5 = new GroupingResult<>(Arrays.asList(x3Prime.payload(), x3.payload()), 1);
+    //final List<String> y5 = new List<>(Arrays.asList(x3Prime.payload(), x3.payload()), 1);
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -185,11 +185,10 @@ public final class GroupingTest {
     Collections.shuffle(shuffledInput, new Random(2));
 
     final int window = 6;
-    final Set<GroupingResult<String>> mustHave = Seq.seq(input)
+    final Set<List<String>> mustHave = Seq.seq(input)
             .map(DataItem::payload)
             .sliding(window)
             .map(Collectable::toList)
-            .map(li -> new GroupingResult<>(li, 1))
             .toSet();
 
     //this.LOG.debug("Got: {}", out.stream().map(DataItem::payload).collect(Collectors.toList()));
@@ -198,12 +197,12 @@ public final class GroupingTest {
     Assert.assertTrue(new HashSet<>(GroupingTest.groupMe(shuffledInput, window)).containsAll(mustHave), "Result must contain expected elements");
   }
 
-  private static <T> List<GroupingResult<T>> groupMe(Iterable<DataItem<T>> input, int window) {
+  private static <T> List<List<T>> groupMe(Iterable<DataItem<T>> input, int window) {
     final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), window);
 
-    final List<GroupingResult<T>> out = new ArrayList<>();
+    final List<List<T>> out = new ArrayList<>();
 
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((GroupingResult<T>) di.payload()));
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((List<T>) di.payload()));
 
     grouping.onStart(handle);
     input.forEach(in -> grouping.onPush(grouping.inPort(), in, handle));

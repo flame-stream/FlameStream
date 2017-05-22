@@ -12,6 +12,7 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -63,16 +64,16 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
     final Meta meta = new Meta(outGroup.get(outGroup.size() - 1).meta(), this.incrementLocalTimeAndGet());
     final int hashValue = this.hash.applyAsInt(group.get(0).payload());
-    final GroupingResult<T> groupingResult = new GroupingResult<>(outGroup.stream().map(DataItem::payload).collect(Collectors.toList()), hashValue);
+    final List<T> groupingResult = outGroup.stream().map(DataItem::payload).collect(Collectors.toList());
 
-    final DataItem<GroupingResult<T>> result = new PayloadDataItem<>(meta, groupingResult);
+    final DataItem<List<T>> result = new PayloadDataItem<>(meta, groupingResult);
     handle.push(this.outPort(), result);
   }
 
   private int insert(List<DataItem<T>> group, DataItem<T> item) {
-    final int position = Collections.binarySearch(group, item, this.itemComparator);
+    final int position = Collections.binarySearch(group, item, Grouping.itemComparator);
     if (position >= 0) {
-      final int invalidationRelation = this.itemInvalidationComparator.compare(item, group.get(position));
+      final int invalidationRelation = Grouping.itemInvalidationComparator.compare(item, group.get(position));
       if (invalidationRelation > 0) {
         group.set(position, item);
         return position;
@@ -121,7 +122,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   @Override
   public void onCommit(AtomicHandle handle) {
-    handle.saveState(this.inPort, this.buffers);
+    //handle.saveState(this.inPort, this.buffers);
   }
 
   @Override

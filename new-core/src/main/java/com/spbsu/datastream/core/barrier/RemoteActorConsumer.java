@@ -53,6 +53,11 @@ public final class RemoteActorConsumer<T> extends AbstractAtomicGraph {
   }
 
   @Override
+  public void onCommit(AtomicHandle handle) {
+    System.out.println();
+  }
+
+  @Override
   public List<InPort> inPorts() {
     return Collections.singletonList(this.inPort);
   }

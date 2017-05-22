@@ -9,7 +9,6 @@ import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.Broadcast;
 import com.spbsu.datastream.core.graph.ops.Filter;
 import com.spbsu.datastream.core.graph.ops.Grouping;
-import com.spbsu.datastream.core.graph.ops.GroupingResult;
 import com.spbsu.datastream.core.graph.ops.Merge;
 import com.spbsu.datastream.core.graph.ops.StatelessMap;
 import com.spbsu.datastream.core.sum.IdentityEnricher;
@@ -36,7 +35,7 @@ import java.util.stream.Collectors;
 public final class SumTest {
   @Test
   public void test() throws InterruptedException {
-    try (TestStand stage = new TestStand(4)) {
+    try (TestStand stage = new TestStand(4, 4)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
@@ -53,13 +52,13 @@ public final class SumTest {
 
   private static TheGraph sumGraph(Collection<Integer> fronts, ActorPath consumer) {
     final HashFunction<Numb> identity = HashFunction.constantHash(1);
-    final HashFunction<GroupingResult<Numb>> groupIdentity = HashFunction.constantHash(1);
+    final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
 
     final Merge<Numb> merge = new Merge<>(Arrays.asList(identity, identity));
     final Grouping<Numb> grouping = new Grouping<>(identity, 2);
-    final StatelessMap<GroupingResult<Numb>, GroupingResult<Numb>> enricher = new StatelessMap<>(new IdentityEnricher(), groupIdentity);
-    final Filter<GroupingResult<Numb>> junkFilter = new Filter<>(new WrongOrderingFilter(), groupIdentity);
-    final StatelessMap<GroupingResult<Numb>, Sum> reducer = new StatelessMap<>(new Reduce(), groupIdentity);
+    final StatelessMap<List<Numb>, List<Numb>> enricher = new StatelessMap<>(new IdentityEnricher(), groupIdentity);
+    final Filter<List<Numb>> junkFilter = new Filter<>(new WrongOrderingFilter(), groupIdentity);
+    final StatelessMap<List<Numb>, Sum> reducer = new StatelessMap<>(new Reduce(), groupIdentity);
     final Broadcast<Sum> broadcast = new Broadcast<>(identity, 2);
 
     final PreSinkMetaFilter<Sum> metaFilter = new PreSinkMetaFilter<>(identity);
