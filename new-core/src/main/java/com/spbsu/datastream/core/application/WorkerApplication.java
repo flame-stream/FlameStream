@@ -43,7 +43,6 @@ public final class WorkerApplication {
 
   public static void main(String... args) throws UnknownHostException {
     final Options options = new Options();
-    final Option idOpt = Option.builder("id").hasArg().argName("id").desc("worker id").required().build();
     final Option hostOpt = Option.builder("host").hasArg().argName("FQDN").desc("worker FQDN").required().build();
     final Option portOpt = Option.builder("port").hasArg().argName("port").desc("worker port").required().build();
     final Option zkOpt = Option.builder("zk").hasArg().argName("connectString").desc("ZK connect string").required().build();
@@ -88,8 +87,6 @@ public final class WorkerApplication {
   }
 
   public void shutdown() {
-    // TODO: 5/2/17 Graceful stop
-    //this.system.dispatcher().execute(this.system.terminate());
     try {
       Await.ready(this.system.terminate(), Duration.Inf());
       this.zk.close();

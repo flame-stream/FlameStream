@@ -21,6 +21,7 @@ import scala.concurrent.duration.Duration;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -42,7 +43,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@SuppressWarnings("ProhibitedExceptionThrown")
 final class TestStand implements Closeable {
   private static final String ZK_STRING = "localhost:2181";
   private static final int LOCAL_SYSTEM_PORT = 12345;
@@ -50,7 +50,6 @@ final class TestStand implements Closeable {
   private static final int START_WORKER_PORT = 5223;
 
   private final Map<Integer, InetSocketAddress> dns;
-  private final Map<HashRange, Integer> workers;
   private final Set<Integer> fronts;
 
   private final Collection<WorkerApplication> workerApplication = new HashSet<>();
@@ -61,23 +60,24 @@ final class TestStand implements Closeable {
 
   TestStand(int workersCount, int frontCount) {
     this.dns = TestStand.dns(workersCount);
-    this.workers = TestStand.workers(this.dns.keySet());
     this.fronts = this.dns.keySet().stream().limit(frontCount).collect(Collectors.toSet());
 
     try {
       final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + TestStand.LOCAL_SYSTEM_PORT)
               .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + InetAddress.getLocalHost().getHostName()))
               .withFallback(ConfigFactory.load("remote"));
-      this.localSystem = ActorSystem.create("requester", config);
 
       FileUtils.deleteDirectory(new File("zookeeper"));
       FileUtils.deleteDirectory(new File("leveldb"));
+
+      this.localSystem = ActorSystem.create("requester", config);
       this.zk = new ZooKeeperApplication();
       this.zkThread = new Thread(Unchecked.runnable(this.zk::run));
       this.zkThread.start();
 
       TimeUnit.SECONDS.sleep(1);
       this.deployPartitioning();
+
       this.workerApplication.addAll(this.startWorkers());
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -87,14 +87,16 @@ final class TestStand implements Closeable {
   @Override
   public void close() {
     try {
+      Await.ready(this.localSystem.terminate(), Duration.Inf());
+      this.workerApplication.forEach(WorkerApplication::shutdown);
+      this.workerApplication.clear();
+
       this.zk.shutdown();
       this.zkThread.join();
 
-      Await.ready(this.localSystem.terminate(), Duration.Inf());
-
-      this.workerApplication.forEach(WorkerApplication::shutdown);
-      this.workerApplication.clear();
-    } catch (InterruptedException | TimeoutException e) {
+      FileUtils.deleteDirectory(new File("zookeeper"));
+      FileUtils.deleteDirectory(new File("leveldb"));
+    } catch (InterruptedException | TimeoutException | IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -118,26 +120,29 @@ final class TestStand implements Closeable {
     }
   }
 
-  public void deploy(TheGraph theGraph, int delay, TimeUnit units) {
+  public void deploy(TheGraph theGraph, int tickLength, TimeUnit timeUnit) {
     final long startTs = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+
+    final Map<HashRange, Integer> workers = TestStand.workers(this.dns.keySet());
+
     final TickInfo tickInfo = new TickInfo(
             theGraph,
-            this.workers.values().stream().findAny().orElseThrow(RuntimeException::new),
-            this.workers,
+            workers.values().stream().findAny().orElseThrow(RuntimeException::new),
+            workers,
             startTs,
-            startTs + units.toNanos(delay),
+            startTs + timeUnit.toNanos(tickLength),
             TimeUnit.MILLISECONDS.toNanos(10)
     );
     try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStand.ZK_STRING)) {
       zkConfigurationDeployer.pushTick(tickInfo);
-      TimeUnit.SECONDS.sleep(1);
+      TimeUnit.SECONDS.sleep(2);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  public void waitTick(int delay, TimeUnit unit) throws InterruptedException {
-    unit.sleep(delay);
+  public void waitTick(int tickLength, TimeUnit unit) throws InterruptedException {
+    unit.sleep(tickLength);
   }
 
   public Consumer<Object> randomFrontConsumer() {
@@ -151,11 +156,6 @@ final class TestStand implements Closeable {
 
     final Random rd = new Random();
     return obj -> result.get(rd.nextInt(result.size())).accept(obj);
-  }
-
-  public Consumer<Object> frontConsumer(int id) {
-    final ActorSelection frontActor = TestStand.front(this.localSystem, id, this.dns.get(id));
-    return obj -> frontActor.tell(new RawData<>(obj), ActorRef.noSender());
   }
 
   private static Map<Integer, InetSocketAddress> dns(int workersCount) {
