@@ -69,6 +69,12 @@ public final class NodeConcierge extends LoggingActor {
   }
 
   @Override
+  public void postStop() throws Exception {
+    db.close();
+    super.postStop();
+  }
+
+  @Override
   public Receive createReceive() {
     return this.receiveBuilder().match(TickInfo.class, this::onNewTick).build();
   }
