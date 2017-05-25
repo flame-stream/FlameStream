@@ -19,6 +19,7 @@
         <module>example</module>
         <module>sql</module>
         <module>wikiforia-parser</module>
+        <module>paper</module>
     </modules>
 
 </project>
