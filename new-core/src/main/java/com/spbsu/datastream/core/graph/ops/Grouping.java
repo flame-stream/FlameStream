@@ -126,10 +126,11 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   @Override
   public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
     final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
-      final ListIterator<DataItem<T>> removeIndex = group.listIterator();
-      while (removeIndex.nextIndex() < group.size() - this.window
-              && removeIndex.next().meta().globalTime().compareTo(globalTime) < 0) {
-        removeIndex.remove();
+      final ListIterator<DataItem<T>> iter = group.listIterator();
+
+      while (iter.nextIndex() < group.size() - this.window - 1
+              && iter.next().meta().globalTime().compareTo(globalTime) < 0) {
+        iter.remove();
       }
     };
     this.buffers.forEach(removeOldConsumer);

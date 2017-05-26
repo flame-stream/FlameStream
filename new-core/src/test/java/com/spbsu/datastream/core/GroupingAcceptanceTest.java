@@ -14,10 +14,7 @@ import org.jooq.lambda.Unchecked;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,30 +48,33 @@ public final class GroupingAcceptanceTest {
 
   private static void doIt(HashFunction<? super Long> groupHash,
                            HashFunction<? super Long> filterHash) throws InterruptedException {
-    try (TestStand stage = new TestStand(10, 1)) {
-
-      final Deque<List<Long>> result = new ArrayDeque<>();
+    try (TestStand stage = new TestStand(5, 1)) {
+      final Set<List<Long>> result = new HashSet<>();
+      final int window = 7;
 
       stage.deploy(GroupingAcceptanceTest.groupGraph(stage.fronts(),
-              stage.wrap(result::add),
+              stage.wrap(di -> result.add((List<Long>) di)),
+              window,
               groupHash,
-              filterHash), 15, TimeUnit.SECONDS);
+              filterHash), 10, TimeUnit.SECONDS);
 
-      final List<Long> source = new Random().longs(10000).boxed().collect(Collectors.toList());
+      final List<Long> source = new Random().longs(5000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();
       source.forEach(sink);
-      stage.waitTick(15, TimeUnit.SECONDS);
+      stage.waitTick(10, TimeUnit.SECONDS);
 
-      Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, groupHash));
+      Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, groupHash, window));
     }
   }
 
   @Test(enabled = false)
   public void infiniteTest() throws InterruptedException {
-    try (TestStand stage = new TestStand(10, 10)) {
+    try (TestStand stage = new TestStand(5, 10)) {
 
       stage.deploy(GroupingAcceptanceTest.groupGraph(stage.fronts(),
-              stage.wrap(d -> {}),
+              stage.wrap(d -> {
+              }),
+              3,
               HashFunction.uniformLimitedHash(100),
               HashFunction.OBJECT_HASH), 15, TimeUnit.HOURS);
 
@@ -90,29 +90,31 @@ public final class GroupingAcceptanceTest {
     }
   }
 
-  private static Set<List<Long>> expected(List<Long> in, HashFunction<? super Long> hash) {
+  private static Set<List<Long>> expected(List<Long> in, HashFunction<? super Long> hash, int window) {
     final Set<List<Long>> mustHave = new HashSet<>();
 
     final Map<Integer, List<Long>> buckets =
             in.stream().collect(Collectors.groupingBy(hash::hash));
 
     for (List<Long> bucket : buckets.values()) {
-      Seq.seq(bucket).sliding(2)
+      for (int i = 0; i < Math.min(bucket.size(), window - 1); ++i) {
+        mustHave.add(bucket.subList(0, i + 1));
+      }
+
+      Seq.seq(bucket).sliding(window)
               .map(Collectable::toList)
               .forEach(mustHave::add);
-      if (!bucket.isEmpty()) {
-        mustHave.add(Collections.singletonList(bucket.get(0)));
-      }
     }
 
     return mustHave;
   }
 
   private static TheGraph groupGraph(Collection<Integer> fronts, ActorPath consumer,
+                                     int window,
                                      HashFunction<? super Long> groupHash,
                                      HashFunction<? super Long> filterHash) {
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
-    final Grouping<Long> grouping = new Grouping<>(groupHash, 2);
+    final Grouping<Long> grouping = new Grouping<>(groupHash, window);
 
     final PreSinkMetaFilter<List<Long>> metaFilter = new PreSinkMetaFilter<>(HashFunction.OBJECT_HASH);
     final RemoteActorConsumer<List<Long>> sink = new RemoteActorConsumer<>(consumer);
