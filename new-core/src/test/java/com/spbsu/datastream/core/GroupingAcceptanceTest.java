@@ -56,12 +56,12 @@ public final class GroupingAcceptanceTest {
               stage.wrap(di -> result.add((List<Long>) di)),
               window,
               groupHash,
-              filterHash), 5, TimeUnit.SECONDS);
+              filterHash), 10, TimeUnit.SECONDS);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();
       source.forEach(sink);
-      stage.waitTick(6, TimeUnit.SECONDS);
+      stage.waitTick(12, TimeUnit.SECONDS);
 
       Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, groupHash, window));
     }
