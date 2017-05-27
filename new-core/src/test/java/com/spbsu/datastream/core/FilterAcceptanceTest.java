@@ -25,17 +25,17 @@ import java.util.stream.Collectors;
 public final class FilterAcceptanceTest {
 
   @Test
-  public void emptyTest() throws InterruptedException {
+  public void linearFilter() throws InterruptedException {
     try (TestStand stage = new TestStand(4, 4)) {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(FilterAcceptanceTest.multiGraph(stage.fronts(), stage.wrap(result::add)), 15, TimeUnit.SECONDS);
+      stage.deploy(FilterAcceptanceTest.multiGraph(stage.fronts(), stage.wrap(result::add)), 5, TimeUnit.SECONDS);
 
-      final List<Integer> source = new Random().ints(5000).boxed().collect(Collectors.toList());
+      final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();
       source.forEach(sink);
-      stage.waitTick(15, TimeUnit.SECONDS);
+      stage.waitTick(6, TimeUnit.SECONDS);
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }

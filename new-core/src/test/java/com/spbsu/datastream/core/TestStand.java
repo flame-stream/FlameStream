@@ -43,7 +43,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-final class TestStand implements Closeable {
+public final class TestStand implements Closeable {
   private static final String ZK_STRING = "localhost:2181";
   private static final int LOCAL_SYSTEM_PORT = 12345;
 
@@ -58,7 +58,7 @@ final class TestStand implements Closeable {
   private final Thread zkThread;
   private final ActorSystem localSystem;
 
-  TestStand(int workersCount, int frontCount) {
+  public TestStand(int workersCount, int frontCount) {
     this.dns = TestStand.dns(workersCount);
     this.fronts = this.dns.keySet().stream().limit(frontCount).collect(Collectors.toSet());
 

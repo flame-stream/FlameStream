@@ -56,12 +56,12 @@ public final class GroupingAcceptanceTest {
               stage.wrap(di -> result.add((List<Long>) di)),
               window,
               groupHash,
-              filterHash), 10, TimeUnit.SECONDS);
+              filterHash), 5, TimeUnit.SECONDS);
 
-      final List<Long> source = new Random().longs(5000).boxed().collect(Collectors.toList());
+      final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();
       source.forEach(sink);
-      stage.waitTick(10, TimeUnit.SECONDS);
+      stage.waitTick(6, TimeUnit.SECONDS);
 
       Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, groupHash, window));
     }
@@ -69,7 +69,7 @@ public final class GroupingAcceptanceTest {
 
   @Test(enabled = false)
   public void infiniteTest() throws InterruptedException {
-    try (TestStand stage = new TestStand(5, 10)) {
+    try (TestStand stage = new TestStand(4, 10)) {
 
       stage.deploy(GroupingAcceptanceTest.groupGraph(stage.fronts(),
               stage.wrap(d -> {
