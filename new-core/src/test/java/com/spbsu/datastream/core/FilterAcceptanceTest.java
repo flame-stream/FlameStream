@@ -30,12 +30,12 @@ public final class FilterAcceptanceTest {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(FilterAcceptanceTest.multiGraph(stage.fronts(), stage.wrap(result::add)), 5, TimeUnit.SECONDS);
+      stage.deploy(FilterAcceptanceTest.multiGraph(stage.fronts(), stage.wrap(result::add)), 10, TimeUnit.SECONDS);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();
       source.forEach(sink);
-      stage.waitTick(6, TimeUnit.SECONDS);
+      stage.waitTick(12, TimeUnit.SECONDS);
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }
