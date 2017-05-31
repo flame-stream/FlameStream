@@ -14,21 +14,13 @@ import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 import java.util.Collections;
 import java.util.List;
 
-public final class RemoteActorConsumer<T> extends AbstractAtomicGraph {
+public final class RemoteActorConsumer<T> extends BarrierSink<T> {
   private final ActorPath path;
-  private final InPort inPort;
-
-  private final BarrierCollector collector = new LinearCollector();
 
   private ActorSelection actor;
 
   public RemoteActorConsumer(ActorPath path) {
     this.path = path;
-    this.inPort = new InPort(PreSinkMetaElement.HASH_FUNCTION);
-  }
-
-  public InPort inPort() {
-    return this.inPort;
   }
 
   @Override
@@ -37,34 +29,8 @@ public final class RemoteActorConsumer<T> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
-    this.collector.enqueue(item);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-    this.collector.update(globalTime);
-    this.collector.release(di -> this.consume((DataItem<PreSinkMetaElement<T>>) di));
-  }
-
-  private void consume(DataItem<PreSinkMetaElement<T>> di) {
-    this.actor.tell(new RawData<>(di.payload().payload()), ActorRef.noSender());
-  }
-
-  @Override
-  public void onCommit(AtomicHandle handle) {
-    System.out.println();
-  }
-
-  @Override
-  public List<InPort> inPorts() {
-    return Collections.singletonList(this.inPort);
-  }
-
-  @Override
-  public List<OutPort> outPorts() {
-    return Collections.emptyList();
+  protected void consume(T payload) {
+    this.actor.tell(new RawData<>(payload), ActorRef.noSender());
   }
 }
 
