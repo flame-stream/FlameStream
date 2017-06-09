@@ -9,17 +9,13 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
 public final class Filter<T> extends AbstractAtomicGraph {
-  public static final String NULL_PAYLOAD = "empty";
-
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
-  private final OutPort nullPort = new OutPort();
 
   private final Predicate<T> predicate;
 
@@ -30,13 +26,14 @@ public final class Filter<T> extends AbstractAtomicGraph {
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
-    @SuppressWarnings("unchecked") final boolean test = this.predicate.test((T) item.payload());
+    @SuppressWarnings("unchecked") final boolean ok = this.predicate.test((T) item.payload());
 
-    if (test) {
+    if (ok) {
       final DataItem<?> result = new PayloadDataItem<>(new Meta(item.meta(), this.incrementLocalTimeAndGet()), item.payload());
+
       handler.push(this.outPort(), result);
     } else {
-      handler.push(this.nullPort(), new PayloadDataItem<>(new Meta(item.meta(), this.incrementLocalTimeAndGet()), Filter.NULL_PAYLOAD));
+      // TODO: 5/9/17 DELIVER NULL
     }
   }
 
@@ -53,16 +50,9 @@ public final class Filter<T> extends AbstractAtomicGraph {
     return this.outPort;
   }
 
-  public OutPort nullPort() {
-    return this.nullPort;
-  }
-
   @Override
   public List<OutPort> outPorts() {
-    final List<OutPort> result = new ArrayList<>();
-    result.add(this.outPort);
-    result.add(this.nullPort);
-    return Collections.unmodifiableList(result);
+    return Collections.singletonList(this.outPort);
   }
 }
 
