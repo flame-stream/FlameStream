@@ -1,16 +1,43 @@
 package com.spbsu.datastream.core;
 
-import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.function.Function;
 
 @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
 public final class Trace implements Comparable<Trace> {
   //Inner representation is a subject for a discussion and/or an optimization
   public static final Trace EMPTY_TRACE = new Trace();
 
+  /**
+   * Invalidating relation
+   */
+  public static final Comparator<Trace> INVALIDATION_COMPARATOR = (t0, t1) -> {
+    for (int i = 0; i < Math.min(t0.size(), t1.size()); ++i) {
+      if (!t0.eventAt(i).equals(t1.eventAt(i))) {
+        return Long.compare(t0.eventAt(i).localTime(), t1.eventAt(i).localTime());
+      }
+    }
+    return 0;
+  };
+
+  /**
+   * Compares traces lexicographically. Invalidate related traces are equal.
+   */
+  public static final Comparator<Trace> INVALIDATION_IGNORING_COMPARATOR = (t0, t1) -> {
+    for (int i = 0; i < Math.min(t0.size(), t1.size()); ++i) {
+      final LocalEvent t0Event = t0.eventAt(i);
+      final LocalEvent t1Event = t1.eventAt(i);
+      if (!Objects.equals(t0Event, t1Event)) {
+        if (t0Event.localTime() == t1Event.localTime()) {
+          return Integer.compare(t0Event.childId(), t1Event.childId());
+        } else {
+          return 0;
+        }
+      }
+    }
+    return Integer.compare(t0.size(), t1.size());
+  };
 
   private final LocalEvent[] trace;
 
@@ -37,15 +64,9 @@ public final class Trace implements Comparable<Trace> {
 
   @Override
   public int compareTo(Trace that) {
-    for (int i = 0; i < Math.min(that.trace.length, this.trace.length); ++i) {
-
-      final int compare = this.eventAt(i).compareTo(that.eventAt(i));
-      if (compare != 0) {
-        return compare;
-      }
-    }
-
-    return Integer.compare(this.trace.length, that.trace.length);
+    return Trace.INVALIDATION_IGNORING_COMPARATOR
+            .thenComparing(Trace.INVALIDATION_COMPARATOR)
+            .compare(this, that);
   }
 
   @Override

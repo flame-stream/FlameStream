@@ -3,7 +3,6 @@ package com.spbsu.datastream.core.graph.ops;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.LocalEvent;
 import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.Trace;
@@ -12,11 +11,10 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -86,37 +84,13 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     }
   }
 
-  public static final Comparator<Trace> INVALIDATION_COMPARATOR = (t0, t1) -> {
-    for (int i = 0; i < Math.min(t0.size(), t1.size()); ++i) {
-      if (!t0.eventAt(i).equals(t1.eventAt(i))) {
-        return Long.compare(t0.eventAt(i).localTime(), t1.eventAt(i).localTime());
-      }
-    }
-    return 0;
-  };
-
-  private static final Comparator<Trace> INVALIDATION_IGNORING_COMPARATOR = (t0, t1) -> {
-    for (int i = 0; i < Math.min(t0.size(), t1.size()); ++i) {
-      final LocalEvent t0Event = t0.eventAt(i);
-      final LocalEvent t1Event = t1.eventAt(i);
-      if (!Objects.equals(t0Event, t1Event)) {
-        if (t0Event.localTime() == t1Event.localTime()) {
-          return Integer.compare(t0Event.childId(), t1Event.childId());
-        } else {
-          return 0;
-        }
-      }
-    }
-    return Integer.compare(t0.size(), t1.size());
-  };
-
   private static final Comparator<DataItem<?>> ITEM_COMPARATOR = Comparator
           .comparing((DataItem<?> di) -> di.meta().globalTime())
           .thenComparing((DataItem<?> di) -> di.meta().trace(),
-                  Grouping.INVALIDATION_IGNORING_COMPARATOR);
+                  Trace.INVALIDATION_IGNORING_COMPARATOR);
 
   private static final Comparator<DataItem<?>> ITEM_INVALIDATION_COMPARATOR = Comparator
-          .comparing((DataItem<?> di) -> di.meta().trace(), Grouping.INVALIDATION_COMPARATOR);
+          .comparing((DataItem<?> di) -> di.meta().trace(), Trace.INVALIDATION_COMPARATOR);
 
   @Override
   public void onCommit(AtomicHandle handle) {
@@ -126,12 +100,30 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   @Override
   public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
     final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
-      final ListIterator<DataItem<T>> iter = group.listIterator();
-
-      while (iter.nextIndex() < group.size() - this.window - 1
-              && iter.next().meta().globalTime().compareTo(globalTime) < 0) {
-        iter.remove();
+      int position = 0;
+      while (position < group.size()
+              && group.get(position).meta().globalTime().compareTo(globalTime) < 0) {
+        position++;
       }
+
+      //  [position, size) - to keep. But we need to add window to position: [position - window, size).
+      // And do not forget about brothers, that can be invalidated at once.
+
+      int groupSize = 0;
+      Meta previousMeta = null;
+      while (groupSize <  this.window && position - 1 >= 0) {
+
+        if (previousMeta == null || !group.get(position - 1).meta().isBrother(previousMeta)) {
+          groupSize++;
+        }
+
+        previousMeta = group.get(position - 1).meta();
+        position--;
+      }
+
+      final List<DataItem<T>> toKeep = new ArrayList<>(group.subList(position, group.size()));
+      group.clear();
+      group.addAll(toKeep);
     };
     this.buffers.forEach(removeOldConsumer);
   }

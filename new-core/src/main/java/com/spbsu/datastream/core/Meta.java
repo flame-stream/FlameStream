@@ -40,6 +40,15 @@ public final class Meta implements Comparable<Meta> {
     return Meta.COMPARATOR.compare(this, that);
   }
 
+  public boolean isBrother(Meta that) {
+    if (this.globalTime.equals(that.globalTime())
+            && Trace.INVALIDATION_COMPARATOR.compare(this.trace, that.trace()) == 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
