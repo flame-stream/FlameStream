@@ -42,31 +42,11 @@ public final class WorkerApplication {
   }
 
   public static void main(String... args) throws UnknownHostException {
-    if (args.length > 0) {
-      WorkerApplication.runWithArgs(args);
-    } else {
-      WorkerApplication.runWithEnv();
-    }
-  }
-
-  private static void runWithEnv() throws UnknownHostException {
-    final int id = Integer.valueOf(System.getenv("DS_ID"));
-    final InetAddress address = InetAddress.getByName(System.getenv("DS_HOST"));
-    final int port = Integer.parseInt(System.getenv("DS_PORT"));
-    final InetSocketAddress socketAddress = new InetSocketAddress(address, port);
-
-    final String connectingString = System.getenv("DS_ZK");
-    new WorkerApplication(id, socketAddress, connectingString).run();
-  }
-
-  private static void runWithArgs(String... args) {
     final Options options = new Options();
-    final Option idOpt = Option.builder("id").hasArg().argName("id").desc("worker id").required().build();
     final Option hostOpt = Option.builder("host").hasArg().argName("FQDN").desc("worker FQDN").required().build();
     final Option portOpt = Option.builder("port").hasArg().argName("port").desc("worker port").required().build();
     final Option zkOpt = Option.builder("zk").hasArg().argName("connectString").desc("ZK connect string").required().build();
 
-    options.addOption(idOpt);
     options.addOption(hostOpt);
     options.addOption(portOpt);
     options.addOption(zkOpt);
@@ -86,10 +66,7 @@ public final class WorkerApplication {
       WorkerApplication.LOG.error("Parsing failed", e);
       final HelpFormatter formatter = new HelpFormatter();
       formatter.printHelp("dataStreams", options);
-    } catch (UnknownHostException e) {
-      WorkerApplication.LOG.error("Resolving failed", e);
     }
-
   }
 
   public void run() {
