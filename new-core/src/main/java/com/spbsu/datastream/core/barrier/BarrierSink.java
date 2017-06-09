@@ -7,20 +7,16 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public abstract class BarrierSink<T> extends AbstractAtomicGraph {
   private final InPort inPort;
 
-  private final InPort nullPort;
-
   private final BarrierCollector collector = new LinearCollector();
 
   public BarrierSink() {
     this.inPort = new InPort(PreSinkMetaElement.HASH_FUNCTION);
-    this.nullPort = new InPort(PreSinkMetaElement.HASH_FUNCTION);
   }
 
   @Override
@@ -41,16 +37,9 @@ public abstract class BarrierSink<T> extends AbstractAtomicGraph {
     return this.inPort;
   }
 
-  public final InPort nullPort() {
-    return this.nullPort;
-  }
-
   @Override
   public final List<InPort> inPorts() {
-    final List<InPort> result = new ArrayList<>();
-    result.add(this.inPort);
-    result.add(this.nullPort);
-    return Collections.unmodifiableList(result);
+    return Collections.singletonList(this.inPort);
   }
 
   @Override
