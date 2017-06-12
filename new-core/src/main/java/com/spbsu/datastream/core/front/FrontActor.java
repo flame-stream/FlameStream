@@ -15,8 +15,9 @@ import java.util.TreeMap;
 public final class FrontActor extends LoggingActor {
   private final ActorRef dns;
   private final int id;
-
   private final TreeMap<Long, ActorRef> tickFronts = new TreeMap<>();
+
+  private long prevGlobalTs = -1;
 
   public static Props props(ActorRef dns, int id) {
     return Props.create(FrontActor.class, dns, id);
@@ -55,7 +56,13 @@ public final class FrontActor extends LoggingActor {
   }
 
   private void redirectItem(RawData<?> data) {
-    final GlobalTime globalTime = new GlobalTime(System.nanoTime(), this.id);
+    long globalTs = System.nanoTime();
+    if (globalTs <= prevGlobalTs) {
+      globalTs = prevGlobalTs + 1;
+    }
+    prevGlobalTs = globalTs;
+
+    final GlobalTime globalTime = new GlobalTime(globalTs, this.id);
     final Meta now = new Meta(globalTime);
     final DataItem<?> dataItem = new PayloadDataItem<>(now, data.payload());
 
