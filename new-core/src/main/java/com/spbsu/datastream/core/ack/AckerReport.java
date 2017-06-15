@@ -10,7 +10,7 @@ public final class AckerReport {
 
   /***
    * @param globalTime start time of the report.
-   * @param xor xor of the dataItem acks, generated in the window [globalTime, globalTime + window]
+   * @param xor xor of the dataItem acks, generated in the window [globalTime, globalTime + window)
    */
   public AckerReport(GlobalTime globalTime, long xor) {
     this.globalTime = globalTime;

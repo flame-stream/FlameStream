@@ -47,6 +47,8 @@ public final class AckActor extends LoggingActor {
   }
 
   private void handleAck(Ack ack) {
+    this.assertMonotonicAck(ack.time());
+
     this.LOG().debug("Ack received: {}", ack);
     this.ledger.ack(ack.time(), ack.xor());
     this.checkLedgerTime();
@@ -62,6 +64,12 @@ public final class AckActor extends LoggingActor {
     if (ledgerMin.time() >= this.tickInfo.stopTs()) {
       this.sendCommit();
       this.getContext().become(this.receiveBuilder().match(CommitDone.class, this::handleDone).build());
+    }
+  }
+
+  private void assertMonotonicAck(GlobalTime newTime) {
+    if (newTime.compareTo(this.currentMin) < 0) {
+      throw new IllegalStateException("Not monotonic acks. Fixme");
     }
   }
 
