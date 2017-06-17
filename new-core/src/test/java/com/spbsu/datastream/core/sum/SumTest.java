@@ -29,18 +29,18 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class SumTest {
-  @Test(enabled = false)
+  @Test
   public void test() throws InterruptedException {
-    try (TestStand stage = new TestStand(4, 4)) {
+    try (TestStand stage = new TestStand(4, 1)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
-      stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(result::add)), 15, TimeUnit.SECONDS);
+      stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(result::add)), 10, TimeUnit.SECONDS);
 
-      final List<LongNumb> source = new Random().longs(2).mapToObj(LongNumb::new).collect(Collectors.toList());
+      final List<LongNumb> source = new Random().longs(1000).mapToObj(LongNumb::new).collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer();
       source.forEach(sink);
-      stage.waitTick(15, TimeUnit.SECONDS);
+      stage.waitTick(12, TimeUnit.SECONDS);
 
       Assert.assertEquals(result.getLast().value(), source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value());
     }
