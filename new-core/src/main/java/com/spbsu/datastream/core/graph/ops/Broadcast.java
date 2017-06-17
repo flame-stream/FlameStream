@@ -32,7 +32,7 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
       final Meta newMeta = new Meta(item.meta(), this.incrementLocalTimeAndGet(), i);
 
       final DataItem<?> newItem = new PayloadDataItem<>(newMeta, item.payload());
-      handle.push(outPorts.get(i), item);
+      handle.push(outPorts.get(i), newItem);
     }
   }
 
