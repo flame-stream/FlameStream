@@ -27,9 +27,9 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     final List<OutPort> outPorts = this.outPorts();
-
+    final int newLocalTime = this.incrementLocalTimeAndGet();
     for (int i = 0; i < outPorts.size(); ++i) {
-      final Meta newMeta = new Meta(item.meta(), this.incrementLocalTimeAndGet(), i);
+      final Meta newMeta = new Meta(item.meta(), newLocalTime, i);
 
       final DataItem<?> newItem = new PayloadDataItem<>(newMeta, item.payload());
       handle.push(outPorts.get(i), newItem);

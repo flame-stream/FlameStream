@@ -22,7 +22,7 @@ public final class FlatFilter<T, R> extends AbstractAtomicGraph {
 
   private final InPort inPort;
 
-  public FlatFilter(Function<T, Stream<R>> function, HashFunction<T> hash) {
+  public FlatFilter(Function<T, Stream<R>> function, HashFunction<? super T> hash) {
     this.function = function;
     this.inPort = new InPort(hash);
   }
@@ -31,8 +31,9 @@ public final class FlatFilter<T, R> extends AbstractAtomicGraph {
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
     final Stream<R> res = this.function.apply((T) item.payload());
+    final int newLocalTime = this.incrementLocalTimeAndGet();
     Seq.zipWithIndex(res).forEach(t -> {
-      final Meta newMeta = new Meta(item.meta(), this.incrementLocalTimeAndGet(), Math.toIntExact(t.v2()));
+      final Meta newMeta = new Meta(item.meta(), newLocalTime, Math.toIntExact(t.v2()));
       final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t.v1());
 
       handler.push(this.outPort(), newDataItem);
