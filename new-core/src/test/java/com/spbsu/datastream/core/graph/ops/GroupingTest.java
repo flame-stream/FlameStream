@@ -197,6 +197,52 @@ public final class GroupingTest {
     Assert.assertTrue(new HashSet<>(GroupingTest.groupMe(shuffledInput, window)).containsAll(mustHave), "Result must contain expected elements");
   }
 
+  @Test
+  public void brothersInvalidation() {
+    final DataItem<String> father = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "father");
+
+    final DataItem<String> son1 = new PayloadDataItem<>(new Meta(father.meta(), 1, 0), "son1");
+    final DataItem<String> son2 = new PayloadDataItem<>(new Meta(father.meta(), 1, 1), "son2");
+    final DataItem<String> son3 = new PayloadDataItem<>(new Meta(father.meta(), 1, 2), "son3");
+
+    final DataItem<String> son1Prime = new PayloadDataItem<>(new Meta(father.meta(), 2, 0), "son1Prime");
+    final DataItem<String> son2Prime = new PayloadDataItem<>(new Meta(father.meta(), 2, 1), "son2Prime");
+    final DataItem<String> son3Prime = new PayloadDataItem<>(new Meta(father.meta(), 2, 2), "son3Prime");
+
+    { //without reordering
+      final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(son1, son2, son3, son1Prime, son2Prime, son3Prime), 2);
+      final List<List<String>> expectedResult = Arrays.asList(
+              Collections.singletonList(son1.payload()),
+              Arrays.asList(son1.payload(), son2.payload()),
+              Arrays.asList(son2.payload(), son3.payload()),
+              Collections.singletonList(son1Prime.payload()),
+              Arrays.asList(son1Prime.payload(), son2Prime.payload()),
+              Arrays.asList(son2Prime.payload(), son3Prime.payload())
+      );
+      Assert.assertEquals(actualResult, expectedResult, "Brothers invalidation without reordering");
+    }
+    { //with reordering #1
+      final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(son1, son2, son1Prime, son3, son2Prime, son3Prime), 2);
+      final List<List<String>> expectedResult = Arrays.asList(
+              Collections.singletonList(son1.payload()),
+              Arrays.asList(son1.payload(), son2.payload()),
+              Collections.singletonList(son1Prime.payload()),
+              Arrays.asList(son1Prime.payload(), son2Prime.payload()),
+              Arrays.asList(son2Prime.payload(), son3Prime.payload())
+      );
+      Assert.assertEquals(actualResult, expectedResult, "Brothers invalidation with reordering #1");
+    }
+    { //with reordering #2
+      final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(son1Prime, son1, son2, son2Prime, son3, son3Prime), 2);
+      final List<List<String>> expectedResult = Arrays.asList(
+              Collections.singletonList(son1Prime.payload()),
+              Arrays.asList(son1Prime.payload(), son2Prime.payload()),
+              Arrays.asList(son2Prime.payload(), son3Prime.payload())
+      );
+      Assert.assertEquals(actualResult, expectedResult, "Brothers invalidation with reordering #2");
+    }
+  }
+
   private static <T> List<List<T>> groupMe(Iterable<DataItem<T>> input, int window) {
     final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), window);
 
