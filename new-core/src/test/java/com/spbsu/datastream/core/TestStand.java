@@ -145,7 +145,7 @@ public final class TestStand implements Closeable {
     unit.sleep(tickLength);
   }
 
-  public Consumer<Object> randomFrontConsumer() {
+  public Consumer<Object> randomFrontConsumer(long seed) {
     final List<Consumer<Object>> result = new ArrayList<>();
 
     for (int frontId : this.fronts) {
@@ -154,7 +154,7 @@ public final class TestStand implements Closeable {
       result.add(consumer);
     }
 
-    final Random rd = new Random();
+    final Random rd = new Random(seed);
     return obj -> result.get(rd.nextInt(result.size())).accept(obj);
   }
 

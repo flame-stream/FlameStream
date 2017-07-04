@@ -64,7 +64,7 @@ public class UserCountTest {
               .collect(Collectors.toList());
       final Map<String, Integer> expected = source.stream().collect(Collectors.toMap(UserQuery::user, o -> 1, Integer::sum));
 
-      final Consumer<Object> sink = stage.randomFrontConsumer();
+      final Consumer<Object> sink = stage.randomFrontConsumer(123);
       source.forEach(sink);
       stage.waitTick(12, TimeUnit.SECONDS);
 

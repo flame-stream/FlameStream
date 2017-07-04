@@ -59,7 +59,7 @@ public final class GroupingAcceptanceTest {
               filterHash), 10, TimeUnit.SECONDS);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = stage.randomFrontConsumer();
+      final Consumer<Object> sink = stage.randomFrontConsumer(123);
       source.forEach(sink);
       stage.waitTick(12, TimeUnit.SECONDS);
 
@@ -78,7 +78,7 @@ public final class GroupingAcceptanceTest {
               HashFunction.uniformLimitedHash(100),
               HashFunction.OBJECT_HASH), 15, TimeUnit.HOURS);
 
-      final Consumer<Object> sink = stage.randomFrontConsumer();
+      final Consumer<Object> sink = stage.randomFrontConsumer(123);
 
       new Random().longs().boxed()
               .forEach(Unchecked.consumer(l -> {

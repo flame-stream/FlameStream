@@ -3,11 +3,19 @@ package com.spbsu.datastream.core;
 import akka.actor.AbstractActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import scala.PartialFunction;
+import scala.runtime.BoxedUnit;
 
 import java.util.Optional;
 
 public abstract class LoggingActor extends AbstractActor {
   private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
+
+  @Override
+  public void aroundReceive(PartialFunction<Object, BoxedUnit> receive, Object msg) {
+    this.LOG().debug("Received: {}", msg);
+    receive.apply(msg);
+  }
 
   @Override
   public void preStart() throws Exception {
