@@ -51,6 +51,39 @@ public final class GroupingTest {
   }
 
   @Test
+  public void groupWithSucessor() {
+    final Meta x5Global = new Meta(new Meta(new GlobalTime(5, 5)), 1);
+    final Meta x0Global = new Meta(new Meta(new GlobalTime(3, 3)), 2);
+
+    final DataItem<String> x5 = new PayloadDataItem<>(x5Global, "v5");
+    final DataItem<String> x5State = new PayloadDataItem<>(new Meta(x5Global, 6), "v5State");
+    final DataItem<String> x0 = new PayloadDataItem<>(x0Global, "x0Global");
+    final DataItem<String> x0State = new PayloadDataItem<>(new Meta(x0Global, 8), "x0State");
+    final DataItem<String> theState = new PayloadDataItem<>(new Meta(x5Global, 10), "theState");
+
+    final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x5, x5State, x0, x0State, theState), 2);
+    final List<List<String>> expectedResult = new ArrayList<>();
+
+    final List<String> y1 = Collections.singletonList(x5.payload());
+    final List<String> y2 = Arrays.asList(x5.payload(), x5State.payload());
+    final List<String> y3 = Collections.singletonList(x0.payload());
+    final List<String> y4 = Arrays.asList(x0.payload(), x5.payload());
+    final List<String> y5 = Arrays.asList(x0.payload(), x0State.payload());
+    final List<String> y6 = Arrays.asList(x0State.payload(), x5.payload());
+    final List<String> y7 = Arrays.asList(x5.payload(), theState.payload());
+
+    expectedResult.add(y1);
+    expectedResult.add(y2);
+    expectedResult.add(y3);
+    expectedResult.add(y4);
+    expectedResult.add(y5);
+    expectedResult.add(y6);
+    expectedResult.add(y7);
+
+    Assert.assertEquals(actualResult, expectedResult);
+  }
+
+  @Test
   public void cycleSimulation() {
     final Meta x1Meta = new Meta(new GlobalTime(1, 1));
 
