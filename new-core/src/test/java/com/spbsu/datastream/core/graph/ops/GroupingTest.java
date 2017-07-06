@@ -230,7 +230,7 @@ public final class GroupingTest {
     Assert.assertTrue(new HashSet<>(GroupingTest.groupMe(shuffledInput, window)).containsAll(mustHave), "Result must contain expected elements");
   }
 
-  @Test
+  @Test(enabled = false)
   public void brothersInvalidation() {
     final DataItem<String> father = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "father");
 
