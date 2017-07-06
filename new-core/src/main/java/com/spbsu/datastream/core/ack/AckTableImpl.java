@@ -57,11 +57,17 @@ public final class AckTableImpl implements AckTable {
 
   @Override
   public void ack(long ts, long xor) {
+    if (ts < this.lastMinReported) {
+      throw new IllegalArgumentException("Ack for passed min");
+    }
+
     final long lowerBound = this.startTs + this.window * ((ts - this.startTs) / this.window);
 
     this.table.computeIfPresent(lowerBound, (t, entry) -> new AckEntry(entry.isReported(), entry.xor() ^ xor));
     this.table.putIfAbsent(lowerBound, new AckEntry(false, xor));
   }
+
+  private long lastMinReported = 0;
 
   @Override
   public long min() {
@@ -74,6 +80,7 @@ public final class AckTableImpl implements AckTable {
       }
     }
 
+    this.lastMinReported = this.table.firstKey();
     return this.table.firstKey();
   }
 
