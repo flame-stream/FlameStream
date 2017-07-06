@@ -1,5 +1,6 @@
 package com.spbsu.datastream.core.range.atomic;
 
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.AtomicMessage;
 import com.spbsu.datastream.core.LoggingActor;
@@ -7,18 +8,20 @@ import com.spbsu.datastream.core.ack.Commit;
 import com.spbsu.datastream.core.ack.MinTimeUpdate;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.range.AtomicCommitDone;
+import com.spbsu.datastream.core.tick.TickInfo;
+import org.iq80.leveldb.DB;
 
 public final class AtomicActor extends LoggingActor {
   private final AtomicGraph atomic;
   private final AtomicHandle handle;
 
-  private AtomicActor(AtomicGraph atomic, AtomicHandle handle) {
+  private AtomicActor(AtomicGraph atomic, TickInfo tickInfo, ActorRef dns, DB db) {
     this.atomic = atomic;
-    this.handle = handle;
+    this.handle = new AtomicHandleImpl(tickInfo, dns, db, this.context());
   }
 
-  public static Props props(AtomicGraph atomic, AtomicHandle handle) {
-    return Props.create(AtomicActor.class, atomic, handle);
+  public static Props props(AtomicGraph atomic, TickInfo tickInfo, ActorRef dns, DB db) {
+    return Props.create(AtomicActor.class, atomic, tickInfo, dns, db);
   }
 
   @Override

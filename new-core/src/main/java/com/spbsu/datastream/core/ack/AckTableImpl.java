@@ -26,6 +26,13 @@ public final class AckTableImpl implements AckTable {
     public boolean isDone() {
       return this.isReported && this.xor == 0;
     }
+
+    @Override
+    public String toString() {
+      return "AckEntry{" + "isReported=" + this.isReported +
+              ", xor=" + this.xor +
+              '}';
+    }
   }
 
   private final SortedMap<Long, AckEntry> table;
@@ -92,5 +99,12 @@ public final class AckTableImpl implements AckTable {
   @Override
   public long start() {
     return this.startTs;
+  }
+
+  @Override
+  public String toString() {
+    return "AckTableImpl{" + "table=" + this.table +
+            ", waitingReportFor=" + this.waitingFor +
+            '}';
   }
 }

@@ -43,4 +43,11 @@ public final class LinearCollector implements BarrierCollector {
     this.released.forEach(consumer);
     this.released.clear();
   }
+
+  @Override
+  public String toString() {
+    return "LinearCollector{" + "invalidationPool=" + this.invalidationPool +
+            ", released=" + this.released +
+            '}';
+  }
 }

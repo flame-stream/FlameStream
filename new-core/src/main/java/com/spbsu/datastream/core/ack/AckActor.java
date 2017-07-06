@@ -40,6 +40,13 @@ public final class AckActor extends LoggingActor {
             .build();
   }
 
+  @Override
+  public void postStop() throws Exception {
+    super.postStop();
+
+    this.LOG().debug("Acker ledger: {}", this.ledger);
+  }
+
   private void handleReport(AckerReport report) {
     this.LOG().debug("Front report received: {}", report);
     this.ledger.report(report.globalTime(), report.xor());

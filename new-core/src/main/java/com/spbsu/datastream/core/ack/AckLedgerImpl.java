@@ -4,9 +4,6 @@ import com.spbsu.datastream.core.GlobalTime;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
-import java.util.Comparator;
-import java.util.Map;
-
 public final class AckLedgerImpl implements AckLedger {
   private final TIntObjectMap<AckTable> tables = new TIntObjectHashMap<>();
 
@@ -38,5 +35,11 @@ public final class AckLedgerImpl implements AckLedger {
   @Override
   public void ack(GlobalTime windowHead, long xor) {
     this.tables.get(windowHead.front()).ack(windowHead.time(), xor);
+  }
+
+  @Override
+  public String toString() {
+    return "AckLedgerImpl{" + "tables=" + this.tables +
+            '}';
   }
 }

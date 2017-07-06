@@ -13,7 +13,6 @@ import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
 import com.spbsu.datastream.core.range.atomic.AtomicActor;
-import com.spbsu.datastream.core.range.atomic.AtomicHandleImpl;
 import com.spbsu.datastream.core.tick.TickInfo;
 import org.iq80.leveldb.DB;
 
@@ -106,6 +105,7 @@ public final class RangeConcierge extends LoggingActor {
 
   private ActorRef actorForAtomic(AtomicGraph atomic) {
     final String id = UUID.randomUUID().toString();
-    return this.context().actorOf(AtomicActor.props(atomic, new AtomicHandleImpl(this.tickInfo, this.dns, this.db, this.context())), id);
+    this.LOG().debug("Creating actor for atomic: id= {}, class={}", id, atomic.getClass());
+    return this.context().actorOf(AtomicActor.props(atomic, this.tickInfo, this.dns, this.db), id);
   }
 }
