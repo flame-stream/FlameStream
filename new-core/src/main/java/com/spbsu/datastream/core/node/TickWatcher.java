@@ -15,20 +15,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class TickCurator extends LoggingActor {
+public final class TickWatcher extends LoggingActor {
   private final TickInfoSerializer serializer = new KryoInfoSerializer();
   private final ZooKeeper zooKeeper;
   private final ActorRef notify;
 
   private final Map<Long, TickInfo> seenTicks = new HashMap<>();
 
-  private TickCurator(ZooKeeper zooKeeper, ActorRef notify) {
+  private TickWatcher(ZooKeeper zooKeeper, ActorRef notify) {
     this.zooKeeper = zooKeeper;
     this.notify = notify;
   }
 
   public static Props props(ZooKeeper zooKeeper, ActorRef notify) {
-    return Props.create(TickCurator.class, zooKeeper, notify);
+    return Props.create(TickWatcher.class, zooKeeper, notify);
   }
 
   @Override
@@ -49,7 +49,7 @@ public final class TickCurator extends LoggingActor {
       if (!this.seenTicks.containsKey(Long.valueOf(tick))) {
         final byte[] data = this.zooKeeper.getData("/ticks/" + tick, false, null);
         final TickInfo tickInfo = this.serializer.deserialize(data);
-        this.seenTicks.putIfAbsent(Long.valueOf(tick), tickInfo);
+        this.seenTicks.put(Long.valueOf(tick), tickInfo);
         this.notify.tell(tickInfo, this.sender());
       }
     }

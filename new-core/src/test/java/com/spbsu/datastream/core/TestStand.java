@@ -189,6 +189,7 @@ public final class TestStand implements Closeable {
     final Address add = Address.apply("akka.tcp", "worker", address.getAddress().getHostName(), address.getPort());
     final ActorPath path = RootActorPath.apply(add, "/")
             .$div("user")
+            .$div("watcher")
             .$div(String.valueOf(id))
             .$div("front");
     return system.actorSelection(path);

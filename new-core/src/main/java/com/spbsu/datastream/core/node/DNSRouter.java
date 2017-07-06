@@ -70,6 +70,7 @@ final class DNSRouter extends LoggingActor {
     final Address add = Address.apply("akka.tcp", "worker", address.getAddress().getHostName(), address.getPort());
     final ActorPath path = RootActorPath.apply(add, "/")
             .$div("user")
+            .$div("watcher")
             .$div(String.valueOf(id))
             .$div("dns");
     return this.context().actorSelection(path);

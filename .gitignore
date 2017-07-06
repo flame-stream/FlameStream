@@ -13,3 +13,4 @@ experiments/storm-test/target/
 new-core/target/
 sql/target/
 wikiforia-parser/target/
+/new-core/test.log

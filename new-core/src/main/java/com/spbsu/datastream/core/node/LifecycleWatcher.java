@@ -1,34 +1,69 @@
 package com.spbsu.datastream.core.node;
 
 import akka.actor.Props;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import com.spbsu.datastream.core.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.ZooKeeper;
 
 import static org.apache.zookeeper.Watcher.Event;
 
 public final class LifecycleWatcher extends LoggingActor {
-  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
+  private final String zkConnectString;
+  private final int id;
 
-  public static Props props() {
-    return Props.create(LifecycleWatcher.class);
+  private ZooKeeper zk;
+
+  public LifecycleWatcher(String zkConnectString, int id) {
+    this.zkConnectString = zkConnectString;
+    this.id = id;
+  }
+
+  public static Props props(String zkConnectString, int id) {
+    return Props.create(LifecycleWatcher.class, zkConnectString, id);
+  }
+
+  @Override
+  public void preStart() throws Exception {
+    super.preStart();
+
+    this.zk = new ZooKeeper(this.zkConnectString, 5000,
+            event -> this.self().tell(event, this.self()));
+  }
+
+  @Override
+  public void postStop() throws Exception {
+    super.postStop();
+
+    this.zk.close();
   }
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder().match(WatchedEvent.class, LifecycleWatcher::onWatchedEvent).build();
+    return this.receiveBuilder().match(WatchedEvent.class, this::onWatchedEvent).build();
   }
 
-  private static void onWatchedEvent(WatchedEvent event) {
+  private void onWatchedEvent(WatchedEvent event) {
     if (event.getType() == Event.EventType.None) {
       final Event.KeeperState state = event.getState();
-      if (state == Event.KeeperState.Expired) {
-        System.err.print(event);
-        System.err.flush();
-        // TODO: 3/26/17 DO NOT EXIT HERE
-        System.exit(1);
+
+      switch (state) {
+        case SyncConnected:
+          this.LOG().info("Connected to ZK");
+          this.initConcierge();
+          break;
+        case Expired:
+          this.LOG().info("Session expired");
+          this.context().stop(this.self());
+          break;
+        default:
+          this.unhandled(event);
       }
+    } else {
+      this.unhandled(event);
     }
+  }
+
+  private void initConcierge() {
+    this.context().actorOf(NodeConcierge.props(this.id, this.zk), String.valueOf(this.id));
   }
 }
