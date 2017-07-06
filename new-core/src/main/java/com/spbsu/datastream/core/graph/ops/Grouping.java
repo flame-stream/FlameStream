@@ -68,38 +68,22 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     handle.push(this.outPort(), result);
   }
 
-  //private int insert(List<DataItem<T>> group, DataItem<T> item) {
-  //  final int position = Collections.binarySearch(group, item, Grouping.ITEM_COMPARATOR);
-  //  if (position >= 0) {
-  //    final DataItem<T> olderItem = group.get(position);
-  //    final int invalidationRelation = Grouping.ITEM_INVALIDATION_COMPARATOR.compare(item, olderItem);
-  //    if (invalidationRelation > 0) {
-  //      int leftmostBrother = position;
-  //      while ((leftmostBrother - 1) >= 0 && group.get(leftmostBrother - 1).meta().isBrother(olderItem.meta()))
-  //        leftmostBrother--;
-  //      int rightmostBrother = position;
-  //      while ((rightmostBrother + 1) < group.size() && group.get(rightmostBrother + 1).meta().isBrother(olderItem.meta()))
-  //        rightmostBrother++;
-  //      if (rightmostBrother - leftmostBrother > 0)
-  //        group.subList(leftmostBrother + 1, rightmostBrother + 1).clear();
-  //      group.set(leftmostBrother, item);
-  //      return leftmostBrother;
-  //    } else {
-  //      return -1;
-  //    }
-  //  } else {
-  //    group.add(-(position + 1), item);
-  //    return -(position + 1);
-  //  }
-  //}
-
   private int insert(List<DataItem<T>> group, DataItem<T> item) {
     final int position = Collections.binarySearch(group, item, Grouping.ITEM_COMPARATOR);
     if (position >= 0) {
-      final int invalidationRelation = Grouping.ITEM_INVALIDATION_COMPARATOR.compare(item, group.get(position));
+      final DataItem<T> olderItem = group.get(position);
+      final int invalidationRelation = Grouping.ITEM_INVALIDATION_COMPARATOR.compare(item, olderItem);
       if (invalidationRelation > 0) {
-        group.set(position, item);
-        return position;
+        int leftmostBrother = position;
+        while ((leftmostBrother - 1) >= 0 && group.get(leftmostBrother - 1).meta().isBrother(olderItem.meta()))
+          leftmostBrother--;
+        int rightmostBrother = position;
+        while ((rightmostBrother + 1) < group.size() && group.get(rightmostBrother + 1).meta().isBrother(olderItem.meta()))
+          rightmostBrother++;
+        if (rightmostBrother - leftmostBrother > 0)
+          group.subList(leftmostBrother + 1, rightmostBrother + 1).clear();
+        group.set(leftmostBrother, item);
+        return leftmostBrother;
       } else {
         return -1;
       }

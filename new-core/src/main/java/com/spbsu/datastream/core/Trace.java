@@ -18,7 +18,7 @@ public final class Trace implements Comparable<Trace> {
         return Long.compare(t0.eventAt(i).localTime(), t1.eventAt(i).localTime());
       }
     }
-    return 0;
+    return Integer.compare(t0.size(), t1.size());
   };
 
   /**
