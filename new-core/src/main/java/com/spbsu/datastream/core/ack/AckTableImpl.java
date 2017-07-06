@@ -5,90 +5,47 @@ import java.util.TreeMap;
 
 public final class AckTableImpl implements AckTable {
 
-  private static final class AckEntry {
-    private final boolean isReported;
-
-    private final long xor;
-
-    private AckEntry(boolean isReported, long xor) {
-      this.isReported = isReported;
-      this.xor = xor;
-    }
-
-    public boolean isReported() {
-      return this.isReported;
-    }
-
-    public long xor() {
-      return this.xor;
-    }
-
-    public boolean isDone() {
-      return this.isReported && this.xor == 0;
-    }
-
-    @Override
-    public String toString() {
-      return "AckEntry{" + "isReported=" + this.isReported +
-              ", xor=" + this.xor +
-              '}';
-    }
-  }
-
-  private final SortedMap<Long, AckEntry> table;
+  // FIXME: 7/6/17 DO NOT BOX
+  private final SortedMap<Long, Long> table;
 
   private final long startTs;
 
   private final long window;
 
-  private long waitingFor;
+  private long toBeReported;
 
   public AckTableImpl(long startTs, long window) {
     this.startTs = startTs;
     this.window = window;
     this.table = new TreeMap<>();
-    this.table.put(startTs, new AckEntry(false, 0));
-    this.waitingFor = startTs;
+    this.toBeReported = startTs;
   }
 
   @Override
   public void report(long windowHead, long xor) {
-    if (windowHead == this.waitingFor) {
-      this.table.computeIfPresent(windowHead, (ts, entry) -> new AckEntry(true, entry.xor() ^ xor));
-      this.table.putIfAbsent(windowHead, new AckEntry(true, xor));
-      this.waitingFor += this.window;
+    if (windowHead == this.toBeReported) {
+      this.ack(windowHead, xor);
+      this.toBeReported += this.window;
     } else {
-      throw new IllegalArgumentException("Not monotonic reports. Expected: " + this.waitingFor + ", got: " + windowHead);
+      throw new IllegalArgumentException("Not monotonic reports. Expected: " + this.toBeReported + ", got: " + windowHead);
     }
   }
 
   @Override
   public void ack(long ts, long xor) {
-    if (ts < this.lastMinReported) {
-      throw new IllegalArgumentException("Ack for passed min");
-    }
-
     final long lowerBound = this.startTs + this.window * ((ts - this.startTs) / this.window);
 
-    this.table.computeIfPresent(lowerBound, (t, entry) -> new AckEntry(entry.isReported(), entry.xor() ^ xor));
-    this.table.putIfAbsent(lowerBound, new AckEntry(false, xor));
+    final long updatedXor = xor ^ this.table.getOrDefault(lowerBound, 0L);
+    if (updatedXor == 0) {
+      this.table.remove(lowerBound);
+    } else {
+      this.table.put(lowerBound, updatedXor);
+    }
   }
-
-  private long lastMinReported = 0;
 
   @Override
   public long min() {
-    while (this.table.get(this.table.firstKey()).isDone()) {
-      final long firstKey = this.table.firstKey();
-
-      if (this.table.get(firstKey).isDone()) {
-        this.table.remove(firstKey);
-        this.table.putIfAbsent(firstKey + this.window, new AckEntry(false, 0));
-      }
-    }
-
-    this.lastMinReported = this.table.firstKey();
-    return this.table.firstKey();
+    return this.table.isEmpty() ? this.toBeReported : Math.min(this.toBeReported, this.table.firstKey());
   }
 
   @Override
@@ -104,7 +61,9 @@ public final class AckTableImpl implements AckTable {
   @Override
   public String toString() {
     return "AckTableImpl{" + "table=" + this.table +
-            ", waitingReportFor=" + this.waitingFor +
+            ", startTs=" + this.startTs +
+            ", window=" + this.window +
+            ", toBeReported=" + this.toBeReported +
             '}';
   }
 }

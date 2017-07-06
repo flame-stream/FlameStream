@@ -51,12 +51,12 @@ public class UserCountTest {
 
   @Test
   public void test() throws InterruptedException {
-    try (TestStand stage = new TestStand(4, 1)) {
+    try (TestStand stage = new TestStand(4, 4)) {
       final Map<String, Integer> actual = new HashMap<>();
       stage.deploy(userCountTest(stage.fronts(), stage.wrap(o -> {
         final UserCounter userCounter = (UserCounter) o;
         actual.put(userCounter.user(), userCounter.count());
-      })), 10, TimeUnit.SECONDS);
+      })), 20, TimeUnit.SECONDS);
 
       final String[] users = new String[]{"vasya", "petya", "kolya", "natasha"};
       final List<UserQuery> source = Stream.generate(() -> new UserQuery(users[ThreadLocalRandom.current().nextInt(0, users.length)]))
@@ -66,7 +66,7 @@ public class UserCountTest {
 
       final Consumer<Object> sink = stage.randomFrontConsumer(123);
       source.forEach(sink);
-      stage.waitTick(12, TimeUnit.SECONDS);
+      stage.waitTick(25, TimeUnit.SECONDS);
 
       Assert.assertEquals(actual, expected);
     }
