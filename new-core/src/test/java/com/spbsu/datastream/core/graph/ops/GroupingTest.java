@@ -51,15 +51,15 @@ public final class GroupingTest {
   }
 
   @Test
-  public void groupWithSucessor() {
-    final Meta x5Global = new Meta(new Meta(new GlobalTime(5, 5)), 1);
-    final Meta x0Global = new Meta(new Meta(new GlobalTime(3, 3)), 2);
+  public void groupWithSuccessor() {
+    final Meta x5Global = new Meta(new GlobalTime(2, 1));
+    final Meta x0Global = new Meta(new GlobalTime(1, 1));
 
     final DataItem<String> x5 = new PayloadDataItem<>(x5Global, "v5");
-    final DataItem<String> x5State = new PayloadDataItem<>(new Meta(x5Global, 6), "v5State");
-    final DataItem<String> x0 = new PayloadDataItem<>(x0Global, "x0Global");
-    final DataItem<String> x0State = new PayloadDataItem<>(new Meta(x0Global, 8), "x0State");
-    final DataItem<String> theState = new PayloadDataItem<>(new Meta(x5Global, 10), "theState");
+    final DataItem<String> x5State = new PayloadDataItem<>(new Meta(x5Global, 1), "v5State");
+    final DataItem<String> x0 = new PayloadDataItem<>(x0Global, "x0");
+    final DataItem<String> x0State = new PayloadDataItem<>(new Meta(x0Global, 2), "x0State");
+    final DataItem<String> theState = new PayloadDataItem<>(new Meta(x5Global, 3), "theState");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x5, x5State, x0, x0State, theState), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
