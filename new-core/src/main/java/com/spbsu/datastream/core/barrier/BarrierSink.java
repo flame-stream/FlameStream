@@ -31,6 +31,13 @@ public abstract class BarrierSink<T> extends AbstractAtomicGraph {
     this.collector.release(di -> this.consume(((DataItem<PreSinkMetaElement<T>>) di).payload().payload()));
   }
 
+  @Override
+  public final void onCommit(AtomicHandle handle) {
+    if (!this.collector.isEmpty()) {
+      throw new IllegalStateException("Barrier should be empty");
+    }
+  }
+
   protected abstract void consume(T payload);
 
   public final InPort inPort() {

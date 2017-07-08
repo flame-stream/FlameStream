@@ -45,6 +45,11 @@ public final class LinearCollector implements BarrierCollector {
   }
 
   @Override
+  public boolean isEmpty() {
+    return this.invalidationPool.isEmpty() && this.released.isEmpty();
+  }
+
+  @Override
   public String toString() {
     return "LinearCollector{" + "invalidationPool=" + this.invalidationPool +
             ", released=" + this.released +

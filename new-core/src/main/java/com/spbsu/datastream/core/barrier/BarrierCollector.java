@@ -11,4 +11,6 @@ interface BarrierCollector {
   void enqueue(DataItem<?> item);
 
   void release(Consumer<DataItem<?>> consumer);
+
+  boolean isEmpty();
 }
