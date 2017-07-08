@@ -43,7 +43,7 @@ public final class SumTest {
 
   @Test
   public void shortRepeatedTests() throws InterruptedException {
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < 10; ++i) {
       this.test(5, 10, 4, i);
     }
   }
@@ -58,7 +58,7 @@ public final class SumTest {
       final List<LongNumb> source = new Random(seed).ints(inputSize).map(i -> i % 100).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(seed);
       source.forEach(sink);
-      stage.waitTick(tickLength + 10, TimeUnit.SECONDS);
+      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
 
       final long expected = source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value();
       final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
