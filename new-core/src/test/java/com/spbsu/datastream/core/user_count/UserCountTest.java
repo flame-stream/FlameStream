@@ -18,6 +18,8 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +62,7 @@ public class UserCountTest {
   @Test
   public void test() throws InterruptedException {
     try (TestStand stage = new TestStand(4, 4)) {
-      final Map<String, Integer> actual = new ConcurrentHashMap<>();
+      final Map<String, Integer> actual = Collections.synchronizedMap(new HashMap<>());
       stage.deploy(userCountTest(stage.fronts(), stage.wrap(o -> {
         final UserCounter userCounter = (UserCounter) o;
         actual.put(userCounter.user(), userCounter.count());
