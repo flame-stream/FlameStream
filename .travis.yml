@@ -2,6 +2,8 @@ language: java
 
 sudo: required
 
+services:
+  - docker
 
 addons:
   apt:
@@ -23,4 +25,4 @@ install: true
 
 script:
   - mvn -version
-  - mvn clean install -Pqulice --errors --batch-mode
+  - mvn clean install -fn --errors --batch-mode

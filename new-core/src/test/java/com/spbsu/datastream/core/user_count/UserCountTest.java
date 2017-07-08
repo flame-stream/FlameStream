@@ -60,9 +60,18 @@ public class UserCountTest {
   };
 
   @Test
-  public void test() throws InterruptedException {
-    try (TestStand stage = new TestStand(4, 4)) {
-      final Map<String, Integer> actual = Collections.synchronizedMap(new HashMap<>());
+  public void testSingleFront() throws InterruptedException {
+    this.test(1);
+  }
+
+  @Test
+  public void testMultipleFronts() throws InterruptedException {
+    this.test(4);
+  }
+
+  private void test(int fronts) throws InterruptedException {
+    try (TestStand stage = new TestStand(4, fronts)) {
+      final Map<String, Integer> actual = new HashMap<>();
       stage.deploy(userCountTest(stage.fronts(), stage.wrap(o -> {
         final UserCounter userCounter = (UserCounter) o;
         actual.put(userCounter.user(), userCounter.count());
@@ -80,6 +89,7 @@ public class UserCountTest {
 
       Assert.assertEquals(actual, expected);
     }
+
   }
 
   private static TheGraph userCountTest(Collection<Integer> fronts, ActorPath consumer) {

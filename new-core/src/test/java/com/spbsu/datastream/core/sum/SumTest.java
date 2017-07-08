@@ -16,10 +16,12 @@ import com.spbsu.datastream.core.graph.ops.StatelessMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -29,11 +31,21 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class SumTest {
-  @Test
-  public void test() throws InterruptedException {
-    try (TestStand stage = new TestStand(4, 4)) {
 
-      final List<Sum> result = Collections.synchronizedList(new ArrayList<>());
+  @Test
+  public void testSingleFront() throws InterruptedException {
+    this.test(1);
+  }
+
+  @Test
+  public void testMultipleFronts() throws InterruptedException {
+    this.test(4);
+  }
+
+  private void test(int fronts) throws InterruptedException {
+    try (TestStand stage = new TestStand(4, fronts)) {
+
+      final Deque<Sum> result = new ArrayDeque<>();
 
       stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(k -> result.add((Sum) k))), 30, TimeUnit.SECONDS);
 
@@ -42,7 +54,7 @@ public final class SumTest {
       source.forEach(sink);
       stage.waitTick(35, TimeUnit.SECONDS);
 
-      Assert.assertEquals(result.get(result.size() - 1).value(), source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value());
+      Assert.assertEquals(result.getLast().value(), source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value());
     }
   }
 
