@@ -37,7 +37,7 @@ public final class SumTest {
 
       stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(result::add)), 30, TimeUnit.SECONDS);
 
-      final List<LongNumb> source = new Random().longs(1000).mapToObj(LongNumb::new).collect(Collectors.toList());
+      final List<LongNumb> source = new Random().ints(1000).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(123);
       source.forEach(sink);
       stage.waitTick(35, TimeUnit.SECONDS);
