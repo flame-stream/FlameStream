@@ -42,7 +42,7 @@ public final class SumTest {
       source.forEach(sink);
       stage.waitTick(35, TimeUnit.SECONDS);
 
-      Assert.assertEquals(result.get(result.size()).value(), source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value());
+      Assert.assertEquals(result.get(result.size() - 1).value(), source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value());
     }
   }
 
