@@ -2,8 +2,6 @@ language: java
 
 sudo: required
 
-services:
-  - docker
 
 addons:
   apt:
