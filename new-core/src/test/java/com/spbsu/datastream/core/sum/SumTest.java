@@ -32,30 +32,30 @@ public final class SumTest {
 
   @Test
   public void testSingleFront() throws InterruptedException {
-    this.test(20, 1000, 1);
+    this.test(20, 1000, 1, 123);
   }
 
   @Test
   public void testMultipleFronts() throws InterruptedException {
-    this.test(30, 1000, 4);
+    this.test(30, 1000, 4, 123);
   }
 
   @Test
   public void shortRepeatedTests() throws InterruptedException {
     for (int i = 0; i < 20; ++i) {
-      this.test(5, 10, 4);
+      this.test(5, 10, 4, i);
     }
   }
 
-  private void test(int tickLength, int inputSize, int fronts) throws InterruptedException {
+  private void test(int tickLength, int inputSize, int fronts, int seed) throws InterruptedException {
     try (TestStand stage = new TestStand(4, fronts)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
       stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(k -> result.add((Sum) k))), tickLength, TimeUnit.SECONDS);
 
-      final List<LongNumb> source = new Random().ints(inputSize).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
-      final Consumer<Object> sink = stage.randomFrontConsumer(123);
+      final List<LongNumb> source = new Random(seed).ints(inputSize).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
+      final Consumer<Object> sink = stage.randomFrontConsumer(seed);
       source.forEach(sink);
       stage.waitTick(5, TimeUnit.SECONDS);
 
