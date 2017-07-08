@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -54,12 +55,15 @@ public final class SumTest {
 
       stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(k -> result.add((Sum) k))), tickLength, TimeUnit.SECONDS);
 
-      final List<LongNumb> source = new Random(seed).ints(inputSize).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
+      final List<LongNumb> source = new Random(seed).ints(inputSize).map(i -> i % 100).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(seed);
       source.forEach(sink);
-      stage.waitTick(5, TimeUnit.SECONDS);
+      stage.waitTick(tickLength + 10, TimeUnit.SECONDS);
 
-      Assert.assertEquals(result.getLast().value(), source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value());
+      final long expected = source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value();
+      final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
+
+      Assert.assertEquals(actual, expected);
     }
   }
 

@@ -18,11 +18,9 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -74,7 +72,8 @@ public class UserCountTest {
       final Map<String, Integer> actual = new HashMap<>();
       stage.deploy(userCountTest(stage.fronts(), stage.wrap(o -> {
         final UserCounter userCounter = (UserCounter) o;
-        actual.put(userCounter.user(), userCounter.count());
+        actual.putIfAbsent(userCounter.user(), 0);
+        actual.computeIfPresent(userCounter.user(), (uid, old) -> Math.max(userCounter.count(), old));
       })), 30, TimeUnit.SECONDS);
 
       final String[] users = new String[]{"vasya", "petya", "kolya", "natasha"};
