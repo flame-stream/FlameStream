@@ -16,13 +16,13 @@ import com.spbsu.datastream.core.graph.ops.StatelessMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -33,7 +33,7 @@ public final class SumTest {
   public void test() throws InterruptedException {
     try (TestStand stage = new TestStand(4, 4)) {
 
-      final Deque<Sum> result = new ArrayDeque<>();
+      final Deque<Sum> result = new LinkedBlockingDeque<>();
 
       stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(result::add)), 30, TimeUnit.SECONDS);
 

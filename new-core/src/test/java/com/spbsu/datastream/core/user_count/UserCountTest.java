@@ -8,11 +8,19 @@ import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.graph.ops.*;
+import com.spbsu.datastream.core.graph.ops.Broadcast;
+import com.spbsu.datastream.core.graph.ops.Filter;
+import com.spbsu.datastream.core.graph.ops.Grouping;
+import com.spbsu.datastream.core.graph.ops.Merge;
+import com.spbsu.datastream.core.graph.ops.StatelessMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -52,7 +60,7 @@ public class UserCountTest {
   @Test
   public void test() throws InterruptedException {
     try (TestStand stage = new TestStand(4, 4)) {
-      final Map<String, Integer> actual = new HashMap<>();
+      final Map<String, Integer> actual = new ConcurrentHashMap<>();
       stage.deploy(userCountTest(stage.fronts(), stage.wrap(o -> {
         final UserCounter userCounter = (UserCounter) o;
         actual.put(userCounter.user(), userCounter.count());
