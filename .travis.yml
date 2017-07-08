@@ -1,18 +1,25 @@
 language: java
+
 sudo: required
+
+services:
+  - docker
+
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
+
 cache:
   directories:
     - $HOME/.m2
+
 env:
   global:
     - MAVEN_OPTS="-Xmx256m"
     - JAVA_OPTS="-Xmx256m"
-jdk:
-  - oraclejdk8
 
 install: true
 
 script:
-    - sudo apt update && sudo apt install -y oracle-java8-installer
-    - java -version
-    - mvn clean install -Pqulice --errors --batch-mode
+  - mvn clean install -Pqulice --errors --batch-mode
