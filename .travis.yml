@@ -25,4 +25,4 @@ install: true
 
 script:
   - mvn -version
-  - mvn clean install -fn --errors --batch-mode
+  - mvn clean install -fae --errors --batch-mode
