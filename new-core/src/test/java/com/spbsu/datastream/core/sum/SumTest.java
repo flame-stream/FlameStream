@@ -17,10 +17,8 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -34,25 +32,32 @@ public final class SumTest {
 
   @Test
   public void testSingleFront() throws InterruptedException {
-    this.test(1);
+    this.test(20, 1000, 1);
   }
 
   @Test
   public void testMultipleFronts() throws InterruptedException {
-    this.test(4);
+    this.test(30, 1000, 4);
   }
 
-  private void test(int fronts) throws InterruptedException {
+  @Test
+  public void shortRepeatedTests() throws InterruptedException {
+    for (int i = 0; i < 20; ++i) {
+      this.test(5, 10, 4);
+    }
+  }
+
+  private void test(int tickLength, int inputSize, int fronts) throws InterruptedException {
     try (TestStand stage = new TestStand(4, fronts)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
-      stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(k -> result.add((Sum) k))), 30, TimeUnit.SECONDS);
+      stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(k -> result.add((Sum) k))), tickLength, TimeUnit.SECONDS);
 
-      final List<LongNumb> source = new Random().ints(1000).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
+      final List<LongNumb> source = new Random().ints(inputSize).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(123);
       source.forEach(sink);
-      stage.waitTick(35, TimeUnit.SECONDS);
+      stage.waitTick(5, TimeUnit.SECONDS);
 
       Assert.assertEquals(result.getLast().value(), source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value());
     }
