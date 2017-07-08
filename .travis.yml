@@ -9,6 +9,8 @@ addons:
   apt:
     packages:
       - oracle-java8-installer
+jdk:
+  - oraclejdk8
 
 cache:
   directories:
@@ -22,4 +24,5 @@ env:
 install: true
 
 script:
+  - mvn -version
   - mvn clean install -Pqulice --errors --batch-mode
