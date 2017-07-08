@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core;
 
 import akka.actor.AbstractActor;
+import akka.actor.SupervisorStrategy;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import scala.PartialFunction;
@@ -39,6 +40,11 @@ public abstract class LoggingActor extends AbstractActor {
   public void unhandled(Object message) {
     this.LOG().error("Can't handle payload: {}", message);
     super.unhandled(message);
+  }
+
+  @Override
+  public SupervisorStrategy supervisorStrategy() {
+    return SupervisorStrategy.stoppingStrategy();
   }
 
   protected final LoggingAdapter LOG() {
