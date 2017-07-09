@@ -1,0 +1,3 @@
+[submodule "spbsu-commons"]
+	path = spbsu-commons
+	url = https://github.com/spbsu-ml-community/commons.git

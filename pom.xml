@@ -15,5 +15,6 @@
         <module>new-core</module>
         <module>wikiforia-parser</module>
         <module>paper</module>
+        <module>spbsu-commons</module>
     </modules>
 </project>
