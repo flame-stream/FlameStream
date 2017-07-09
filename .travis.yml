@@ -24,5 +24,12 @@ env:
 install: true
 
 script:
-  - mvn -version
   - mvn clean install -fae --errors --batch-mode
+
+after_success:
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker build -t datastreams/worker-application new-core;
+    docker push datastreams/worker-application;
+    fi
+

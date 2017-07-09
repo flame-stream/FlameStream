@@ -4,13 +4,7 @@ import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.node.LifecycleWatcher;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Await;
@@ -19,6 +13,7 @@ import scala.concurrent.duration.Duration;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 public final class WorkerApplication {
@@ -30,6 +25,12 @@ public final class WorkerApplication {
 
   private ActorSystem system;
 
+  public WorkerApplication(int id, String zkConnectString) throws UnknownHostException {
+    this.id = id;
+    this.host = new InetSocketAddress(InetAddress.getLocalHost(), 4387);
+    this.zkConnectString = zkConnectString;
+  }
+
   public WorkerApplication(int id, InetSocketAddress host, String zkConnectString) {
     this.id = id;
     this.host = host;
@@ -37,36 +38,17 @@ public final class WorkerApplication {
   }
 
   public static void main(String... args) throws UnknownHostException {
-    final Options options = new Options();
+    final int id = Integer.valueOf(System.getenv("DATASTREAMS_ID"));
 
-    final Option idOpt = Option.builder("id").hasArg().argName("id").desc("worker id").required().build();
-    final Option hostOpt = Option.builder("host").hasArg().argName("FQDN").desc("worker FQDN").required().build();
-    final Option portOpt = Option.builder("port").hasArg().argName("port").desc("worker port").required().build();
-    final Option zkOpt = Option.builder("zk").hasArg().argName("connectString").desc("ZK connect string").required().build();
+    final InetAddress address = Optional.ofNullable(System.getenv("DATASTREAMS_HOST"))
+            .map(Unchecked.function(InetAddress::getByName)).orElse(InetAddress.getLocalHost());
+    final int port = Optional.ofNullable(System.getenv("DATASTREAMS_PORT"))
+            .map(Integer::valueOf).orElse(4387);
+    final String connectingString = System.getenv("DATASTREAMS_ZK");
 
-    options.addOption(idOpt);
-    options.addOption(hostOpt);
-    options.addOption(portOpt);
-    options.addOption(zkOpt);
+    final InetSocketAddress socketAddress = new InetSocketAddress(address, port);
 
-    final CommandLineParser parser = new DefaultParser();
-
-    try {
-      final CommandLine cmd = parser.parse(options, args);
-      final int id = Integer.valueOf(cmd.getOptionValue("id"));
-
-      final InetAddress address = InetAddress.getByName(cmd.getOptionValue("host"));
-      final int port = Integer.parseInt(cmd.getOptionValue("port"));
-      final InetSocketAddress socketAddress = new InetSocketAddress(address, port);
-
-      final String connectingString = cmd.getOptionValue("zk");
-
-      new WorkerApplication(id, socketAddress, connectingString).run();
-    } catch (ParseException e) {
-      WorkerApplication.LOG.error("Parsing failed", e);
-      final HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp("dataStreams", options);
-    }
+    new WorkerApplication(id, socketAddress, connectingString).run();
   }
 
   public void run() {
