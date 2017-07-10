@@ -24,7 +24,9 @@ env:
 install: true
 
 script:
-  - mvn clean install -fae --errors --batch-mode
+  - mvn clean install -DskipTests -fae --errors --batch-mode
+  - cd ./new-core
+  - mvn test
 
 before_install:
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
