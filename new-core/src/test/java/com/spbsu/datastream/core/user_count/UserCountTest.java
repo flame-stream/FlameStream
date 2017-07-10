@@ -88,7 +88,6 @@ public class UserCountTest {
 
       Assert.assertEquals(actual, expected);
     }
-
   }
 
   private static TheGraph userCountTest(Collection<Integer> fronts, ActorPath consumer) {
