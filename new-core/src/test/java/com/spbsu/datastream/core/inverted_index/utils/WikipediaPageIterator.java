@@ -1,6 +1,8 @@
 package com.spbsu.datastream.core.inverted_index.utils;
 
 import com.spbsu.datastream.core.inverted_index.model.WikipediaPage;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -13,6 +15,7 @@ import java.util.Iterator;
  * Date: 10.07.2017
  */
 public class WikipediaPageIterator implements Iterator<WikipediaPage> {
+  private final TIntIntMap versions = new TIntIntHashMap();
   private final XMLStreamReader reader;
   private WikipediaPage next;
 
@@ -33,7 +36,8 @@ public class WikipediaPageIterator implements Iterator<WikipediaPage> {
         if (reader.isStartElement() && reader.getLocalName().equals("page")) {
           final int id = Integer.valueOf(reader.getAttributeValue(null, "id"));
           final String title = reader.getAttributeValue(null, "title");
-          next = new WikipediaPage(id, WikipediaPageVersion.updateAndGetVersion(id), title, reader.getElementText());
+          final int version = versions.adjustOrPutValue(id, 1, 1);
+          next = new WikipediaPage(id, version, title, reader.getElementText());
           return true;
         }
       }

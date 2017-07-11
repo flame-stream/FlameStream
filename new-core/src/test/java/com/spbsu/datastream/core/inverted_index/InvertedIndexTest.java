@@ -9,11 +9,11 @@ import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.*;
-import com.spbsu.datastream.core.inverted_index.model.WikipediaPage;
-import com.spbsu.datastream.core.inverted_index.model.WordContainer;
-import com.spbsu.datastream.core.inverted_index.model.WordPagePositions;
+import com.spbsu.datastream.core.inverted_index.model.*;
 import com.spbsu.datastream.core.inverted_index.ops.*;
+import com.spbsu.datastream.core.inverted_index.utils.IndexLongUtil;
 import com.spbsu.datastream.core.inverted_index.utils.WikipediaPageIterator;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -70,7 +70,7 @@ public class InvertedIndexTest {
     }
   };
 
-  @Test(enabled = false)
+  @Test
   public void testIndexWithSmallDump() throws InterruptedException, FileNotFoundException {
     final ClassLoader classLoader = InvertedIndexTest.class.getClassLoader();
     final URL fileUrl = classLoader.getResource("wikipedia/small_dump_example.xml");
@@ -83,16 +83,68 @@ public class InvertedIndexTest {
     final Iterator<WikipediaPage> wikipediaPageIterator = new WikipediaPageIterator(inputStream);
     final Iterable<WikipediaPage> iterable = () -> wikipediaPageIterator;
     final Stream<WikipediaPage> source = StreamSupport.stream(iterable.spliterator(), false);
-    this.test(source, 20, 1);
-  }
 
-  @SuppressWarnings("SameParameterValue")
-  private void test(Stream<WikipediaPage> source, int tickLength, int fronts) throws InterruptedException {
-    try (TestStand stage = new TestStand(4, fronts)) {
-      stage.deploy(invertedIndexTest(stage.fronts(), stage.wrap(System.out::println)), tickLength, TimeUnit.SECONDS);
-      final Consumer<Object> sink = stage.randomFrontConsumer(123);
+    final List<WordContainer> output = new ArrayList<>();
+    try (TestStand stage = new TestStand(4, 2)) {
+      stage.deploy(invertedIndexTest(stage.fronts(), stage.wrap(o -> output.add((WordContainer) o))), 5, TimeUnit.SECONDS);
+      final Consumer<Object> sink = stage.randomFrontConsumer(122);
       source.forEach(sink);
-      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
+      stage.waitTick(10, TimeUnit.SECONDS);
+    }
+
+    Assert.assertEquals(output.size(), 4411);
+    { //assertions for word "isbn"
+      Assert.assertTrue(output.stream()
+              .filter(wordContainer -> "isbn".equals(wordContainer.word()))
+              .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
+              .anyMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
+                      {
+                              IndexLongUtil.createPagePosition(7, 2534, 1),
+                              IndexLongUtil.createPagePosition(7, 2561, 1)
+                      })));
+      Assert.assertTrue(output.stream()
+              .filter(wordContainer -> "isbn".equals(wordContainer.word()))
+              .filter(wordContainer -> wordContainer instanceof WordIndexRemove)
+              .allMatch(indexRemove -> ((WordIndexRemove) indexRemove).start() == IndexLongUtil.createPagePosition(7, 2534, 1) && ((WordIndexRemove) indexRemove).range() == 2));
+      Assert.assertTrue(output.stream()
+              .filter(wordContainer -> "isbn".equals(wordContainer.word()))
+              .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
+              .anyMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
+                      {
+                              IndexLongUtil.createPagePosition(7, 2561, 2)
+                      })));
+    }
+    { //assertions for word "вставка"
+      Assert.assertTrue(output.stream()
+              .filter(wordContainer -> "вставка".equals(wordContainer.word()))
+              .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
+              .allMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
+                      {
+                              IndexLongUtil.createPagePosition(7, 2515, 2)
+                      })));
+      Assert.assertTrue(output.stream()
+              .filter(wordContainer -> "вставка".equals(wordContainer.word()))
+              .noneMatch(wordContainer -> wordContainer instanceof WordIndexRemove));
+    }
+    { //assertions for word "эйдинтас"
+      Assert.assertTrue(output.stream()
+              .filter(wordContainer -> "эйдинтас".equals(wordContainer.word()))
+              .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
+              .anyMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
+                      {
+                              IndexLongUtil.createPagePosition(7, 2516, 1)
+                      })));
+      Assert.assertTrue(output.stream()
+              .filter(wordContainer -> "эйдинтас".equals(wordContainer.word()))
+              .filter(wordContainer -> wordContainer instanceof WordIndexRemove)
+              .allMatch(indexRemove -> ((WordIndexRemove) indexRemove).start() == IndexLongUtil.createPagePosition(7, 2516, 1) && ((WordIndexRemove) indexRemove).range() == 1));
+      Assert.assertTrue(output.stream()
+              .filter(wordContainer -> "эйдинтас".equals(wordContainer.word()))
+              .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
+              .anyMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
+                      {
+                              IndexLongUtil.createPagePosition(7, 2517, 2)
+                      })));
     }
   }
 
@@ -114,10 +166,10 @@ public class InvertedIndexTest {
             .fuse(wrongOrderingFilter, grouping.outPort(), wrongOrderingFilter.inPort())
             .fuse(indexer, wrongOrderingFilter.outPort(), indexer.inPort())
             .fuse(broadcast, indexer.outPort(), broadcast.inPort())
-            .fuse(indexFilter, broadcast.outPorts().get(0), indexFilter.inPort())
+            .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
             .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
             .fuse(sink, metaFilter.outPort(), sink.inPort())
-            .fuse(indexDiffFilter, broadcast.outPorts().get(1), indexDiffFilter.inPort())
+            .fuse(indexDiffFilter, broadcast.outPorts().get(0), indexDiffFilter.inPort())
             .wire(indexDiffFilter.outPort(), merge.inPorts().get(1));
 
     final Map<Integer, InPort> frontBindings = fronts.stream()

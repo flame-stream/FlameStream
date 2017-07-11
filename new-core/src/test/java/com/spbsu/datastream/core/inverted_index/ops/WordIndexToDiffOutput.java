@@ -24,7 +24,7 @@ public class WordIndexToDiffOutput implements Function<List<WordContainer>, Stre
       if (first instanceof WordIndex && second instanceof WordPagePositions) {
         return createOutputStream((WordIndex) first, (WordPagePositions) second);
       } else {
-        return null;
+        throw new IllegalStateException("Wrong order of objects");
       }
     }
   }
