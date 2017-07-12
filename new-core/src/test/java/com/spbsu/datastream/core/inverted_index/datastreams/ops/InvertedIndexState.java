@@ -1,7 +1,7 @@
-package com.spbsu.datastream.core.inverted_index.ops;
+package com.spbsu.datastream.core.inverted_index.datastreams.ops;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.spbsu.datastream.core.inverted_index.utils.IndexLongUtil;
+import com.spbsu.datastream.core.inverted_index.datastreams.utils.IndexLongUtil;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 

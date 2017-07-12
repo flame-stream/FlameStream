@@ -1,6 +1,6 @@
-package com.spbsu.datastream.core.inverted_index.ops;
+package com.spbsu.datastream.core.inverted_index.datastreams.ops;
 
-import com.spbsu.datastream.core.inverted_index.utils.IndexLongUtil;
+import com.spbsu.datastream.core.inverted_index.datastreams.utils.IndexLongUtil;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 import org.testng.Assert;

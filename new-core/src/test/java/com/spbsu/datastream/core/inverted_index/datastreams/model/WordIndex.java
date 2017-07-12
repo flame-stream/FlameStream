@@ -1,6 +1,6 @@
-package com.spbsu.datastream.core.inverted_index.model;
+package com.spbsu.datastream.core.inverted_index.datastreams.model;
 
-import com.spbsu.datastream.core.inverted_index.ops.InvertedIndexState;
+import com.spbsu.datastream.core.inverted_index.datastreams.ops.InvertedIndexState;
 
 /**
  * User: Artem

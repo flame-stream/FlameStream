@@ -9,10 +9,12 @@ import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.*;
-import com.spbsu.datastream.core.inverted_index.model.*;
-import com.spbsu.datastream.core.inverted_index.ops.*;
-import com.spbsu.datastream.core.inverted_index.utils.IndexLongUtil;
-import com.spbsu.datastream.core.inverted_index.utils.WikipediaPageIterator;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.*;
+import com.spbsu.datastream.core.inverted_index.datastreams.ops.*;
+import com.spbsu.datastream.core.inverted_index.datastreams.utils.IndexLongUtil;
+import com.spbsu.datastream.core.inverted_index.datastreams.utils.WikipediaPageIterator;
+import com.spbsu.datastream.core.inverted_index.storage.InMemRankingStorage;
+import com.spbsu.datastream.core.inverted_index.storage.RankingStorage;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -72,25 +74,10 @@ public class InvertedIndexTest {
 
   @Test
   public void testIndexWithSmallDump() throws InterruptedException, FileNotFoundException {
-    final ClassLoader classLoader = InvertedIndexTest.class.getClassLoader();
-    final URL fileUrl = classLoader.getResource("wikipedia/small_dump_example.xml");
-    if (fileUrl == null) {
-      throw new RuntimeException("Dump URL is null");
-    }
-
-    final File dumpFile = new File(fileUrl.getFile());
-    final InputStream inputStream = new FileInputStream(dumpFile);
-    final Iterator<WikipediaPage> wikipediaPageIterator = new WikipediaPageIterator(inputStream);
-    final Iterable<WikipediaPage> iterable = () -> wikipediaPageIterator;
-    final Stream<WikipediaPage> source = StreamSupport.stream(iterable.spliterator(), false);
-
+    final File dumpFile = fileFromResources("wikipedia/test_index_small_dump.xml");
     final List<WordContainer> output = new ArrayList<>();
-    try (TestStand stage = new TestStand(4, 2)) {
-      stage.deploy(invertedIndexTest(stage.fronts(), stage.wrap(o -> output.add((WordContainer) o))), 5, TimeUnit.SECONDS);
-      final Consumer<Object> sink = stage.randomFrontConsumer(122);
-      source.forEach(sink);
-      stage.waitTick(10, TimeUnit.SECONDS);
-    }
+
+    test(dumpFile, o -> output.add((WordContainer) o), 2, 5);
 
     Assert.assertEquals(output.size(), 4411);
     { //assertions for word "isbn"
@@ -148,6 +135,58 @@ public class InvertedIndexTest {
     }
   }
 
+  @Test
+  public void testIndexAndRankingStorageWithSmallDump() throws InterruptedException, FileNotFoundException {
+    final File dumpFile = fileFromResources("wikipedia/test_index_ranking_storage_small_dump.xml");
+    final RankingStorage rankingStorage = new InMemRankingStorage();
+
+    test(dumpFile, container -> {
+      if (container instanceof WordIndexAdd) {
+        final WordIndexAdd indexAdd = (WordIndexAdd) container;
+        final int docId = IndexLongUtil.pageId(indexAdd.positions()[0]);
+        final int docVersion = IndexLongUtil.version(indexAdd.positions()[0]);
+        rankingStorage.add(indexAdd.word(), indexAdd.positions().length, docId, docVersion);
+      }
+    }, 4, 10);
+
+    {
+      Assert.assertEquals(rankingStorage.avgDocsLength(), 2157.5);
+      Assert.assertEquals(rankingStorage.docLength(7), 2563);
+      Assert.assertEquals(rankingStorage.docLength(10), 2174);
+      Assert.assertEquals(rankingStorage.docLength(11), 2937);
+      Assert.assertEquals(rankingStorage.docLength(15), 956);
+    }
+    {
+      Assert.assertEquals(rankingStorage.docCountWithTerm("слон"), 2);
+      Assert.assertEquals(rankingStorage.termCountInDoc("слон", 10), 29);
+      Assert.assertEquals(rankingStorage.termCountInDoc("слон", 11), 1);
+
+      Assert.assertEquals(rankingStorage.docCountWithTerm("россия"), 2);
+      Assert.assertEquals(rankingStorage.termCountInDoc("россия", 10), 3);
+      Assert.assertEquals(rankingStorage.termCountInDoc("россия", 15), 1);
+
+      Assert.assertEquals(rankingStorage.docCountWithTerm("литва"), 1);
+      Assert.assertEquals(rankingStorage.termCountInDoc("литва", 7), 13);
+      Assert.assertEquals(rankingStorage.termCountInDoc("литва", 10), 0);
+      Assert.assertEquals(rankingStorage.termCountInDoc("литва", 15), 0);
+      Assert.assertEquals(rankingStorage.termCountInDoc("литва", 222), 0);
+    }
+  }
+
+  private static void test(File dumpFile, Consumer<Object> outputConsumer, int fronts, int tickLength) throws InterruptedException, FileNotFoundException {
+    final InputStream inputStream = new FileInputStream(dumpFile);
+    final Iterator<WikipediaPage> wikipediaPageIterator = new WikipediaPageIterator(inputStream);
+    final Iterable<WikipediaPage> iterable = () -> wikipediaPageIterator;
+    final Stream<WikipediaPage> source = StreamSupport.stream(iterable.spliterator(), false);
+
+    try (TestStand stage = new TestStand(4, fronts)) {
+      stage.deploy(invertedIndexTest(stage.fronts(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
+      final Consumer<Object> sink = stage.randomFrontConsumer(122);
+      source.forEach(sink);
+      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
+    }
+  }
+
   private static TheGraph invertedIndexTest(Collection<Integer> fronts, ActorPath consumer) {
     final FlatFilter<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlatFilter<>(new WikipediaPageToWordPositions(), WIKI_PAGE_HASH);
     final Merge<WordContainer> merge = new Merge<>(Arrays.asList(WORD_HASH, WORD_HASH));
@@ -175,5 +214,14 @@ public class InvertedIndexTest {
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(Collectors.toMap(Function.identity(), e -> wikiPageToPositions.inPort()));
     return new TheGraph(graph, frontBindings);
+  }
+
+  private static File fileFromResources(String fileName) {
+    final ClassLoader classLoader = InvertedIndexTest.class.getClassLoader();
+    final URL fileUrl = classLoader.getResource(fileName);
+    if (fileUrl == null) {
+      throw new RuntimeException("Dump URL is null");
+    }
+    return new File(fileUrl.getFile());
   }
 }

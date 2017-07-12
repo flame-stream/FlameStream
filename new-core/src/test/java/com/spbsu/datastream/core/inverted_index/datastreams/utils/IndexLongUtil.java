@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.inverted_index.utils;
+package com.spbsu.datastream.core.inverted_index.datastreams.utils;
 
 /**
  * User: Artem

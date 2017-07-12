@@ -1,6 +1,6 @@
-package com.spbsu.datastream.core.inverted_index.utils;
+package com.spbsu.datastream.core.inverted_index.datastreams.utils;
 
-import com.spbsu.datastream.core.inverted_index.model.WikipediaPage;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.WikipediaPage;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 

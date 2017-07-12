@@ -1,8 +1,8 @@
-package com.spbsu.datastream.core.inverted_index.ops;
+package com.spbsu.datastream.core.inverted_index.datastreams.ops;
 
-import com.spbsu.datastream.core.inverted_index.model.WordContainer;
-import com.spbsu.datastream.core.inverted_index.model.WordIndexAdd;
-import com.spbsu.datastream.core.inverted_index.model.WordIndexRemove;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.WordContainer;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.WordIndexAdd;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.WordIndexRemove;
 
 import java.util.function.Predicate;
 

@@ -1,7 +1,7 @@
-package com.spbsu.datastream.core.inverted_index.ops;
+package com.spbsu.datastream.core.inverted_index.datastreams.ops;
 
-import com.spbsu.datastream.core.inverted_index.model.*;
-import com.spbsu.datastream.core.inverted_index.utils.IndexLongUtil;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.*;
+import com.spbsu.datastream.core.inverted_index.datastreams.utils.IndexLongUtil;
 
 import java.util.List;
 import java.util.Objects;
