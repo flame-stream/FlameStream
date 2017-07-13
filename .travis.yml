@@ -26,11 +26,11 @@ install: true
 script:
   - mvn clean install -DskipTests -fae --errors --batch-mode
   - cd ./new-core
-  - mvn test
+  - mvn -fae --errors --batch-mode test
+  - cd ../
 
 before_install:
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-
 
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
