@@ -188,12 +188,12 @@ public class InvertedIndexTest {
   }
 
   private static TheGraph invertedIndexTest(Collection<Integer> fronts, ActorPath consumer) {
-    final FlatFilter<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlatFilter<>(new WikipediaPageToWordPositions(), WIKI_PAGE_HASH);
+    final FlatMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlatMap<>(new WikipediaPageToWordPositions(), WIKI_PAGE_HASH);
     final Merge<WordContainer> merge = new Merge<>(Arrays.asList(WORD_HASH, WORD_HASH));
     final Filter<WordContainer> indexDiffFilter = new Filter<>(new WordIndexDiffFilter(), WORD_HASH);
     final Grouping<WordContainer> grouping = new Grouping<>(WORD_HASH, 2);
     final Filter<List<WordContainer>> wrongOrderingFilter = new Filter<>(new WrongOrderingFilter(), GROUP_HASH);
-    final FlatFilter<List<WordContainer>, WordContainer> indexer = new FlatFilter<>(new WordIndexToDiffOutput(), GROUP_HASH);
+    final FlatMap<List<WordContainer>, WordContainer> indexer = new FlatMap<>(new WordIndexToDiffOutput(), GROUP_HASH);
     final Filter<WordContainer> indexFilter = new Filter<>(new WordIndexFilter(), WORD_HASH);
     final Broadcast<WordContainer> broadcast = new Broadcast<>(WORD_HASH, 2);
 

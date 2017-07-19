@@ -16,12 +16,12 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 01.07.2017
  */
-public class FlatFilterTest {
+public class FlatMapTest {
   @Test
   public void testFlatFilterLogic() {
     final int flatNumber = 10;
     final Function<Integer, Stream<Integer>> function = integer -> Stream.generate(() -> integer).limit(flatNumber);
-    final FlatFilter<Integer, Integer> flatFilter = new FlatFilter<>(function, HashFunction.constantHash(1));
+    final FlatMap<Integer, Integer> flatMap = new FlatMap<>(function, HashFunction.constantHash(1));
 
     final int inputSize = 10;
     final List<DataItem<Integer>> input = IntStream.range(0, inputSize)
@@ -31,8 +31,8 @@ public class FlatFilterTest {
     final List<DataItem<Integer>> out = new ArrayList<>();
     //noinspection unchecked
     final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((DataItem<Integer>) di));
-    flatFilter.onStart(handle);
-    input.forEach(in -> flatFilter.onPush(flatFilter.inPort(), in, handle));
+    flatMap.onStart(handle);
+    input.forEach(in -> flatMap.onPush(flatMap.inPort(), in, handle));
 
     for (int i = 0; i < inputSize; i++) {
       for (int j = 0; j < flatNumber; j++) {
