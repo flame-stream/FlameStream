@@ -1,5 +1,7 @@
 package com.spbsu.datastream.core;
 
+import com.spbsu.datastream.core.meta.Meta;
+
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 

@@ -5,7 +5,7 @@ import akka.actor.Props;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.LoggingActor;
-import com.spbsu.datastream.core.Meta;
+import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.tick.TickInfo;
@@ -63,7 +63,7 @@ public final class FrontActor extends LoggingActor {
     prevGlobalTs = globalTs;
 
     final GlobalTime globalTime = new GlobalTime(globalTs, this.id);
-    final Meta now = new Meta(globalTime);
+    final Meta now = Meta.meta(globalTime);
     final DataItem<?> dataItem = new PayloadDataItem<>(now, data.payload());
 
     final long tick = this.tickFronts.floorKey(globalTime.time());

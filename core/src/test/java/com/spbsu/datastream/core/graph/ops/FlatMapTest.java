@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.*;
+import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 import org.testng.Assert;
 import org.testng.annotations.Test;

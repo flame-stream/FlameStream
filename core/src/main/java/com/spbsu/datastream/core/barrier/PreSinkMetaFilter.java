@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;

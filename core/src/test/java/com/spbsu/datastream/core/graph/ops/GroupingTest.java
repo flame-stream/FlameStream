@@ -4,7 +4,7 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.FakeAtomicHandle;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.Meta;
+import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 import org.jooq.lambda.Collectable;
@@ -195,7 +195,7 @@ public final class GroupingTest {
     final List<String> y3 = Arrays.asList(x2.payload(), x3.payload());
     final List<String> y4 = Arrays.asList(x2.payload(), x3Prime.payload());
     //Invalidation element should replace invalid
-    // {@link com.spbsu.datastreams.core.Trace#isInvalidatedBy method}
+    // {@link com.spbsu.datastreams.core.TraceImpl#isInvalidatedBy method}
     //final List<String> y5 = new List<>(Arrays.asList(x3Prime.payload(), x3.payload()), 1);
 
     expectedResult.add(y1);

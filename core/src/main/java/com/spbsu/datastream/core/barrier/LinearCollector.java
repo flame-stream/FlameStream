@@ -2,8 +2,7 @@ package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
-import com.spbsu.datastream.core.Trace;
-import com.spbsu.datastream.core.graph.ops.Grouping;
+import com.spbsu.datastream.core.meta.Trace;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
