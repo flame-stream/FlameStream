@@ -12,7 +12,7 @@
 
     <modules>
         <module>parent</module>
-        <module>new-core</module>
+        <module>core</module>
         <module>wikiforia-parser</module>
         <module>paper</module>
         <module>spbsu-commons</module>
