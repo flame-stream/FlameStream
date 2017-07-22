@@ -1,6 +1,6 @@
 package com.spbsu.datastream.core.ack;
 
-interface AckTable {
+public interface AckTable {
   long min();
 
   long window();

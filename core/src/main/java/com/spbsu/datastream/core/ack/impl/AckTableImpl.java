@@ -1,4 +1,6 @@
-package com.spbsu.datastream.core.ack;
+package com.spbsu.datastream.core.ack.impl;
+
+import com.spbsu.datastream.core.ack.AckTable;
 
 import java.util.SortedMap;
 import java.util.TreeMap;
