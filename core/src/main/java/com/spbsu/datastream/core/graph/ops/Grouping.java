@@ -61,7 +61,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private void pushSubGroup(List<DataItem<T>> group, int left, int right, AtomicHandle handle) {
     final List<DataItem<T>> outGroup = group.subList(left, right);
 
-    final Meta meta = new Meta(outGroup.get(outGroup.size() - 1).meta(), this.incrementLocalTimeAndGet());
+    final Meta meta = outGroup.get(outGroup.size() - 1).meta().advanced(this.incrementLocalTimeAndGet());
     final List<T> groupingResult = outGroup.stream().map(DataItem::payload).collect(Collectors.toList());
 
     final DataItem<List<T>> result = new PayloadDataItem<>(meta, groupingResult);

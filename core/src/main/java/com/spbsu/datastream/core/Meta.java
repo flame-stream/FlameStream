@@ -4,10 +4,6 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public final class Meta implements Comparable<Meta> {
-  public static final Comparator<Meta> COMPARATOR = Comparator
-          .comparing(Meta::globalTime)
-          .thenComparing(Meta::trace);
-
   private final GlobalTime globalTime;
 
   private final Trace trace;
@@ -17,14 +13,17 @@ public final class Meta implements Comparable<Meta> {
     this.trace = Trace.EMPTY_TRACE;
   }
 
-  public Meta(Meta oldMeta, int newLocalTime) {
-    this.globalTime = oldMeta.globalTime();
-    this.trace = new Trace(oldMeta.trace(), new LocalEvent(newLocalTime));
+  private Meta(GlobalTime globalTime, Trace trace) {
+    this.globalTime = globalTime;
+    this.trace = trace;
   }
 
-  public Meta(Meta oldMeta, int newLocalTime, int childId) {
-    this.globalTime = oldMeta.globalTime();
-    this.trace = new Trace(oldMeta.trace(), new LocalEvent(newLocalTime, childId));
+  public Meta advanced(int newLocalTime) {
+    return new Meta(this.globalTime, new Trace(this.trace, new LocalEvent(newLocalTime)));
+  }
+
+  public Meta advanced(int newLocalTime, int child) {
+    return new Meta(this.globalTime, new Trace(this.trace, new LocalEvent(newLocalTime, child)));
   }
 
   public GlobalTime globalTime() {
@@ -37,8 +36,12 @@ public final class Meta implements Comparable<Meta> {
 
   @Override
   public int compareTo(Meta that) {
-    return Meta.COMPARATOR.compare(this, that);
+    return Meta.NATURAL_ORDER.compare(this, that);
   }
+
+  public static final Comparator<Meta> NATURAL_ORDER = Comparator
+          .comparing(Meta::globalTime)
+          .thenComparing(Meta::trace);
 
   public boolean isBrother(Meta that) {
     if (this.globalTime.equals(that.globalTime())

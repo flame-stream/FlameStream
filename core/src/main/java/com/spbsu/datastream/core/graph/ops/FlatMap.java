@@ -33,7 +33,7 @@ public final class FlatMap<T, R> extends AbstractAtomicGraph {
     final Stream<R> res = this.function.apply((T) item.payload());
     final int newLocalTime = this.incrementLocalTimeAndGet();
     Seq.zipWithIndex(res).forEach(t -> {
-      final Meta newMeta = new Meta(item.meta(), newLocalTime, Math.toIntExact(t.v2()));
+      final Meta newMeta = item.meta().advanced(newLocalTime, Math.toIntExact(t.v2()));
       final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t.v1());
 
       handler.push(this.outPort(), newDataItem);

@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
@@ -24,7 +23,7 @@ public final class Merge<R> extends AbstractAtomicGraph {
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
-    final DataItem<?> newItem = new PayloadDataItem<>(new Meta(item.meta(), this.incrementLocalTimeAndGet()),
+    final DataItem<?> newItem = new PayloadDataItem<>(item.meta().advanced(this.incrementLocalTimeAndGet()),
             item.payload());
 
     handler.push(this.outPort(), newItem);

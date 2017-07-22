@@ -23,7 +23,7 @@ public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     final DataItem<?> newItem = new PayloadDataItem<>(
-            new Meta(item.meta(), this.incrementLocalTimeAndGet()),
+            item.meta().advanced(this.incrementLocalTimeAndGet()),
             new PreSinkMetaElement<>(item.payload(), HashFunction.UNIFORM_OBJECT_HASH.hash(item.meta().globalTime().front())));
     handle.push(this.outPort(), newItem);
   }

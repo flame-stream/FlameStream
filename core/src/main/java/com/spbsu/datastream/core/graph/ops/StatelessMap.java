@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
@@ -30,10 +29,9 @@ public final class StatelessMap<T, R> extends AbstractAtomicGraph {
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
-    @SuppressWarnings("unchecked")
-    final R res = this.function.apply((T) item.payload());
+    @SuppressWarnings("unchecked") final R res = this.function.apply((T) item.payload());
 
-    final DataItem<R> result = new PayloadDataItem<>(new Meta(item.meta(), this.incrementLocalTimeAndGet()), res);
+    final DataItem<R> result = new PayloadDataItem<>(item.meta().advanced(this.incrementLocalTimeAndGet()), res);
 
     handler.push(this.outPort(), result);
   }

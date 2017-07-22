@@ -56,10 +56,10 @@ public final class GroupingTest {
     final Meta x0Global = new Meta(new GlobalTime(1, 1));
 
     final DataItem<String> x5 = new PayloadDataItem<>(x5Global, "v5");
-    final DataItem<String> x5State = new PayloadDataItem<>(new Meta(x5Global, 1), "v5State");
+    final DataItem<String> x5State = new PayloadDataItem<>(x5Global.advanced(1), "v5State");
     final DataItem<String> x0 = new PayloadDataItem<>(x0Global, "x0");
-    final DataItem<String> x0State = new PayloadDataItem<>(new Meta(x0Global, 2), "x0State");
-    final DataItem<String> theState = new PayloadDataItem<>(new Meta(x5Global, 3), "theState");
+    final DataItem<String> x0State = new PayloadDataItem<>(x0Global.advanced(2), "x0State");
+    final DataItem<String> theState = new PayloadDataItem<>(x5Global.advanced(3), "theState");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x5, x5State, x0, x0State, theState), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
@@ -89,7 +89,7 @@ public final class GroupingTest {
 
     final DataItem<String> x1 = new PayloadDataItem<>(x1Meta, "v1");
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
-    final DataItem<String> x1Prime = new PayloadDataItem<>(new Meta(x1Meta, 2), "state");
+    final DataItem<String> x1Prime = new PayloadDataItem<>(x1Meta.advanced(2), "state");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x2, x1Prime), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
@@ -184,8 +184,8 @@ public final class GroupingTest {
     final DataItem<String> x2 = new PayloadDataItem<>(new Meta(new GlobalTime(2, 1)), "v2");
 
     final Meta x3Meta = new Meta(new GlobalTime(3, 1));
-    final DataItem<String> x3 = new PayloadDataItem<>(new Meta(x3Meta, 1), "v3");
-    final DataItem<String> x3Prime = new PayloadDataItem<>(new Meta(x3Meta, 2), "v3Prime");
+    final DataItem<String> x3 = new PayloadDataItem<>(x3Meta.advanced(1), "v3");
+    final DataItem<String> x3Prime = new PayloadDataItem<>(x3Meta.advanced(2), "v3Prime");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(x1, x2, x3, x3Prime), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
@@ -234,13 +234,13 @@ public final class GroupingTest {
   public void brothersInvalidation() {
     final DataItem<String> father = new PayloadDataItem<>(new Meta(new GlobalTime(1, 1)), "father");
 
-    final DataItem<String> son1 = new PayloadDataItem<>(new Meta(father.meta(), 1, 0), "son1");
-    final DataItem<String> son2 = new PayloadDataItem<>(new Meta(father.meta(), 1, 1), "son2");
-    final DataItem<String> son3 = new PayloadDataItem<>(new Meta(father.meta(), 1, 2), "son3");
+    final DataItem<String> son1 = new PayloadDataItem<>(father.meta().advanced(1, 0), "son1");
+    final DataItem<String> son2 = new PayloadDataItem<>(father.meta().advanced(1, 1), "son2");
+    final DataItem<String> son3 = new PayloadDataItem<>(father.meta().advanced(1, 2), "son3");
 
-    final DataItem<String> son1Prime = new PayloadDataItem<>(new Meta(father.meta(), 2, 0), "son1Prime");
-    final DataItem<String> son2Prime = new PayloadDataItem<>(new Meta(father.meta(), 2, 1), "son2Prime");
-    final DataItem<String> son3Prime = new PayloadDataItem<>(new Meta(father.meta(), 2, 2), "son3Prime");
+    final DataItem<String> son1Prime = new PayloadDataItem<>(father.meta().advanced(2, 0), "son1Prime");
+    final DataItem<String> son2Prime = new PayloadDataItem<>(father.meta().advanced(2, 1), "son2Prime");
+    final DataItem<String> son3Prime = new PayloadDataItem<>(father.meta().advanced(2, 2), "son3Prime");
 
     { //without reordering
       final List<List<String>> actualResult = GroupingTest.groupMe(Arrays.asList(son1, son2, son3, son1Prime, son2Prime, son3Prime), 2);
