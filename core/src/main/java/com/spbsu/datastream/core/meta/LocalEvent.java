@@ -20,6 +20,6 @@ final class LocalEvent {
   }
 
   static long localEvent(int localTime, int childId) {
-    return (long) localTime << Integer.SIZE + childId;
+    return ((long) localTime << Integer.SIZE) + childId;
   }
 }
