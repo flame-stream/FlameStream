@@ -20,7 +20,7 @@ final class TraceImpl implements Trace {
   @Override
   public TraceImpl advanced(int localTime, int childId) {
     final long[] newTrace = Arrays.copyOf(this.trace, this.trace.length + 1);
-    newTrace[this.trace.length - 1] = localEvent(localTime, childId);
+    newTrace[newTrace.length - 1] = localEvent(localTime, childId);
     return new TraceImpl(newTrace);
   }
 
