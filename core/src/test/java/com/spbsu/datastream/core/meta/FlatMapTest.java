@@ -41,8 +41,8 @@ public class FlatMapTest {
         Assert.assertEquals(i, out.get(i * flatNumber + j).payload().intValue());
         final MetaImpl meta = (MetaImpl) out.get(i * flatNumber + j).meta();
         final TraceImpl trace = (TraceImpl)meta.trace();
-        Assert.assertEquals(i + 1, LocalEvent.localTimeOf(trace.trace[i]));
-        Assert.assertEquals(j, LocalEvent.childIdOf(trace.trace[i]));
+        Assert.assertEquals(i + 1, LocalEvent.localTimeOf(trace.trace[0]));
+        Assert.assertEquals(j, LocalEvent.childIdOf(trace.trace[0]));
       }
     }
   }
