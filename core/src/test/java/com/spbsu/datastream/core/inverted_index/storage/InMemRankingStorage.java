@@ -1,50 +1,59 @@
 package com.spbsu.datastream.core.inverted_index.storage;
 
 import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: Artem
  * Date: 11.07.2017
  */
 public class InMemRankingStorage implements RankingStorage {
-  private final TIntObjectMap<Doc> docs = new TIntObjectHashMap<>();
+  private final Set<Document> allDocs = new HashSet<>();
   private final Map<String, TIntIntMap> termCountInDoc = new HashMap<>();
+
+  private final TIntIntMap docsLength = new TIntIntHashMap();
+  private final TIntIntMap docsVersion = new TIntIntHashMap();
   private double avgDocsLength = 0.0;
 
   @Override
-  public void add(String term, int count, int docId, int docVersion) {
-    final int prevDocsSize = docs.size();
-    final Doc doc = docs.get(docId);
-    if (doc != null && docVersion > doc.version()) { //uncommon scenario
+  public void add(String term, int count, Document document) {
+    final int prevDocsSize = docsLength.size();
+    final boolean prevVersionExists = allDocs.contains(document);
+    if (prevVersionExists && document.version() > docsVersion.get(document.id())) { //uncommon scenario
       termCountInDoc.forEach((t, map) -> {
         if (t.equals(term))
-          map.put(docId, count);
+          map.put(document.id(), count);
         else
-          map.remove(docId);
+          map.remove(document.id());
       });
-      avgDocsLength = (avgDocsLength * prevDocsSize - doc.length() + count) / (double) prevDocsSize;
-      doc.length(count);
-      doc.version(docVersion);
-    } else if (doc == null || docVersion == doc.version) {
+      { //length
+        avgDocsLength = (avgDocsLength * prevDocsSize - docLength(document.id()) + count) / (double) prevDocsSize;
+        docsLength.put(document.id(), count);
+      }
+      { //all docs & version
+        docsVersion.put(document.id(), document.version());
+        allDocs.remove(document);
+        allDocs.add(document);
+      }
+    } else if (!prevVersionExists || document.version() == docsVersion.get(document.id())) {
       termCountInDoc.compute(term, (w, map) -> {
         if (map == null)
           map = new TIntIntHashMap();
-        map.adjustOrPutValue(docId, count, count);
+        map.adjustOrPutValue(document.id(), count, count);
         return map;
       });
-      if (doc == null)
-        docs.put(docId, new Doc(docVersion, count));
-      else
-        doc.length(doc.length() + count);
-
-      final int newDocsSize = docs.size();
-      avgDocsLength = (avgDocsLength * prevDocsSize + count) / (double) newDocsSize;
+      { //all docs & version
+        if (!prevVersionExists)
+          docsVersion.put(document.id(), document.version());
+        allDocs.add(document);
+      }
+      { //length
+        docsLength.adjustOrPutValue(document.id(), count, count);
+        final int newDocsSize = docsLength.size();
+        avgDocsLength = (avgDocsLength * prevDocsSize + count) / (double) newDocsSize;
+      }
     }
   }
 
@@ -62,8 +71,7 @@ public class InMemRankingStorage implements RankingStorage {
 
   @Override
   public int docLength(int docId) {
-    final Doc doc = docs.get(docId);
-    return doc == null ? 0 : doc.length();
+    return docsLength.get(docId);
   }
 
   @Override
@@ -71,29 +79,8 @@ public class InMemRankingStorage implements RankingStorage {
     return avgDocsLength;
   }
 
-  private static class Doc {
-    private int version;
-    private int length;
-
-    Doc(int version, int length) {
-      this.version = version;
-      this.length = length;
-    }
-
-    int version() {
-      return version;
-    }
-
-    void version(int version) {
-      this.version = version;
-    }
-
-    int length() {
-      return length;
-    }
-
-    void length(int length) {
-      this.length = length;
-    }
+  @Override
+  public Collection<Document> allDocs() {
+    return allDocs;
   }
 }

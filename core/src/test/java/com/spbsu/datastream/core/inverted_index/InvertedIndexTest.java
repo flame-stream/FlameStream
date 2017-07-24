@@ -13,6 +13,7 @@ import com.spbsu.datastream.core.inverted_index.datastreams.model.*;
 import com.spbsu.datastream.core.inverted_index.datastreams.ops.*;
 import com.spbsu.datastream.core.inverted_index.datastreams.utils.IndexLongUtil;
 import com.spbsu.datastream.core.inverted_index.datastreams.utils.WikipediaPageIterator;
+import com.spbsu.datastream.core.inverted_index.storage.Document;
 import com.spbsu.datastream.core.inverted_index.storage.InMemRankingStorage;
 import com.spbsu.datastream.core.inverted_index.storage.RankingStorage;
 import org.testng.Assert;
@@ -145,7 +146,7 @@ public class InvertedIndexTest {
         final WordIndexAdd indexAdd = (WordIndexAdd) container;
         final int docId = IndexLongUtil.pageId(indexAdd.positions()[0]);
         final int docVersion = IndexLongUtil.version(indexAdd.positions()[0]);
-        rankingStorage.add(indexAdd.word(), indexAdd.positions().length, docId, docVersion);
+        rankingStorage.add(indexAdd.word(), indexAdd.positions().length, new Document(docId, docVersion));
       }
     }, 4, 10);
 
@@ -170,6 +171,13 @@ public class InvertedIndexTest {
       Assert.assertEquals(rankingStorage.termCountInDoc("литва", 10), 0);
       Assert.assertEquals(rankingStorage.termCountInDoc("литва", 15), 0);
       Assert.assertEquals(rankingStorage.termCountInDoc("литва", 222), 0);
+    }
+    {
+      Assert.assertEquals(4, rankingStorage.allDocs().size());
+      Assert.assertTrue(rankingStorage.allDocs().contains(new Document(7, 2)));
+      Assert.assertTrue(rankingStorage.allDocs().contains(new Document(10, 1)));
+      Assert.assertTrue(rankingStorage.allDocs().contains(new Document(11, 1)));
+      Assert.assertTrue(rankingStorage.allDocs().contains(new Document(15, 1)));
     }
   }
 
