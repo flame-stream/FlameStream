@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.inverted_index;
 
 import akka.actor.ActorPath;
+import com.spbsu.commons.text.stem.Stemmer;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.TestStand;
 import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
@@ -78,12 +79,12 @@ public class InvertedIndexTest {
     final File dumpFile = fileFromResources("wikipedia/test_index_small_dump.xml");
     final List<WordContainer> output = new ArrayList<>();
 
-    test(dumpFile, o -> output.add((WordContainer) o), 2, 5);
-
-    Assert.assertEquals(output.size(), 4411);
+    test(dumpFile, o -> output.add((WordContainer) o), 2, 4, 5);
+    Assert.assertEquals(output.size(), 3481);
     { //assertions for word "isbn"
+      final String isbn = stem("isbn");
       Assert.assertTrue(output.stream()
-              .filter(wordContainer -> "isbn".equals(wordContainer.word()))
+              .filter(wordContainer -> isbn.equals(wordContainer.word()))
               .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
               .anyMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
                       {
@@ -91,11 +92,11 @@ public class InvertedIndexTest {
                               IndexLongUtil.createPagePosition(7, 2561, 1)
                       })));
       Assert.assertTrue(output.stream()
-              .filter(wordContainer -> "isbn".equals(wordContainer.word()))
+              .filter(wordContainer -> isbn.equals(wordContainer.word()))
               .filter(wordContainer -> wordContainer instanceof WordIndexRemove)
               .allMatch(indexRemove -> ((WordIndexRemove) indexRemove).start() == IndexLongUtil.createPagePosition(7, 2534, 1) && ((WordIndexRemove) indexRemove).range() == 2));
       Assert.assertTrue(output.stream()
-              .filter(wordContainer -> "isbn".equals(wordContainer.word()))
+              .filter(wordContainer -> isbn.equals(wordContainer.word()))
               .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
               .anyMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
                       {
@@ -103,31 +104,33 @@ public class InvertedIndexTest {
                       })));
     }
     { //assertions for word "вставка"
+      final String vstavka = stem("вставка");
       Assert.assertTrue(output.stream()
-              .filter(wordContainer -> "вставка".equals(wordContainer.word()))
+              .filter(wordContainer -> vstavka.equals(wordContainer.word()))
               .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
               .allMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
                       {
                               IndexLongUtil.createPagePosition(7, 2515, 2)
                       })));
       Assert.assertTrue(output.stream()
-              .filter(wordContainer -> "вставка".equals(wordContainer.word()))
+              .filter(wordContainer -> vstavka.equals(wordContainer.word()))
               .noneMatch(wordContainer -> wordContainer instanceof WordIndexRemove));
     }
     { //assertions for word "эйдинтас"
+      final String eidintas = stem("эйдинтас");
       Assert.assertTrue(output.stream()
-              .filter(wordContainer -> "эйдинтас".equals(wordContainer.word()))
+              .filter(wordContainer -> eidintas.equals(wordContainer.word()))
               .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
               .anyMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
                       {
                               IndexLongUtil.createPagePosition(7, 2516, 1)
                       })));
       Assert.assertTrue(output.stream()
-              .filter(wordContainer -> "эйдинтас".equals(wordContainer.word()))
+              .filter(wordContainer -> eidintas.equals(wordContainer.word()))
               .filter(wordContainer -> wordContainer instanceof WordIndexRemove)
               .allMatch(indexRemove -> ((WordIndexRemove) indexRemove).start() == IndexLongUtil.createPagePosition(7, 2516, 1) && ((WordIndexRemove) indexRemove).range() == 1));
       Assert.assertTrue(output.stream()
-              .filter(wordContainer -> "эйдинтас".equals(wordContainer.word()))
+              .filter(wordContainer -> eidintas.equals(wordContainer.word()))
               .filter(wordContainer -> wordContainer instanceof WordIndexAdd)
               .anyMatch(indexAdd -> Arrays.equals(((WordIndexAdd) indexAdd).positions(), new long[]
                       {
@@ -139,17 +142,7 @@ public class InvertedIndexTest {
   @Test
   public void testIndexAndRankingStorageWithSmallDump() throws InterruptedException, FileNotFoundException {
     final File dumpFile = fileFromResources("wikipedia/test_index_ranking_storage_small_dump.xml");
-    final RankingStorage rankingStorage = new InMemRankingStorage();
-
-    test(dumpFile, container -> {
-      if (container instanceof WordIndexAdd) {
-        final WordIndexAdd indexAdd = (WordIndexAdd) container;
-        final int docId = IndexLongUtil.pageId(indexAdd.positions()[0]);
-        final int docVersion = IndexLongUtil.version(indexAdd.positions()[0]);
-        rankingStorage.add(indexAdd.word(), indexAdd.positions().length, new Document(docId, docVersion));
-      }
-    }, 4, 10);
-
+    final RankingStorage rankingStorage = test(dumpFile, 4, 4, 10);
     {
       Assert.assertEquals(rankingStorage.avgDocsLength(), 2157.5);
       Assert.assertEquals(rankingStorage.docLength(7), 2563);
@@ -158,19 +151,22 @@ public class InvertedIndexTest {
       Assert.assertEquals(rankingStorage.docLength(15), 956);
     }
     {
-      Assert.assertEquals(rankingStorage.docCountWithTerm("слон"), 2);
-      Assert.assertEquals(rankingStorage.termCountInDoc("слон", 10), 29);
-      Assert.assertEquals(rankingStorage.termCountInDoc("слон", 11), 1);
+      final String slon = stem("слон");
+      Assert.assertEquals(rankingStorage.docCountWithTerm(slon), 2);
+      Assert.assertEquals(rankingStorage.termCountInDoc(slon, 10), 128);
+      Assert.assertEquals(rankingStorage.termCountInDoc(slon, 11), 12);
 
-      Assert.assertEquals(rankingStorage.docCountWithTerm("россия"), 2);
-      Assert.assertEquals(rankingStorage.termCountInDoc("россия", 10), 3);
-      Assert.assertEquals(rankingStorage.termCountInDoc("россия", 15), 1);
+      final String rossiya = stem("россия");
+      Assert.assertEquals(rankingStorage.docCountWithTerm(rossiya), 3);
+      Assert.assertEquals(rankingStorage.termCountInDoc(rossiya, 10), 4);
+      Assert.assertEquals(rankingStorage.termCountInDoc(rossiya, 15), 1);
 
-      Assert.assertEquals(rankingStorage.docCountWithTerm("литва"), 1);
-      Assert.assertEquals(rankingStorage.termCountInDoc("литва", 7), 13);
-      Assert.assertEquals(rankingStorage.termCountInDoc("литва", 10), 0);
-      Assert.assertEquals(rankingStorage.termCountInDoc("литва", 15), 0);
-      Assert.assertEquals(rankingStorage.termCountInDoc("литва", 222), 0);
+      final String litva = stem("литва");
+      Assert.assertEquals(rankingStorage.docCountWithTerm(litva), 1);
+      Assert.assertEquals(rankingStorage.termCountInDoc(litva, 7), 61);
+      Assert.assertEquals(rankingStorage.termCountInDoc(litva, 10), 0);
+      Assert.assertEquals(rankingStorage.termCountInDoc(litva, 15), 0);
+      Assert.assertEquals(rankingStorage.termCountInDoc(litva, 222), 0);
     }
     {
       Assert.assertEquals(4, rankingStorage.allDocs().size());
@@ -181,13 +177,27 @@ public class InvertedIndexTest {
     }
   }
 
-  private static void test(File dumpFile, Consumer<Object> outputConsumer, int fronts, int tickLength) throws InterruptedException, FileNotFoundException {
+  @SuppressWarnings("SameParameterValue")
+  private static RankingStorage test(File dumpFile, int fronts, int workers, int tickLength) throws FileNotFoundException, InterruptedException {
+    final RankingStorage rankingStorage = new InMemRankingStorage();
+    test(dumpFile, container -> {
+      if (container instanceof WordIndexAdd) {
+        final WordIndexAdd indexAdd = (WordIndexAdd) container;
+        final int docId = IndexLongUtil.pageId(indexAdd.positions()[0]);
+        final int docVersion = IndexLongUtil.version(indexAdd.positions()[0]);
+        rankingStorage.add(indexAdd.word(), indexAdd.positions().length, new Document(docId, docVersion));
+      }
+    }, fronts, workers, tickLength);
+    return rankingStorage;
+  }
+
+  private static void test(File dumpFile, Consumer<Object> outputConsumer, int fronts, int workers, int tickLength) throws InterruptedException, FileNotFoundException {
     final InputStream inputStream = new FileInputStream(dumpFile);
     final Iterator<WikipediaPage> wikipediaPageIterator = new WikipediaPageIterator(inputStream);
     final Iterable<WikipediaPage> iterable = () -> wikipediaPageIterator;
     final Stream<WikipediaPage> source = StreamSupport.stream(iterable.spliterator(), false);
 
-    try (TestStand stage = new TestStand(4, fronts)) {
+    try (TestStand stage = new TestStand(workers, fronts)) {
       stage.deploy(invertedIndexTest(stage.fronts(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
       final Consumer<Object> sink = stage.randomFrontConsumer(122);
       source.forEach(sink);
@@ -231,5 +241,11 @@ public class InvertedIndexTest {
       throw new RuntimeException("Dump URL is null");
     }
     return new File(fileUrl.getFile());
+  }
+
+  private static String stem(String term) {
+    //noinspection deprecation
+    final Stemmer stemmer = Stemmer.getInstance();
+    return stemmer.stem(term).toString();
   }
 }
