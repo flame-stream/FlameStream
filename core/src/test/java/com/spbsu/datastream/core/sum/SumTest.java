@@ -57,7 +57,14 @@ public final class SumTest {
 
       final List<LongNumb> source = new Random(seed).ints(inputSize).map(i -> i % 100).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(seed);
-      source.forEach(sink);
+      source.forEach(longNumb -> {
+        sink.accept(longNumb);
+        try {
+          Thread.sleep(5);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      });
       stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
 
       final long expected = source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value();
