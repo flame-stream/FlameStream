@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.inverted_index.storage;
+package com.spbsu.datastream.core.inverted_index.ranking;
 
 /**
  * User: Artem
@@ -27,11 +27,13 @@ public class Document {
     if (o == null || getClass() != o.getClass()) return false;
 
     Document document = (Document) o;
-    return id == document.id;
+    return id == document.id && version == document.version;
   }
 
   @Override
   public int hashCode() {
-    return id;
+    int result = id;
+    result = 31 * result + version;
+    return result;
   }
 }
