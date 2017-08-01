@@ -7,15 +7,17 @@ import java.util.stream.Stream;
  * Date: 11.07.2017
  */
 public interface RankingStorage {
-  void add(String term, int count, Document document);
+  void add(CharSequence term, int count, Document document);
 
-  int termCountInDoc(String term, Document document);
+  int termCountInDoc(CharSequence term, Document document);
 
-  int docCountWithTerm(String term);
+  int docCountWithTerm(CharSequence term);
 
   int docLength(Document document);
 
   double avgDocsLength();
 
   Stream<Document> allDocs();
+
+  int docsCount();
 }

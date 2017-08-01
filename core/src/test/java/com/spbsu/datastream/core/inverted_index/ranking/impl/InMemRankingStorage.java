@@ -17,13 +17,13 @@ import java.util.stream.StreamSupport;
  * Date: 11.07.2017
  */
 public class InMemRankingStorage implements RankingStorage {
-  private final Map<String, TIntIntMap> termCountInDoc = new HashMap<>();
+  private final Map<CharSequence, TIntIntMap> termCountInDoc = new HashMap<>();
   private final TIntIntMap docsLength = new TIntIntHashMap();
   private final TIntIntMap docsVersion = new TIntIntHashMap();
   private double avgDocsLength = 0.0;
 
   @Override
-  public void add(String term, int count, Document document) {
+  public void add(CharSequence term, int count, Document document) {
     final int prevDocsSize = docsLength.size();
     final boolean prevVersionExists = docsVersion.containsKey(document.id());
     final int prevDocVersion = docsVersion.get(document.id());
@@ -53,7 +53,7 @@ public class InMemRankingStorage implements RankingStorage {
   }
 
   @Override
-  public int termCountInDoc(String term, Document document) {
+  public int termCountInDoc(CharSequence term, Document document) {
     if (!docsVersion.containsKey(document.id()))
       throw new IllegalArgumentException("Storage does not contain requested doc");
     else if (docsVersion.get(document.id()) != document.version())
@@ -63,7 +63,7 @@ public class InMemRankingStorage implements RankingStorage {
   }
 
   @Override
-  public int docCountWithTerm(String term) {
+  public int docCountWithTerm(CharSequence term) {
     final TIntIntMap map = termCountInDoc.get(term);
     return map == null ? 0 : map.size();
   }
@@ -98,5 +98,10 @@ public class InMemRankingStorage implements RankingStorage {
       }
     };
     return StreamSupport.stream(iterable.spliterator(), false);
+  }
+
+  @Override
+  public int docsCount() {
+    return docsLength.size();
   }
 }

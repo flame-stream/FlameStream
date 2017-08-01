@@ -1,7 +1,7 @@
 package com.spbsu.datastream.core.inverted_index.datastreams.ops;
 
 import com.spbsu.commons.text.lexical.StemsTokenizer;
-import com.spbsu.commons.text.lexical.WordsTokenizer;
+import com.spbsu.commons.text.lexical.Tokenizer;
 import com.spbsu.commons.text.stem.Stemmer;
 import com.spbsu.datastream.core.inverted_index.datastreams.model.WikipediaPage;
 import com.spbsu.datastream.core.inverted_index.datastreams.model.WordPagePositions;
@@ -24,7 +24,7 @@ public class WikipediaPageToWordPositions implements Function<WikipediaPage, Str
   @Override
   public Stream<WordPagePositions> apply(WikipediaPage wikipediaPage) {
     //noinspection deprecation
-    final WordsTokenizer tokenizer = new StemsTokenizer(Stemmer.getInstance(), wikipediaPage.text());
+    final Tokenizer tokenizer = new StemsTokenizer(Stemmer.getInstance(), wikipediaPage.text());
     final Map<String, TLongList> wordPositions = new HashMap<>();
     final List<WordPagePositions> wordPagePositions = new ArrayList<>();
     int position = 0;
