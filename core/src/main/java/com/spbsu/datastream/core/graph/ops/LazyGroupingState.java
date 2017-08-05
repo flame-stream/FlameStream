@@ -1,13 +1,14 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.HashFunction;
 import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.ToIntFunction;
 
 /**
  * User: Artem
@@ -16,17 +17,19 @@ import java.util.function.Consumer;
  */
 @SuppressWarnings({"TypeMayBeWeakened", "OptionalContainsCollection"})
 public final class LazyGroupingState<T> implements GroupingState<T> {
-  private final HashFunction<? super T> hash;
+  private final ToIntFunction<? super T> hash;
+  private final BiPredicate<? super T, ? super T> equalz;
   private final TLongObjectMap<Object> buffers = new TLongObjectHashMap<>();
 
-  public LazyGroupingState(HashFunction<? super T> hash) {
+  public LazyGroupingState(ToIntFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz) {
     this.hash = hash;
+    this.equalz = equalz;
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public List<DataItem<T>> getGroupFor(DataItem<T> item) {
-    final long hashValue = this.hash.hash(item.payload());
+    final long hashValue = this.hash.applyAsInt(item.payload());
     final Object obj = this.buffers.get(hashValue);
     if (obj == null) {
       final List<DataItem<T>> newBucket = new ArrayList<>();
@@ -55,7 +58,7 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
   }
 
   private List<DataItem<T>> getFromBucket(DataItem<T> item, List<DataItem<T>> bucket) {
-    if (this.hash.equal(bucket.get(0).payload(), item.payload())) {
+    if (this.equalz.test(bucket.get(0).payload(), item.payload())) {
       return bucket;
     } else {
       final List<List<DataItem<T>>> container = new ArrayList<>();
@@ -85,7 +88,7 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
 
   private List<DataItem<T>> searchBucket(DataItem<T> item, List<List<DataItem<T>>> container) {
     return container.stream()
-            .filter(bucket -> this.hash.equal(bucket.get(0).payload(), item.payload()))
+            .filter(bucket -> this.equalz.test(bucket.get(0).payload(), item.payload()))
             .findAny()
             .orElse(new ArrayList<>());
   }

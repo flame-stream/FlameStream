@@ -11,6 +11,7 @@ import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 
 public final class Filter<T> extends AbstractAtomicGraph {
   private final InPort inPort;
@@ -18,7 +19,7 @@ public final class Filter<T> extends AbstractAtomicGraph {
 
   private final Predicate<T> predicate;
 
-  public Filter(Predicate<T> predicate, HashFunction<? super T> hash) {
+  public Filter(Predicate<T> predicate, ToIntFunction<? super T> hash) {
     this.inPort = new InPort(hash);
     this.predicate = predicate;
   }

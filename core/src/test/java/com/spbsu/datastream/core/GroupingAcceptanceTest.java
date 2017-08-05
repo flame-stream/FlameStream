@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -114,7 +115,12 @@ public final class GroupingAcceptanceTest {
                                      HashFunction<? super Long> groupHash,
                                      HashFunction<? super Long> filterHash) {
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
-    final Grouping<Long> grouping = new Grouping<>(groupHash, window);
+    final Grouping<Long> grouping = new Grouping<>(groupHash, new BiPredicate<Long, Long>() {
+      @Override
+      public boolean test(Long a, Long b) {
+        return a.hashCode() == b.hashCode();
+      }
+    }, window);
 
     final PreSinkMetaFilter<List<Long>> metaFilter = new PreSinkMetaFilter<>(HashFunction.OBJECT_HASH);
     final RemoteActorConsumer<List<Long>> sink = new RemoteActorConsumer<>(consumer);

@@ -8,9 +8,21 @@ import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.graph.ops.*;
-import com.spbsu.datastream.core.inverted_index.datastreams.model.*;
-import com.spbsu.datastream.core.inverted_index.datastreams.ops.*;
+import com.spbsu.datastream.core.graph.ops.Broadcast;
+import com.spbsu.datastream.core.graph.ops.Filter;
+import com.spbsu.datastream.core.graph.ops.FlatMap;
+import com.spbsu.datastream.core.graph.ops.Grouping;
+import com.spbsu.datastream.core.graph.ops.Merge;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.WikipediaPage;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.WordContainer;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.WordIndexAdd;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.WordIndexRemove;
+import com.spbsu.datastream.core.inverted_index.datastreams.model.WordPagePositions;
+import com.spbsu.datastream.core.inverted_index.datastreams.ops.WikipediaPageToWordPositions;
+import com.spbsu.datastream.core.inverted_index.datastreams.ops.WordIndexDiffFilter;
+import com.spbsu.datastream.core.inverted_index.datastreams.ops.WordIndexFilter;
+import com.spbsu.datastream.core.inverted_index.datastreams.ops.WordIndexToDiffOutput;
+import com.spbsu.datastream.core.inverted_index.datastreams.ops.WrongOrderingFilter;
 import com.spbsu.datastream.core.inverted_index.datastreams.utils.IndexLongUtil;
 import com.spbsu.datastream.core.inverted_index.datastreams.utils.WikipediaPageIterator;
 import com.spbsu.datastream.core.inverted_index.storage.InMemRankingStorage;
@@ -23,8 +35,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,11 +56,6 @@ import java.util.stream.StreamSupport;
 public class InvertedIndexTest {
   private static final HashFunction<WikipediaPage> WIKI_PAGE_HASH = new HashFunction<WikipediaPage>() {
     @Override
-    public boolean equal(WikipediaPage o1, WikipediaPage o2) {
-      return o1.id() == o2.id();
-    }
-
-    @Override
     public int hash(WikipediaPage value) {
       return value.id();
     }
@@ -50,22 +63,19 @@ public class InvertedIndexTest {
 
   private static final HashFunction<WordContainer> WORD_HASH = new HashFunction<WordContainer>() {
     @Override
-    public boolean equal(WordContainer o1, WordContainer o2) {
-      return o1.word().equals(o2.word());
-    }
-
-    @Override
     public int hash(WordContainer value) {
       return value.word().hashCode();
     }
   };
 
-  private static final HashFunction<List<WordContainer>> GROUP_HASH = new HashFunction<List<WordContainer>>() {
+  private static final BiPredicate<WordContainer, WordContainer> WORD_EQUALZ = new BiPredicate<WordContainer, WordContainer>() {
     @Override
-    public boolean equal(List<WordContainer> o1, List<WordContainer> o2) {
-      return WORD_HASH.equal(o1.get(0), o2.get(0));
+    public boolean test(WordContainer wordContainer, WordContainer wordContainer2) {
+      return wordContainer.word().equals(wordContainer.word());
     }
+  };
 
+  private static final HashFunction<List<WordContainer>> GROUP_HASH = new HashFunction<List<WordContainer>>() {
     @Override
     public int hash(List<WordContainer> value) {
       return WORD_HASH.hash(value.get(0));
@@ -191,7 +201,7 @@ public class InvertedIndexTest {
     final FlatMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlatMap<>(new WikipediaPageToWordPositions(), WIKI_PAGE_HASH);
     final Merge<WordContainer> merge = new Merge<>(Arrays.asList(WORD_HASH, WORD_HASH));
     final Filter<WordContainer> indexDiffFilter = new Filter<>(new WordIndexDiffFilter(), WORD_HASH);
-    final Grouping<WordContainer> grouping = new Grouping<>(WORD_HASH, 2);
+    final Grouping<WordContainer> grouping = new Grouping<>(WORD_HASH, WORD_EQUALZ, 2);
     final Filter<List<WordContainer>> wrongOrderingFilter = new Filter<>(new WrongOrderingFilter(), GROUP_HASH);
     final FlatMap<List<WordContainer>, WordContainer> indexer = new FlatMap<>(new WordIndexToDiffOutput(), GROUP_HASH);
     final Filter<WordContainer> indexFilter = new Filter<>(new WordIndexFilter(), WORD_HASH);

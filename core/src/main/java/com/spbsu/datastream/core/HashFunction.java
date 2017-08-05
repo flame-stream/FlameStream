@@ -2,13 +2,16 @@ package com.spbsu.datastream.core;
 
 import java.util.function.ToIntFunction;
 
+@FunctionalInterface
 public interface HashFunction<T> extends ToIntFunction<T> {
-  HashFunction<Object> OBJECT_HASH = new HashFunction<Object>() {
-    @Override
-    public boolean equal(Object o1, Object o2) {
-      return o1.hashCode() == o2.hashCode();
-    }
+  int hash(T value);
 
+  @Override
+  default int applyAsInt(T value) {
+    return this.hash(value);
+  }
+
+  HashFunction<Object> OBJECT_HASH = new HashFunction<Object>() {
     @Override
     public int hash(Object value) {
       return value.hashCode();
@@ -16,11 +19,6 @@ public interface HashFunction<T> extends ToIntFunction<T> {
   };
 
   HashFunction<Object> UNIFORM_OBJECT_HASH = new HashFunction<Object>() {
-    @Override
-    public boolean equal(Object o1, Object o2) {
-      return o1.hashCode() == o2.hashCode();
-    }
-
     @Override
     public int hash(Object value) {
       return this.jenkinsHash(value.hashCode());
@@ -40,16 +38,11 @@ public interface HashFunction<T> extends ToIntFunction<T> {
 
   static <T> HashFunction<T> uniformLimitedHash(int buckets) {
     return new HashFunction<T>() {
-      private final int bucketss = buckets;
-
-      @Override
-      public boolean equal(T o1, T o2) {
-        return this.applyAsInt(o1) == this.applyAsInt(o2);
-      }
+      private final int n = buckets;
 
       @Override
       public int hash(T value) {
-        return HashFunction.UNIFORM_OBJECT_HASH.applyAsInt(OBJECT_HASH.applyAsInt(value) % bucketss);
+        return HashFunction.UNIFORM_OBJECT_HASH.applyAsInt(OBJECT_HASH.applyAsInt(value) % n);
       }
     };
   }
@@ -57,23 +50,9 @@ public interface HashFunction<T> extends ToIntFunction<T> {
   static <T> HashFunction<T> constantHash(int hash) {
     return new HashFunction<T>() {
       @Override
-      public boolean equal(T o1, T o2) {
-        return true;
-      }
-
-      @Override
       public int hash(T value) {
         return hash;
       }
     };
-  }
-
-  boolean equal(T o1, T o2);
-
-  int hash(T value);
-
-  @Override
-  default int applyAsInt(T value) {
-    return this.hash(value);
   }
 }

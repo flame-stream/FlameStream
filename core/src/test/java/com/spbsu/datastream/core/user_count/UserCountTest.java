@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -35,22 +36,19 @@ import java.util.stream.Stream;
 public class UserCountTest {
   private static final HashFunction<UserContainer> USER_HASH = new HashFunction<UserContainer>() {
     @Override
-    public boolean equal(UserContainer o1, UserContainer o2) {
-      return o1.user().equals(o2.user());
-    }
-
-    @Override
     public int hash(UserContainer value) {
       return value.user().hashCode();
     }
   };
 
-  private static final HashFunction<List<UserContainer>> GROUP_HASH = new HashFunction<List<UserContainer>>() {
+  private static final BiPredicate<UserContainer, UserContainer> EQUALZ = new BiPredicate<UserContainer, UserContainer>() {
     @Override
-    public boolean equal(List<UserContainer> o1, List<UserContainer> o2) {
-      return USER_HASH.equal(o1.get(0), o2.get(0));
+    public boolean test(UserContainer o1, UserContainer o2) {
+      return o1.user().equals(o2.user());
     }
+  };
 
+  private static final HashFunction<List<UserContainer>> GROUP_HASH = new HashFunction<List<UserContainer>>() {
     @Override
     public int hash(List<UserContainer> value) {
       return USER_HASH.hash(value.get(0));
@@ -92,7 +90,7 @@ public class UserCountTest {
 
   private static TheGraph userCountTest(Collection<Integer> fronts, ActorPath consumer) {
     final Merge<UserContainer> merge = new Merge<>(Arrays.asList(USER_HASH, USER_HASH));
-    final Grouping<UserContainer> grouping = new Grouping<>(USER_HASH, 2);
+    final Grouping<UserContainer> grouping = new Grouping<>(USER_HASH, EQUALZ, 2);
     final Filter<List<UserContainer>> filter = new Filter<>(new WrongOrderingFilter(), GROUP_HASH);
     final StatelessMap<List<UserContainer>, UserCounter> counter = new StatelessMap<>(new CountUserEntries(), GROUP_HASH);
     final Broadcast<UserCounter> broadcast = new Broadcast<>(USER_HASH, 2);

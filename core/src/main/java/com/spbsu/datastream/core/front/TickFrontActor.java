@@ -7,7 +7,6 @@ import com.spbsu.datastream.core.AckerMessage;
 import com.spbsu.datastream.core.AtomicMessage;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
-import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.AckerReport;
 import com.spbsu.datastream.core.graph.InPort;
@@ -19,6 +18,7 @@ import scala.concurrent.duration.FiniteDuration;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.ToIntFunction;
 
 final class TickFrontActor extends LoggingActor {
   private final ActorRef dns;
@@ -88,7 +88,7 @@ final class TickFrontActor extends LoggingActor {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   private void dispatchItem(DataItem<?> item) {
-    final HashFunction hashFunction = this.target.hashFunction();
+    final ToIntFunction hashFunction = this.target.hashFunction();
     final int hash = hashFunction.applyAsInt(item.payload());
 
     final int receiver = this.tickInfo.hashMapping().entrySet().stream().filter(e -> e.getKey().contains(hash))

@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -277,7 +278,7 @@ public final class GroupingTest {
   }
 
   private static <T> List<List<T>> groupMe(Iterable<DataItem<T>> input, int window) {
-    final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), window);
+    final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window);
 
     final List<List<T>> out = new ArrayList<>();
 

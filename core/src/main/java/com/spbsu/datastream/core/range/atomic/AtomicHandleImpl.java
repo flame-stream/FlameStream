@@ -8,7 +8,6 @@ import com.google.common.primitives.Longs;
 import com.spbsu.datastream.core.AckerMessage;
 import com.spbsu.datastream.core.AtomicMessage;
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.RoutingException;
 import com.spbsu.datastream.core.ack.Ack;
 import com.spbsu.datastream.core.graph.InPort;
@@ -25,6 +24,7 @@ import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.ToIntFunction;
 
 public final class AtomicHandleImpl implements AtomicHandle {
   private final TickInfo tickInfo;
@@ -52,7 +52,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
     final Optional<InPort> destination = Optional.ofNullable(this.tickInfo.graph().graph().downstreams().get(out));
     final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
 
-    @SuppressWarnings("rawtypes") final HashFunction hashFunction = address.hashFunction();
+    @SuppressWarnings("rawtypes") final ToIntFunction hashFunction = address.hashFunction();
 
     @SuppressWarnings("unchecked") final int hash = hashFunction.applyAsInt(result.payload());
     final int receiver = this.tickInfo.hashMapping().entrySet().stream().filter(e -> e.getKey().contains(hash))

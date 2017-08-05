@@ -11,6 +11,7 @@ import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -18,7 +19,7 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final List<OutPort> broadcastPorts;
 
-  public Broadcast(HashFunction<? super T> hash, int shape) {
+  public Broadcast(ToIntFunction<? super T> hash, int shape) {
     this.inPort = new InPort(hash);
     this.broadcastPorts = Stream.generate(OutPort::new).limit((long) shape)
             .collect(Collectors.toList());

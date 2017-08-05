@@ -10,12 +10,13 @@ import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.ToIntFunction;
 
 public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
-  public PreSinkMetaFilter(HashFunction<? super T> hashFunction) {
+  public PreSinkMetaFilter(ToIntFunction<? super T> hashFunction) {
     this.inPort = new InPort(hashFunction);
   }
 

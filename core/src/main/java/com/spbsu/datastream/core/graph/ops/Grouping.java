@@ -2,20 +2,21 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
-import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
-import com.spbsu.datastream.core.meta.Trace;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
+import com.spbsu.datastream.core.meta.Meta;
+import com.spbsu.datastream.core.meta.Trace;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"rawtypes", "ConditionalExpression"})
@@ -23,20 +24,22 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
-  private final HashFunction<? super T> hash;
+  private final ToIntFunction<? super T> hash;
+  private final BiPredicate<? super T, ? super T> equalz;
   private final int window;
   private GroupingState<T> buffers;
 
-  public Grouping(HashFunction<? super T> hash, int window) {
+  public Grouping(ToIntFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, int window) {
     this.inPort = new InPort(hash);
     this.window = window;
     this.hash = hash;
+    this.equalz = equalz;
   }
 
   @Override
   public void onStart(AtomicHandle handle) {
     // TODO: 5/18/17 Load state
-    this.buffers = new LazyGroupingState<>(this.hash);
+    this.buffers = new LazyGroupingState<>(this.hash, equalz);
   }
 
   @Override
@@ -120,7 +123,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
       int groupSize = 0;
       Meta previousMeta = null;
-      while (groupSize <  this.window && position - 1 >= 0) {
+      while (groupSize < this.window && position - 1 >= 0) {
 
         if (previousMeta == null || !group.get(position - 1).meta().isBrother(previousMeta)) {
           groupSize++;

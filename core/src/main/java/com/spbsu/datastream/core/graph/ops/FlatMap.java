@@ -13,6 +13,7 @@ import org.jooq.lambda.Seq;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 public final class FlatMap<T, R> extends AbstractAtomicGraph {
@@ -22,7 +23,7 @@ public final class FlatMap<T, R> extends AbstractAtomicGraph {
 
   private final InPort inPort;
 
-  public FlatMap(Function<T, Stream<R>> function, HashFunction<? super T> hash) {
+  public FlatMap(Function<T, Stream<R>> function, ToIntFunction<? super T> hash) {
     this.function = function;
     this.inPort = new InPort(hash);
   }

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -70,9 +71,15 @@ public final class SumTest {
   private static TheGraph sumGraph(Collection<Integer> fronts, ActorPath consumer) {
     final HashFunction<Numb> identity = HashFunction.constantHash(1);
     final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
+    final BiPredicate<Numb, Numb> predicate = new BiPredicate<Numb, Numb>() {
+      @Override
+      public boolean test(Numb o, Numb o2) {
+        return true;
+      }
+    };
 
     final Merge<Numb> merge = new Merge<>(Arrays.asList(identity, identity));
-    final Grouping<Numb> grouping = new Grouping<>(identity, 2);
+    final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2);
     final StatelessMap<List<Numb>, List<Numb>> enricher = new StatelessMap<>(new IdentityEnricher(), groupIdentity);
     final Filter<List<Numb>> junkFilter = new Filter<>(new WrongOrderingFilter(), groupIdentity);
     final StatelessMap<List<Numb>, Sum> reducer = new StatelessMap<>(new Reduce(), groupIdentity);

@@ -1,20 +1,19 @@
 package com.spbsu.datastream.core.graph;
 
-import com.spbsu.datastream.core.HashFunction;
-
 import java.security.SecureRandom;
 import java.util.Objects;
 import java.util.Random;
+import java.util.function.ToIntFunction;
 
 public final class InPort {
   private static final Random RANDOM = new SecureRandom();
   private static final long OFFSET = 64L - 41L;
-  private static final long RAND_MASK =  (1L << InPort.OFFSET) - 1L;
+  private static final long RAND_MASK = (1L << InPort.OFFSET) - 1L;
 
   private final long id;
-  private final HashFunction<?> hashFunction;
+  private final ToIntFunction<?> hashFunction;
 
-  public InPort(HashFunction<?> function) {
+  public InPort(ToIntFunction<?> function) {
     this.id = (System.currentTimeMillis() << InPort.OFFSET) + (InPort.RANDOM.nextLong() & InPort.RAND_MASK);
     this.hashFunction = function;
   }
@@ -23,7 +22,7 @@ public final class InPort {
     return this.id;
   }
 
-  public HashFunction<?> hashFunction() {
+  public ToIntFunction<?> hashFunction() {
     return this.hashFunction;
   }
 

@@ -1,7 +1,6 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
@@ -10,6 +9,7 @@ import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 public final class Merge<R> extends AbstractAtomicGraph {
@@ -17,7 +17,7 @@ public final class Merge<R> extends AbstractAtomicGraph {
   private final OutPort outPort = new OutPort();
 
   @SuppressWarnings("TypeMayBeWeakened")
-  public Merge(List<HashFunction<?>> hashes) {
+  public Merge(List<? extends ToIntFunction<?>> hashes) {
     this.inPorts = hashes.stream().map(InPort::new).collect(Collectors.toList());
   }
 
