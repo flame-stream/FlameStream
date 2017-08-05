@@ -40,17 +40,20 @@ public final class GroupingAcceptanceTest {
 
   @Test
   public void noReorderingMultipleHash() throws InterruptedException {
-    GroupingAcceptanceTest.doIt(HashFunction.uniformLimitedHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
+    final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
+    GroupingAcceptanceTest.doIt(hash, HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
+
+      final HashFunction<Long> hashFunction = hash;
       @Override
       public boolean test(Long aLong, Long aLong2) {
-        return aLong.equals(aLong2);
+        return hashFunction.hash(aLong) == hashFunction.hash(aLong2);
       }
     });
   }
 
   @Test
   public void reorderingSingleHash() throws InterruptedException {
-    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
+    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.uniformLimitedHash(100), new BiPredicate<Long , Long>() {
       @Override
       public boolean test(Long aLong, Long aLong2) {
         return true;
@@ -60,10 +63,14 @@ public final class GroupingAcceptanceTest {
 
   @Test
   public void reorderingMultipleHash() throws InterruptedException {
-    GroupingAcceptanceTest.doIt(HashFunction.uniformLimitedHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
+    final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
+
+    GroupingAcceptanceTest.doIt(hash, HashFunction.uniformLimitedHash(100), new BiPredicate<Long , Long>() {
+      private final HashFunction<Long> hashFunction = hash;
+
       @Override
       public boolean test(Long aLong, Long aLong2) {
-        return aLong.equals(aLong2);
+        return hashFunction.hash(aLong) == hashFunction.hash(aLong2);
       }
     });
   }
@@ -99,7 +106,7 @@ public final class GroupingAcceptanceTest {
               stage.wrap(d -> {
               }),
               3,
-              HashFunction.uniformLimitedHash(100),
+              HashFunction.OBJECT_HASH,
               new BiPredicate<Long, Long>() {
                 @Override
                 public boolean test(Long aLong, Long aLong2) {
