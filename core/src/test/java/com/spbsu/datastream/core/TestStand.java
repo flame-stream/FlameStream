@@ -51,11 +51,8 @@ public final class TestStand implements AutoCloseable {
               .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + InetAddress.getLocalHost().getHostName()))
               .withFallback(ConfigFactory.load("remote"));
 
-      FileUtils.deleteDirectory(new File("zookeeperString"));
-      FileUtils.deleteDirectory(new File("leveldb"));
-
       this.localSystem = ActorSystem.create("requester", config);
-    } catch (IOException e) {
+    } catch (UnknownHostException e) {
       throw new UncheckedIOException(e);
     }
   }
@@ -64,10 +61,7 @@ public final class TestStand implements AutoCloseable {
   public void close() {
     try {
       Await.ready(this.localSystem.terminate(), Duration.Inf());
-
-      FileUtils.deleteDirectory(new File("zookeeper"));
-      FileUtils.deleteDirectory(new File("leveldb"));
-    } catch (InterruptedException | TimeoutException | IOException e) {
+    } catch (InterruptedException | TimeoutException e) {
       throw new RuntimeException(e);
     }
   }
