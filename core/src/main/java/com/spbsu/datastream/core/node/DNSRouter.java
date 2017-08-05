@@ -71,7 +71,7 @@ final class DNSRouter extends LoggingActor {
     final ActorPath path = RootActorPath.apply(add, "/")
             .$div("user")
             .$div("watcher")
-            .$div(String.valueOf(id))
+            .$div("concierge")
             .$div("dns");
     return this.context().actorSelection(path);
   }

@@ -6,8 +6,6 @@ import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
-import com.spbsu.datastream.core.application.WorkerApplication;
-import com.spbsu.datastream.core.application.ZooKeeperApplication;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.front.RawData;
 import com.spbsu.datastream.core.graph.TheGraph;
@@ -15,72 +13,50 @@ import com.spbsu.datastream.core.tick.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.io.FileUtils;
-import org.jooq.lambda.Unchecked;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-public final class TestStand implements Closeable {
-  private static final String ZK_STRING = "localhost:2181";
+import static java.util.Collections.unmodifiableSet;
+
+public final class TestStand implements AutoCloseable {
   private static final int LOCAL_SYSTEM_PORT = 12345;
 
-  private static final int START_WORKER_PORT = 5223;
-
-  private final Map<Integer, InetSocketAddress> dns;
-  private final Set<Integer> fronts;
-
-  private final Collection<WorkerApplication> workerApplication = new HashSet<>();
-
-  private final ZooKeeperApplication zk;
-  private final Thread zkThread;
   private final ActorSystem localSystem;
 
-  public TestStand(int workersCount, int frontCount) {
-    this.dns = TestStand.dns(workersCount);
-    this.fronts = this.dns.keySet().stream().limit(frontCount).collect(Collectors.toSet());
+  private final Cluster cluster;
+
+  public TestStand(Cluster cluster) {
+    this.cluster = cluster;
 
     try {
       final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + TestStand.LOCAL_SYSTEM_PORT)
               .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + InetAddress.getLocalHost().getHostName()))
               .withFallback(ConfigFactory.load("remote"));
 
-      FileUtils.deleteDirectory(new File("zookeeper"));
+      FileUtils.deleteDirectory(new File("zookeeperString"));
       FileUtils.deleteDirectory(new File("leveldb"));
 
       this.localSystem = ActorSystem.create("requester", config);
-      this.zk = new ZooKeeperApplication();
-      this.zkThread = new Thread(Unchecked.runnable(this.zk::run));
-      this.zkThread.start();
-
-      TimeUnit.SECONDS.sleep(1);
-      this.deployPartitioning();
-
-      this.workerApplication.addAll(this.startWorkers());
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
   }
 
@@ -88,11 +64,6 @@ public final class TestStand implements Closeable {
   public void close() {
     try {
       Await.ready(this.localSystem.terminate(), Duration.Inf());
-      this.workerApplication.forEach(WorkerApplication::shutdown);
-      this.workerApplication.clear();
-
-      this.zk.shutdown();
-      this.zkThread.join();
 
       FileUtils.deleteDirectory(new File("zookeeper"));
       FileUtils.deleteDirectory(new File("leveldb"));
@@ -101,10 +72,16 @@ public final class TestStand implements Closeable {
     }
   }
 
-  public Collection<Integer> fronts() {
-    return Collections.unmodifiableSet(this.fronts);
+  public Collection<Integer> frontIds() {
+    return unmodifiableSet(cluster.fronts().keySet());
   }
 
+
+  /**
+   * Wraps collection with an Actor.
+   *
+   * NB: Collection must be properly synchronized
+   */
   public <T> ActorPath wrap(Consumer<T> collection) {
     try {
       final String id = UUID.randomUUID().toString();
@@ -123,7 +100,7 @@ public final class TestStand implements Closeable {
   public void deploy(TheGraph theGraph, int tickLength, TimeUnit timeUnit) {
     final long startTs = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
 
-    final Map<HashRange, Integer> workers = TestStand.workers(this.dns.keySet());
+    final Map<HashRange, Integer> workers = rangeMappingForTick();
 
     final TickInfo tickInfo = new TickInfo(
             theGraph,
@@ -133,8 +110,9 @@ public final class TestStand implements Closeable {
             startTs + timeUnit.toNanos(tickLength),
             TimeUnit.MILLISECONDS.toNanos(10)
     );
-    try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStand.ZK_STRING)) {
-      zkConfigurationDeployer.pushTick(tickInfo);
+
+    try (final ZookeeperDeployer zkDeployer = new ZookeeperDeployer(cluster.zookeeperString())) {
+      zkDeployer.pushTick(tickInfo);
       TimeUnit.SECONDS.sleep(2);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -148,8 +126,8 @@ public final class TestStand implements Closeable {
   public Consumer<Object> randomFrontConsumer(long seed) {
     final List<Consumer<Object>> result = new ArrayList<>();
 
-    for (int frontId : this.fronts) {
-      final ActorSelection frontActor = TestStand.front(this.localSystem, frontId, this.dns.get(frontId));
+    for (InetSocketAddress front : cluster.fronts().values()) {
+      final ActorSelection frontActor = frontActor(front);
       final Consumer<Object> consumer = obj -> frontActor.tell(new RawData<>(obj), ActorRef.noSender());
       result.add(consumer);
     }
@@ -158,21 +136,16 @@ public final class TestStand implements Closeable {
     return obj -> result.get(rd.nextInt(result.size())).accept(obj);
   }
 
-  private static Map<Integer, InetSocketAddress> dns(int workersCount) {
-    return IntStream.range(TestStand.START_WORKER_PORT, TestStand.START_WORKER_PORT + workersCount)
-            .boxed().collect(Collectors.toMap(Function.identity(),
-                    Unchecked.function(port -> new InetSocketAddress(InetAddress.getLocalHost(), port))));
-  }
-
   @SuppressWarnings("NumericCastThatLosesPrecision")
-  private static Map<HashRange, Integer> workers(Collection<Integer> workers) {
+  private Map<HashRange, Integer> rangeMappingForTick() {
     final Map<HashRange, Integer> result = new HashMap<>();
+    final Set<Integer> workerIds = cluster.nodes().keySet();
 
-    final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / workers.size());
+    final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / workerIds.size());
     long left = Integer.MIN_VALUE;
     long right = left + step;
 
-    for (int workerId : workers) {
+    for (int workerId : workerIds) {
       result.put(new HashRange((int) left, (int) right), workerId);
 
       left += step;
@@ -182,33 +155,13 @@ public final class TestStand implements Closeable {
     return result;
   }
 
-  @SuppressWarnings("TypeMayBeWeakened")
-  private static ActorSelection front(ActorSystem system,
-                                      int id,
-                                      InetSocketAddress address) {
+  private ActorSelection frontActor(InetSocketAddress address) {
     final Address add = Address.apply("akka.tcp", "worker", address.getAddress().getHostName(), address.getPort());
     final ActorPath path = RootActorPath.apply(add, "/")
             .$div("user")
             .$div("watcher")
-            .$div(String.valueOf(id))
+            .$div("concierge")
             .$div("front");
-    return system.actorSelection(path);
-  }
-
-  private void deployPartitioning() throws Exception {
-    try (final ZKDeployer zkConfigurationDeployer = new ZKDeployer(TestStand.ZK_STRING)) {
-      zkConfigurationDeployer.createDirs();
-      zkConfigurationDeployer.pushDNS(this.dns);
-      zkConfigurationDeployer.pushFronts(this.fronts);
-    }
-  }
-
-  private Collection<WorkerApplication> startWorkers() {
-    final Set<WorkerApplication> apps = this.dns.entrySet().stream()
-            .map(f -> new WorkerApplication(f.getKey(), f.getValue(), TestStand.ZK_STRING))
-            .collect(Collectors.toSet());
-
-    apps.forEach(WorkerApplication::run);
-    return apps;
+    return localSystem.actorSelection(path);
   }
 }

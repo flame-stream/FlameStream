@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.sum;
 
 import akka.actor.ActorPath;
 import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.LocalCluster;
 import com.spbsu.datastream.core.TestStand;
 import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
 import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
@@ -33,28 +34,29 @@ import java.util.stream.Collectors;
 public final class SumTest {
 
   @Test
-  public void testSingleFront() throws InterruptedException {
+  public void testSingleFront() throws Exception {
     this.test(20, 1000, 1, 123);
   }
 
   @Test
-  public void testMultipleFronts() throws InterruptedException {
+  public void testMultipleFronts() throws Exception {
     this.test(30, 1000, 4, 123);
   }
 
   @Test
-  public void shortRepeatedTests() throws InterruptedException {
+  public void shortRepeatedTests() throws Exception {
     for (int i = 0; i < 10; ++i) {
       this.test(5, 10, 4, i);
     }
   }
 
-  private void test(int tickLength, int inputSize, int fronts, int seed) throws InterruptedException {
-    try (TestStand stage = new TestStand(4, fronts)) {
+  private void test(int tickLength, int inputSize, int fronts, int seed) throws Exception {
+    try (LocalCluster cluster = new LocalCluster(4, fronts);
+         TestStand stage = new TestStand(cluster)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
-      stage.deploy(SumTest.sumGraph(stage.fronts(), stage.wrap(k -> result.add((Sum) k))), tickLength, TimeUnit.SECONDS);
+      stage.deploy(SumTest.sumGraph(stage.frontIds(), stage.wrap(k -> result.add((Sum) k))), tickLength, TimeUnit.SECONDS);
 
       final List<LongNumb> source = new Random(seed).ints(inputSize).map(i -> i % 100).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(seed);

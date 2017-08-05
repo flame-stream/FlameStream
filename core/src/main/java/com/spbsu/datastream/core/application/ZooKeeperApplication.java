@@ -12,9 +12,11 @@ public final class ZooKeeperApplication extends ZooKeeperServerMain {
   public void run() throws IOException {
     final QuorumPeerConfig quorumConfig = new QuorumPeerConfig();
 
-    try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("zookeeper-dev.properties")) {
+    try {
       final Properties props = new Properties();
-      props.load(stream);
+      props.setProperty("clientPort", "2181");
+      props.setProperty("tickTime", "2000");
+      props.setProperty("dataDir", "./zookeeper");
       quorumConfig.parseProperties(props);
     } catch (QuorumPeerConfig.ConfigException | IOException e) {
       throw new RuntimeException(e);

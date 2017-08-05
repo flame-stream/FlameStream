@@ -25,12 +25,13 @@ import java.util.stream.Collectors;
 public final class FilterAcceptanceTest {
 
   @Test
-  public void linearFilter() throws InterruptedException {
-    try (TestStand stage = new TestStand(4, 4)) {
+  public void linearFilter() throws Exception {
+    try (LocalCluster cluster = new LocalCluster(4, 4);
+         TestStand stage = new TestStand(cluster)) {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(FilterAcceptanceTest.multiGraph(stage.fronts(), stage.wrap(result::add)), 10, TimeUnit.SECONDS);
+      stage.deploy(FilterAcceptanceTest.multiGraph(stage.frontIds(), stage.wrap(result::add)), 10, TimeUnit.SECONDS);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(123);

@@ -3,6 +3,7 @@ package com.spbsu.datastream.core.inverted_index;
 import akka.actor.ActorPath;
 import com.spbsu.commons.text.stem.Stemmer;
 import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.LocalCluster;
 import com.spbsu.datastream.core.TestStand;
 import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
 import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
@@ -61,6 +62,7 @@ import java.util.stream.StreamSupport;
  * User: Artem
  * Date: 10.07.2017
  */
+@SuppressWarnings("MagicNumber")
 public class InvertedIndexTest {
   private static final HashFunction<WikipediaPage> WIKI_PAGE_HASH = new HashFunction<WikipediaPage>() {
     @Override
@@ -91,7 +93,7 @@ public class InvertedIndexTest {
   };
 
   @Test
-  public void testIndexWithSmallDump() throws InterruptedException, FileNotFoundException {
+  public void testIndexWithSmallDump() throws Exception {
     final Stream<WikipediaPage> source = dumpFromResources("wikipedia/test_index_small_dump.xml");
     final List<WordContainer> output = new ArrayList<>();
 
@@ -158,7 +160,7 @@ public class InvertedIndexTest {
   }
 
   @Test
-  public void testIndexAndRankingStorageWithSmallDump() throws InterruptedException, FileNotFoundException {
+  public void testIndexAndRankingStorageWithSmallDump() throws Exception {
     final Stream<WikipediaPage> source = dumpFromResources("wikipedia/test_index_ranking_storage_small_dump.xml");
     final RankingStorage rankingStorage = test(source, 4, 4, 10);
 
@@ -191,7 +193,7 @@ public class InvertedIndexTest {
       Assert.assertEquals(rankingStorage.termCountInDoc(litva, krasnayaKnigaDoc), 0);
     }
     {
-      Assert.assertEquals(4, rankingStorage.allDocs().count());
+      Assert.assertEquals(rankingStorage.allDocs().count(), 4);
       Assert.assertTrue(rankingStorage.allDocs().anyMatch(document -> document.equals(litvaDoc)));
       Assert.assertTrue(rankingStorage.allDocs().anyMatch(document -> document.equals(slonovyeDoc)));
       Assert.assertTrue(rankingStorage.allDocs().anyMatch(document -> document.equals(mamontyDoc)));
@@ -200,7 +202,7 @@ public class InvertedIndexTest {
   }
 
   @Test
-  public void testIndexWithRanking() throws InterruptedException, FileNotFoundException {
+  public void testIndexWithRanking() throws Exception {
     final Stream<WikipediaPage> source = dumpFromResources("wikipedia/national_football_teams_dump.xml");
     final RankingStorage rankingStorage = test(source, 1, 1, 10);
     final RankingFunction rankingFunction = new BM25(rankingStorage);
@@ -233,7 +235,7 @@ public class InvertedIndexTest {
 
   //Enable test, set queries and have fun!
   @Test(enabled = false, dataProvider = "queries")
-  public void manualTestIndexWithRanking(String query) throws FileNotFoundException, InterruptedException {
+  public void manualTestIndexWithRanking(String query) throws Exception {
     final TIntObjectMap<String> docsTitleResolver = new TIntObjectHashMap<>();
     final Stream<WikipediaPage> source = dumpFromResources("wikipedia/national_football_teams_dump.xml")
             .peek(wikipediaPage -> docsTitleResolver.put(wikipediaPage.id(), wikipediaPage.title()));
@@ -245,7 +247,7 @@ public class InvertedIndexTest {
   }
 
   @SuppressWarnings("SameParameterValue")
-  private static RankingStorage test(Stream<WikipediaPage> source, int fronts, int workers, int tickLength) throws FileNotFoundException, InterruptedException {
+  private static RankingStorage test(Stream<WikipediaPage> source, int fronts, int workers, int tickLength) throws Exception {
     final RankingStorage rankingStorage = new InMemRankingStorage();
     test(source, container -> {
       if (container instanceof WordIndexAdd) {
@@ -258,9 +260,10 @@ public class InvertedIndexTest {
     return rankingStorage;
   }
 
-  private static void test(Stream<WikipediaPage> source, Consumer<Object> outputConsumer, int fronts, int workers, int tickLength) throws InterruptedException, FileNotFoundException {
-    try (TestStand stage = new TestStand(workers, fronts)) {
-      stage.deploy(invertedIndexTest(stage.fronts(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
+  private static void test(Stream<WikipediaPage> source, Consumer<Object> outputConsumer, int fronts, int workers, int tickLength) throws Exception {
+    try (LocalCluster cluster = new LocalCluster(workers, fronts);
+         TestStand stage = new TestStand(cluster)) {
+      stage.deploy(invertedIndexTest(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
       final Consumer<Object> sink = stage.randomFrontConsumer(122);
       source.forEach(sink);
       stage.waitTick(tickLength + 5, TimeUnit.SECONDS);

@@ -8,7 +8,6 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.Grouping;
 import com.spbsu.datastream.core.graph.ops.StatelessMap;
-import com.sun.xml.bind.v2.runtime.reflect.opt.FieldAccessor_Long;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
 
 public final class GroupingAcceptanceTest {
   @Test
-  public void noReorderingSingleHash() throws InterruptedException {
+  public void noReorderingSingleHash() throws Exception {
     GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
       @Override
       public boolean test(Long aLong, Long aLong2) {
@@ -39,7 +38,7 @@ public final class GroupingAcceptanceTest {
   }
 
   @Test
-  public void noReorderingMultipleHash() throws InterruptedException {
+  public void noReorderingMultipleHash() throws Exception {
     final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
     GroupingAcceptanceTest.doIt(hash, HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
 
@@ -52,7 +51,7 @@ public final class GroupingAcceptanceTest {
   }
 
   @Test
-  public void reorderingSingleHash() throws InterruptedException {
+  public void reorderingSingleHash() throws Exception {
     GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.uniformLimitedHash(100), new BiPredicate<Long , Long>() {
       @Override
       public boolean test(Long aLong, Long aLong2) {
@@ -62,7 +61,7 @@ public final class GroupingAcceptanceTest {
   }
 
   @Test
-  public void reorderingMultipleHash() throws InterruptedException {
+  public void reorderingMultipleHash() throws Exception {
     final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
 
     GroupingAcceptanceTest.doIt(hash, HashFunction.uniformLimitedHash(100), new BiPredicate<Long , Long>() {
@@ -77,12 +76,13 @@ public final class GroupingAcceptanceTest {
 
   private static void doIt(HashFunction<? super Long> groupHash,
                            HashFunction<? super Long> filterHash,
-                           BiPredicate<? super Long, ? super Long> equalz) throws InterruptedException {
-    try (TestStand stage = new TestStand(5, 1)) {
+                           BiPredicate<? super Long, ? super Long> equalz) throws Exception {
+    try (LocalCluster cluster = new LocalCluster(5, 1);
+         TestStand stage = new TestStand(cluster)) {
       final Set<List<Long>> result = new HashSet<>();
       final int window = 7;
 
-      stage.deploy(GroupingAcceptanceTest.groupGraph(stage.fronts(),
+      stage.deploy(GroupingAcceptanceTest.groupGraph(stage.frontIds(),
               stage.wrap(di -> result.add((List<Long>) di)),
               window,
               groupHash,
@@ -99,10 +99,11 @@ public final class GroupingAcceptanceTest {
   }
 
   @Test(enabled = false)
-  public void infiniteTest() throws InterruptedException {
-    try (TestStand stage = new TestStand(4, 10)) {
+  public void infiniteTest() throws Exception {
+    try (LocalCluster cluster = new LocalCluster(5, 1);
+         TestStand stage = new TestStand(cluster)) {
 
-      stage.deploy(GroupingAcceptanceTest.groupGraph(stage.fronts(),
+      stage.deploy(GroupingAcceptanceTest.groupGraph(stage.frontIds(),
               stage.wrap(d -> {
               }),
               3,

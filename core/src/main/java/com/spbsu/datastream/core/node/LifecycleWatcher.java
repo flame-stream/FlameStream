@@ -64,6 +64,6 @@ public final class LifecycleWatcher extends LoggingActor {
   }
 
   private void initConcierge() {
-    this.context().actorOf(NodeConcierge.props(this.id, this.zk), String.valueOf(this.id));
+    this.context().actorOf(NodeConcierge.props(this.id, this.zk), "concierge");
   }
 }

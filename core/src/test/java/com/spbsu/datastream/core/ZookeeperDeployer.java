@@ -16,15 +16,15 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
 
-final class ZKDeployer implements Closeable {
-  private final Logger LOG = LoggerFactory.getLogger(ZKDeployer.class);
+final class ZookeeperDeployer implements Closeable {
+  private final Logger LOG = LoggerFactory.getLogger(ZookeeperDeployer.class);
 
   private final ObjectMapper mapper = new ObjectMapper();
   private final TickInfoSerializer serializer = new KryoInfoSerializer();
   private final ZooKeeper zooKeeper;
 
-  ZKDeployer(String zkString) throws IOException {
-    this.zooKeeper = new ZooKeeper(zkString, 5000, e -> this.LOG.info("Init zookeeper ZKEvent: {}", e));
+  ZookeeperDeployer(String zkString) throws IOException {
+    this.zooKeeper = new ZooKeeper(zkString, 5000, e -> this.LOG.info("Init zookeeperString ZKEvent: {}", e));
   }
 
   public void pushDNS(Map<Integer, InetSocketAddress> dns) throws Exception {
@@ -56,7 +56,7 @@ final class ZKDeployer implements Closeable {
     try {
       this.zooKeeper.close();
     } catch (InterruptedException e) {
-      this.LOG.error("Smth bad happens during closing ZKDeployer", e);
+      this.LOG.error("Smth bad happens during closing ZookeeperDeployer", e);
       throw new RuntimeException(e);
     }
   }

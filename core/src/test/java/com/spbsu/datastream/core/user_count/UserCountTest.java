@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.user_count;
 
 import akka.actor.ActorPath;
 import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.LocalCluster;
 import com.spbsu.datastream.core.TestStand;
 import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
 import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
@@ -66,9 +67,10 @@ public class UserCountTest {
   }
 
   private void test(int fronts) throws InterruptedException {
-    try (TestStand stage = new TestStand(4, fronts)) {
+    try (LocalCluster cluster = new LocalCluster(4, fronts);
+            TestStand stage = new TestStand(cluster)) {
       final Map<String, Integer> actual = new HashMap<>();
-      stage.deploy(userCountTest(stage.fronts(), stage.wrap(o -> {
+      stage.deploy(userCountTest(stage.frontIds(), stage.wrap(o -> {
         final UserCounter userCounter = (UserCounter) o;
         actual.putIfAbsent(userCounter.user(), 0);
         actual.computeIfPresent(userCounter.user(), (uid, old) -> Math.max(userCounter.count(), old));
@@ -85,6 +87,8 @@ public class UserCountTest {
       stage.waitTick(35, TimeUnit.SECONDS);
 
       Assert.assertEquals(actual, expected);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
