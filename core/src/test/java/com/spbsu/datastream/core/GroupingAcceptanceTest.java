@@ -43,7 +43,7 @@ public final class GroupingAcceptanceTest {
     GroupingAcceptanceTest.doIt(HashFunction.uniformLimitedHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
       @Override
       public boolean test(Long aLong, Long aLong2) {
-        return true;
+        return aLong.equals(aLong2);
       }
     });
   }
@@ -53,7 +53,7 @@ public final class GroupingAcceptanceTest {
     GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
       @Override
       public boolean test(Long aLong, Long aLong2) {
-        return aLong.equals(aLong2);
+        return true;
       }
     });
   }
