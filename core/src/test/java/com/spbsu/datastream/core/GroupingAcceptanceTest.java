@@ -8,6 +8,7 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.Grouping;
 import com.spbsu.datastream.core.graph.ops.StatelessMap;
+import com.sun.xml.bind.v2.runtime.reflect.opt.FieldAccessor_Long;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
@@ -29,26 +30,47 @@ import java.util.stream.Collectors;
 public final class GroupingAcceptanceTest {
   @Test
   public void noReorderingSingleHash() throws InterruptedException {
-    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100));
+    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
+      @Override
+      public boolean test(Long aLong, Long aLong2) {
+        return true;
+      }
+    });
   }
 
   @Test
   public void noReorderingMultipleHash() throws InterruptedException {
-    GroupingAcceptanceTest.doIt(HashFunction.uniformLimitedHash(100), HashFunction.constantHash(100));
+    GroupingAcceptanceTest.doIt(HashFunction.uniformLimitedHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
+      @Override
+      public boolean test(Long aLong, Long aLong2) {
+        return true;
+      }
+    });
   }
 
   @Test
   public void reorderingSingleHash() throws InterruptedException {
-    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.OBJECT_HASH);
+    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
+      @Override
+      public boolean test(Long aLong, Long aLong2) {
+        return aLong.equals(aLong2);
+      }
+    });
   }
 
   @Test
   public void reorderingMultipleHash() throws InterruptedException {
-    GroupingAcceptanceTest.doIt(HashFunction.uniformLimitedHash(100), HashFunction.OBJECT_HASH);
+    GroupingAcceptanceTest.doIt(HashFunction.uniformLimitedHash(100), HashFunction.constantHash(100), new BiPredicate<Long , Long>() {
+      @Override
+      public boolean test(Long aLong, Long aLong2) {
+        return aLong.equals(aLong2);
+      }
+    });
   }
 
   private static void doIt(HashFunction<? super Long> groupHash,
-                           HashFunction<? super Long> filterHash) throws InterruptedException {
+                           HashFunction<? super Long> filterHash,
+                           BiPredicate<? super Long, ? super Long> equalz) throws InterruptedException {
     try (TestStand stage = new TestStand(5, 1)) {
       final Set<List<Long>> result = new HashSet<>();
       final int window = 7;
@@ -57,6 +79,7 @@ public final class GroupingAcceptanceTest {
               stage.wrap(di -> result.add((List<Long>) di)),
               window,
               groupHash,
+              equalz,
               filterHash), 10, TimeUnit.SECONDS);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
@@ -77,7 +100,12 @@ public final class GroupingAcceptanceTest {
               }),
               3,
               HashFunction.uniformLimitedHash(100),
-              HashFunction.OBJECT_HASH), 15, TimeUnit.HOURS);
+              new BiPredicate<Long, Long>() {
+                @Override
+                public boolean test(Long aLong, Long aLong2) {
+                  return aLong.equals(aLong2);
+                }
+              }, HashFunction.OBJECT_HASH), 15, TimeUnit.HOURS);
 
       final Consumer<Object> sink = stage.randomFrontConsumer(123);
 
@@ -113,14 +141,10 @@ public final class GroupingAcceptanceTest {
   private static TheGraph groupGraph(Collection<Integer> fronts, ActorPath consumer,
                                      int window,
                                      HashFunction<? super Long> groupHash,
+                                     BiPredicate<? super Long, ? super Long> equalz,
                                      HashFunction<? super Long> filterHash) {
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
-    final Grouping<Long> grouping = new Grouping<>(groupHash, new BiPredicate<Long, Long>() {
-      @Override
-      public boolean test(Long a, Long b) {
-        return a.hashCode() == b.hashCode();
-      }
-    }, window);
+    final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window);
 
     final PreSinkMetaFilter<List<Long>> metaFilter = new PreSinkMetaFilter<>(HashFunction.OBJECT_HASH);
     final RemoteActorConsumer<List<Long>> sink = new RemoteActorConsumer<>(consumer);
