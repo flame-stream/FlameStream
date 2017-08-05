@@ -5,9 +5,9 @@ package com.spbsu.datastream.core.inverted_index.datastreams.utils;
  * Date: 10.07.2017
  */
 public class IndexLongUtil {
-  private static final int pageIdBitLength = 22;
+  private static final int pageIdBitLength = 24;
   private static final int positionBitLength = 20;
-  private static final int versionBitLength = 10;
+  private static final int versionBitLength = 8;
   private static final int rangeBitLength = 12;
 
   public static long createPagePosition(int pageId, int position, int pageVersion) {

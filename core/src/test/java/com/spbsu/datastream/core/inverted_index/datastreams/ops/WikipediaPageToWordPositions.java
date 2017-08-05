@@ -1,6 +1,8 @@
 package com.spbsu.datastream.core.inverted_index.datastreams.ops;
 
-import com.spbsu.commons.text.lexical.WordsTokenizer;
+import com.spbsu.commons.text.lexical.StemsTokenizer;
+import com.spbsu.commons.text.lexical.Tokenizer;
+import com.spbsu.commons.text.stem.Stemmer;
 import com.spbsu.datastream.core.inverted_index.datastreams.model.WikipediaPage;
 import com.spbsu.datastream.core.inverted_index.datastreams.model.WordPagePositions;
 import com.spbsu.datastream.core.inverted_index.datastreams.utils.IndexLongUtil;
@@ -21,12 +23,13 @@ import java.util.stream.Stream;
 public class WikipediaPageToWordPositions implements Function<WikipediaPage, Stream<WordPagePositions>> {
   @Override
   public Stream<WordPagePositions> apply(WikipediaPage wikipediaPage) {
-    final WordsTokenizer tokenizer = new WordsTokenizer(wikipediaPage.text());
+    //noinspection deprecation
+    final Tokenizer tokenizer = new StemsTokenizer(Stemmer.getInstance(), wikipediaPage.text());
     final Map<String, TLongList> wordPositions = new HashMap<>();
     final List<WordPagePositions> wordPagePositions = new ArrayList<>();
     int position = 0;
     while (tokenizer.hasNext()) {
-      final String word = ((String) tokenizer.next()).toLowerCase();
+      final String word = tokenizer.next().toString().toLowerCase();
       final long pagePosition = IndexLongUtil.createPagePosition(wikipediaPage.id(), position, wikipediaPage.version());
       if (!wordPositions.containsKey(word)) {
         final TLongList positions = new TLongArrayList();
