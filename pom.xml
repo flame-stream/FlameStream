@@ -16,5 +16,6 @@
         <module>wikiforia-parser</module>
         <module>paper</module>
         <module>spbsu-commons</module>
+        <module>benchmarks</module>
     </modules>
 </project>
