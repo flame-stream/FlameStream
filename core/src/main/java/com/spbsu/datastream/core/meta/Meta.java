@@ -10,8 +10,6 @@ public interface Meta extends Comparable<Meta> {
 
   Trace trace();
 
-  boolean isBrother(Meta that);
-
   Meta advanced(int newLocalTime);
 
   Meta advanced(int newLocalTime, int childId);

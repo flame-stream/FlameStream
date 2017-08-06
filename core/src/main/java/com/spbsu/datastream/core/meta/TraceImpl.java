@@ -28,7 +28,7 @@ final class TraceImpl implements Trace {
   public int compareTo(Trace trace) {
     final TraceImpl that = (TraceImpl) trace;
     for (int i = 0; i < Math.min(this.trace.length, that.trace.length); ++i) {
-      if (this.trace[i] != this.trace[i]) {
+      if (this.trace[i] != that.trace[i]) {
         return Long.compare(this.trace[i], that.trace[i]);
       }
     }

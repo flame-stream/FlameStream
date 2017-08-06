@@ -35,7 +35,7 @@ public final class PayloadDataItem<T> implements DataItem<T> {
 
   @Override
   public String toString() {
-    return "PayloadDataItem{" + "meta=" + this.meta +
+    return '{' + "meta=" + this.meta +
             ", payload=" + this.payload +
             '}';
   }

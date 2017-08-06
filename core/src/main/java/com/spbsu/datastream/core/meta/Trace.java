@@ -36,7 +36,7 @@ public interface Trace extends Comparable<Trace> {
     for (int i = 0; i < Math.min(t0.trace.length, t1.trace.length); ++i) {
       final long t0Event = t0.trace[i];
       final long t1Event = t1.trace[i];
-      if (!Objects.equals(t0Event, t1Event)) {
+      if (t0Event != t1Event) {
         if (localTimeOf(t0Event) == localTimeOf(t1Event)) {
           return Integer.compare(childIdOf(t0Event), childIdOf(t1Event));
         } else {

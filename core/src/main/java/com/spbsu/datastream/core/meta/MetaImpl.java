@@ -46,16 +46,6 @@ final class MetaImpl implements Meta {
 
 
   @Override
-  public boolean isBrother(Meta that) {
-    if (this.globalTime.equals(that.globalTime())
-            && Trace.INVALIDATION_COMPARATOR.compare(this.trace, that.trace()) == 0) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || this.getClass() != o.getClass()) return false;
@@ -71,8 +61,6 @@ final class MetaImpl implements Meta {
 
   @Override
   public String toString() {
-    return "Meta{" + "globalTime=" + this.globalTime +
-            ", trace=" + this.trace +
-            '}';
+    return "(" + this.globalTime + ", " + this.trace + ')';
   }
 }
