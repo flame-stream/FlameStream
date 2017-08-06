@@ -49,9 +49,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
     final List<DataItem<T>> group = this.buffers.getGroupFor(dataItem);
     final int position = this.insert(group, dataItem);
-    if (position != -1) {
-      this.replayAround(position, group, handle);
-    }
+    this.replayAround(position, group, handle);
   }
 
   private void replayAround(int position, List<DataItem<T>> group, AtomicHandle handle) {
@@ -71,29 +69,27 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     handle.push(this.outPort(), result);
   }
 
-  private int insert(List<DataItem<T>> group, DataItem<T> item) {
-    final int position = Collections.binarySearch(group, item, Grouping.ITEM_COMPARATOR);
-    if (position >= 0) {
-      final DataItem<T> olderItem = group.get(position);
-      final int invalidationRelation = Grouping.ITEM_INVALIDATION_COMPARATOR.compare(item, olderItem);
-      if (invalidationRelation > 0) {
-        int leftmostBrother = position;
-        while ((leftmostBrother - 1) >= 0 && group.get(leftmostBrother - 1).meta().isBrother(olderItem.meta()))
-          leftmostBrother--;
-        int rightmostBrother = position;
-        while ((rightmostBrother + 1) < group.size() && group.get(rightmostBrother + 1).meta().isBrother(olderItem.meta()))
-          rightmostBrother++;
-        if (rightmostBrother - leftmostBrother > 0)
-          group.subList(leftmostBrother + 1, rightmostBrother + 1).clear();
-        group.set(leftmostBrother, item);
-        return leftmostBrother;
-      } else {
-        return -1;
+  private int insert(List<DataItem<T>> group, DataItem<T> insertee) {
+    int position = 0;
+
+    while (position < group.size()) {
+      final DataItem<T> currentItem = group.get(position);
+      if (ITEM_COMPARATOR.compare(insertee, currentItem) < 0) {
+        break;
+      } else if (ITEM_COMPARATOR.compare(insertee, currentItem) > 0) {
+        position++;
+        continue;
+      } else if (ITEM_COMPARATOR.compare(insertee, currentItem) == 0) {
+        if (ITEM_INVALIDATION_COMPARATOR.compare(insertee, currentItem) > 0) {
+          group.remove(position);
+        } else {
+          throw new IllegalStateException("New item should always invalidate older");
+        }
       }
-    } else {
-      group.add(-(position + 1), item);
-      return -(position + 1);
     }
+
+    group.add(position, insertee);
+    return position;
   }
 
   private static final Comparator<DataItem<?>> ITEM_COMPARATOR = Comparator
@@ -122,14 +118,14 @@ public final class Grouping<T> extends AbstractAtomicGraph {
       // And do not forget about brothers, that can be invalidated at once.
 
       int groupSize = 0;
-      Meta previousMeta = null;
+      GlobalTime previousGT = null;
       while (groupSize < this.window && position - 1 >= 0) {
 
-        if (previousMeta == null || !group.get(position - 1).meta().isBrother(previousMeta)) {
+        if (previousGT == null || group.get(position - 1).meta().globalTime() != previousGT) {
           groupSize++;
         }
 
-        previousMeta = group.get(position - 1).meta();
+        previousGT = group.get(position - 1).meta().globalTime();
         position--;
       }
 
