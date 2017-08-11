@@ -15,3 +15,4 @@ sql/target/
 wikiforia-parser/target/
 /new-core/test.log
 /core/test.log
+/core/log
