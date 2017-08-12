@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableSet;
 
@@ -67,7 +68,7 @@ public final class TestStand implements AutoCloseable {
   }
 
   public Collection<Integer> frontIds() {
-    return unmodifiableSet(cluster.fronts().keySet());
+    return unmodifiableSet(cluster.fronts());
   }
 
 
@@ -120,7 +121,10 @@ public final class TestStand implements AutoCloseable {
   public Consumer<Object> randomFrontConsumer(long seed) {
     final List<Consumer<Object>> result = new ArrayList<>();
 
-    for (InetSocketAddress front : cluster.fronts().values()) {
+    final Set<InetSocketAddress> frontAddresses = cluster.fronts().stream()
+            .map(id -> cluster.nodes().get(id)).collect(Collectors.toSet());
+
+    for (InetSocketAddress front : frontAddresses) {
       final ActorSelection frontActor = frontActor(front);
       final Consumer<Object> consumer = obj -> frontActor.tell(new RawData<>(obj), ActorRef.noSender());
       result.add(consumer);

@@ -37,8 +37,8 @@ public final class LocalCluster implements Cluster, AutoCloseable {
   }
 
   @Override
-  public Map<Integer, InetSocketAddress> fronts() {
-    return fronts.stream().collect(toMap(Function.identity(), dns::get));
+  public Set<Integer> fronts() {
+    return unmodifiableSet(fronts);
   }
 
   @Override
@@ -86,7 +86,7 @@ public final class LocalCluster implements Cluster, AutoCloseable {
   }
 
   private void deployPartitioning() throws Exception {
-    try (final ZookeeperDeployer zkConfigurationDeployer = new ZookeeperDeployer(ZK_STRING)) {
+    try (ZookeeperDeployer zkConfigurationDeployer = new ZookeeperDeployer(ZK_STRING)) {
       zkConfigurationDeployer.createDirs();
       zkConfigurationDeployer.pushDNS(dns);
       zkConfigurationDeployer.pushFronts(fronts);
