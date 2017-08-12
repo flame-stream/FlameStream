@@ -40,7 +40,7 @@ public class WordCountTest {
   private static final HashFunction<WordContainer> WORD_HASH = new HashFunction<WordContainer>() {
     @Override
     public int hash(WordContainer value) {
-      return value.word().hashCode();
+      return HashFunction.jenkinsHash(value.word().hashCode());
     }
   };
 
