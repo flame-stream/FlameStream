@@ -74,16 +74,13 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
     while (position < group.size()) {
       final DataItem<T> currentItem = group.get(position);
-      if (ITEM_COMPARATOR.compare(insertee, currentItem) < 0) {
+      if (insertee.meta().compareTo(currentItem.meta()) < 0) {
         break;
-      } else if (ITEM_COMPARATOR.compare(insertee, currentItem) > 0) {
-        position++;
-        continue;
-      } else if (ITEM_COMPARATOR.compare(insertee, currentItem) == 0) {
-        if (ITEM_INVALIDATION_COMPARATOR.compare(insertee, currentItem) > 0) {
+      } else if (insertee.meta().compareTo(currentItem.meta()) > 0) {
+        if (currentItem.meta().isInvalidatedBy(insertee.meta())) {
           group.remove(position);
         } else {
-          throw new IllegalStateException("New item should always invalidate older");
+          position++;
         }
       }
     }
@@ -91,14 +88,6 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     group.add(position, insertee);
     return position;
   }
-
-  private static final Comparator<DataItem<?>> ITEM_COMPARATOR = Comparator
-          .comparing((DataItem<?> di) -> di.meta().globalTime())
-          .thenComparing((DataItem<?> di) -> di.meta().trace(),
-                  Trace.INVALIDATION_IGNORING_COMPARATOR);
-
-  private static final Comparator<DataItem<?>> ITEM_INVALIDATION_COMPARATOR = Comparator
-          .comparing((DataItem<?> di) -> di.meta().trace(), Trace.INVALIDATION_COMPARATOR);
 
   @Override
   public void onCommit(AtomicHandle handle) {

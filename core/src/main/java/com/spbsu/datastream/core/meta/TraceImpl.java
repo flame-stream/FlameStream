@@ -25,6 +25,18 @@ final class TraceImpl implements Trace {
   }
 
   @Override
+  public boolean isInvalidatedBy(Trace trace) {
+    final TraceImpl that = (TraceImpl) trace;
+
+    for (int i = 0; i < Math.min(this.trace.length, that.trace.length); ++i) {
+      if (this.trace[i] != that.trace[i]) {
+        return localTimeOf(this.trace[i]) < localTimeOf(that.trace[i]);
+      }
+    }
+    return false;
+  }
+
+  @Override
   public int compareTo(Trace trace) {
     final TraceImpl that = (TraceImpl) trace;
     for (int i = 0; i < Math.min(this.trace.length, that.trace.length); ++i) {

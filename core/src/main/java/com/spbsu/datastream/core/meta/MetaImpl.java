@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.meta;
 
 import com.spbsu.datastream.core.GlobalTime;
 
+import java.util.Comparator;
 import java.util.Objects;
 
 final class MetaImpl implements Meta {
@@ -30,6 +31,12 @@ final class MetaImpl implements Meta {
   }
 
   @Override
+  public boolean isInvalidatedBy(Meta that) {
+    return this.globalTime.equals(that.globalTime())
+            && this.trace.isInvalidatedBy(that.trace());
+  }
+
+  @Override
   public GlobalTime globalTime() {
     return this.globalTime;
   }
@@ -41,9 +48,12 @@ final class MetaImpl implements Meta {
 
   @Override
   public int compareTo(Meta that) {
-    return Meta.NATURAL_ORDER.compare(this, that);
+    return NATURAL_ORDER.compare(this, that);
   }
 
+  private static final Comparator<Meta> NATURAL_ORDER = Comparator
+          .comparing(Meta::globalTime)
+          .thenComparing(Meta::trace);
 
   @Override
   public boolean equals(Object o) {
