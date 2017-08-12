@@ -47,7 +47,7 @@ public final class InPort {
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.id);
+    return Long.hashCode(this.id);
   }
 }
 
