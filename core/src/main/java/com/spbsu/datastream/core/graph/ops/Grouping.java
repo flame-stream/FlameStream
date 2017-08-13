@@ -7,12 +7,10 @@ import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.meta.Meta;
-import com.spbsu.datastream.core.meta.Trace;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -103,24 +101,8 @@ public final class Grouping<T> extends AbstractAtomicGraph {
         position++;
       }
 
-      //  [position, size) - to keep. But we need to add window to position: [position - window, size).
-      // And do not forget about brothers, that can be invalidated at once.
-
-      int groupSize = 0;
-      GlobalTime previousGT = null;
-      while (groupSize < this.window && position - 1 >= 0) {
-
-        if (previousGT == null || group.get(position - 1).meta().globalTime() != previousGT) {
-          groupSize++;
-        }
-
-        previousGT = group.get(position - 1).meta().globalTime();
-        position--;
-      }
-
-      final List<DataItem<T>> toKeep = new ArrayList<>(group.subList(position, group.size()));
-      group.clear();
-      group.addAll(toKeep);
+      position = Math.max(position - window, 0);
+      group.subList(0, position).clear();
     };
     this.buffers.forEach(removeOldConsumer);
   }
