@@ -9,7 +9,6 @@ import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -102,9 +101,15 @@ public final class Grouping<T> extends AbstractAtomicGraph {
       }
 
       position = Math.max(position - window, 0);
-      group.subList(0, position).clear();
+      removeRange(group, position);
     };
     this.buffers.forEach(removeOldConsumer);
+  }
+
+  private <E> void removeRange(List<E> list, int toIndex) {
+    for (int i = 0; i < toIndex; i++) {
+      list.remove(0);
+    }
   }
 
   public InPort inPort() {
