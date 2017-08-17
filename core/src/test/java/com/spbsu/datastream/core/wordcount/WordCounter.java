@@ -21,4 +21,18 @@ public class WordCounter implements WordContainer {
   public int count() {
     return count;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    WordCounter that = (WordCounter) o;
+    return word.equals(that.word);
+  }
+
+  @Override
+  public int hashCode() {
+    return word.hashCode();
+  }
 }
