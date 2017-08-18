@@ -13,6 +13,10 @@ experiments/storm-test/target/
 new-core/target/
 sql/target/
 wikiforia-parser/target/
+benchmarks/target/
 /new-core/test.log
 /core/test.log
 /core/log
+
+/leveldb/
+/zookeeper/
