@@ -57,12 +57,12 @@
                         </goals>
                     </execution>
                     <execution>
-                        <id>make-wordcount-runner</id>
+                        <id>make-benchmark-runner</id>
                         <configuration>
-                            <finalName>${project.artifactId}-wordcount</finalName>
+                            <finalName>${project.artifactId}-benchmark</finalName>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.spbsu.datastream.benchmarks.wordcount.WordCountRunner</mainClass>
+                                    <mainClass>com.spbsu.datastream.benchmarks.BenchmarkLauncher</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
