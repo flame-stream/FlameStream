@@ -5,7 +5,7 @@ package com.spbsu.datastream.benchmarks.config;
  * Date: 18.08.2017
  */
 public interface ClusterCfg {
-  boolean local();
+  boolean isLocal();
 
   LocalClusterCfg localClusterCfg();
 

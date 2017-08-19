@@ -32,7 +32,7 @@ public class BenchmarkLauncher {
     final ClusterRunnerCfg clusterRunnerCfg = new TypesafeClusterRunnerCfg(load);
 
     final Cluster cluster;
-    if (clusterCfg.local()) {
+    if (clusterCfg.isLocal()) {
       cluster = new LocalCluster(clusterCfg.localClusterCfg().workers(), clusterCfg.localClusterCfg().fronts());
     } else {
       cluster = new RealCluster(clusterCfg.realClusterCfg().zkString(), clusterCfg.realClusterCfg().nodes(), clusterCfg.realClusterCfg().fronts());

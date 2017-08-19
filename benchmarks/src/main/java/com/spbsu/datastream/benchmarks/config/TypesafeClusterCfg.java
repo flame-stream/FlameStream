@@ -28,7 +28,7 @@ public class TypesafeClusterCfg implements ClusterCfg {
   }
 
   @Override
-  public boolean local() {
+  public boolean isLocal() {
     return local;
   }
 
