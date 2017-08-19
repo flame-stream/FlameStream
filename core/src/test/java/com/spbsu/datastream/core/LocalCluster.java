@@ -16,8 +16,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 public final class LocalCluster implements Cluster, AutoCloseable {
   private static final String ZK_STRING = "localhost:2181";
@@ -63,12 +65,12 @@ public final class LocalCluster implements Cluster, AutoCloseable {
       FileUtils.deleteDirectory(new File("zookeeper"));
       FileUtils.deleteDirectory(new File("leveldb"));
 
-    this.dns = freeSockerts(workersCount);
-    this.fronts = this.dns.keySet().stream().limit(frontCount).collect(toSet());
+      this.dns = freeSockerts(workersCount);
+      this.fronts = this.dns.keySet().stream().limit(frontCount).collect(toSet());
 
-    this.zk = new ZooKeeperApplication();
-    this.zkThread = new Thread(Unchecked.runnable(this.zk::run));
-    this.zkThread.start();
+      this.zk = new ZooKeeperApplication();
+      this.zkThread = new Thread(Unchecked.runnable(this.zk::run));
+      this.zkThread.start();
 
       TimeUnit.SECONDS.sleep(1);
       this.deployPartitioning();

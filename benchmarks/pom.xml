@@ -32,4 +32,50 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-worker</id>
+                        <configuration>
+                            <finalName>${project.artifactId}-worker</finalName>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.spbsu.datastream.core.application.WorkerApplication</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>make-wordcount-runner</id>
+                        <configuration>
+                            <finalName>${project.artifactId}-wordcount</finalName>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.spbsu.datastream.benchmarks.wordcount.WordCountRunner</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
