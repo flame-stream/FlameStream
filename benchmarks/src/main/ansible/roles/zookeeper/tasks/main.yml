@@ -1,0 +1,39 @@
+---
+- name: Ensure the zookeeper dir exists at {{ zookeeper_dir }}
+  file:
+    path: "{{ zookeeper_dir }}"
+    state: directory
+  tags: bootstrap
+
+- name: Ensure the tarball dir exists {{ zookeeper_tarball_dir }}
+  file:
+    path: "{{ zookeeper_tarball_dir }}"
+    state: directory
+  tags: bootstrap
+
+- name: Download zk tarball
+  get_url: 
+    url: "{{ zookeeper_url }}"
+    dest: "{{ zookeeper_tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz"
+  tags: bootstrap
+
+- name: Unpack the tarball
+  command: tar -xf {{ zookeeper_tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz --strip-components=1
+  args: 
+    chdir: "{{ zookeeper_dir }}" 
+    creates: "{{ zookeeper_dir }}/bin"
+  tags: bootstrap
+
+- name: Create zookeeper data directory at {{ data_dir }}
+  file:
+    path: "{{ data_dir }}"
+    state: directory
+  tags: bootstrap
+
+- name: Configure zookeeper
+  template:
+    src: zoo.cfg.j2
+    dest: "{{ zookeeper_dir }}/conf/zoo.cfg"
+  tags: bootstrap
+  notify:
+    - Restart zookeeper

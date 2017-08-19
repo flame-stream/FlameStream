@@ -1,0 +1,8 @@
+---
+- hosts: all
+  roles:
+    - common
+
+- hosts: zookeeper
+  roles:
+    - zookeeper

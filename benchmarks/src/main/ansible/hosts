@@ -1,0 +1,9 @@
+[zookeeper]
+127.0.7.3  ansible_user=root  ansible_port=32773
+
+[workers]
+127.0.7.3  ansible_user=root  ansible_port=32773  ds_id=1
+127.0.7.4  ansible_user=root  ansible_port=32774  ds_id=2
+127.0.7.5  ansible_user=root  ansible_port=32775  ds_id=3
+127.0.7.6  ansible_user=root  ansible_port=32776  ds_id=4
+127.0.7.7  ansible_user=root  ansible_port=32777  ds_id=5
