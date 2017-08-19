@@ -10,13 +10,24 @@ import com.spbsu.datastream.core.LocalCluster;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  * User: Artem
  * Date: 18.08.2017
  */
-public class Launcher {
-  public static void main(String[] args) throws InterruptedException, IllegalAccessException, InstantiationException {
-    final Config load = ConfigFactory.load();
+public class BenchmarkLauncher {
+  public static void main(String[] args) throws Exception {
+    final Config load;
+    if (args.length == 1) {
+      final Path filename = Paths.get(args[0]);
+      load = ConfigFactory.parseReader(Files.newBufferedReader(filename));
+    } else {
+      load = ConfigFactory.load();
+    }
+
     final ClusterCfg clusterCfg = new TypesafeClusterCfg(load);
     final ClusterRunnerCfg clusterRunnerCfg = new TypesafeClusterRunnerCfg(load);
 
