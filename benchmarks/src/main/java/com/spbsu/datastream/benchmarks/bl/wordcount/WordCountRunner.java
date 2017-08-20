@@ -38,7 +38,7 @@ public final class WordCountRunner implements ClusterRunner {
       input.forEach(text -> {
         try {
           frontConsumer.accept(text);
-          Thread.sleep(100);
+          Thread.sleep(1000);
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
