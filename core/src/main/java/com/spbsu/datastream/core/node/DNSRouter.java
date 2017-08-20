@@ -67,7 +67,7 @@ final class DNSRouter extends LoggingActor {
 
   private ActorSelection selectionFor(int id, InetSocketAddress address) {
     // TODO: 5/8/17 Properly resolve ActorRef
-    final Address add = Address.apply("akka.tcp", "worker", address.getAddress().getHostName(), address.getPort());
+    final Address add = Address.apply("akka", "worker", address.getAddress().getHostName(), address.getPort());
     final ActorPath path = RootActorPath.apply(add, "/")
             .$div("user")
             .$div("watcher")
