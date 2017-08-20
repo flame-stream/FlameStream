@@ -1,16 +1,11 @@
 cluster {
   local = false
 
-  local-cluster {
-    workers = 1
-    fronts = 1
-  }
-
   real-cluster {
     zk = "{{ hostvars[groups['zookeeper'][0]].inner_dn }}:{{ client_port }}"
     nodes = [
     {% for worker in groups['workers'] %}
-      {id = {{ hostvars[worker].ds_id }}, host = "{{ hostvars[worker].inner_dn }}", port = {{ hostvars[worker].ds_port }}}
+      {id = {{ hostvars[worker].ds_id }}, host = "{{ hostvars[worker].inner_dn }}", port = {{ worker_port }}}
       {{ "," if not loop.last else "" }}
     {% endfor %}
     ],

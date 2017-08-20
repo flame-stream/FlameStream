@@ -2,10 +2,10 @@
 127.1.6.8  ansible_user=root  ansible_port=32768  inner_dn=worker1
 
 [workers]
-127.1.6.8  ansible_user=root  ansible_port=32768  ds_id=1  ds_port=4387  inner_dn=worker1
-127.1.6.9  ansible_user=root  ansible_port=32769  ds_id=2  ds_port=4387  inner_dn=worker2
-127.1.7.0  ansible_user=root  ansible_port=32770  ds_id=3  ds_port=4387  inner_dn=worker3
-127.1.7.1  ansible_user=root  ansible_port=32771  ds_id=4  ds_port=4387  inner_dn=worker4
+127.1.6.8  ansible_user=root  ansible_port=32768  ds_id=1  inner_dn=worker1
+127.1.6.9  ansible_user=root  ansible_port=32769  ds_id=2  inner_dn=worker2
+127.1.7.0  ansible_user=root  ansible_port=32770  ds_id=3  inner_dn=worker3
+127.1.7.1  ansible_user=root  ansible_port=32771  ds_id=4  inner_dn=worker4
 
 [bench]
-127.1.6.8  ansible_user=root  ansible_port=32768  ds_id=1  ds_port=4387  inner_dn=worker1
+127.1.6.8  ansible_user=root  ansible_port=32768  ds_id=1  inner_dn=worker1

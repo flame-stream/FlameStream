@@ -5,13 +5,13 @@
 
 - hosts: zookeeper
   roles:
-    - { role: zookeeper, client_port: 2181 }
+    - { role: zookeeper, client_port: 2181, worker_port: 4181 }
 
 - hosts: workers
   roles:
-    - { role: worker, client_port: 2181 }
+    - { role: worker, client_port: 2181, worker_port: 4181 }
 
 - hosts: bench
   roles:
-    - { role: bench, client_port: 2181 }
+    - { role: bench, client_port: 2181, worker_port: 4181 }
 
