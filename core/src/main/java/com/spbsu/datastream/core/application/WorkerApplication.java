@@ -55,8 +55,8 @@ public final class WorkerApplication {
   }
 
   public void run() {
-    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + this.host.getPort())
-            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + this.host.getHostString()))
+    final Config config = ConfigFactory.parseString("akka.remote.artery.canonical.port=" + this.host.getPort())
+            .withFallback(ConfigFactory.parseString("akka.remote.artery.canonical.hostname=" + this.host.getHostString()))
             .withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);
 

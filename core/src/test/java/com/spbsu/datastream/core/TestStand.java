@@ -45,8 +45,8 @@ public final class TestStand implements AutoCloseable {
     this.cluster = cluster;
 
     try {
-      final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + TestStand.LOCAL_SYSTEM_PORT)
-              .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + InetAddress.getLocalHost().getHostName()))
+      final Config config = ConfigFactory.parseString("akka.remote.artery.canonical.port=" + TestStand.LOCAL_SYSTEM_PORT)
+              .withFallback(ConfigFactory.parseString("akka.remote.artery.canonical.hostname=" + InetAddress.getLocalHost().getHostName()))
               .withFallback(ConfigFactory.load("remote"));
 
       this.localSystem = ActorSystem.create("requester", config);
@@ -78,7 +78,7 @@ public final class TestStand implements AutoCloseable {
     try {
       final String id = UUID.randomUUID().toString();
       final ActorRef consumerActor = this.localSystem.actorOf(CollectingActor.props(collection), id);
-      final Address add = Address.apply("akka.tcp", "requester",
+      final Address add = Address.apply("akka", "requester",
               InetAddress.getLocalHost().getHostName(),
               TestStand.LOCAL_SYSTEM_PORT);
       return RootActorPath.apply(add, "/")
@@ -151,7 +151,7 @@ public final class TestStand implements AutoCloseable {
   }
 
   private ActorSelection frontActor(InetSocketAddress address) {
-    final Address add = Address.apply("akka.tcp", "worker", address.getAddress().getHostName(), address.getPort());
+    final Address add = Address.apply("akka", "worker", address.getAddress().getHostName(), address.getPort());
     final ActorPath path = RootActorPath.apply(add, "/")
             .$div("user")
             .$div("watcher")
