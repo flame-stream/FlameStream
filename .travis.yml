@@ -2,9 +2,6 @@ language: java
 
 sudo: required
 
-services:
-  - docker
-
 addons:
   apt:
     packages:
@@ -28,13 +25,3 @@ script:
   - cd ./core
   - mvn -fae --errors --batch-mode test
   - cd ../
-
-before_install:
-  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-
-after_success:
-  - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    docker build -t datastreams/worker-application new-core;
-    docker push datastreams/worker-application;
-    fi
-
