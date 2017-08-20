@@ -4,16 +4,17 @@ import akka.actor.ActorSystem;
 import com.spbsu.datastream.core.node.LifecycleWatcher;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Optional;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeoutException;
 
 public final class WorkerApplication {
@@ -37,18 +38,20 @@ public final class WorkerApplication {
     this.zkConnectString = zkConnectString;
   }
 
-  public static void main(String... args) throws UnknownHostException {
-    final int id = Integer.valueOf(System.getenv("DATASTREAMS_ID"));
+  public static void main(String... args) throws IOException {
+    final Config config;
+    if (args.length == 1) {
+      config = ConfigFactory.parseReader(Files.newBufferedReader(Paths.get(args[0])))
+              .withFallback(ConfigFactory.load("ds"));
+    } else {
+      config = ConfigFactory.load("ds");
+    }
 
-    final InetAddress address = Optional.ofNullable(System.getenv("DATASTREAMS_HOST"))
-            .map(Unchecked.function(InetAddress::getByName)).orElse(InetAddress.getLocalHost());
-    final int port = Optional.ofNullable(System.getenv("DATASTREAMS_PORT"))
-            .map(Integer::valueOf).orElse(4387);
-    final String connectingString = System.getenv("DATASTREAMS_ZK");
+    final int port = config.getInt("port");
+    final InetAddress host = InetAddress.getByName(config.getString("host"));
+    final InetSocketAddress socketAddress = new InetSocketAddress(host, port);
 
-    final InetSocketAddress socketAddress = new InetSocketAddress(address, port);
-
-    new WorkerApplication(id, socketAddress, connectingString).run();
+    new WorkerApplication(config.getInt("id"), socketAddress, config.getString("zk_string")).run();
   }
 
   public void run() {
