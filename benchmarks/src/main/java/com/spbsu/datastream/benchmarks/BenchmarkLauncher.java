@@ -25,7 +25,7 @@ public class BenchmarkLauncher {
       final Path filename = Paths.get(args[0]);
       load = ConfigFactory.parseReader(Files.newBufferedReader(filename));
     } else {
-      load = ConfigFactory.load();
+      load = ConfigFactory.load("bench");
     }
 
     final ClusterCfg clusterCfg = new TypesafeClusterCfg(load);
