@@ -22,7 +22,7 @@ public class TypesafeClusterCfg implements ClusterCfg {
     this.realClusterCfg = new RealClusterCfg(
             config.getString("real-cluster.zk"),
             config.getConfigList("real-cluster.nodes").stream()
-                    .collect(Collectors.toMap(cfg -> cfg.getInt("num"), cfg -> new InetSocketAddress(cfg.getString("host"), cfg.getInt("port")))),
+                    .collect(Collectors.toMap(cfg -> cfg.getInt("id"), cfg -> new InetSocketAddress(cfg.getString("host"), cfg.getInt("port")))),
             new HashSet<>(config.getIntList("real-cluster.fronts"))
     );
   }
