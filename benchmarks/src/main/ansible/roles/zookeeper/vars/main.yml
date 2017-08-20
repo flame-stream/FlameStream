@@ -2,10 +2,11 @@
 zookeeper_version: 3.4.9
 zookeeper_url: http://www.apache.org/dist/zookeeper/zookeeper-{{zookeeper_version}}/zookeeper-{{zookeeper_version}}.tar.gz
 
-client_port: 2181
 tick_time: 2000
 
 data_dir: /var/lib/zookeeper
 
-zookeeper_dir: /opt/zookeeper-{{zookeeper_version}}
+zookeeper_dir: /opt/zookeeper-{{ zookeeper_version }}
 zookeeper_tarball_dir: /opt/src
+
+zk_cli: "{{ zookeeper_dir }}/bin/zkCli.sh -server localhost:{{ client_port }}"

@@ -1,0 +1,32 @@
+---
+- name: Stop the ds worker
+  shell: pkill worker.jar || true
+  tags: deploy
+
+- name: Clean the ds directory
+  file:
+    path: "{{ ds_dir }}"
+    state: absent
+  tags: deploy
+
+- name: Create the ds dir
+  file:
+    path: "{{ ds_dir }}"
+    state: directory
+  tags: deploy
+
+- name: Copy the worker application
+  copy:
+    src: datastreams-benchmarks-worker-jar-with-dependencies.jar
+    dest: "{{ ds_dir }}/worker.jar"
+  tags: deploy
+
+- name: Copy the configuraion file
+  template:
+    src: ds.conf.j2
+    dest: "{{ ds_dir }}/ds.conf"
+  tags: deploy
+
+- name: Start the ds worker
+  shell: nohup java -jar {{ ds_dir }}/worker.jar {{ ds_dir }}/ds.conf > /worker.log 2>&1 &
+  tags: deploy

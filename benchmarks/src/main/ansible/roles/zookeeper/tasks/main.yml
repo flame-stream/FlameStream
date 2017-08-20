@@ -24,16 +24,50 @@
     creates: "{{ zookeeper_dir }}/bin"
   tags: bootstrap
 
-- name: Create zookeeper data directory at {{ data_dir }}
+- name: Create the zookeeper data directory at {{ data_dir }}
   file:
     path: "{{ data_dir }}"
     state: directory
   tags: bootstrap
 
-- name: Configure zookeeper
+- name: Configure the zookeeper
   template:
     src: zoo.cfg.j2
     dest: "{{ zookeeper_dir }}/conf/zoo.cfg"
   tags: bootstrap
-  notify:
-    - Restart zookeeper
+
+- name: Restart zookeeper
+  shell: "{{ zookeeper_dir }}/bin/zkServer.sh restart"
+  tags: bootstrap
+
+- name: Copy dns json
+  template:
+    src: dns.json.j2
+    dest: "{{ zookeeper_dir }}/dns.json"
+  tags: deploy
+
+- name: Copy fronts json
+  template:
+    src: fronts.json.j2
+    dest: "{{ zookeeper_dir }}/fronts.json"
+  tags: deploy
+
+- name: Clean zookeeper {{ item }}
+  shell: "{{ zk_cli }} deleteall {{ item }}"
+  tags: deploy
+  with_items:
+    - /ticks
+    - /dns
+    - /fronts
+
+- name: Create ticks dir
+  shell: "{{ zk_cli }} create /ticks \"\""
+  tags: deploy
+
+- name: Deploy dns
+  shell: "{{ zk_cli }} create /dns \"$(cat {{ zookeeper_dir }}/dns.json)\""
+  tags: deploy
+
+- name: Deploy fronts
+  shell: "{{ zk_cli }} create /fronts \"$(cat {{ zookeeper_dir }}/fronts.json)\""
+  tags: deploy

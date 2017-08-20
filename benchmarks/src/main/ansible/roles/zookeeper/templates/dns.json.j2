@@ -1,0 +1,5 @@
+{
+{% for worker in groups['workers'] %}
+  "{{ hostvars[worker].ds_id }}": "{{ hostvars[worker].inner_dn }}:{{ hostvars[worker].ds_port }}" {{ "," if not loop.last else "" }}
+{% endfor %}
+}

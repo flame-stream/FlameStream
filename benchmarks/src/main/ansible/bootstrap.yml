@@ -1,8 +1,12 @@
 ---
 - hosts: all
   roles:
-    - common
+    - { role: common }
 
 - hosts: zookeeper
   roles:
-    - zookeeper
+    - { role: zookeeper, client_port: 2181 }
+
+- hosts: workers
+  roles:
+    - { role: worker, client_port: 2181 }
