@@ -7,11 +7,11 @@ cluster {
   }
 
   real-cluster {
-    zk = "{{ hostvars[groups['zookeeper'][0]].inner_dns }}:{{ client_port }}"
+    zk = "{{ hostvars[groups['zookeeper'][0]].inner_dn }}:{{ client_port }}"
     nodes = [
     {% for worker in groups['workers'] %}
       {id = {{ hostvars[worker].ds_id }}, host = "{{ hostvars[worker].inner_dn }}", port = {{ hostvars[worker].ds_port }}}
-      {{ "," if not loop.last }}
+      {{ "," if not loop.last else "" }}
     {% endfor %}
     ],
     fronts = [{{ hostvars[groups['bench'][0]].ds_id }}]

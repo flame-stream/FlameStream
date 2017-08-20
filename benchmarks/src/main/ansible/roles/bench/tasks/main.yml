@@ -1,0 +1,28 @@
+---
+- name: Clean the bench directory
+  file:
+    path: "{{ bench_dir }}"
+    state: absent
+  tags: run
+
+- name: Create the bench dir
+  file:
+    path: "{{ bench_dir }}"
+    state: directory
+  tags: run
+
+- name: Copy the bench application
+  copy:
+    src: datastreams-benchmarks-1.0-SNAPSHOT-bench.jar
+    dest: "{{ bench_dir }}/bench.jar"
+  tags: run
+
+- name: Copy the configuraion file
+  template:
+    src: bench.conf.j2
+    dest: "{{ bench_dir }}/bench.conf"
+  tags: run
+
+- name: Start the ds worker
+  shell: java -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf > /bench.log
+  tags: run

@@ -10,3 +10,8 @@
 - hosts: workers
   roles:
     - { role: worker, client_port: 2181 }
+
+- hosts: bench
+  roles:
+    - { role: bench, client_port: 2181 }
+
