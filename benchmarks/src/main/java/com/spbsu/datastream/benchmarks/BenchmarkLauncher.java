@@ -1,6 +1,5 @@
 package com.spbsu.datastream.benchmarks;
 
-import com.spbsu.datastream.benchmarks.bl.wordcount.RealCluster;
 import com.spbsu.datastream.benchmarks.config.ClusterCfg;
 import com.spbsu.datastream.benchmarks.config.ClusterRunnerCfg;
 import com.spbsu.datastream.benchmarks.config.TypesafeClusterCfg;

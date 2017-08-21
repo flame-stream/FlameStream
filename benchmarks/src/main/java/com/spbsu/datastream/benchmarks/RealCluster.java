@@ -1,4 +1,4 @@
-package com.spbsu.datastream.benchmarks.bl.wordcount;
+package com.spbsu.datastream.benchmarks;
 
 import com.spbsu.datastream.core.Cluster;
 
