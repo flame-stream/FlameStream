@@ -50,14 +50,14 @@ public final class LocalCluster implements Cluster {
 
   @Override
   public void close() throws Exception {
-    FileUtils.deleteDirectory(new File("zookeeper"));
-    FileUtils.deleteDirectory(new File("leveldb"));
-
     this.workerApplication.forEach(WorkerApplication::shutdown);
     this.workerApplication.clear();
 
     this.zk.shutdown();
     this.zkThread.join();
+
+    FileUtils.deleteDirectory(new File("zookeeper"));
+    FileUtils.deleteDirectory(new File("leveldb"));
   }
 
   public LocalCluster(int workersCount, int frontCount) {
