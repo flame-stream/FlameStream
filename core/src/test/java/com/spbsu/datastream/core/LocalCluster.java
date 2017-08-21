@@ -21,7 +21,7 @@ import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
-public final class LocalCluster implements Cluster, AutoCloseable {
+public final class LocalCluster implements Cluster {
   private static final String ZK_STRING = "localhost:2181";
 
   private static final int START_WORKER_PORT = 5223;

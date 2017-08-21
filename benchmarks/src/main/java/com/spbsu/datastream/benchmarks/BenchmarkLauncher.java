@@ -28,17 +28,18 @@ public class BenchmarkLauncher {
       load = ConfigFactory.load("bench");
     }
 
-    final ClusterCfg clusterCfg = new TypesafeClusterCfg(load);
     final ClusterRunnerCfg clusterRunnerCfg = new TypesafeClusterRunnerCfg(load);
-
-    final Cluster cluster;
-    if (clusterCfg.isLocal()) {
-      cluster = new LocalCluster(clusterCfg.localClusterCfg().workers(), clusterCfg.localClusterCfg().fronts());
-    } else {
-      cluster = new RealCluster(clusterCfg.realClusterCfg().zkString(), clusterCfg.realClusterCfg().nodes(), clusterCfg.realClusterCfg().fronts());
-    }
-
     final ClusterRunner runner = clusterRunnerCfg.runner().newInstance();
-    runner.run(cluster);
+
+    final ClusterCfg clusterCfg = new TypesafeClusterCfg(load);
+    if (clusterCfg.isLocal()) {
+      try (final Cluster cluster = new LocalCluster(clusterCfg.localClusterCfg().workers(), clusterCfg.localClusterCfg().fronts())) {
+        runner.run(cluster);
+      }
+    } else {
+      try (final Cluster cluster = new RealCluster(clusterCfg.realClusterCfg().zkString(), clusterCfg.realClusterCfg().nodes(), clusterCfg.realClusterCfg().fronts())) {
+        runner.run(cluster);
+      }
+    }
   }
 }

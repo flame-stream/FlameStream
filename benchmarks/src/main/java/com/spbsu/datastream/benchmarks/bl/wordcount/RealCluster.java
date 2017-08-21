@@ -36,4 +36,8 @@ public final class RealCluster implements Cluster {
   public Map<Integer, InetSocketAddress> nodes() {
     return unmodifiableMap(nodes);
   }
+
+  @Override
+  public void close() throws Exception {
+  }
 }
