@@ -21,7 +21,7 @@ env:
 install: true
 
 script:
-  - mvn clean install -DskipTests -fae --errors --batch-mode
+  - mvn clean install -DskipTests -fae --errors --batch-mode -q
   - cd ./core
-  - mvn -fae --errors --batch-mode test
+  - mvn -fae --errors --batch-mode test -q
   - cd ../
