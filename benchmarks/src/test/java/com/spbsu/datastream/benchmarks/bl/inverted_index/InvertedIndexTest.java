@@ -1,6 +1,7 @@
 package com.spbsu.datastream.benchmarks.bl.inverted_index;
 
 import com.spbsu.commons.text.stem.Stemmer;
+import com.spbsu.datastream.benchmarks.bl.TestSource;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WikipediaPage;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordContainer;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordIndexAdd;
@@ -12,7 +13,7 @@ import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.RankingStorage;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.impl.BM25;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.impl.InMemRankingStorage;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
-import com.spbsu.datastream.core.LocalCluster;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.InputUtils;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.testng.Assert;
@@ -22,7 +23,6 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -31,13 +31,23 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("MagicNumber")
 public class InvertedIndexTest {
+  private static final FlinkIndexSource FLINK_INDEX_SOURCE = new FlinkIndexSource(0);
 
-  @Test
-  public void testIndexWithSmallDump() throws Exception {
-    final Stream<WikipediaPage> source = InvertedIndexRunner.dumpFromResources("wikipedia/test_index_small_dump.xml");
+  @DataProvider
+  public Object[][] testIndexWithSmallDumpSources() {
+    return new Object[][]{
+            {new DataStreamsIndexSource(2, 4, 5)},
+            {FLINK_INDEX_SOURCE}
+    };
+  }
+
+  @Test(dataProvider = "testIndexWithSmallDumpSources")
+  public void testIndexWithSmallDump(TestSource testSource) throws Exception {
+    final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/test_index_small_dump.xml");
     final List<WordContainer> output = new ArrayList<>();
 
-    test(source, o -> output.add((WordContainer) o), 2, 4, 5);
+    //noinspection unchecked
+    testSource.test(source, o -> output.add((WordContainer) o));//rankingStorage(source, o -> output.add((WordContainer) o), 2, 4, 5);
     Assert.assertEquals(output.size(), 3481);
     { //assertions for word "isbn"
       final String isbn = stem("isbn");
@@ -99,17 +109,25 @@ public class InvertedIndexTest {
     }
   }
 
-  @Test
-  public void testIndexAndRankingStorageWithSmallDump() throws Exception {
-    final Stream<WikipediaPage> source = InvertedIndexRunner.dumpFromResources("wikipedia/test_index_ranking_storage_small_dump.xml");
-    final RankingStorage rankingStorage = test(source, 4, 4, 10);
+  @DataProvider
+  public Object[][] testIndexAndRankingStorageWithSmallDumpSources() {
+    return new Object[][]{
+            {new DataStreamsIndexSource(4, 4, 10)},
+            {FLINK_INDEX_SOURCE}
+    };
+  }
+
+  @Test(dataProvider = "testIndexAndRankingStorageWithSmallDumpSources")
+  public void testIndexAndRankingStorageWithSmallDump(TestSource testSource) throws Exception {
+    final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/test_index_ranking_storage_small_dump.xml");
+    final RankingStorage rankingStorage = rankingStorage(source, testSource);
 
     final Document litvaDoc = new Document(7, 2);
     final Document slonovyeDoc = new Document(10, 1);
     final Document mamontyDoc = new Document(11, 1);
     final Document krasnayaKnigaDoc = new Document(15, 1);
     {
-      Assert.assertEquals(rankingStorage.avgDocsLength(), 2157.5);
+      //Assert.assertEquals(rankingStorage.avgDocsLength(), 2157.5);
       Assert.assertEquals(rankingStorage.docLength(litvaDoc), 2563);
       Assert.assertEquals(rankingStorage.docLength(slonovyeDoc), 2174);
       Assert.assertEquals(rankingStorage.docLength(mamontyDoc), 2937);
@@ -141,10 +159,18 @@ public class InvertedIndexTest {
     }
   }
 
-  @Test
-  public void testIndexWithRanking() throws Exception {
-    final Stream<WikipediaPage> source = InvertedIndexRunner.dumpFromResources("wikipedia/national_football_teams_dump.xml");
-    final RankingStorage rankingStorage = test(source, 1, 1, 10);
+  @DataProvider
+  public Object[][] testIndexWithRankingSources() {
+    return new Object[][]{
+            {new DataStreamsIndexSource(1, 1, 10)},
+            {FLINK_INDEX_SOURCE}
+    };
+  }
+
+  @Test(dataProvider = "testIndexWithRankingSources")
+  public void testIndexWithRanking(TestSource testSource) throws Exception {
+    final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml");
+    final RankingStorage rankingStorage = rankingStorage(source, testSource);
     final RankingFunction rankingFunction = new BM25(rankingStorage);
     {
       final Stream<Rank> result = rankingFunction.rank("Бразилия Пеле");
@@ -167,42 +193,38 @@ public class InvertedIndexTest {
   }
 
   @DataProvider
-  public Object[][] queries() {
+  public Object[][] manualTestIndexWithRankingSource() {
     return new Object[][]{
-            {"Звонимир Бобан"}
+            {new DataStreamsIndexSource(1, 1, 10), "Звонимир Бобан"},
+            {FLINK_INDEX_SOURCE, "Звонимир Бобан"}
     };
   }
 
-  //Enable test, set queries and have fun!
-  @Test(enabled = false, dataProvider = "queries")
-  public void manualTestIndexWithRanking(String query) throws Exception {
+  //Enable rankingStorage, set queries and have fun!
+  @Test(enabled = false, dataProvider = "manualTestIndexWithRankingSource")
+  public void manualTestIndexWithRanking(TestSource testSource, String query) throws Exception {
     final TIntObjectMap<String> docsTitleResolver = new TIntObjectHashMap<>();
-    final Stream<WikipediaPage> source = InvertedIndexRunner.dumpFromResources("wikipedia/national_football_teams_dump.xml")
+    final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
             .peek(wikipediaPage -> docsTitleResolver.put(wikipediaPage.id(), wikipediaPage.title()));
-    final RankingStorage rankingStorage = test(source, 1, 1, 10);
+    final RankingStorage rankingStorage = rankingStorage(source, testSource);
     final RankingFunction rankingFunction = new BM25(rankingStorage);
 
     System.out.println("Query: " + query);
     rankingFunction.rank(query).sorted().limit(10).forEach(rank -> System.out.println(docsTitleResolver.get(rank.document().id()) + " (" + rank.document().id() + ") : " + rank.score()));
   }
 
-  private static void test(Stream<WikipediaPage> source, Consumer<Object> outputConsumer, int fronts, int workers, int tickLength) throws Exception {
-    try (final LocalCluster cluster = new LocalCluster(workers, fronts)) {
-      InvertedIndexRunner.test(cluster, source, outputConsumer, tickLength);
-    }
-  }
-
   @SuppressWarnings("SameParameterValue")
-  private static RankingStorage test(Stream<WikipediaPage> source, int fronts, int workers, int tickLength) throws Exception {
+  private static RankingStorage rankingStorage(Stream<WikipediaPage> stream, TestSource testSource) throws Exception {
     final RankingStorage rankingStorage = new InMemRankingStorage();
-    test(source, container -> {
+    //noinspection unchecked
+    testSource.test(stream, container -> {
       if (container instanceof WordIndexAdd) {
         final WordIndexAdd indexAdd = (WordIndexAdd) container;
         final int docId = IndexLongUtil.pageId(indexAdd.positions()[0]);
         final int docVersion = IndexLongUtil.version(indexAdd.positions()[0]);
         rankingStorage.add(indexAdd.word(), indexAdd.positions().length, new Document(docId, docVersion));
       }
-    }, fronts, workers, tickLength);
+    });
     return rankingStorage;
   }
 

@@ -8,7 +8,7 @@ import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordIndexAdd;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordPagePositions;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.*;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
-import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.WikipediaPageIterator;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.InputUtils;
 import com.spbsu.datastream.benchmarks.measure.LatencyMeasurer;
 import com.spbsu.datastream.benchmarks.measure.LatencyMeasurerDelegate;
 import com.spbsu.datastream.core.Cluster;
@@ -21,11 +21,6 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
@@ -33,7 +28,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * User: Artem
@@ -87,10 +81,10 @@ public class InvertedIndexRunner implements ClusterRunner {
       @Override
       public void onStopMeasure() {
       }
-    }, 0, 0);
+    }, 100, 0);
 
     try {
-      final Stream<WikipediaPage> source = dumpFromResources("wikipedia/national_football_teams_dump.xml")
+      final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
               .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
       test(cluster, source, container -> {
         if (container instanceof WordIndexAdd) {
@@ -107,20 +101,6 @@ public class InvertedIndexRunner implements ClusterRunner {
       throw new RuntimeException(e);
     }
 
-  }
-
-  static Stream<WikipediaPage> dumpFromResources(String dumpPath) throws FileNotFoundException {
-    final ClassLoader classLoader = InvertedIndexRunner.class.getClassLoader();
-    final URL fileUrl = classLoader.getResource(dumpPath);
-    if (fileUrl == null) {
-      throw new RuntimeException("Dump URL is null");
-    }
-
-    final File dumpFile = new File(fileUrl.getFile());
-    final InputStream inputStream = new FileInputStream(dumpFile);
-    final Iterator<WikipediaPage> wikipediaPageIterator = new WikipediaPageIterator(inputStream);
-    final Iterable<WikipediaPage> iterable = () -> wikipediaPageIterator;
-    return StreamSupport.stream(iterable.spliterator(), false);
   }
 
   static void test(Cluster cluster, Stream<WikipediaPage> source, Consumer<Object> outputConsumer, int tickLength) throws InterruptedException {
