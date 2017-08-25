@@ -92,7 +92,7 @@ public class InvertedIndexRunner implements ClusterRunner {
           final int docId = IndexLongUtil.pageId(indexAdd.positions()[0]);
           latencyMeasurer.finish(docId);
         }
-      }, 30);
+      }, 40);
 
       final long[] latencies = latencyMeasurer.latencies();
       System.out.println("Size: " + latencies.length);
@@ -107,7 +107,14 @@ public class InvertedIndexRunner implements ClusterRunner {
     try (final TestStand stage = new TestStand(cluster)) {
       stage.deploy(invertedIndexGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
       final Consumer<Object> sink = stage.randomFrontConsumer(122);
-      source.forEach(sink);
+      source.forEach(wikipediaPage -> {
+        sink.accept(wikipediaPage);
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+          throw new RuntimeException();
+        }
+      });
       stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
     }
   }
