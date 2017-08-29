@@ -8,10 +8,12 @@ import com.spbsu.datastream.core.ack.Commit;
 import com.spbsu.datastream.core.ack.MinTimeUpdate;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.range.AtomicCommitDone;
+import com.spbsu.datastream.core.stat.AtomicActorStatistics;
 import com.spbsu.datastream.core.tick.TickInfo;
 import org.iq80.leveldb.DB;
 
 public final class AtomicActor extends LoggingActor {
+  private final AtomicActorStatistics stat = new AtomicActorStatistics();
   private final AtomicGraph atomic;
   private final AtomicHandle handle;
 
@@ -44,14 +46,26 @@ public final class AtomicActor extends LoggingActor {
     this.context().parent().tell(new AtomicCommitDone(this.atomic), this.self());
     this.LOG().info("Commit done");
     this.context().stop(this.self());
+
+    this.LOG().info("Atomic {} statistics: {}", atomic, stat);
   }
 
   private void onAtomicMessage(AtomicMessage<?> message) {
+    final long start = System.nanoTime();
+
     this.atomic.onPush(message.port(), message.payload(), this.handle);
     this.handle.ack(message.payload());
+
+    final long stop = System.nanoTime();
+    stat.recordOnAtomicMessage(stop - start);
   }
 
   private void onMinTimeUpdate(MinTimeUpdate message) {
+    final long start = System.nanoTime();
+
     this.atomic.onMinGTimeUpdate(message.minTime(), this.handle);
+
+    final long stop = System.nanoTime();
+    stat.recordOnMinTimeUpdate(stop - start);
   }
 }
