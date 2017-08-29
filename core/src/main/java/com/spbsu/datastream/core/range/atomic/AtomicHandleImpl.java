@@ -4,6 +4,8 @@ import akka.actor.ActorContext;
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import com.google.common.primitives.Longs;
 import com.spbsu.datastream.core.AckerMessage;
 import com.spbsu.datastream.core.AtomicMessage;
@@ -13,6 +15,7 @@ import com.spbsu.datastream.core.ack.Ack;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
+import com.spbsu.datastream.core.stat.Statistics;
 import com.spbsu.datastream.core.tick.TickInfo;
 import org.iq80.leveldb.DB;
 
@@ -31,6 +34,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
   private final ActorRef dns;
   private final DB db;
   private final ActorContext context;
+  private final LoggingAdapter LOG;
 
   public AtomicHandleImpl(TickInfo tickInfo,
                           ActorRef dns,
@@ -40,6 +44,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
     this.dns = dns;
     this.db = db;
     this.context = context;
+    LOG = Logging.getLogger(context.system(), context);
   }
 
   @Override
@@ -114,5 +119,10 @@ public final class AtomicHandleImpl implements AtomicHandle {
   public void removeState(InPort inPort) {
     final byte[] key = Longs.toByteArray(inPort.id());
     this.db.delete(key);
+  }
+
+  @Override
+  public void submitStatistics(Statistics stat) {
+    LOG.info("Inner statistics: {}", stat);
   }
 }

@@ -8,6 +8,7 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
+import com.spbsu.datastream.core.stat.GroupingStatistics;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings({"rawtypes", "ConditionalExpression"})
 public final class Grouping<T> extends AbstractAtomicGraph {
+  private final GroupingStatistics stat = new GroupingStatistics();
+
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
@@ -50,10 +53,15 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   private void replayAround(int position, List<DataItem<T>> group, AtomicHandle handle) {
+    int replayCount = 0;
+
     for (int right = position + 1; right <= Math.min(position + this.window, group.size()); ++right) {
+      replayCount++;
       final int left = Math.max(right - this.window, 0);
       this.pushSubGroup(group, left, right, handle);
     }
+
+    stat.recordReplaySize(replayCount);
   }
 
   private void pushSubGroup(List<DataItem<T>> group, int left, int right, AtomicHandle handle) {
@@ -89,6 +97,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   @Override
   public void onCommit(AtomicHandle handle) {
     //handle.saveState(this.inPort, this.buffers);
+    handle.submitStatistics(stat);
   }
 
   @Override

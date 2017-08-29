@@ -5,6 +5,7 @@ import akka.actor.ActorSelection;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
+import com.spbsu.datastream.core.stat.Statistics;
 
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -44,5 +45,9 @@ public final class FakeAtomicHandle implements AtomicHandle {
   @Override
   public void removeState(InPort inPort) {
     throw new UnsupportedOperationException("Removing of the grouping state has not implemented yet");
+  }
+
+  @Override
+  public void submitStatistics(Statistics stat) {
   }
 }
