@@ -5,11 +5,11 @@ package com.spbsu.datastream.core.buffer;
  * Date: 31.08.2017
  */
 public interface LongBuffer {
-  void addLast(long value);
-
   void removeFirst();
 
   long get(int position);
+
+  void put(int position, long value);
 
   int size();
 

@@ -23,6 +23,7 @@ public final class AckActor extends LoggingActor {
 
   private AckActor(TickInfo tickInfo, ActorRef dns) {
     this.ledger = new AckLedgerImpl(tickInfo.startTs(),
+            tickInfo.stopTs(),
             tickInfo.window(),
             tickInfo.graph().frontBindings().keySet());
     this.tickInfo = tickInfo;

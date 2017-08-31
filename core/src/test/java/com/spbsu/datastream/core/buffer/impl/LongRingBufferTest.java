@@ -1,11 +1,11 @@
 package com.spbsu.datastream.core.buffer.impl;
 
 import com.spbsu.datastream.core.buffer.LongBuffer;
+import gnu.trove.list.TLongList;
+import gnu.trove.list.array.TLongArrayList;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -20,22 +20,24 @@ public class LongRingBufferTest {
   public void correctnessTest() {
     final int capacity = 1000000;
     final LongBuffer longBuffer = new LongRingBuffer(capacity);
+    final TLongList testList = new TLongArrayList(capacity);
+    LongStream.range(0, capacity).forEach(value -> testList.add(0L));
 
-    final Deque<Long> testDeque = new ArrayDeque<>();
-    final int iterations = capacity - 1;
-    LongStream.range(0, iterations)
-            .map(operand -> ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE))
+    final int iterations = 10000;
+    final int[] upperRandomBound = {capacity};
+    LongStream.generate(() -> ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE))
+            .limit(iterations)
             .forEach(value -> {
               if (value % 5 == 0 && !longBuffer.isEmpty()) {
                 longBuffer.removeFirst();
-                testDeque.removeFirst();
+                testList.removeAt(0);
+                upperRandomBound[0]--;
               } else {
-                longBuffer.addLast(value);
-                testDeque.addLast(value);
+                final int index = ThreadLocalRandom.current().nextInt(0, upperRandomBound[0]);
+                longBuffer.put(index, value);
+                testList.set(index, value);
               }
             });
-
-    Assert.assertEquals(testDeque.size(), longBuffer.size());
-    IntStream.range(0, longBuffer.size()).forEach(pos -> Assert.assertTrue(longBuffer.get(pos) == testDeque.pollFirst()));
+    IntStream.range(0, longBuffer.size()).forEach(pos -> Assert.assertEquals(longBuffer.get(pos), testList.get(pos)));
   }
 }

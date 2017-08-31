@@ -8,8 +8,8 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 public final class AckLedgerImpl implements AckLedger {
   private final TIntObjectMap<AckTable> tables = new TIntObjectHashMap<>();
 
-  public AckLedgerImpl(long startTs, long window, Iterable<Integer> fronts) {
-    fronts.forEach(i -> this.tables.put(i, new AckTable(startTs, window)));
+  public AckLedgerImpl(long startTs, long stopTs, long window, Iterable<Integer> fronts) {
+    fronts.forEach(i -> this.tables.put(i, new AckTable(startTs, stopTs, window)));
   }
 
   @Override

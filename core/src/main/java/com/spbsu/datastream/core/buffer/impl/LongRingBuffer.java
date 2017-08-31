@@ -16,13 +16,6 @@ public class LongRingBuffer implements LongBuffer {
   }
 
   @Override
-  public void addLast(long value) {
-    buffer[offset] = value;
-    offset = (offset + 1) % buffer.length;
-    filled++;
-  }
-
-  @Override
   public void removeFirst() {
     filled--;
   }
@@ -30,6 +23,15 @@ public class LongRingBuffer implements LongBuffer {
   @Override
   public long get(int position) {
     return buffer[(offset + (buffer.length - filled + position)) % buffer.length];
+  }
+
+  @Override
+  public void put(int position, long value) {
+    if (position >= filled) {
+      offset = (offset + (position + 1 - filled)) % buffer.length;
+      filled = position + 1;
+    }
+    buffer[(offset + (buffer.length - filled + position)) % buffer.length] = value;
   }
 
   @Override

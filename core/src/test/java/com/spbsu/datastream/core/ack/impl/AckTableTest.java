@@ -26,7 +26,7 @@ public class AckTableTest {
   @Test(dataProvider = "logicAndPerformanceTestProvider")
   public void logicAndPerformanceTest(int window, int windowsCount, int range) {
     Interval.start();
-    final AckTable ackTable = new AckTable(0, window);
+    final AckTable ackTable = new AckTable(0, window * windowsCount, window);
     IntStream.range(0, windowsCount).forEach(value -> ackTable.report(window * value, value + 1));
     IntStream.range(0, range).forEach(value -> {
       final long ts = ThreadLocalRandom.current().nextLong(0, window * windowsCount);
