@@ -1,26 +1,21 @@
 package com.spbsu.datastream.core.ack.impl;
 
-import com.spbsu.datastream.core.buffer.LongBuffer;
-import com.spbsu.datastream.core.buffer.impl.LongRingBuffer;
-
 final class AckTable {
-  private static final long MIN_TIME_NOT_INITIALIZED = Long.MAX_VALUE;
-
-  private final LongBuffer buffer;
   private final long startTs;
   private final long window;
+  private final long[] xorStorage;
 
-  private long minTs = MIN_TIME_NOT_INITIALIZED;
-  private long positionTs;
+  private int minPosition;
   private long toBeReported;
 
   AckTable(long startTs, long stopTs, long window) {
     this.startTs = startTs;
     this.window = window;
-    this.buffer = new LongRingBuffer(Math.toIntExact((stopTs - startTs) / window));
 
+    final int xorStorageSize = Math.toIntExact((stopTs - startTs) / window);
+    this.xorStorage = new long[xorStorageSize];
+    this.minPosition = xorStorageSize;
     this.toBeReported = startTs;
-    this.positionTs = startTs;
   }
 
   void report(long windowHead, long xor) {
@@ -33,30 +28,25 @@ final class AckTable {
   }
 
   void ack(long ts, long xor) {
-    //code is not cleaned because it does not work for multiple workers
-    final int position = Math.toIntExact(((ts - this.positionTs) / this.window));
-    final long updatedXor = xor ^ (this.buffer.size() <= position ? 0L : this.buffer.get(position));
-    if (updatedXor == 0 && !buffer.isEmpty() && xor != 0) {
-      this.buffer.removeFirst();
-      this.minTs = this.startTs + this.window * ((ts - this.startTs) / this.window) + this.window;
-      this.positionTs += this.window;
+    final int position = Math.toIntExact(((ts - this.startTs) / this.window));
+    final long updatedXor = xor ^ xorStorage[position];
+    this.xorStorage[position] = updatedXor;
+
+    if (updatedXor == 0 && xor != 0 && position == minPosition) {
+      while (this.minPosition < this.xorStorage.length && this.xorStorage[this.minPosition] == 0)
+        this.minPosition++;
     } else if (updatedXor != 0) {
-      this.buffer.put(position, updatedXor);
-      if (this.minTs == MIN_TIME_NOT_INITIALIZED) {
-        this.minTs = this.startTs + this.window * ((ts - this.startTs) / this.window);
-      } else {
-        this.minTs = Math.min(minTs, this.startTs + this.window * ((ts - this.startTs) / this.window));
-      }
+      this.minPosition = Math.min(minPosition, position);
     }
   }
 
   long min() {
-    return this.buffer.isEmpty() ? this.toBeReported : Math.min(this.toBeReported, this.minTs);
+    return Math.min(this.toBeReported, this.startTs + this.window * this.minPosition);
   }
 
   @Override
   public String toString() {
-    return "AckTableImpl{" + "table=" + this.buffer +
+    return "AckTableImpl{" +
             ", startTs=" + this.startTs +
             ", window=" + this.window +
             ", toBeReported=" + this.toBeReported +
