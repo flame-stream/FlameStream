@@ -71,15 +71,7 @@ public class InvertedIndexRunner implements ClusterRunner {
       }
 
       @Override
-      public void onProcess(Integer key) {
-      }
-
-      @Override
       public void onFinish(Integer key, long latency) {
-      }
-
-      @Override
-      public void onStopMeasure() {
       }
     }, 100, 0);
 

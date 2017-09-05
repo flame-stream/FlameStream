@@ -22,14 +22,13 @@ public class LatencyMeasurer<T> {
   }
 
   public void start(T key) {
-    delegate.onStart(key);
     if (--delay > 0)
       return;
     delay = measurePeriod;
 
     final long startTs = System.nanoTime();
     starts.put(key, startTs);
-    delegate.onProcess(key);
+    delegate.onStart(key);
   }
 
   public void finish(T key) {
@@ -38,10 +37,6 @@ public class LatencyMeasurer<T> {
       latencies.put(key, latency);
       delegate.onFinish(key, latency);
     }
-  }
-
-  public void stopMeasure() {
-    delegate.onStopMeasure();
   }
 
   public long[] latencies() {

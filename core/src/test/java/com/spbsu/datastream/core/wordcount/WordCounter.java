@@ -28,11 +28,13 @@ public class WordCounter implements WordContainer {
     if (o == null || getClass() != o.getClass()) return false;
 
     WordCounter that = (WordCounter) o;
-    return word.equals(that.word);
+    return count == that.count && word.equals(that.word);
   }
 
   @Override
   public int hashCode() {
-    return word.hashCode();
+    int result = word.hashCode();
+    result = 31 * result + count;
+    return result;
   }
 }

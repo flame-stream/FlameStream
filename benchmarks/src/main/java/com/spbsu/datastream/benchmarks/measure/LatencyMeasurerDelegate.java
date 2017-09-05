@@ -7,9 +7,5 @@ package com.spbsu.datastream.benchmarks.measure;
 public interface LatencyMeasurerDelegate<T> {
   void onStart(T key);
 
-  void onProcess(T key);
-
   void onFinish(T key, long latency);
-
-  void onStopMeasure();
 }
