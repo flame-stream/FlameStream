@@ -1,14 +1,12 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
+import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
-import org.jooq.lambda.Seq;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,11 +31,15 @@ public final class FlatMap<T, R> extends AbstractAtomicGraph {
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
     final Stream<R> res = this.function.apply((T) item.payload());
     final int newLocalTime = this.incrementLocalTimeAndGet();
-    Seq.zipWithIndex(res).forEach(t -> {
-      final Meta newMeta = item.meta().advanced(newLocalTime, Math.toIntExact(t.v2()));
-      final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t.v1());
+
+    final int[] childId = {0};
+    res.forEach(t -> {
+      final Meta newMeta = item.meta().advanced(newLocalTime, childId[0]);
+      final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t);
 
       handler.push(this.outPort(), newDataItem);
+
+      childId[0]++;
     });
   }
 
