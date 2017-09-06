@@ -54,17 +54,18 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void push(OutPort out, DataItem<?> result) {
-    final Optional<InPort> destination = Optional.ofNullable(this.tickInfo.graph().graph().downstreams().get(out));
-    final InPort address = destination.orElseThrow(() -> new RoutingException("Unable to find port for " + out));
+    final InPort destination = this.tickInfo.graph().graph().downstreams().get(out);
+    if (destination == null) throw new RoutingException("Unable to find port for " + out);
 
-    @SuppressWarnings("rawtypes") final ToIntFunction hashFunction = address.hashFunction();
-
+    @SuppressWarnings("rawtypes") final ToIntFunction hashFunction = destination.hashFunction();
     @SuppressWarnings("unchecked") final int hash = hashFunction.applyAsInt(result.payload());
-    final int receiver = this.tickInfo.hashMapping().entrySet().stream().filter(e -> e.getKey().contains(hash))
-            .map(Map.Entry::getValue).findAny().orElseThrow(NoSuchElementException::new);
+    final int receiver = this.tickInfo.hashMapping().workerForHash(hash);
 
-    final UnresolvedMessage<AtomicMessage<?>> message = new UnresolvedMessage<>(receiver,
-            new AtomicMessage<>(this.tickInfo.startTs(), hash, address, result));
+    final UnresolvedMessage<AtomicMessage<?>> message = new UnresolvedMessage<>(
+            receiver,
+            new AtomicMessage<>(this.tickInfo.startTs(), hash, destination, result)
+    );
+
     this.ack(result);
     this.dns.tell(message, this.context.self());
   }

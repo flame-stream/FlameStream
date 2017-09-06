@@ -91,8 +91,7 @@ final class TickFrontActor extends LoggingActor {
     final ToIntFunction hashFunction = this.target.hashFunction();
     final int hash = hashFunction.applyAsInt(item.payload());
 
-    final int receiver = this.tickInfo.hashMapping().entrySet().stream().filter(e -> e.getKey().contains(hash))
-            .map(Map.Entry::getValue).findAny().orElseThrow(NoSuchElementException::new);
+    final int receiver = this.tickInfo.hashMapping().workerForHash(hash);
 
     final UnresolvedMessage<AtomicMessage<?>> message = new UnresolvedMessage<>(receiver,
             new AtomicMessage<>(this.tickInfo.startTs(), hash, this.target, item));

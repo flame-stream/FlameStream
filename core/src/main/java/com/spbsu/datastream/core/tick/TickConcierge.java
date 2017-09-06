@@ -34,7 +34,7 @@ public final class TickConcierge extends LoggingActor {
     this.localId = localId;
 
     this.concierges = new TreeMap<>();
-    this.myRanges(tickInfo.hashMapping())
+    this.myRanges(tickInfo.hashMapping().asMap())
             .forEach(range -> this.concierges.put(range.from(), this.rangeConcierge(range)));
     this.db = db;
     if (tickInfo.ackerLocation() == localId) {

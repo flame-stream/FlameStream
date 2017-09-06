@@ -86,7 +86,7 @@ public final class AckActor extends LoggingActor {
     this.LOG().debug("Received: {}", commitDone);
     final HashRange committer = commitDone.committer();
     this.committers.add(committer);
-    if (this.committers.equals(this.tickInfo.hashMapping().keySet())) {
+    if (this.committers.equals(this.tickInfo.hashMapping().asMap().keySet())) {
       this.LOG().info("COOOOMMMMITTTITITITITITI");
     }
   }

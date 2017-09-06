@@ -3,14 +3,13 @@ package com.spbsu.datastream.core.tick;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.TheGraph;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class TickInfo {
   private final TheGraph graph;
 
-  private final Map<HashRange, Integer> hashMapping;
+  private final HashMapping hashMapping;
 
   private final long startTs;
 
@@ -27,15 +26,15 @@ public final class TickInfo {
                   long stopTs,
                   long window) {
     this.ackerLocation = ackerLocation;
-    this.hashMapping = new HashMap<>(hashMapping);
+    this.hashMapping = HashMapping.hashMapping(new HashMap<>(hashMapping));
     this.graph = graph;
     this.startTs = startTs;
     this.window = window;
     this.stopTs = stopTs;
   }
 
-  public Map<HashRange, Integer> hashMapping() {
-    return Collections.unmodifiableMap(this.hashMapping);
+  public HashMapping hashMapping() {
+    return hashMapping;
   }
 
   public long stopTs() {
