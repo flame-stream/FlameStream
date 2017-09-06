@@ -86,9 +86,11 @@ public class InvertedIndexRunner implements ClusterRunner {
         }
       }, 40);
 
-      final long[] latencies = latencyMeasurer.latencies();
-      System.out.println("Size: " + latencies.length);
-      Arrays.stream(latencies).forEach(System.out::println);
+      final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
+              .map(TimeUnit.NANOSECONDS::toMillis)
+              .summaryStatistics();
+      System.out.println(stat);
+
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

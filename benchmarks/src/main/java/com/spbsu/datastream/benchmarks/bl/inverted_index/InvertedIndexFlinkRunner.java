@@ -23,6 +23,8 @@ import org.apache.flink.util.Collector;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LongSummaryStatistics;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -59,9 +61,12 @@ public class InvertedIndexFlinkRunner implements ClusterRunner {
         }
       }, 0);
 
-      final long[] latencies = latencyMeasurer.latencies();
-      System.out.println("Size: " + latencies.length);
-      Arrays.stream(latencies).forEach(System.out::println);
+      final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
+              .map(TimeUnit.NANOSECONDS::toMillis)
+              .summaryStatistics();
+
+      System.out.println(stat);
+
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
