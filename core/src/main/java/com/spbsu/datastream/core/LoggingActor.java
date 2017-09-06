@@ -14,7 +14,7 @@ public abstract class LoggingActor extends AbstractActor {
 
   @Override
   public void aroundReceive(PartialFunction<Object, BoxedUnit> receive, Object msg) {
-    this.LOG().debug("Received: {}", msg);
+    //this.LOG().debug("Received: {}", msg);
     receive.apply(msg);
   }
 

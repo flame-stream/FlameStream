@@ -44,7 +44,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
     this.dns = dns;
     this.db = db;
     this.context = context;
-    LOG = Logging.getLogger(context.system(), context);
+    LOG = Logging.getLogger(context.system(), context.self());
   }
 
   @Override
