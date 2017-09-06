@@ -1,6 +1,8 @@
 package com.spbsu.datastream.core.ack.impl;
 
-final class AckTable {
+import com.spbsu.datastream.core.ack.AckTable;
+
+final class ArrayAckTable implements AckTable {
   private final long startTs;
   private final long window;
   private final long[] xorStorage;
@@ -8,7 +10,7 @@ final class AckTable {
   private int minPosition;
   private long toBeReported;
 
-  AckTable(long startTs, long stopTs, long window) {
+  ArrayAckTable(long startTs, long stopTs, long window) {
     this.startTs = startTs;
     this.window = window;
 
@@ -18,7 +20,7 @@ final class AckTable {
     this.toBeReported = startTs;
   }
 
-  void report(long windowHead, long xor) {
+  public void report(long windowHead, long xor) {
     if (windowHead == this.toBeReported) {
       this.ack(windowHead, xor);
       this.toBeReported += this.window;
@@ -27,7 +29,7 @@ final class AckTable {
     }
   }
 
-  void ack(long ts, long xor) {
+  public void ack(long ts, long xor) {
     final int position = Math.toIntExact(((ts - this.startTs) / this.window));
     final long updatedXor = xor ^ this.xorStorage[position];
     this.xorStorage[position] = updatedXor;
@@ -40,13 +42,13 @@ final class AckTable {
     }
   }
 
-  long min() {
+  public long min() {
     return Math.min(this.toBeReported, this.startTs + this.window * this.minPosition);
   }
 
   @Override
   public String toString() {
-    return "AckTableImpl{" +
+    return "ArrayAckTable{" +
             ", startTs=" + this.startTs +
             ", window=" + this.window +
             ", toBeReported=" + this.toBeReported +

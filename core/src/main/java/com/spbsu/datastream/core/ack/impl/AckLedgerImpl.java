@@ -2,6 +2,7 @@ package com.spbsu.datastream.core.ack.impl;
 
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.ack.AckLedger;
+import com.spbsu.datastream.core.ack.AckTable;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -9,7 +10,7 @@ public final class AckLedgerImpl implements AckLedger {
   private final TIntObjectMap<AckTable> tables = new TIntObjectHashMap<>();
 
   public AckLedgerImpl(long startTs, long stopTs, long window, Iterable<Integer> fronts) {
-    fronts.forEach(i -> this.tables.put(i, new AckTable(startTs, stopTs, window)));
+    fronts.forEach(i -> this.tables.put(i, new ArrayAckTable(startTs, stopTs, window)));
   }
 
   @Override
