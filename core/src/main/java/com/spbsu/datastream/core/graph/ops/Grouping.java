@@ -76,12 +76,12 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   private int insert(List<DataItem<T>> group, DataItem<T> insertee) {
     int position = 0;
-
     while (position < group.size()) {
       final DataItem<T> currentItem = group.get(position);
-      if (insertee.meta().compareTo(currentItem.meta()) < 0) {
+      final int compareTo = insertee.meta().compareTo(currentItem.meta());
+      if (compareTo < 0) {
         break;
-      } else if (insertee.meta().compareTo(currentItem.meta()) > 0) {
+      } else if (compareTo > 0) {
         if (currentItem.meta().isInvalidatedBy(insertee.meta())) {
           group.remove(position);
         } else {
@@ -91,6 +91,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     }
 
     group.add(position, insertee);
+    stat.recordBucketSize(group.size());
     return position;
   }
 
@@ -110,15 +111,9 @@ public final class Grouping<T> extends AbstractAtomicGraph {
       }
 
       position = Math.max(position - window, 0);
-      removeRange(group, position);
+      group.subList(0, position).clear();
     };
     this.buffers.forEach(removeOldConsumer);
-  }
-
-  private <E> void removeRange(List<E> list, int toIndex) {
-    for (int i = 0; i < toIndex; i++) {
-      list.remove(0);
-    }
   }
 
   public InPort inPort() {
