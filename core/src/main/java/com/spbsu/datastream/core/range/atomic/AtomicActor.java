@@ -50,6 +50,13 @@ public final class AtomicActor extends LoggingActor {
     this.LOG().info("Atomic {} statistics: {}", atomic, stat);
   }
 
+  @Override
+  public void postStop() throws Exception {
+    this.LOG().info("Atomic {} statistics: {}", atomic, stat);
+
+    super.postStop();
+  }
+
   private void onAtomicMessage(AtomicMessage<?> message) {
     final long start = System.nanoTime();
 
