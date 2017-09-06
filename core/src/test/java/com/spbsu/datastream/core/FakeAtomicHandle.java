@@ -6,6 +6,8 @@ import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 import com.spbsu.datastream.core.stat.Statistics;
+import com.spbsu.datastream.core.tick.TickInfo;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -49,5 +51,10 @@ public final class FakeAtomicHandle implements AtomicHandle {
 
   @Override
   public void submitStatistics(Statistics stat) {
+  }
+
+  @Override
+  public TickInfo tickInfo() {
+    throw new NotImplementedException();
   }
 }

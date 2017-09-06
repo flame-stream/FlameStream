@@ -6,6 +6,7 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.stat.Statistics;
+import com.spbsu.datastream.core.tick.TickInfo;
 
 import java.util.Optional;
 
@@ -23,5 +24,7 @@ public interface AtomicHandle {
   void removeState(InPort inPort);
 
   void submitStatistics(Statistics stat);
+
+  TickInfo tickInfo();
 }
 

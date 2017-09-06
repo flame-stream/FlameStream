@@ -125,4 +125,9 @@ public final class AtomicHandleImpl implements AtomicHandle {
   public void submitStatistics(Statistics stat) {
     LOG.info("Inner statistics: {}", stat);
   }
+
+  @Override
+  public TickInfo tickInfo() {
+    return tickInfo;
+  }
 }
