@@ -26,5 +26,7 @@ public interface AtomicHandle {
   void submitStatistics(Statistics stat);
 
   TickInfo tickInfo();
+
+  void error(String format, Object... args);
 }
 
