@@ -59,11 +59,14 @@ public final class AtomicActor extends LoggingActor {
 
   private void onAtomicMessage(AtomicMessage<?> message) {
     final long start = System.nanoTime();
-
     this.atomic.onPush(message.port(), message.payload(), this.handle);
+    final long stop = System.nanoTime();
+
     this.handle.ack(message.payload());
 
-    final long stop = System.nanoTime();
+    if (stop - start > 20E6) {
+      LOG().warning("onAtomic took more than 20ms MES={} ATOM={} TS={}", message, this.atomic, stop - start);
+    }
     stat.recordOnAtomicMessage(stop - start);
   }
 

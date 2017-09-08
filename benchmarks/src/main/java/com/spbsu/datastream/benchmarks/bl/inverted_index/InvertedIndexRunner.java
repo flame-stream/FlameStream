@@ -77,7 +77,7 @@ public class InvertedIndexRunner implements ClusterRunner {
       @Override
       public void onFinish(Integer key, long latency) {
       }
-    }, 100, 10);
+    }, 100, 5);
 
     try {
       final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")

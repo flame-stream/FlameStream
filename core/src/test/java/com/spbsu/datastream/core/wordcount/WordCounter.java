@@ -37,4 +37,9 @@ public class WordCounter implements WordContainer {
     result = 31 * result + count;
     return result;
   }
+
+  @Override
+  public String toString() {
+    return word;
+  }
 }

@@ -21,4 +21,9 @@ public class WordPagePositions implements WordContainer {
   public long[] positions() {
     return positions;
   }
+
+  @Override
+  public String toString() {
+    return word;
+  }
 }

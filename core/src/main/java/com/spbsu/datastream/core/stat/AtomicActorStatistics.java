@@ -1,5 +1,8 @@
 package com.spbsu.datastream.core.stat;
 
+import gnu.trove.list.TLongList;
+import gnu.trove.list.array.TLongArrayList;
+
 import java.util.HashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
@@ -9,8 +12,10 @@ import static com.spbsu.datastream.core.stat.Statistics.*;
 public final class AtomicActorStatistics implements Statistics {
   private final LongSummaryStatistics onAtomic = new LongSummaryStatistics();
 
+  private final TLongList onAtomicDist = new TLongArrayList();
   public void recordOnAtomicMessage(long nanoDuration) {
-    onAtomic.accept(nanoDuration);
+    onAtomicDist.add(nanoDuration);
+    //onAtomic.accept(nanoDuration);
   }
 
   private final LongSummaryStatistics onMinTime = new LongSummaryStatistics();
@@ -28,6 +33,7 @@ public final class AtomicActorStatistics implements Statistics {
 
   @Override
   public String toString() {
-    return metrics().toString();
+    return "ON ATOMIC DIST: " + onAtomicDist;
+    //return metrics().toString();
   }
 }
