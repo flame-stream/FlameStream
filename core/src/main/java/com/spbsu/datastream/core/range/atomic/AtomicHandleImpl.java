@@ -24,8 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.ToIntFunction;
 
@@ -130,5 +128,10 @@ public final class AtomicHandleImpl implements AtomicHandle {
   @Override
   public TickInfo tickInfo() {
     return tickInfo;
+  }
+
+  @Override
+  public void error(String format, Object... args) {
+    LOG.warning(format, args);
   }
 }

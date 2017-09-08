@@ -57,4 +57,8 @@ public final class FakeAtomicHandle implements AtomicHandle {
   public TickInfo tickInfo() {
     throw new NotImplementedException();
   }
+
+  @Override
+  public void error(String format, Object... args) {
+  }
 }
