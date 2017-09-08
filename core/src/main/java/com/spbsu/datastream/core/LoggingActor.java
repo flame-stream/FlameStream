@@ -4,6 +4,7 @@ import akka.actor.AbstractActor;
 import akka.actor.SupervisorStrategy;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import com.spbsu.datastream.core.node.UnresolvedMessage;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
 
@@ -14,8 +15,36 @@ public abstract class LoggingActor extends AbstractActor {
 
   @Override
   public void aroundReceive(PartialFunction<Object, BoxedUnit> receive, Object msg) {
-    //this.LOG().debug("Received: {}", msg);
     receive.apply(msg);
+    //final Message message;
+    //
+    //if (msg instanceof UnresolvedMessage) {
+    //  message = ((UnresolvedMessage) msg).payload();
+    //} else if (msg instanceof Message) {
+    //  message = ((Message) msg);
+    //} else {
+    //  receive.apply(msg);
+    //  return;
+    //}
+    //
+    //final AtomicMessage atomicMessage;
+    //
+    //if (message instanceof AtomicMessage) {
+    //  atomicMessage = ((AtomicMessage) message);
+    //} else {
+    //  receive.apply(msg);
+    //  return;
+    //}
+    //
+    //final Object data = atomicMessage.payload().payload();
+    //
+    //if (data.toString().contains("фигей")) {
+    //  LOG.info("Before: {}", System.nanoTime());
+    //  receive.apply(msg);
+    //  LOG.info("After: {}", System.nanoTime());
+    //} else {
+    //  receive.apply(msg);
+    //}
   }
 
   @Override
