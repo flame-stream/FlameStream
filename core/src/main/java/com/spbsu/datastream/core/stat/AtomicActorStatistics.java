@@ -1,30 +1,28 @@
 package com.spbsu.datastream.core.stat;
 
 import java.util.HashMap;
+import java.util.LongSummaryStatistics;
 import java.util.Map;
 
+import static com.spbsu.datastream.core.stat.Statistics.*;
+
 public final class AtomicActorStatistics implements Statistics {
-  private long cumulativeOnAtomic = 0;
-  private int onAtomicSamples = 0;
+  private final LongSummaryStatistics onAtomic = new LongSummaryStatistics();
 
   public void recordOnAtomicMessage(long nanoDuration) {
-    cumulativeOnAtomic += nanoDuration;
-    onAtomicSamples++;
+    onAtomic.accept(nanoDuration);
   }
 
-  private long cumulativeOnMinTime = 0;
-  private long onMinTimeSamples = 0;
-
+  private final LongSummaryStatistics onMinTime = new LongSummaryStatistics();
   public void recordOnMinTimeUpdate(long nanoDuration) {
-    cumulativeOnMinTime += nanoDuration;
-    onMinTimeSamples++;
+    onMinTime.accept(nanoDuration);
   }
 
   @Override
   public Map<String, Double> metrics() {
     final Map<String, Double> result = new HashMap<>();
-    result.put("Average onAtomicMessage duration", (double) cumulativeOnAtomic / onAtomicSamples);
-    result.put("Average onMinTime duration", (double) cumulativeOnMinTime / onMinTimeSamples);
+    result.putAll(asMap("onAtomicMessage duration", onAtomic));
+    result.putAll(asMap("Average onMinTime duration", onMinTime));
     return result;
   }
 
