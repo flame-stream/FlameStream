@@ -1,4 +1,8 @@
-package com.spbsu.datastream.core.wordcount;
+package com.spbsu.datastream.benchmarks.bl.wordcount.ops;
+
+import com.spbsu.datastream.benchmarks.bl.wordcount.model.WordContainer;
+import com.spbsu.datastream.benchmarks.bl.wordcount.model.WordCounter;
+import com.spbsu.datastream.benchmarks.bl.wordcount.model.WordEntry;
 
 import java.util.List;
 import java.util.function.Function;

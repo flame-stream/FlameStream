@@ -76,7 +76,7 @@ public class InvertedIndexFlinkRunner implements ClusterRunner {
     }
   }
 
-  static void test(Stream<WikipediaPage> source, Consumer<Object> output, int bufferTimeout) {
+  public static void test(Stream<WikipediaPage> source, Consumer<Object> output, int bufferTimeout) {
     try {
       iterator = source.iterator();
       consumer = output;
@@ -107,6 +107,7 @@ public class InvertedIndexFlinkRunner implements ClusterRunner {
 
     @Override
     public void run(SourceContext<WikipediaPage> ctx) throws Exception {
+      //noinspection Duplicates
       while (running) {
         if (iterator.hasNext()) {
           ctx.collect(iterator.next());

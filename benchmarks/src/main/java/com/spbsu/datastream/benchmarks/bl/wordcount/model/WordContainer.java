@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.wordcount;
+package com.spbsu.datastream.benchmarks.bl.wordcount.model;
 
 /**
  * User: Artem

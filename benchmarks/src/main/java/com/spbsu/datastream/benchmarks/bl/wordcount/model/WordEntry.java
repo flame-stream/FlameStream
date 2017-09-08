@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core.wordcount;
+package com.spbsu.datastream.benchmarks.bl.wordcount.model;
 
 /**
  * User: Artem
@@ -7,7 +7,7 @@ package com.spbsu.datastream.core.wordcount;
 public class WordEntry implements WordContainer {
   private final String word;
 
-  WordEntry(String word) {
+  public WordEntry(String word) {
     this.word = word;
   }
 

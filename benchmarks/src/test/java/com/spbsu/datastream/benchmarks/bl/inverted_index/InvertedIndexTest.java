@@ -1,6 +1,8 @@
 package com.spbsu.datastream.benchmarks.bl.inverted_index;
 
 import com.spbsu.commons.text.stem.Stemmer;
+import com.spbsu.datastream.benchmarks.bl.DataStreamsSource;
+import com.spbsu.datastream.benchmarks.bl.FlinkSource;
 import com.spbsu.datastream.benchmarks.bl.TestSource;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WikipediaPage;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordContainer;
@@ -14,6 +16,7 @@ import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.impl.BM25;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.impl.InMemRankingStorage;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.InputUtils;
+import com.spbsu.datastream.core.LocalCluster;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.testng.Assert;
@@ -23,6 +26,7 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -31,12 +35,17 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("MagicNumber")
 public class InvertedIndexTest {
-  private static final FlinkIndexSource FLINK_INDEX_SOURCE = new FlinkIndexSource(0);
+  private static final FlinkSource FLINK_INDEX_SOURCE = new FlinkSource<WikipediaPage>(0) {
+    @Override
+    public void test(Stream<WikipediaPage> input, Consumer<Object> output) {
+      InvertedIndexFlinkRunner.test(input, output, this.bufferTimeout);
+    }
+  };
 
   @DataProvider
   public Object[][] testIndexWithSmallDumpSources() {
     return new Object[][]{
-            {new DataStreamsIndexSource(2, 4, 5)},
+            {dataStreamsSource(2, 4, 5)},
             {FLINK_INDEX_SOURCE}
     };
   }
@@ -112,7 +121,7 @@ public class InvertedIndexTest {
   @DataProvider
   public Object[][] testIndexAndRankingStorageWithSmallDumpSources() {
     return new Object[][]{
-            {new DataStreamsIndexSource(4, 4, 10)},
+            {dataStreamsSource(4, 4, 10)},
             {FLINK_INDEX_SOURCE}
     };
   }
@@ -162,7 +171,7 @@ public class InvertedIndexTest {
   @DataProvider
   public Object[][] testIndexWithRankingSources() {
     return new Object[][]{
-            {new DataStreamsIndexSource(1, 1, 40)},
+            {dataStreamsSource(1, 1, 40)},
             {FLINK_INDEX_SOURCE}
     };
   }
@@ -195,7 +204,7 @@ public class InvertedIndexTest {
   @DataProvider
   public Object[][] manualTestIndexWithRankingSource() {
     return new Object[][]{
-            {new DataStreamsIndexSource(1, 1, 10), "Звонимир Бобан"},
+            {dataStreamsSource(1, 1, 10), "Звонимир Бобан"},
             {FLINK_INDEX_SOURCE, "Звонимир Бобан"}
     };
   }
@@ -232,5 +241,20 @@ public class InvertedIndexTest {
     //noinspection deprecation
     final Stemmer stemmer = Stemmer.getInstance();
     return stemmer.stem(term).toString();
+  }
+
+  private DataStreamsSource<WikipediaPage> dataStreamsSource(int fronts, int workers, int tickLength) {
+    return new DataStreamsSource<WikipediaPage>(fronts, workers, tickLength) {
+      @Override
+      public void test(Stream<WikipediaPage> input, Consumer<Object> output) {
+        try {
+          try (final LocalCluster cluster = new LocalCluster(this.workers, this.fronts)) {
+            InvertedIndexRunner.test(cluster, input, output, this.tickLength);
+          }
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
   }
 }

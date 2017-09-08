@@ -1,4 +1,8 @@
-package com.spbsu.datastream.core.wordcount;
+package com.spbsu.datastream.benchmarks.bl.wordcount.ops;
+
+import com.spbsu.datastream.benchmarks.bl.wordcount.model.WordContainer;
+import com.spbsu.datastream.benchmarks.bl.wordcount.model.WordCounter;
+import com.spbsu.datastream.benchmarks.bl.wordcount.model.WordEntry;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -7,7 +11,7 @@ import java.util.function.Predicate;
  * User: Artem
  * Date: 25.06.2017
  */
-public class WrongOrderingFilter implements Predicate<List<WordContainer>> {
+public class WordContainerOrderingFilter implements Predicate<List<WordContainer>> {
   @Override
   public boolean test(List<WordContainer> wordContainers) {
     if (wordContainers.size() > 2)
