@@ -78,7 +78,10 @@ public final class NodeConcierge extends LoggingActor {
 
   private void onNewTick(TickInfo tickInfo) {
     // FIXME: 7/6/17 this two events are not ordered
-    final ActorRef tickConcierge = this.context().actorOf(TickConcierge.props(tickInfo, this.db, this.id, this.dnsRouter), String.valueOf(tickInfo.startTs()));
+    final ActorRef tickConcierge = this.context().actorOf(
+            TickConcierge.props(tickInfo, this.db, this.id, this.dnsRouter),
+            String.valueOf(tickInfo.startTs())
+    );
     this.tickRouter.tell(new TickRouter.RegisterTick(tickInfo.startTs(), tickConcierge), this.self());
 
     if (this.front != null) {
