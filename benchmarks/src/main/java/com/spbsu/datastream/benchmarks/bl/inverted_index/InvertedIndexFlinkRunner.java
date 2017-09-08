@@ -19,6 +19,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.util.Collector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
@@ -33,6 +35,8 @@ import java.util.stream.Stream;
  * Date: 21.08.2017
  */
 public class InvertedIndexFlinkRunner implements ClusterRunner {
+  private final Logger LOG = LoggerFactory.getLogger(InvertedIndexRunner.class);
+
   //TODO: make iterator serializable and use org.apache.flink.streaming.api.functions.source.FromIteratorFunction
   private static Iterator<WikipediaPage> iterator;
   //TODO: make consumer serializable
@@ -65,7 +69,7 @@ public class InvertedIndexFlinkRunner implements ClusterRunner {
               .map(TimeUnit.NANOSECONDS::toMillis)
               .summaryStatistics();
 
-      System.out.println(stat);
+      LOG.info("Result: {}", stat);
 
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);

@@ -10,8 +10,11 @@ import com.spbsu.datastream.core.wordcount.WordCountTest;
 import com.spbsu.datastream.core.wordcount.WordCounter;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.LongSummaryStatistics;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -23,6 +26,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
 public final class WordCountRunner implements ClusterRunner {
+  private final Logger LOG = LoggerFactory.getLogger(WordCountRunner.class);
 
   @Override
   public void run(Cluster cluster) throws InterruptedException {
@@ -30,12 +34,10 @@ public final class WordCountRunner implements ClusterRunner {
       final LatencyMeasurer<WordCounter> latencyMeasurer = new LatencyMeasurer<>(new LatencyMeasurerDelegate<WordCounter>() {
         @Override
         public void onStart(WordCounter key) {
-          System.out.println("Measuring at " + key.word() + ':' + key.count());
         }
 
         @Override
         public void onFinish(WordCounter key, long latency) {
-          System.out.println("Measured at " + key.word() + ':' + key.count() + ' ' + latency + " nanoseconds");
         }
       }, 1000 * 10, 1000 * 10);
       final TheGraph graph = WordCountTest.wordCountGraph(cluster.fronts(), stand.wrap(o -> latencyMeasurer.finish((WordCounter) o)));
@@ -61,7 +63,9 @@ public final class WordCountRunner implements ClusterRunner {
         }
       });
       stand.waitTick(1, TimeUnit.HOURS);
+
+      final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
+      LOG.info("Result: {}", stat);
     }
   }
-
 }

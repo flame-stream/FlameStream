@@ -20,6 +20,8 @@ import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.graph.ops.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +37,8 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("Convert2Lambda")
 public class InvertedIndexRunner implements ClusterRunner {
+  private final Logger LOG = LoggerFactory.getLogger(InvertedIndexRunner.class);
+
   private static final HashFunction<WikipediaPage> WIKI_PAGE_HASH = new HashFunction<WikipediaPage>() {
     @Override
     public int hash(WikipediaPage value) {
@@ -73,7 +77,7 @@ public class InvertedIndexRunner implements ClusterRunner {
       @Override
       public void onFinish(Integer key, long latency) {
       }
-    }, 100, 0);
+    }, 100, 20);
 
     try {
       final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
@@ -89,8 +93,7 @@ public class InvertedIndexRunner implements ClusterRunner {
       final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
               .map(TimeUnit.NANOSECONDS::toMillis)
               .summaryStatistics();
-      System.out.println(stat);
-
+      LOG.info("Result: {}", stat);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
