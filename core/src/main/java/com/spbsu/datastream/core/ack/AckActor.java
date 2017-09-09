@@ -22,10 +22,7 @@ public final class AckActor extends LoggingActor {
   private final Collection<HashRange> committers = new HashSet<>();
 
   private AckActor(TickInfo tickInfo, ActorRef dns) {
-    this.ledger = new AckLedgerImpl(tickInfo.startTs(),
-            tickInfo.stopTs(),
-            tickInfo.window(),
-            tickInfo.graph().frontBindings().keySet());
+    this.ledger = new AckLedgerImpl(tickInfo);
     this.tickInfo = tickInfo;
     this.dns = dns;
   }
