@@ -76,13 +76,13 @@ public class AckTableTest {
     };
   }
 
-  @Test(dataProvider = "performanceTestProvider", invocationCount = 100)
+  @Test(dataProvider = "performanceTestProvider", invocationCount = 100, enabled = false)
   public void arrayAckTablePerformanceTest(long startTs, long window, long windowsCount, List<Pair<Long, Long>> xors) {
     final AckTable ackTable = new ArrayAckTable(startTs, window * windowsCount, window);
     performanceTest(ackTable, window, windowsCount, xors);
   }
 
-  @Test(dataProvider = "performanceTestProvider", invocationCount = 100)
+  @Test(dataProvider = "performanceTestProvider", invocationCount = 100, enabled = false)
   public void treeAckTablePerformanceTest(long startTs, long window, long windowsCount, List<Pair<Long, Long>> xors) {
     final AckTable ackTable = new TreeAckTable(startTs, window);
     performanceTest(ackTable, window, windowsCount, xors);
