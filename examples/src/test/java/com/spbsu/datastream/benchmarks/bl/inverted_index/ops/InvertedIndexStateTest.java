@@ -1,6 +1,5 @@
 package com.spbsu.datastream.benchmarks.bl.inverted_index.ops;
 
-import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.InvertedIndexState;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
@@ -27,8 +26,8 @@ public class InvertedIndexStateTest {
 
     for (int pageId : pageIds) {
       final long value = IndexLongUtil.createPagePosition(pageId, 0, 0);
-      final int newPosition = ThreadLocalRandom.current().nextInt(1,101);
-      final int newRange = ThreadLocalRandom.current().nextInt(1,101);
+      final int newPosition = ThreadLocalRandom.current().nextInt(1, 101);
+      final int newRange = ThreadLocalRandom.current().nextInt(1, 101);
       //Act
       tree.insert(value);
 

@@ -219,7 +219,11 @@ public class InvertedIndexTest {
     final RankingFunction rankingFunction = new BM25(rankingStorage);
 
     System.out.println("Query: " + query);
-    rankingFunction.rank(query).sorted().limit(10).forEach(rank -> System.out.println(docsTitleResolver.get(rank.document().id()) + " (" + rank.document().id() + ") : " + rank.score()));
+    rankingFunction.rank(query)
+            .sorted()
+            .limit(10)
+            .forEach(rank -> System.out.println(docsTitleResolver.get(rank.document().id()) + " (" + rank.document()
+                    .id() + ") : " + rank.score()));
   }
 
   @SuppressWarnings("SameParameterValue")

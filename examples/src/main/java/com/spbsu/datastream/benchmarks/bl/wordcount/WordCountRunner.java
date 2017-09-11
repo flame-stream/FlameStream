@@ -76,7 +76,12 @@ public final class WordCountRunner implements ClusterRunner {
             .limit(1000);
   }
 
-  static void test(Cluster cluster, Stream<String> source, Consumer<Object> outputConsumer, int tickLength) throws InterruptedException {
+  static void test(
+          Cluster cluster,
+          Stream<String> source,
+          Consumer<Object> outputConsumer,
+          int tickLength
+  ) throws InterruptedException {
     try (final TestStand stage = new TestStand(cluster)) {
       stage.deploy(wordCountGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
 

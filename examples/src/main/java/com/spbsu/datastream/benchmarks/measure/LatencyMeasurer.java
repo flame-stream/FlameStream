@@ -49,7 +49,7 @@ public class LatencyMeasurer<T> {
 
   public long[] latencies() {
     latencies.values().forEach(stat ->
-        LOG.info("Latencies distribution for article: {}", stat)
+            LOG.info("Latencies distribution for article: {}", stat)
     );
     return latencies.values().stream().map(LongSummaryStatistics::getMax)
             .mapToLong(l -> l).toArray();

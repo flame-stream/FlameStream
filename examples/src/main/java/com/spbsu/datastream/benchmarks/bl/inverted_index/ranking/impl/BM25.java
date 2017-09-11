@@ -5,8 +5,8 @@ import com.spbsu.commons.text.lexical.StemsTokenizer;
 import com.spbsu.commons.text.lexical.Tokenizer;
 import com.spbsu.commons.text.stem.Stemmer;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.Rank;
-import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.RankingStorage;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.RankingFunction;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.RankingStorage;
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 

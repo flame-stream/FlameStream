@@ -1,6 +1,10 @@
 package com.spbsu.datastream.benchmarks.bl.inverted_index.ops;
 
-import com.spbsu.datastream.benchmarks.bl.inverted_index.model.*;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordContainer;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordIndex;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordIndexAdd;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordIndexRemove;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordPagePositions;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
 
 import java.util.List;

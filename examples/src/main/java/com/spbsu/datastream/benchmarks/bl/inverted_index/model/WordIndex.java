@@ -14,6 +14,7 @@ public class WordIndex implements WordContainer {
     this.word = word;
     this.state = state;
   }
+
   @Override
   public String word() {
     return word;

@@ -3,9 +3,9 @@ package com.spbsu.datastream.benchmarks.bl.inverted_index.ops;
 import com.spbsu.commons.text.lexical.StemsTokenizer;
 import com.spbsu.commons.text.lexical.Tokenizer;
 import com.spbsu.commons.text.stem.Stemmer;
-import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WikipediaPage;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordPagePositions;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 

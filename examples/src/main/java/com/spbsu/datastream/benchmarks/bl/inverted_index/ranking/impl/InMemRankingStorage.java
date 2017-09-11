@@ -1,7 +1,7 @@
 package com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.impl;
 
-import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.RankingStorage;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.Document;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.ranking.RankingStorage;
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;

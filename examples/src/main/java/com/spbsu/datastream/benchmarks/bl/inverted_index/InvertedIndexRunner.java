@@ -6,7 +6,11 @@ import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WikipediaPage;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordContainer;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordIndexAdd;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.model.WordPagePositions;
-import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.*;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.WikipediaPageToWordPositions;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.WordIndexDiffFilter;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.WordIndexFilter;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.WordIndexToDiffOutput;
+import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.WrongOrderingFilter;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.InputUtils;
 import com.spbsu.datastream.benchmarks.measure.LatencyMeasurer;
@@ -18,11 +22,19 @@ import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.graph.ops.*;
+import com.spbsu.datastream.core.graph.ops.Broadcast;
+import com.spbsu.datastream.core.graph.ops.Filter;
+import com.spbsu.datastream.core.graph.ops.FlatMap;
+import com.spbsu.datastream.core.graph.ops.Grouping;
+import com.spbsu.datastream.core.graph.ops.Merge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.LongSummaryStatistics;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -40,7 +52,7 @@ public class InvertedIndexRunner implements ClusterRunner {
 
   @Override
   public void run(Cluster cluster) throws InterruptedException {
-    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>( 100, 20);
+    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 20);
 
     try {
       final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
@@ -63,7 +75,12 @@ public class InvertedIndexRunner implements ClusterRunner {
 
   }
 
-  static void test(Cluster cluster, Stream<WikipediaPage> source, Consumer<Object> outputConsumer, int tickLength) throws InterruptedException {
+  static void test(
+          Cluster cluster,
+          Stream<WikipediaPage> source,
+          Consumer<Object> outputConsumer,
+          int tickLength
+  ) throws InterruptedException {
     try (final TestStand stage = new TestStand(cluster)) {
       stage.deploy(invertedIndexGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
 

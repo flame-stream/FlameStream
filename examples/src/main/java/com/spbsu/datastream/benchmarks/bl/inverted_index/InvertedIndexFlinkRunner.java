@@ -130,7 +130,10 @@ public class InvertedIndexFlinkRunner implements ClusterRunner {
   @SuppressWarnings("deprecation")
   private static class IndexResult implements FoldFunction<Tuple2<String, long[]>, Tuple3<InvertedIndexState, WordIndexAdd, WordIndexRemove>> {
     @Override
-    public Tuple3<InvertedIndexState, WordIndexAdd, WordIndexRemove> fold(Tuple3<InvertedIndexState, WordIndexAdd, WordIndexRemove> accumulator, Tuple2<String, long[]> value) throws Exception {
+    public Tuple3<InvertedIndexState, WordIndexAdd, WordIndexRemove> fold(
+            Tuple3<InvertedIndexState, WordIndexAdd, WordIndexRemove> accumulator,
+            Tuple2<String, long[]> value
+    ) throws Exception {
       final long prevValue = accumulator.f0.updateOrInsert(value.f1);
       final WordIndexAdd wordIndexAdd = new WordIndexAdd(value.f0, value.f1);
       WordIndexRemove wordIndexRemove = null;
