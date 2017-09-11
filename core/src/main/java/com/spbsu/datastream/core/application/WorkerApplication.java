@@ -19,16 +19,17 @@ import java.util.concurrent.TimeoutException;
 
 public final class WorkerApplication {
   private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
+  public static final int PORT = 4387;
 
   private final InetSocketAddress host;
   private final String zkConnectString;
   private final int id;
 
-  private ActorSystem system;
+  public ActorSystem system;
 
   public WorkerApplication(int id, String zkConnectString) throws UnknownHostException {
     this.id = id;
-    this.host = new InetSocketAddress(InetAddress.getLocalHost(), 4387);
+    this.host = new InetSocketAddress(InetAddress.getLocalHost(), PORT);
     this.zkConnectString = zkConnectString;
   }
 

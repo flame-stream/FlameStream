@@ -6,6 +6,7 @@ import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
+import com.spbsu.datastream.core.application.WorkerApplication;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.front.RawData;
 import com.spbsu.datastream.core.graph.TheGraph;
@@ -44,14 +45,18 @@ public final class TestStand implements AutoCloseable {
   public TestStand(Cluster cluster) {
     this.cluster = cluster;
 
-    try {
-      final Config config = ConfigFactory.parseString("akka.remote.artery.canonical.port=" + TestStand.LOCAL_SYSTEM_PORT)
-              .withFallback(ConfigFactory.parseString("akka.remote.artery.canonical.hostname=" + InetAddress.getLocalHost().getHostName()))
-              .withFallback(ConfigFactory.load("remote"));
+    if (cluster instanceof LocalCluster) {
+      this.localSystem = ((LocalCluster) cluster).workerApplication.stream().findAny().get().system;
+    } else {
+      try {
+        final Config config = ConfigFactory.parseString("akka.remote.artery.canonical.port=" + TestStand.LOCAL_SYSTEM_PORT)
+                .withFallback(ConfigFactory.parseString("akka.remote.artery.canonical.hostname=" + InetAddress.getLocalHost().getHostName()))
+                .withFallback(ConfigFactory.load("remote"));
 
-      this.localSystem = ActorSystem.create("requester", config);
-    } catch (UnknownHostException e) {
-      throw new UncheckedIOException(e);
+        this.localSystem = ActorSystem.create("requester", config);
+      } catch (UnknownHostException e) {
+        throw new UncheckedIOException(e);
+      }
     }
   }
 
@@ -78,9 +83,9 @@ public final class TestStand implements AutoCloseable {
     try {
       final String id = UUID.randomUUID().toString();
       final ActorRef consumerActor = this.localSystem.actorOf(CollectingActor.props(collection), id);
-      final Address add = Address.apply("akka", "requester",
+      final Address add = Address.apply("akka", "worker",
               InetAddress.getLocalHost().getHostName(),
-              TestStand.LOCAL_SYSTEM_PORT);
+              5223);
       return RootActorPath.apply(add, "/")
               .$div("user")
               .$div(id);

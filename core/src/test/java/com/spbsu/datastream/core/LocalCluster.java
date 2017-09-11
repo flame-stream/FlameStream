@@ -29,7 +29,7 @@ public final class LocalCluster implements Cluster {
   private final Map<Integer, InetSocketAddress> dns;
   private final Set<Integer> fronts;
 
-  private final Collection<WorkerApplication> workerApplication = new HashSet<>();
+  public final Collection<WorkerApplication> workerApplication = new HashSet<>();
   private final ZooKeeperApplication zk;
   private final Thread zkThread;
 
