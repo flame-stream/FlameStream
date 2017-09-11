@@ -16,10 +16,9 @@ public final class RealCluster implements Cluster {
   private final Map<Integer, InetSocketAddress> nodes;
   private final Set<Integer> fronts;
 
-  public RealCluster(
-          String zookeeperString, Map<Integer, InetSocketAddress> nodes,
-          Set<Integer> fronts
-  ) {
+  public RealCluster(String zookeeperString,
+                     Map<Integer, InetSocketAddress> nodes,
+                     Set<Integer> fronts) {
     this.zookeeperString = zookeeperString;
     this.nodes = new HashMap<>(nodes);
     this.fronts = new HashSet<>(fronts);
