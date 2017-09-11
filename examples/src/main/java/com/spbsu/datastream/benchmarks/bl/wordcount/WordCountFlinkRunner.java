@@ -39,13 +39,22 @@ public class WordCountFlinkRunner implements ClusterRunner {
 
   @Override
   public void run(Cluster cluster) throws InterruptedException {
-    final LatencyMeasurer<WordCounter> latencyMeasurer = WordCountRunner.latencyMeasurer();
+    final LatencyMeasurer<WordCounter> latencyMeasurer = new LatencyMeasurer<>(1000 * 10, 1000 * 10);
+
     final TObjectIntMap<String> expected = new TObjectIntHashMap<>();
-    final Pattern pattern = Pattern.compile("\\s");
-    final Stream<String> source = WordCountRunner.input().peek(text -> Arrays.stream(pattern.split(text)).collect(toMap(Function.identity(), o -> 1, Integer::sum)).forEach((k, v) -> {
-      expected.adjustOrPutValue(k, v, v);
-      latencyMeasurer.start(new WordCounter(k, expected.get(k)));
-    }));
+    final Stream<String> source = WordCountRunner.input()
+            .peek(
+                    text -> {
+                      final Pattern pattern = Pattern.compile("\\s");
+                      Arrays.stream(pattern.split(text))
+                              .collect(toMap(Function.identity(), o -> 1, Integer::sum))
+                              .forEach((k, v) -> {
+                                expected.adjustOrPutValue(k, v, v);
+                                latencyMeasurer.start(new WordCounter(k, expected.get(k)));
+                              });
+                    }
+            );
+
     test(source, o -> latencyMeasurer.finish((WordCounter) o), 0);
 
     final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
@@ -61,6 +70,7 @@ public class WordCountFlinkRunner implements ClusterRunner {
 
       final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment(1);
       env.setBufferTimeout(bufferTimeout);
+
       //noinspection deprecation
       env.addSource(new TextSource())
               .flatMap(new Splitter())
@@ -68,6 +78,7 @@ public class WordCountFlinkRunner implements ClusterRunner {
               //fold is deprecated but there is no alternative in the current version
               .fold(new WordCounter(null, 0), new WordCounterFold())
               .addSink(wordCounter -> consumer.accept(wordCounter));
+
       env.execute();
     } catch (Exception e) {
       throw new RuntimeException(e);

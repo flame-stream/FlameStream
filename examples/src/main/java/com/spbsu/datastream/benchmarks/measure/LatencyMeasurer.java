@@ -18,13 +18,11 @@ public class LatencyMeasurer<T> {
 
   private final TObjectLongMap<T> starts = new TObjectLongHashMap<>();
   private final Map<T, LongSummaryStatistics> latencies = new HashMap<>();
-  private final LatencyMeasurerDelegate<T> delegate;
 
   private final long measurePeriod;
   private long delay;
 
-  public LatencyMeasurer(LatencyMeasurerDelegate<T> delegate, long warmUpDelay, long measurePeriod) {
-    this.delegate = delegate;
+  public LatencyMeasurer(long warmUpDelay, long measurePeriod) {
     this.measurePeriod = measurePeriod;
     this.delay = warmUpDelay;
   }
@@ -36,7 +34,6 @@ public class LatencyMeasurer<T> {
 
     final long startTs = System.nanoTime();
     starts.put(key, startTs);
-    delegate.onStart(key);
     latencies.put(key, new LongSummaryStatistics());
   }
 
@@ -47,7 +44,6 @@ public class LatencyMeasurer<T> {
         stat.accept(latency);
         return stat;
       });
-      delegate.onFinish(key, latency);
     }
   }
 

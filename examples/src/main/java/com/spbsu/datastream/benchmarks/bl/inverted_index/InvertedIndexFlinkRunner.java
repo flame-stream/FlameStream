@@ -9,7 +9,6 @@ import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.InvertedIndexState;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.InputUtils;
 import com.spbsu.datastream.benchmarks.measure.LatencyMeasurer;
-import com.spbsu.datastream.benchmarks.measure.LatencyMeasurerDelegate;
 import com.spbsu.datastream.core.Cluster;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.FoldFunction;
@@ -46,17 +45,10 @@ public class InvertedIndexFlinkRunner implements ClusterRunner {
   public void run(Cluster cluster) throws InterruptedException {
     //TODO: refactor ClusterRunner for flink
     try {
-      final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(new LatencyMeasurerDelegate<Integer>() {
-        @Override
-        public void onStart(Integer key) {
-        }
-
-        @Override
-        public void onFinish(Integer key, long latency) {
-        }
-      }, 100, 0);
+      final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);
       final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
               .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
+
       test(source, container -> {
         if (container instanceof WordIndexAdd) {
           final WordIndexAdd indexAdd = (WordIndexAdd) container;
@@ -76,7 +68,7 @@ public class InvertedIndexFlinkRunner implements ClusterRunner {
     }
   }
 
-  public static void test(Stream<WikipediaPage> source, Consumer<Object> output, int bufferTimeout) {
+  static void test(Stream<WikipediaPage> source, Consumer<Object> output, int bufferTimeout) {
     try {
       iterator = source.iterator();
       consumer = output;

@@ -10,7 +10,6 @@ import com.spbsu.datastream.benchmarks.bl.inverted_index.ops.*;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.IndexLongUtil;
 import com.spbsu.datastream.benchmarks.bl.inverted_index.utils.InputUtils;
 import com.spbsu.datastream.benchmarks.measure.LatencyMeasurer;
-import com.spbsu.datastream.benchmarks.measure.LatencyMeasurerDelegate;
 import com.spbsu.datastream.core.Cluster;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.TestStand;
@@ -39,6 +38,49 @@ import java.util.stream.Stream;
 public class InvertedIndexRunner implements ClusterRunner {
   private final Logger LOG = LoggerFactory.getLogger(InvertedIndexRunner.class);
 
+  @Override
+  public void run(Cluster cluster) throws InterruptedException {
+    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>( 100, 20);
+
+    try {
+      final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
+              .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
+      test(cluster, source, container -> {
+        if (container instanceof WordIndexAdd) {
+          final WordIndexAdd indexAdd = (WordIndexAdd) container;
+          final int docId = IndexLongUtil.pageId(indexAdd.positions()[0]);
+          latencyMeasurer.finish(docId);
+        }
+      }, 40);
+
+      final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
+              .map(TimeUnit.NANOSECONDS::toMillis)
+              .summaryStatistics();
+      LOG.info("Result: {}", stat);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+  }
+
+  static void test(Cluster cluster, Stream<WikipediaPage> source, Consumer<Object> outputConsumer, int tickLength) throws InterruptedException {
+    try (final TestStand stage = new TestStand(cluster)) {
+      stage.deploy(invertedIndexGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
+
+      final Consumer<Object> sink = stage.randomFrontConsumer(122);
+      source.forEach(wikipediaPage -> {
+        sink.accept(wikipediaPage);
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+          throw new RuntimeException();
+        }
+      });
+
+      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
+    }
+  }
+
   private static final HashFunction<WikipediaPage> WIKI_PAGE_HASH = new HashFunction<WikipediaPage>() {
     @Override
     public int hash(WikipediaPage value) {
@@ -66,55 +108,6 @@ public class InvertedIndexRunner implements ClusterRunner {
       return WORD_HASH.hash(value.get(0));
     }
   };
-
-  @Override
-  public void run(Cluster cluster) throws InterruptedException {
-    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(new LatencyMeasurerDelegate<Integer>() {
-      @Override
-      public void onStart(Integer key) {
-      }
-
-      @Override
-      public void onFinish(Integer key, long latency) {
-      }
-    }, 100, 20);
-
-    try {
-      final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
-              .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
-      test(cluster, source, container -> {
-        if (container instanceof WordIndexAdd) {
-          final WordIndexAdd indexAdd = (WordIndexAdd) container;
-          final int docId = IndexLongUtil.pageId(indexAdd.positions()[0]);
-          latencyMeasurer.finish(docId);
-        }
-      }, 40);
-
-      final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
-              .map(TimeUnit.NANOSECONDS::toMillis)
-              .summaryStatistics();
-      LOG.info("Result: {}", stat);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
-  }
-
-  static void test(Cluster cluster, Stream<WikipediaPage> source, Consumer<Object> outputConsumer, int tickLength) throws InterruptedException {
-    try (final TestStand stage = new TestStand(cluster)) {
-      stage.deploy(invertedIndexGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
-      final Consumer<Object> sink = stage.randomFrontConsumer(122);
-      source.forEach(wikipediaPage -> {
-        sink.accept(wikipediaPage);
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          throw new RuntimeException();
-        }
-      });
-      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
-    }
-  }
 
   private static TheGraph invertedIndexGraph(Collection<Integer> fronts, ActorPath consumer) {
     final FlatMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlatMap<>(new WikipediaPageToWordPositions(), WIKI_PAGE_HASH);

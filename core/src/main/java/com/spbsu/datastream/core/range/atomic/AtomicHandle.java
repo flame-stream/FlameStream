@@ -17,12 +17,6 @@ public interface AtomicHandle {
 
   void ack(DataItem<?> item);
 
-  Optional<Object> loadState(InPort inPort);
-
-  void saveState(InPort inPort, Object state);
-
-  void removeState(InPort inPort);
-
   void submitStatistics(Statistics stat);
 
   TickInfo tickInfo();

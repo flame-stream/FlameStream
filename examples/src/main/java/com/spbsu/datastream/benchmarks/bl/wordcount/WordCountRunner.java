@@ -8,7 +8,6 @@ import com.spbsu.datastream.benchmarks.bl.wordcount.model.WordEntry;
 import com.spbsu.datastream.benchmarks.bl.wordcount.ops.CountWordEntries;
 import com.spbsu.datastream.benchmarks.bl.wordcount.ops.WordContainerOrderingFilter;
 import com.spbsu.datastream.benchmarks.measure.LatencyMeasurer;
-import com.spbsu.datastream.benchmarks.measure.LatencyMeasurerDelegate;
 import com.spbsu.datastream.core.Cluster;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.TestStand;
@@ -17,13 +16,23 @@ import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
-import com.spbsu.datastream.core.graph.ops.*;
+import com.spbsu.datastream.core.graph.ops.Broadcast;
+import com.spbsu.datastream.core.graph.ops.Filter;
+import com.spbsu.datastream.core.graph.ops.FlatMap;
+import com.spbsu.datastream.core.graph.ops.Grouping;
+import com.spbsu.datastream.core.graph.ops.Merge;
+import com.spbsu.datastream.core.graph.ops.StatelessMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.LongSummaryStatistics;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -37,6 +46,53 @@ import static java.util.stream.Collectors.toMap;
 @SuppressWarnings("Convert2Lambda")
 public final class WordCountRunner implements ClusterRunner {
   private final Logger LOG = LoggerFactory.getLogger(WordCountRunner.class);
+
+  @Override
+  public void run(Cluster cluster) throws InterruptedException {
+    final LatencyMeasurer<WordCounter> latencyMeasurer = new LatencyMeasurer<>(1000 * 10, 1000 * 10);
+
+    final TObjectIntMap<String> expected = new TObjectIntHashMap<>();
+    final Stream<String> input = input()
+            .peek(
+                    text -> {
+                      final Pattern pattern = Pattern.compile("\\s");
+                      Arrays.stream(pattern.split(text))
+                              .collect(toMap(Function.identity(), o -> 1, Integer::sum))
+                              .forEach((k, v) -> {
+                                expected.adjustOrPutValue(k, v, v);
+                                latencyMeasurer.start(new WordCounter(k, expected.get(k)));
+                              });
+                    }
+            );
+
+    test(cluster, input, o -> latencyMeasurer.finish((WordCounter) o), 60 * 60);
+    final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
+    LOG.info("Result: {}", stat);
+  }
+
+  static Stream<String> input() {
+    return Stream.generate(() -> new Random().ints(1000, 0, 1000)
+            .mapToObj(num -> "word" + num).collect(joining(" ")))
+            .limit(1000);
+  }
+
+  static void test(Cluster cluster, Stream<String> source, Consumer<Object> outputConsumer, int tickLength) throws InterruptedException {
+    try (final TestStand stage = new TestStand(cluster)) {
+      stage.deploy(wordCountGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
+
+      final Consumer<Object> sink = stage.randomFrontConsumer(1);
+      //noinspection Duplicates
+      source.forEach(s -> {
+        sink.accept(s);
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+          throw new RuntimeException();
+        }
+      });
+      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
+    }
+  }
 
   private static final HashFunction<WordContainer> WORD_HASH = new HashFunction<WordContainer>() {
     @Override
@@ -58,56 +114,6 @@ public final class WordCountRunner implements ClusterRunner {
       return WORD_HASH.hash(value.get(0));
     }
   };
-
-  @Override
-  public void run(Cluster cluster) throws InterruptedException {
-    final LatencyMeasurer<WordCounter> latencyMeasurer = latencyMeasurer();
-    final TObjectIntMap<String> expected = new TObjectIntHashMap<>();
-    final Pattern pattern = Pattern.compile("\\s");
-    final Stream<String> input = input().peek(text -> Arrays.stream(pattern.split(text)).collect(toMap(Function.identity(), o -> 1, Integer::sum)).forEach((k, v) -> {
-      expected.adjustOrPutValue(k, v, v);
-      latencyMeasurer.start(new WordCounter(k, expected.get(k)));
-    }));
-
-    test(cluster, input, o -> latencyMeasurer.finish((WordCounter) o), 60 * 60);
-    final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
-    LOG.info("Result: {}", stat);
-  }
-
-  static Stream<String> input() {
-    return Stream.generate(() -> new Random().ints(1000, 0, 1000)
-            .mapToObj(num -> "word" + num).collect(joining(" ")))
-            .limit(10000);
-  }
-
-  static LatencyMeasurer<WordCounter> latencyMeasurer() {
-    return new LatencyMeasurer<>(new LatencyMeasurerDelegate<WordCounter>() {
-      @Override
-      public void onStart(WordCounter key) {
-      }
-
-      @Override
-      public void onFinish(WordCounter key, long latency) {
-      }
-    }, 1000 * 10, 1000 * 10);
-  }
-
-  static void test(Cluster cluster, Stream<String> source, Consumer<Object> outputConsumer, int tickLength) throws InterruptedException {
-    try (final TestStand stage = new TestStand(cluster)) {
-      stage.deploy(wordCountGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
-      final Consumer<Object> sink = stage.randomFrontConsumer(1);
-      //noinspection Duplicates
-      source.forEach(s -> {
-        sink.accept(s);
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          throw new RuntimeException();
-        }
-      });
-      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
-    }
-  }
 
   private static TheGraph wordCountGraph(Collection<Integer> fronts, ActorPath consumer) {
     final FlatMap<String, WordEntry> splitter = new FlatMap<>(new Function<String, Stream<WordEntry>>() {
