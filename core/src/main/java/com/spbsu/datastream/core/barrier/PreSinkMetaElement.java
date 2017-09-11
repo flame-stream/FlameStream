@@ -2,8 +2,6 @@ package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.HashFunction;
 
-import java.util.Objects;
-
 final class PreSinkMetaElement<T> {
   static final HashFunction<PreSinkMetaElement<?>> HASH_FUNCTION = new HashFunction<PreSinkMetaElement<?>>() {
     @Override

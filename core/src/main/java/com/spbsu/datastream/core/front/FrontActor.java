@@ -5,9 +5,9 @@ import akka.actor.Props;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.LoggingActor;
-import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.InPort;
+import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.tick.TickInfo;
 
 import java.util.TreeMap;

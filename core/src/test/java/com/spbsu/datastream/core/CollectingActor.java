@@ -3,7 +3,6 @@ package com.spbsu.datastream.core;
 import akka.actor.Props;
 import com.spbsu.datastream.core.front.RawData;
 
-import java.util.Queue;
 import java.util.function.Consumer;
 
 final class CollectingActor<T> extends LoggingActor {

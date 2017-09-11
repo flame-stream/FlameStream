@@ -1,8 +1,11 @@
 package com.spbsu.datastream.core.meta;
 
-import com.spbsu.datastream.core.*;
+import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.FakeAtomicHandle;
+import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.HashFunction;
+import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.ops.FlatMap;
-import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -40,7 +43,7 @@ public class FlatMapTest {
       for (int j = 0; j < flatNumber; j++) {
         Assert.assertEquals(i, out.get(i * flatNumber + j).payload().intValue());
         final MetaImpl meta = (MetaImpl) out.get(i * flatNumber + j).meta();
-        final TraceImpl trace = (TraceImpl)meta.trace();
+        final TraceImpl trace = (TraceImpl) meta.trace();
         Assert.assertEquals(i + 1, LocalEvent.localTimeOf(trace.trace[0]));
         Assert.assertEquals(j, LocalEvent.childIdOf(trace.trace[0]));
       }

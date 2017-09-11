@@ -20,8 +20,11 @@ env:
 
 install: true
 
+# The build process is so strange because we want to skip spbsu-commons tests :)
 script:
-  - mvn clean install -DskipTests -fae --errors --batch-mode -q
+  - mvn clean -DskipTests -fae --errors --batch-mode -q install
   - cd ./core
-  - mvn -fae --errors --batch-mode test -q
+  - mvn -fae --errors --batch-mode -q test
+  - cd ../examples
+  - mvn -fae --errors --batch-mode -q test
   - cd ../

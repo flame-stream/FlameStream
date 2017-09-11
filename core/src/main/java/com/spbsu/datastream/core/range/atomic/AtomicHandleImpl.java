@@ -6,7 +6,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.google.common.primitives.Longs;
 import com.spbsu.datastream.core.AckerMessage;
 import com.spbsu.datastream.core.AtomicMessage;
 import com.spbsu.datastream.core.DataItem;
@@ -19,12 +18,6 @@ import com.spbsu.datastream.core.stat.Statistics;
 import com.spbsu.datastream.core.tick.TickInfo;
 import org.iq80.leveldb.DB;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.Optional;
 import java.util.function.ToIntFunction;
 
 public final class AtomicHandleImpl implements AtomicHandle {
@@ -75,49 +68,6 @@ public final class AtomicHandleImpl implements AtomicHandle {
     final UnresolvedMessage<AckerMessage<?>> message = new UnresolvedMessage<>(id,
             new AckerMessage<>(new Ack(item.ack(), item.meta().globalTime()), this.tickInfo.startTs()));
     this.dns.tell(message, this.context.self());
-  }
-
-  @Override
-  public Optional<Object> loadState(InPort inPort) {
-    final byte[] key = Longs.toByteArray(inPort.id());
-    final byte[] value = this.db.get(key);
-    if (value != null) {
-      final ByteArrayInputStream in = new ByteArrayInputStream(value);
-      try {
-        final ObjectInputStream is = new ObjectInputStream(in);
-        final Object state = is.readObject();
-        is.close();
-        in.close();
-        return Optional.of(state);
-      } catch (IOException | ClassNotFoundException e) {
-        throw new RuntimeException(e);
-      }
-    } else {
-      return Optional.empty();
-    }
-  }
-
-  @Override
-  public void saveState(InPort inPort, Object state) {
-    final byte[] key = Longs.toByteArray(inPort.id());
-    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    try {
-      final ObjectOutputStream oos = new ObjectOutputStream(bos);
-      oos.writeObject(state);
-      oos.close();
-
-      final byte[] value = bos.toByteArray();
-      bos.close();
-      this.db.put(key, value);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public void removeState(InPort inPort) {
-    final byte[] key = Longs.toByteArray(inPort.id());
-    this.db.delete(key);
   }
 
   @Override

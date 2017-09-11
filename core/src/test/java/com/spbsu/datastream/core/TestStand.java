@@ -12,12 +12,9 @@ import com.spbsu.datastream.core.graph.TheGraph;
 import com.spbsu.datastream.core.tick.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.commons.io.FileUtils;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -74,7 +71,7 @@ public final class TestStand implements AutoCloseable {
 
   /**
    * Wraps collection with an Actor.
-   *
+   * <p>
    * NB: Collection must be properly synchronized
    */
   public <T> ActorPath wrap(Consumer<T> collection) {

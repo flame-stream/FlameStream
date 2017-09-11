@@ -4,8 +4,8 @@ import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.FakeAtomicHandle;
 import com.spbsu.datastream.core.GlobalTime;
 import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
+import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 

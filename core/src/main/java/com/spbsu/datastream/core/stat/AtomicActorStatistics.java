@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 
-import static com.spbsu.datastream.core.stat.Statistics.*;
+import static com.spbsu.datastream.core.stat.Statistics.asMap;
 
 public final class AtomicActorStatistics implements Statistics {
   private final LongSummaryStatistics onAtomic = new LongSummaryStatistics();
@@ -19,6 +19,7 @@ public final class AtomicActorStatistics implements Statistics {
   }
 
   private final LongSummaryStatistics onMinTime = new LongSummaryStatistics();
+
   public void recordOnMinTimeUpdate(long nanoDuration) {
     onMinTime.accept(nanoDuration);
   }

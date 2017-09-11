@@ -1,7 +1,6 @@
 package com.spbsu.datastream.core.graph;
 
 import java.security.SecureRandom;
-import java.util.Objects;
 import java.util.Random;
 
 public final class OutPort {
