@@ -1,12 +1,11 @@
 package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.HashFunction;
-import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
+import com.spbsu.datastream.core.meta.Meta;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
 import java.util.Collections;

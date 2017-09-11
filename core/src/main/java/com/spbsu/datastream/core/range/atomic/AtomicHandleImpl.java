@@ -6,7 +6,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.google.common.primitives.Longs;
 import com.spbsu.datastream.core.AckerMessage;
 import com.spbsu.datastream.core.AtomicMessage;
 import com.spbsu.datastream.core.DataItem;
@@ -19,12 +18,6 @@ import com.spbsu.datastream.core.stat.Statistics;
 import com.spbsu.datastream.core.tick.TickInfo;
 import org.iq80.leveldb.DB;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.Optional;
 import java.util.function.ToIntFunction;
 
 public final class AtomicHandleImpl implements AtomicHandle {
@@ -77,7 +70,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
     this.dns.tell(message, this.context.self());
   }
 
- @Override
+  @Override
   public void submitStatistics(Statistics stat) {
     LOG.info("Inner statistics: {}", stat);
   }

@@ -3,12 +3,9 @@ package com.spbsu.datastream.core.range.atomic;
 import akka.actor.ActorPath;
 import akka.actor.ActorSelection;
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.stat.Statistics;
 import com.spbsu.datastream.core.tick.TickInfo;
-
-import java.util.Optional;
 
 public interface AtomicHandle {
   ActorSelection actorSelection(ActorPath path);

@@ -5,7 +5,8 @@ import com.spbsu.datastream.core.configuration.HashRange;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 public interface HashMapping {
   static HashMapping hashMapping(Map<HashRange, Integer> nodeMapping) {

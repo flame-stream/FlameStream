@@ -15,8 +15,6 @@ import com.spbsu.datastream.core.tick.TickInfo;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToIntFunction;
 

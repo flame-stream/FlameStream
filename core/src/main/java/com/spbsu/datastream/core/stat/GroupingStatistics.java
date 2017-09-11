@@ -4,16 +4,18 @@ import java.util.HashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 
-import static com.spbsu.datastream.core.stat.Statistics.*;
+import static com.spbsu.datastream.core.stat.Statistics.asMap;
 
 public final class GroupingStatistics implements Statistics {
 
   private final LongSummaryStatistics replay = new LongSummaryStatistics();
+
   public void recordReplaySize(int replaySize) {
     replay.accept(replaySize);
   }
 
   private final LongSummaryStatistics bucketSize = new LongSummaryStatistics();
+
   public void recordBucketSize(long size) {
     bucketSize.accept(size);
   }
