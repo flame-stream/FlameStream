@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings({"rawtypes", "ConditionalExpression"})
 public final class Grouping<T> extends AbstractAtomicGraph {
+  private static final int MIN_BUFFER_SIZE_FOR_MIN_TIME_UPDATE = 200; //magic number, tuning is welcome
   private final GroupingStatistics stat = new GroupingStatistics();
 
   private final InPort inPort;
@@ -76,23 +77,41 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   private int insert(List<DataItem<T>> group, DataItem<T> insertee) {
     int position = group.size() - 1;
-    while (position >= 0) {
-      final DataItem<T> currentItem = group.get(position);
-      final int compareTo = currentItem.meta().compareTo(insertee.meta());
+    int endPosition = -1;
+    { //find position
+      while (position >= 0) {
+        final DataItem<T> currentItem = group.get(position);
+        final int compareTo = currentItem.meta().compareTo(insertee.meta());
 
-      if (compareTo > 0) {
-        position--;
-      } else {
-        if (currentItem.meta().isInvalidatedBy(insertee.meta())) {
-          group.remove(position);
+        if (compareTo > 0) {
           position--;
         } else {
-          break;
+          if (currentItem.meta().isInvalidatedBy(insertee.meta())) {
+            endPosition = endPosition == -1 ? position : endPosition;
+            position--;
+          } else {
+            break;
+          }
         }
       }
     }
-
-    group.add(position + 1, insertee);
+    { //invalidation/adding
+      if (position == (group.size() - 1)) {
+        group.add(insertee);
+      } else {
+        if (endPosition != -1) {
+          group.set(position + 1, insertee);
+          final int itemsForRemove = endPosition - position - 1;
+          //subList.clear is faster if the number of items for removing >= 2
+          if (itemsForRemove >= 2)
+            group.subList(position + 2, endPosition + 1).clear();
+          else if (itemsForRemove > 0)
+            group.remove(endPosition);
+        } else {
+          group.add(position + 1, insertee);
+        }
+      }
+    }
     stat.recordBucketSize(group.size());
     return position + 1;
   }
@@ -106,14 +125,24 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   @Override
   public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
     final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
-      if (group.size() > 200) {
-        int position = 0;
-        while (position < group.size()
-                && group.get(position).meta().globalTime().compareTo(globalTime) < 0) {
-          position++;
-        }
+      if (group.size() < MIN_BUFFER_SIZE_FOR_MIN_TIME_UPDATE)
+        return;
 
-        position = Math.max(position - window, 0);
+      int left = 0;
+      int right = group.size();
+      { //upper-bound binary search
+        while (right - left > 1) {
+          final int middle = left + (right - left) / 2;
+          if (group.get(middle).meta().globalTime().compareTo(globalTime) <= 0) {
+            left = middle;
+          } else {
+            right = middle;
+          }
+        }
+      }
+
+      final int position = Math.max(left - window, 0);
+      if (position > 0) {
         group.subList(0, position).clear();
       }
     };
