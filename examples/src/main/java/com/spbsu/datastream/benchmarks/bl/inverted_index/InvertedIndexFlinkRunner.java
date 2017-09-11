@@ -60,6 +60,8 @@ public class InvertedIndexFlinkRunner implements ClusterRunner {
       final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
               .summaryStatistics();
 
+      LOG.info(Arrays.toString(latencyMeasurer.latencies()));
+
       LOG.info("Result: {}", stat);
 
     } catch (FileNotFoundException e) {
