@@ -67,8 +67,8 @@ public class InvertedIndexRunner implements ClusterRunner {
         }
       }, 40);
 
-      final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
-              .map(TimeUnit.NANOSECONDS::toMillis)
+      final LongSummaryStatistics stat = Arrays
+              .stream(latencyMeasurer.latencies())
               .summaryStatistics();
       LOG.info("Result: {}", stat);
     } catch (Exception e) {
@@ -78,11 +78,11 @@ public class InvertedIndexRunner implements ClusterRunner {
   }
 
   static void test(Cluster cluster,
-          Stream<WikipediaPage> source,
-          Consumer<Object> outputConsumer,
-          int tickLength) throws InterruptedException {
+                   Stream<WikipediaPage> source,
+                   Consumer<Object> outputConsumer,
+                   int tickLength) throws InterruptedException {
     try (final TestStand stage = new TestStand(cluster)) {
-      stage.deploy(invertedIndexGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
+      stage.deploy(chaincallGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
 
       final Consumer<Object> sink = stage.randomFrontConsumer(122);
       source.forEach(wikipediaPage -> {
@@ -169,12 +169,12 @@ public class InvertedIndexRunner implements ClusterRunner {
 
     final AtomicGraph chain = new ChaincallGraph(
             merge.fuse(grouping, merge.outPort(), grouping.inPort())
-            .fuse(wrongOrderingFilter, grouping.outPort(), wrongOrderingFilter.inPort())
-            .fuse(indexer, wrongOrderingFilter.outPort(), indexer.inPort())
-            .fuse(broadcast, indexer.outPort(), broadcast.inPort())
-            .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
-            .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
-            .flattened()
+                    .fuse(wrongOrderingFilter, grouping.outPort(), wrongOrderingFilter.inPort())
+                    .fuse(indexer, wrongOrderingFilter.outPort(), indexer.inPort())
+                    .fuse(broadcast, indexer.outPort(), broadcast.inPort())
+                    .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
+                    .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
+                    .flattened()
     );
 
     final RemoteActorConsumer<WordContainer> sink = new RemoteActorConsumer<>(consumer);
