@@ -94,7 +94,7 @@ public final class WordCountRunner implements ClusterRunner {
           throw new RuntimeException();
         }
       });
-      stage.waitTick(tickLengthSeconds + 5, TimeUnit.SECONDS);
+      stage.waitTick( 20, TimeUnit.SECONDS);
     }
   }
 

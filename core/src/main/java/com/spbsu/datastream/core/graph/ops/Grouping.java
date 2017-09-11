@@ -103,19 +103,19 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   @Override
   public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-    //final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
-    //  if (group.size() > 100) {
-    //    int position = 0;
-    //    while (position < group.size()
-    //            && group.get(position).meta().globalTime().compareTo(globalTime) < 0) {
-    //      position++;
-    //    }
-    //
-    //    position = Math.max(position - window, 0);
-    //    group.subList(0, position).clear();
-    //  }
-    //};
-    //this.buffers.forEach(removeOldConsumer);
+    final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
+      if (group.size() > 200) {
+        int position = 0;
+        while (position < group.size()
+                && group.get(position).meta().globalTime().compareTo(globalTime) < 0) {
+          position++;
+        }
+
+        position = Math.max(position - window, 0);
+        group.subList(0, position).clear();
+      }
+    };
+    this.buffers.forEach(removeOldConsumer);
   }
 
   public InPort inPort() {
