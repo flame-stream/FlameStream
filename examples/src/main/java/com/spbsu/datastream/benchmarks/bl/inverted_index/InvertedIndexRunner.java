@@ -54,7 +54,7 @@ public class InvertedIndexRunner implements ClusterRunner {
 
   @Override
   public void run(Cluster cluster) throws InterruptedException {
-    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 20);
+    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);
 
     try {
       final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")

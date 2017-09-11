@@ -58,7 +58,6 @@ public class InvertedIndexFlinkRunner implements ClusterRunner {
       }, 0);
 
       final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
-              .map(TimeUnit.NANOSECONDS::toMillis)
               .summaryStatistics();
 
       LOG.info("Result: {}", stat);
