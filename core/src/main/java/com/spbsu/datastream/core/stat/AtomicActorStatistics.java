@@ -7,6 +7,7 @@ import java.util.Map;
 import static com.spbsu.datastream.core.stat.Statistics.asMap;
 
 public final class AtomicActorStatistics implements Statistics {
+
   private final LongSummaryStatistics onAtomic = new LongSummaryStatistics();
 
   public void recordOnAtomicMessage(long nanoDuration) {

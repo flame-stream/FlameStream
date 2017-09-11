@@ -19,6 +19,8 @@ import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.TestStand;
 import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
 import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
+import com.spbsu.datastream.core.graph.AtomicGraph;
+import com.spbsu.datastream.core.graph.ChaincallGraph;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
@@ -52,7 +54,7 @@ public class InvertedIndexRunner implements ClusterRunner {
 
   @Override
   public void run(Cluster cluster) throws InterruptedException {
-    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 20);
+    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);
 
     try {
       final Stream<WikipediaPage> source = InputUtils.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
@@ -65,8 +67,8 @@ public class InvertedIndexRunner implements ClusterRunner {
         }
       }, 40);
 
-      final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies())
-              .map(TimeUnit.NANOSECONDS::toMillis)
+      final LongSummaryStatistics stat = Arrays
+              .stream(latencyMeasurer.latencies())
               .summaryStatistics();
       LOG.info("Result: {}", stat);
     } catch (Exception e) {
@@ -75,14 +77,12 @@ public class InvertedIndexRunner implements ClusterRunner {
 
   }
 
-  static void test(
-          Cluster cluster,
-          Stream<WikipediaPage> source,
-          Consumer<Object> outputConsumer,
-          int tickLength
-  ) throws InterruptedException {
+  static void test(Cluster cluster,
+                   Stream<WikipediaPage> source,
+                   Consumer<Object> outputConsumer,
+                   int tickLength) throws InterruptedException {
     try (final TestStand stage = new TestStand(cluster)) {
-      stage.deploy(invertedIndexGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
+      stage.deploy(chaincallGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
 
       final Consumer<Object> sink = stage.randomFrontConsumer(122);
       source.forEach(wikipediaPage -> {
@@ -94,7 +94,7 @@ public class InvertedIndexRunner implements ClusterRunner {
         }
       });
 
-      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
+      stage.waitTick(25, TimeUnit.SECONDS);
     }
   }
 
@@ -146,6 +146,41 @@ public class InvertedIndexRunner implements ClusterRunner {
             .fuse(broadcast, indexer.outPort(), broadcast.inPort())
             .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
             .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
+            .fuse(sink, metaFilter.outPort(), sink.inPort())
+            .fuse(indexDiffFilter, broadcast.outPorts().get(0), indexDiffFilter.inPort())
+            .wire(indexDiffFilter.outPort(), merge.inPorts().get(1));
+
+    final Map<Integer, InPort> frontBindings = fronts.stream()
+            .collect(Collectors.toMap(Function.identity(), e -> wikiPageToPositions.inPort()));
+    return new TheGraph(graph, frontBindings);
+  }
+
+  private static TheGraph chaincallGraph(Collection<Integer> fronts, ActorPath consumer) {
+    final FlatMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlatMap<>(new WikipediaPageToWordPositions(), WIKI_PAGE_HASH);
+
+    final Merge<WordContainer> merge = new Merge<>(Arrays.asList(WORD_HASH, WORD_HASH));
+    final Filter<WordContainer> indexDiffFilter = new Filter<>(new WordIndexDiffFilter(), WORD_HASH);
+    final Grouping<WordContainer> grouping = new Grouping<>(WORD_HASH, WORD_EQUALZ, 2);
+    final Filter<List<WordContainer>> wrongOrderingFilter = new Filter<>(new WrongOrderingFilter(), GROUP_HASH);
+    final FlatMap<List<WordContainer>, WordContainer> indexer = new FlatMap<>(new WordIndexToDiffOutput(), GROUP_HASH);
+    final Filter<WordContainer> indexFilter = new Filter<>(new WordIndexFilter(), WORD_HASH);
+    final Broadcast<WordContainer> broadcast = new Broadcast<>(WORD_HASH, 2);
+    final PreSinkMetaFilter<WordContainer> metaFilter = new PreSinkMetaFilter<>(WORD_HASH);
+
+    final AtomicGraph chain = new ChaincallGraph(
+            merge.fuse(grouping, merge.outPort(), grouping.inPort())
+                    .fuse(wrongOrderingFilter, grouping.outPort(), wrongOrderingFilter.inPort())
+                    .fuse(indexer, wrongOrderingFilter.outPort(), indexer.inPort())
+                    .fuse(broadcast, indexer.outPort(), broadcast.inPort())
+                    .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
+                    .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
+                    .flattened()
+    );
+
+    final RemoteActorConsumer<WordContainer> sink = new RemoteActorConsumer<>(consumer);
+
+    final Graph graph = wikiPageToPositions
+            .fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0))
             .fuse(sink, metaFilter.outPort(), sink.inPort())
             .fuse(indexDiffFilter, broadcast.outPorts().get(0), indexDiffFilter.inPort())
             .wire(indexDiffFilter.outPort(), merge.inPorts().get(1));
