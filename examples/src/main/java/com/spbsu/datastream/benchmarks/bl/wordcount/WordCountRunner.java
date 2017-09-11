@@ -13,6 +13,7 @@ import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.TestStand;
 import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
 import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
+import com.spbsu.datastream.core.graph.ChaincallGraph;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
@@ -65,7 +66,7 @@ public final class WordCountRunner implements ClusterRunner {
                     }
             );
 
-    test(cluster, input, o -> latencyMeasurer.finish((WordCounter) o), 60 * 60);
+    test(cluster, input, o -> latencyMeasurer.finish((WordCounter) o), 60);
     final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
     LOG.info("Result: {}", stat);
   }
@@ -73,17 +74,15 @@ public final class WordCountRunner implements ClusterRunner {
   static Stream<String> input() {
     return Stream.generate(() -> new Random().ints(1000, 0, 1000)
             .mapToObj(num -> "word" + num).collect(joining(" ")))
-            .limit(1000);
+            .limit(500);
   }
 
-  static void test(
-          Cluster cluster,
-          Stream<String> source,
-          Consumer<Object> outputConsumer,
-          int tickLength
-  ) throws InterruptedException {
+  static void test(Cluster cluster,
+                   Stream<String> source,
+                   Consumer<Object> outputConsumer,
+                   int tickLengthSeconds) throws InterruptedException {
     try (final TestStand stage = new TestStand(cluster)) {
-      stage.deploy(wordCountGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
+      stage.deploy(wordCountGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLengthSeconds, TimeUnit.SECONDS);
 
       final Consumer<Object> sink = stage.randomFrontConsumer(1);
       //noinspection Duplicates
@@ -95,7 +94,7 @@ public final class WordCountRunner implements ClusterRunner {
           throw new RuntimeException();
         }
       });
-      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
+      stage.waitTick(tickLengthSeconds + 5, TimeUnit.SECONDS);
     }
   }
 
@@ -136,15 +135,51 @@ public final class WordCountRunner implements ClusterRunner {
     final PreSinkMetaFilter<WordCounter> metaFilter = new PreSinkMetaFilter<>(WORD_HASH);
     final RemoteActorConsumer<WordCounter> sink = new RemoteActorConsumer<>(consumer);
 
-    final Graph graph =
-            splitter.fuse(merge, splitter.outPort(), merge.inPorts().get(0))
-                    .fuse(grouping, merge.outPort(), grouping.inPort())
+    final Graph graph = splitter
+            .fuse(merge, splitter.outPort(), merge.inPorts().get(0))
+            .fuse(grouping, merge.outPort(), grouping.inPort())
+            .fuse(filter, grouping.outPort(), filter.inPort())
+            .fuse(counter, filter.outPort(), counter.inPort())
+            .fuse(broadcast, counter.outPort(), broadcast.inPort())
+            .fuse(metaFilter, broadcast.outPorts().get(0), metaFilter.inPort())
+            .fuse(sink, metaFilter.outPort(), sink.inPort())
+            .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
+
+    final Map<Integer, InPort> frontBindings = fronts.stream()
+            .collect(toMap(Function.identity(), e -> splitter.inPort()));
+    return new TheGraph(graph, frontBindings);
+  }
+
+  private static TheGraph chainGraph(Collection<Integer> fronts, ActorPath consumer) {
+    final FlatMap<String, WordEntry> splitter = new FlatMap<>(new Function<String, Stream<WordEntry>>() {
+      @Override
+      public Stream<WordEntry> apply(String s) {
+        return Arrays.stream(s.split("\\s")).map(WordEntry::new);
+      }
+    }, HashFunction.OBJECT_HASH);
+
+    final Merge<WordContainer> merge = new Merge<>(Arrays.asList(WORD_HASH, WORD_HASH));
+    final Grouping<WordContainer> grouping = new Grouping<>(WORD_HASH, EQUALZ, 2);
+    final Filter<List<WordContainer>> filter = new Filter<>(new WordContainerOrderingFilter(), GROUP_HASH);
+    final StatelessMap<List<WordContainer>, WordCounter> counter = new StatelessMap<>(new CountWordEntries(), GROUP_HASH);
+    final Broadcast<WordCounter> broadcast = new Broadcast<>(WORD_HASH, 2);
+    final PreSinkMetaFilter<WordCounter> metaFilter = new PreSinkMetaFilter<>(WORD_HASH);
+
+    final ChaincallGraph chain = new ChaincallGraph(
+            merge.fuse(grouping, merge.outPort(), grouping.inPort())
                     .fuse(filter, grouping.outPort(), filter.inPort())
                     .fuse(counter, filter.outPort(), counter.inPort())
                     .fuse(broadcast, counter.outPort(), broadcast.inPort())
                     .fuse(metaFilter, broadcast.outPorts().get(0), metaFilter.inPort())
-                    .fuse(sink, metaFilter.outPort(), sink.inPort())
-                    .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
+                    .flattened()
+    );
+
+    final RemoteActorConsumer<WordCounter> sink = new RemoteActorConsumer<>(consumer);
+
+    final Graph graph = splitter
+            .fuse(chain, splitter.outPort(), merge.inPorts().get(0))
+            .fuse(sink, metaFilter.outPort(), sink.inPort())
+            .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
 
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(toMap(Function.identity(), e -> splitter.inPort()));
