@@ -76,6 +76,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   private int insert(List<DataItem<T>> group, DataItem<T> insertee) {
     int position = group.size() - 1;
+    int endPosition = -1;
     while (position >= 0) {
       final DataItem<T> currentItem = group.get(position);
       final int compareTo = currentItem.meta().compareTo(insertee.meta());
@@ -84,7 +85,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
         position--;
       } else {
         if (currentItem.meta().isInvalidatedBy(insertee.meta())) {
-          group.remove(position);
+          endPosition = endPosition == -1 ? position : endPosition;
           position--;
         } else {
           break;
@@ -92,7 +93,17 @@ public final class Grouping<T> extends AbstractAtomicGraph {
       }
     }
 
-    group.add(position + 1, insertee);
+    if (position == (group.size() - 1)) {
+      group.add(insertee);
+    } else {
+      if (endPosition != -1) {
+        group.set(position + 1, insertee);
+        group.subList(position + 2, endPosition + 1).clear();
+      } else {
+        group.add(position + 1, insertee);
+      }
+    }
+
     stat.recordBucketSize(group.size());
     return position + 1;
   }
