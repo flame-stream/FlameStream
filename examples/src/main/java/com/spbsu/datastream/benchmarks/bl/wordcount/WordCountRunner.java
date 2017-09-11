@@ -82,7 +82,7 @@ public final class WordCountRunner implements ClusterRunner {
                    Consumer<Object> outputConsumer,
                    int tickLengthSeconds) throws InterruptedException {
     try (final TestStand stage = new TestStand(cluster)) {
-      stage.deploy(wordCountGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLengthSeconds, TimeUnit.SECONDS);
+      stage.deploy(chainGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLengthSeconds, TimeUnit.SECONDS);
 
       final Consumer<Object> sink = stage.randomFrontConsumer(1);
       //noinspection Duplicates
