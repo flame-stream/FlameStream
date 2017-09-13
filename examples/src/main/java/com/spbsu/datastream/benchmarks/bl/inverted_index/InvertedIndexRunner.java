@@ -168,9 +168,7 @@ public class InvertedIndexRunner implements ClusterRunner {
     final FlatMap<List<WordContainer>, WordContainer> indexer = new FlatMap<>(new WordIndexToDiffOutput(), GROUP_HASH);
     final Filter<WordContainer> indexFilter = new Filter<>(new WordIndexFilter(), WORD_HASH);
     final Broadcast<WordContainer> broadcast = new Broadcast<>(WORD_HASH, 2);
-
     final PreSinkMetaFilter<WordContainer> metaFilter = new PreSinkMetaFilter<>(WORD_HASH);
-    final RemoteActorConsumer<WordContainer> sink = new RemoteActorConsumer<>(consumer);
 
     final AtomicGraph chain = new ChaincallGraph(
             merge.fuse(grouping, merge.outPort(), grouping.inPort())
@@ -179,13 +177,15 @@ public class InvertedIndexRunner implements ClusterRunner {
                     .fuse(broadcast, indexer.outPort(), broadcast.inPort())
                     .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
                     .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
-                    .fuse(sink, metaFilter.outPort(), sink.inPort())
                     .fuse(indexDiffFilter, broadcast.outPorts().get(0), indexDiffFilter.inPort())
                     .wire(indexDiffFilter.outPort(), merge.inPorts().get(1))
                     .flattened()
     );
 
-    final Graph graph = wikiPageToPositions.fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0));
+    final RemoteActorConsumer<WordContainer> sink = new RemoteActorConsumer<>(consumer);
+    final Graph graph = wikiPageToPositions
+            .fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0))
+            .fuse(sink, metaFilter.outPort(), sink.inPort());
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(Collectors.toMap(Function.identity(), e -> wikiPageToPositions.inPort()));
     return new TheGraph(graph, frontBindings);
