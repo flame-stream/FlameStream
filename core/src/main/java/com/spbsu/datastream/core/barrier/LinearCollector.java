@@ -36,7 +36,7 @@ public final class LinearCollector implements BarrierCollector {
       return oldList;
       /*oldList.removeIf(di -> di.meta().trace().isInvalidatedBy(item.meta().trace()));
       if (oldList.stream().noneMatch(di -> item.meta().trace().isInvalidatedBy(di.meta().trace()))) {
-        oldList.add(item);
+        oldList.add(dataItem);
       }
       return oldList;*/
     });

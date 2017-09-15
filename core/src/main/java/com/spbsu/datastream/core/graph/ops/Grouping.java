@@ -127,7 +127,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   @Override
   public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-    final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
+    /*final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
       if (group.size() < MIN_BUFFER_SIZE_FOR_MIN_TIME_UPDATE)
         return;
 
@@ -149,7 +149,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
         group.subList(0, position).clear();
       }
     };
-    this.buffers.forEach(removeOldConsumer);
+    this.buffers.forEach(removeOldConsumer);*/
   }
 
   public InPort inPort() {
