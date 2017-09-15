@@ -9,14 +9,13 @@ import java.util.function.Consumer;
 
 public final class LinearCollector implements BarrierCollector {
   private final SortedMap<GlobalTime, List<DataItem<Object>>> invalidationPool = new TreeMap<>();
-
   private final Queue<DataItem<?>> released = new ArrayDeque<>();
 
   @Override
   public void update(GlobalTime minTime) {
-    this.invalidationPool.headMap(minTime)
-            .values().stream().flatMap(List::stream).forEach(this.released::add);
-    this.invalidationPool.headMap(minTime).clear();
+    final SortedMap<GlobalTime, List<DataItem<Object>>> headMap = this.invalidationPool.headMap(minTime);
+    headMap.values().stream().flatMap(List::stream).forEach(this.released::add);
+    headMap.clear();
   }
 
   @Override
