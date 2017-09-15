@@ -7,5 +7,5 @@ public interface AckLedger {
 
   GlobalTime min();
 
-  void ack(GlobalTime windowHead, long xor);
+  boolean ack(GlobalTime windowHead, long xor);
 }

@@ -46,8 +46,9 @@ public final class TickConcierge extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder().match(AtomicMessage.class, this::routeAtomicMessage)
+    return this.receiveBuilder()
             .match(AckerMessage.class, m -> this.acker.tell(m.payload(), this.sender()))
+            .match(AtomicMessage.class, this::routeAtomicMessage)
             .match(BroadcastMessage.class, this::broadcast)
             .build();
   }

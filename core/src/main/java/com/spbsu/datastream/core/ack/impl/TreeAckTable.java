@@ -29,13 +29,15 @@ final class TreeAckTable implements AckTable {
     }
   }
 
-  public void ack(long ts, long xor) {
+  public boolean ack(long ts, long xor) {
     final long lowerBound = this.startTs + this.window * ((ts - this.startTs) / this.window);
     final long updatedXor = xor ^ this.table.getOrDefault(lowerBound, 0L);
     if (updatedXor == 0) {
       this.table.remove(lowerBound);
+      return true;
     } else {
       this.table.put(lowerBound, updatedXor);
+      return false;
     }
   }
 

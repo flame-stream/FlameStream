@@ -29,7 +29,7 @@ final class ArrayAckTable implements AckTable {
     }
   }
 
-  public void ack(long ts, long xor) {
+  public boolean ack(long ts, long xor) {
     final int position = Math.toIntExact(((ts - this.startTs) / this.window));
     final long updatedXor = xor ^ this.xorStorage[position];
     this.xorStorage[position] = updatedXor;
@@ -37,8 +37,12 @@ final class ArrayAckTable implements AckTable {
     if (updatedXor == 0 && xor != 0 && position == this.minPosition) {
       while (this.minPosition < this.xorStorage.length && this.xorStorage[this.minPosition] == 0)
         this.minPosition++;
-    } else if (updatedXor != 0) {
-      this.minPosition = Math.min(this.minPosition, position);
+      return true;
+    } else if (updatedXor != 0 && position < this.minPosition) {
+      this.minPosition = position;
+      return true;
+    } else {
+      return false;
     }
   }
 
