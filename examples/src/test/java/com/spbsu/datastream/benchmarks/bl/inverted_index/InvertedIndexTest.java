@@ -121,7 +121,7 @@ public class InvertedIndexTest {
   @DataProvider
   public Object[][] testIndexAndRankingStorageWithSmallDumpSources() {
     return new Object[][]{
-            {dataStreamsSource(4, 4, 20)},
+            {dataStreamsSource(4, 4, 60)},
             {FLINK_INDEX_SOURCE}
     };
   }
@@ -171,7 +171,7 @@ public class InvertedIndexTest {
   @DataProvider
   public Object[][] testIndexWithRankingSources() {
     return new Object[][]{
-            {dataStreamsSource(1, 1, 50)},
+            {dataStreamsSource(4, 4, 60)},
             {FLINK_INDEX_SOURCE}
     };
   }
@@ -204,7 +204,7 @@ public class InvertedIndexTest {
   @DataProvider
   public Object[][] manualTestIndexWithRankingSource() {
     return new Object[][]{
-            {dataStreamsSource(1, 1, 30), "Звонимир Бобан"},
+            {dataStreamsSource(4, 4, 50), "Звонимир Бобан"},
             {FLINK_INDEX_SOURCE, "Звонимир Бобан"}
     };
   }
