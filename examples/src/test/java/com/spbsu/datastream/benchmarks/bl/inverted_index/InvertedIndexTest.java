@@ -171,7 +171,7 @@ public class InvertedIndexTest {
   @DataProvider
   public Object[][] testIndexWithRankingSources() {
     return new Object[][]{
-            {dataStreamsSource(4, 4, 60)},
+            {dataStreamsSource(4, 4, 90)},
             {FLINK_INDEX_SOURCE}
     };
   }
