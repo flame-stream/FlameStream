@@ -49,7 +49,8 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     final DataItem<T> dataItem = (DataItem<T>) item;
 
     final List<DataItem<T>> group = this.buffers.getGroupFor(dataItem);
-    final int position = this.insert(group, dataItem);
+    final int position = insert(group, dataItem);
+    stat.recordBucketSize(group.size());
     this.replayAround(position, group, handle);
   }
 
@@ -75,7 +76,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     handle.push(this.outPort(), result);
   }
 
-  private int insert(List<DataItem<T>> group, DataItem<T> insertee) {
+  public static <T> int insert(List<DataItem<T>> group, DataItem<T> insertee) {
     int position = group.size() - 1;
     int endPosition = -1;
     { //find position
@@ -84,6 +85,9 @@ public final class Grouping<T> extends AbstractAtomicGraph {
         final int compareTo = currentItem.meta().compareTo(insertee.meta());
 
         if (compareTo > 0) {
+          if (insertee.meta().isInvalidatedBy(currentItem.meta())) {
+            return -1;
+          }
           position--;
         } else {
           if (currentItem.meta().isInvalidatedBy(insertee.meta())) {
@@ -112,7 +116,6 @@ public final class Grouping<T> extends AbstractAtomicGraph {
         }
       }
     }
-    stat.recordBucketSize(group.size());
     return position + 1;
   }
 
@@ -124,7 +127,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   @Override
   public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-    final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
+    /*final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
       if (group.size() < MIN_BUFFER_SIZE_FOR_MIN_TIME_UPDATE)
         return;
 
@@ -146,7 +149,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
         group.subList(0, position).clear();
       }
     };
-    this.buffers.forEach(removeOldConsumer);
+    this.buffers.forEach(removeOldConsumer);*/
   }
 
   public InPort inPort() {

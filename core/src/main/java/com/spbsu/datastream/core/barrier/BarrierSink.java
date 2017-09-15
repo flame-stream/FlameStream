@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.GlobalTime;
-import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
@@ -22,18 +21,14 @@ public abstract class BarrierSink<T> extends AbstractAtomicGraph {
 
   @Override
   public final void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
-    if (item.payload() instanceof PreSinkMetaElement) {
-      this.consume((T) ((PreSinkMetaElement) item.payload()).payload());
-    }
-    //(PreSinkMetaElement) item.payload();
-    //this.collector.enqueue(item);
+    this.collector.enqueue(item);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public final void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-    //this.collector.update(globalTime);
-    //this.collector.release(di -> this.consume(((DataItem<PreSinkMetaElement<T>>) di).payload().payload()));
+    this.collector.update(globalTime);
+    this.collector.release(di -> this.consume(((DataItem<PreSinkMetaElement<T>>) di).payload().payload()));
   }
 
   @Override

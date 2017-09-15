@@ -120,12 +120,12 @@ final class TickFrontActor extends LoggingActor {
   }
 
   private void closeWindow(long windowHead, long xor) {
-    //final AckerReport report = new AckerReport(new GlobalTime(windowHead, this.frontId), xor);
-    //this.LOG().debug("Closing window {}", report);
-    //final UnresolvedMessage<AckerMessage<AckerReport>> message = new UnresolvedMessage<>(
-    //        this.tickInfo.ackerLocation(),
-    //        new AckerMessage<>(report, this.tickInfo.startTs()));
-    //
-    //this.dns.tell(message, this.self());
+    final AckerReport report = new AckerReport(new GlobalTime(windowHead, this.frontId), xor);
+    this.LOG().debug("Closing window {}", report);
+    final UnresolvedMessage<AckerMessage<AckerReport>> message = new UnresolvedMessage<>(
+            this.tickInfo.ackerLocation(),
+            new AckerMessage<>(report, this.tickInfo.startTs()));
+
+    this.dns.tell(message, this.self());
   }
 }

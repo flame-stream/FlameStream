@@ -63,11 +63,11 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void ack(DataItem<?> item) {
-    //final int id = this.tickInfo.ackerLocation();
-    //
-    //final UnresolvedMessage<AckerMessage<?>> message = new UnresolvedMessage<>(id,
-    //        new AckerMessage<>(new Ack(item.ack(), item.meta().globalTime()), this.tickInfo.startTs()));
-    //this.dns.tell(message, this.context.self());
+    final int id = this.tickInfo.ackerLocation();
+
+    final UnresolvedMessage<AckerMessage<?>> message = new UnresolvedMessage<>(id,
+            new AckerMessage<>(new Ack(item.ack(), item.meta().globalTime()), this.tickInfo.startTs()));
+    this.dns.tell(message, this.context.self());
   }
 
   @Override

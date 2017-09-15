@@ -105,7 +105,7 @@ public final class TestStand implements AutoCloseable {
             workers,
             startTs,
             startTs + timeUnit.toNanos(tickLength),
-            TimeUnit.MILLISECONDS.toNanos(10)
+            TimeUnit.MILLISECONDS.toNanos(1)
     );
 
     try (final ZookeeperDeployer zkDeployer = new ZookeeperDeployer(cluster.zookeeperString())) {

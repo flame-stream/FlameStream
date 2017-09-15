@@ -37,8 +37,8 @@ public class WordCountTest {
   @DataProvider
   public Object[][] provider() {
     return new Object[][]{
-            {dataStreamsSource(1, 4, 20)},
-            {dataStreamsSource(4, 4, 20)},
+            {dataStreamsSource(1, 1, 20)},
+            {dataStreamsSource(1, 1, 20)},
             {FLINK_INDEX_SOURCE}
     };
   }
