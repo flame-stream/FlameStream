@@ -1,13 +1,8 @@
 package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.DataItem;
+import com.spbsu.datastream.core.graph.*;
 import com.spbsu.datastream.core.meta.GlobalTime;
-import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
-import com.spbsu.datastream.core.graph.AtomicGraph;
-import com.spbsu.datastream.core.graph.ChaincallGraph;
-import com.spbsu.datastream.core.graph.ComposedGraph;
-import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
 import java.util.List;
@@ -89,8 +84,7 @@ public final class BarrierSink implements AtomicGraph {
     @SuppressWarnings("unchecked")
     @Override
     public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-      this.collector.update(globalTime);
-      this.collector.release(di -> handle.push(outPort, di));
+      this.collector.releaseFrom(globalTime, di -> handle.push(outPort, di));
     }
 
     @Override

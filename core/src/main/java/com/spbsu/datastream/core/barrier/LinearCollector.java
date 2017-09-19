@@ -1,20 +1,22 @@
 package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.graph.ops.Grouping;
+import com.spbsu.datastream.core.meta.GlobalTime;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 public final class LinearCollector implements BarrierCollector {
   private final SortedMap<GlobalTime, List<DataItem<Object>>> invalidationPool = new TreeMap<>();
-  private final Queue<DataItem<?>> released = new ArrayDeque<>();
 
   @Override
-  public void update(GlobalTime minTime) {
+  public void releaseFrom(GlobalTime minTime, Consumer<DataItem<?>> consumer) {
     final SortedMap<GlobalTime, List<DataItem<Object>>> headMap = this.invalidationPool.headMap(minTime);
-    headMap.values().stream().flatMap(List::stream).forEach(this.released::add);
+    headMap.values().stream().flatMap(List::stream).forEach(consumer::accept);
     headMap.clear();
   }
 
@@ -28,29 +30,11 @@ public final class LinearCollector implements BarrierCollector {
       }
       Grouping.insert(dataItems, dataItem);
       return dataItems;
-      /*oldList.removeIf(di -> di.meta().trace().isInvalidatedBy(item.meta().trace()));
-      if (oldList.stream().noneMatch(di -> item.meta().trace().isInvalidatedBy(di.meta().trace()))) {
-        oldList.add(item);
-      }
-      return oldList;*/
     });
   }
 
   @Override
-  public void release(Consumer<DataItem<?>> consumer) {
-    this.released.forEach(consumer);
-    this.released.clear();
-  }
-
-  @Override
   public boolean isEmpty() {
-    return this.invalidationPool.isEmpty() && this.released.isEmpty();
-  }
-
-  @Override
-  public String toString() {
-    return "LinearCollector{" + "invalidationPool=" + this.invalidationPool +
-            ", released=" + this.released +
-            '}';
+    return this.invalidationPool.isEmpty();
   }
 }

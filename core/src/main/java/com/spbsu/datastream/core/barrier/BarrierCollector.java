@@ -6,11 +6,9 @@ import com.spbsu.datastream.core.meta.GlobalTime;
 import java.util.function.Consumer;
 
 interface BarrierCollector {
-  void update(GlobalTime minTime);
+  void releaseFrom(GlobalTime minTime, Consumer<DataItem<?>> consumer);
 
   void enqueue(DataItem<?> item);
-
-  void release(Consumer<DataItem<?>> consumer);
 
   boolean isEmpty();
 }
