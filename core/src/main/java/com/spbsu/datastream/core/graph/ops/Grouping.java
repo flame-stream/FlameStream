@@ -13,6 +13,7 @@ import com.spbsu.datastream.core.stat.GroupingStatistics;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
