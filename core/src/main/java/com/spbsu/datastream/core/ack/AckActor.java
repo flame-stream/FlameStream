@@ -56,8 +56,9 @@ public final class AckActor extends LoggingActor {
     this.assertMonotonicAck(ack.time());
 
     this.LOG().debug("Ack received: {}", ack);
-    this.ledger.ack(ack.time(), ack.xor());
-    this.checkLedgerTime();
+    if (this.ledger.ack(ack.time(), ack.xor())) {
+      this.checkLedgerTime();
+    }
   }
 
   private void checkLedgerTime() {

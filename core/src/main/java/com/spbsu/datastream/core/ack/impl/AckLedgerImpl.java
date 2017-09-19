@@ -39,8 +39,8 @@ public final class AckLedgerImpl implements AckLedger {
   }
 
   @Override
-  public void ack(GlobalTime windowHead, long xor) {
-    this.tables.get(windowHead.front()).ack(windowHead.time(), xor);
+  public boolean ack(GlobalTime windowHead, long xor) {
+    return this.tables.get(windowHead.front()).ack(windowHead.time(), xor);
   }
 
   @Override

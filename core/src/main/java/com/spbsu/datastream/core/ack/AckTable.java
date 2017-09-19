@@ -7,7 +7,10 @@ package com.spbsu.datastream.core.ack;
 public interface AckTable {
   void report(long windowHead, long xor);
 
-  void ack(long ts, long xor);
+  /**
+   * @return true if min time may be updated
+   */
+  boolean ack(long ts, long xor);
 
   long min();
 }
