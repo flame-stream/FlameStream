@@ -1,8 +1,9 @@
 package com.spbsu.datastream.core;
 
 import akka.actor.ActorPath;
-import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
-import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
+import com.spbsu.datastream.core.barrier.BarrierSink;
+import com.spbsu.datastream.core.barrier.PreBarrierMetaFilter;
+import com.spbsu.datastream.core.barrier.RemoteActorSink;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
@@ -42,19 +43,21 @@ public final class FilterAcceptanceTest {
     }
   }
 
-  private static TheGraph multiGraph(Collection<Integer> fronts, ActorPath consumer) {
+  private static TheGraph multiGraph(Collection<Integer> fronts, ActorPath consumerPath) {
     final StatelessMap<Integer, Integer> filter1 = new StatelessMap<>(new HumbleFiler(-1), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter2 = new StatelessMap<>(new HumbleFiler(-2), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter3 = new StatelessMap<>(new HumbleFiler(-3), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter4 = new StatelessMap<>(new HumbleFiler(-4), HashFunction.OBJECT_HASH);
-    final PreSinkMetaFilter<Integer> metaFilter = new PreSinkMetaFilter<>(HashFunction.OBJECT_HASH);
-    final RemoteActorConsumer<Integer> sink = new RemoteActorConsumer<>(consumer);
+
+    final PreBarrierMetaFilter<Integer> metaFilter = new PreBarrierMetaFilter<>(HashFunction.OBJECT_HASH);
+    final RemoteActorSink sink = new RemoteActorSink(consumerPath);
+    final BarrierSink barrierSink = new BarrierSink(sink);
 
     final Graph graph = filter1.fuse(filter2, filter1.outPort(), filter2.inPort())
             .fuse(filter3, filter2.outPort(), filter3.inPort())
             .fuse(filter4, filter3.outPort(), filter4.inPort())
             .fuse(metaFilter, filter4.outPort(), metaFilter.inPort())
-            .fuse(sink, metaFilter.outPort(), sink.inPort());
+            .fuse(barrierSink, metaFilter.outPort(), barrierSink.inPort());
 
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(Collectors.toMap(Function.identity(), e -> filter1.inPort()));

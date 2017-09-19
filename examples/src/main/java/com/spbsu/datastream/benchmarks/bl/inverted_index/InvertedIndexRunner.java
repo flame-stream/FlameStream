@@ -17,8 +17,9 @@ import com.spbsu.datastream.benchmarks.measure.LatencyMeasurer;
 import com.spbsu.datastream.core.Cluster;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.TestStand;
-import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
-import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
+import com.spbsu.datastream.core.barrier.BarrierSink;
+import com.spbsu.datastream.core.barrier.PreBarrierMetaFilter;
+import com.spbsu.datastream.core.barrier.RemoteActorSink;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.ChaincallGraph;
 import com.spbsu.datastream.core.graph.Graph;
@@ -127,15 +128,15 @@ public class InvertedIndexRunner implements ClusterRunner {
     }
   };
 
-  private static TheGraph chaincallGraph(Collection<Integer> fronts, ActorPath consumer) {
-    final Merge<WordContainer> merge = new Merge<>(Arrays.asList(WORD_HASH, WORD_HASH));
+  private static TheGraph chaincallGraph(Collection<Integer> fronts, ActorPath consumerPath) {
+    final Merge merge = new Merge(Arrays.asList(WORD_HASH, WORD_HASH));
     final Filter<WordContainer> indexDiffFilter = new Filter<>(new WordIndexDiffFilter(), WORD_HASH);
     final Grouping<WordContainer> grouping = new Grouping<>(WORD_HASH, WORD_EQUALZ, 2);
     final Filter<List<WordContainer>> wrongOrderingFilter = new Filter<>(new WrongOrderingFilter(), GROUP_HASH);
     final FlatMap<List<WordContainer>, WordContainer> indexer = new FlatMap<>(new WordIndexToDiffOutput(), GROUP_HASH);
     final Filter<WordContainer> indexFilter = new Filter<>(new WordIndexFilter(), WORD_HASH);
     final Broadcast<WordContainer> broadcast = new Broadcast<>(WORD_HASH, 2);
-    final PreSinkMetaFilter<WordContainer> metaFilter = new PreSinkMetaFilter<>(WORD_HASH);
+    final PreBarrierMetaFilter<WordContainer> metaFilter = new PreBarrierMetaFilter<>(WORD_HASH);
 
     final AtomicGraph chain = new ChaincallGraph(
             merge.fuse(grouping, merge.outPort(), grouping.inPort())
@@ -150,10 +151,14 @@ public class InvertedIndexRunner implements ClusterRunner {
     );
 
     final FlatMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlatMap<>(new WikipediaPageToWordPositions(), WIKI_PAGE_HASH);
-    final RemoteActorConsumer<WordContainer> sink = new RemoteActorConsumer<>(consumer);
 
-    final Graph graph = wikiPageToPositions.fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0))
-            .fuse(sink, metaFilter.outPort(), sink.inPort());
+    final RemoteActorSink sink = new RemoteActorSink(consumerPath);
+    final BarrierSink barrierSink = new BarrierSink(sink);
+
+    final Graph graph = wikiPageToPositions
+            .fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0))
+            .fuse(barrierSink, metaFilter.outPort(), barrierSink.inPort());
+
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(Collectors.toMap(Function.identity(), e -> wikiPageToPositions.inPort()));
     return new TheGraph(graph, frontBindings);

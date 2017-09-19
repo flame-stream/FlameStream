@@ -4,8 +4,9 @@ import akka.actor.ActorPath;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.LocalCluster;
 import com.spbsu.datastream.core.TestStand;
-import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
-import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
+import com.spbsu.datastream.core.barrier.BarrierSink;
+import com.spbsu.datastream.core.barrier.PreBarrierMetaFilter;
+import com.spbsu.datastream.core.barrier.RemoteActorSink;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
@@ -77,7 +78,7 @@ public final class SumTest {
     }
   }
 
-  private static TheGraph sumGraph(Collection<Integer> fronts, ActorPath consumer) {
+  private static TheGraph sumGraph(Collection<Integer> fronts, ActorPath consumerPath) {
     final HashFunction<Numb> identity = HashFunction.constantHash(1);
     final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
     final BiPredicate<Numb, Numb> predicate = new BiPredicate<Numb, Numb>() {
@@ -87,15 +88,16 @@ public final class SumTest {
       }
     };
 
-    final Merge<Numb> merge = new Merge<>(Arrays.asList(identity, identity));
+    final Merge merge = new Merge(Arrays.asList(identity, identity));
     final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2);
     final StatelessMap<List<Numb>, List<Numb>> enricher = new StatelessMap<>(new IdentityEnricher(), groupIdentity);
     final Filter<List<Numb>> junkFilter = new Filter<>(new WrongOrderingFilter(), groupIdentity);
     final StatelessMap<List<Numb>, Sum> reducer = new StatelessMap<>(new Reduce(), groupIdentity);
     final Broadcast<Sum> broadcast = new Broadcast<>(identity, 2);
 
-    final PreSinkMetaFilter<Sum> metaFilter = new PreSinkMetaFilter<>(identity);
-    final RemoteActorConsumer<Integer> sink = new RemoteActorConsumer<>(consumer);
+    final PreBarrierMetaFilter<Sum> metaFilter = new PreBarrierMetaFilter<>(identity);
+    final RemoteActorSink sink = new RemoteActorSink(consumerPath);
+    final BarrierSink barrierSink = new BarrierSink(sink);
 
     final Graph graph = merge.fuse(grouping, merge.outPort(), grouping.inPort())
             .fuse(enricher, grouping.outPort(), enricher.inPort())
@@ -103,7 +105,7 @@ public final class SumTest {
             .fuse(reducer, junkFilter.outPort(), reducer.inPort())
             .fuse(broadcast, reducer.outPort(), broadcast.inPort())
             .fuse(metaFilter, broadcast.outPorts().get(0), metaFilter.inPort())
-            .fuse(sink, metaFilter.outPort(), sink.inPort())
+            .fuse(barrierSink, metaFilter.outPorts().get(0), barrierSink.inPort())
             .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
 
     final Map<Integer, InPort> frontBindings = fronts.stream()

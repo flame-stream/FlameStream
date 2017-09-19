@@ -2,10 +2,11 @@ package com.spbsu.datastream.core.barrier;
 
 import com.spbsu.datastream.core.HashFunction;
 
-final class PreSinkMetaElement<T> {
-  static final HashFunction<PreSinkMetaElement<?>> HASH_FUNCTION = new HashFunction<PreSinkMetaElement<?>>() {
+final class PreBarrierMetaElement<T> {
+  @SuppressWarnings("Convert2Lambda")
+  static final HashFunction<PreBarrierMetaElement<?>> HASH_FUNCTION = new HashFunction<PreBarrierMetaElement<?>>() {
     @Override
-    public int hash(PreSinkMetaElement<?> value) {
+    public int hash(PreBarrierMetaElement<?> value) {
       return value.metaHash();
     }
   };
@@ -14,7 +15,7 @@ final class PreSinkMetaElement<T> {
 
   private final int metaHash;
 
-  PreSinkMetaElement(T payload, int metaHash) {
+  PreBarrierMetaElement(T payload, int metaHash) {
     this.payload = payload;
     this.metaHash = metaHash;
   }
@@ -30,7 +31,7 @@ final class PreSinkMetaElement<T> {
 
   @Override
   public String toString() {
-    return "PreSinkMetaElement{" + "payload=" + this.payload +
+    return "PreBarrierMetaElement{" + "payload=" + this.payload +
             ", metaHash=" + this.metaHash +
             '}';
   }

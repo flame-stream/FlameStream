@@ -11,8 +11,9 @@ import com.spbsu.datastream.benchmarks.measure.LatencyMeasurer;
 import com.spbsu.datastream.core.Cluster;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.TestStand;
-import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
-import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
+import com.spbsu.datastream.core.barrier.BarrierSink;
+import com.spbsu.datastream.core.barrier.PreBarrierMetaFilter;
+import com.spbsu.datastream.core.barrier.RemoteActorSink;
 import com.spbsu.datastream.core.graph.ChaincallGraph;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
@@ -94,7 +95,7 @@ public final class WordCountRunner implements ClusterRunner {
           throw new RuntimeException();
         }
       });
-      stage.waitTick( 20, TimeUnit.SECONDS);
+      stage.waitTick(20, TimeUnit.SECONDS);
     }
   }
 
@@ -119,15 +120,15 @@ public final class WordCountRunner implements ClusterRunner {
     }
   };
 
-  private static TheGraph chainGraph(Collection<Integer> fronts, ActorPath consumer) {
-    final Merge<WordContainer> merge = new Merge<>(Arrays.asList(WORD_HASH, WORD_HASH));
+  private static TheGraph chainGraph(Collection<Integer> fronts, ActorPath consumerPath) {
+    final Merge merge = new Merge(Arrays.asList(WORD_HASH, WORD_HASH));
     final Grouping<WordContainer> grouping = new Grouping<>(WORD_HASH, EQUALZ, 2);
     final Filter<List<WordContainer>> filter = new Filter<>(new WordContainerOrderingFilter(), GROUP_HASH);
     final StatelessMap<List<WordContainer>, WordCounter> counter = new StatelessMap<>(new CountWordEntries(), GROUP_HASH);
     final Broadcast<WordCounter> broadcast = new Broadcast<>(WORD_HASH, 2);
-    final PreSinkMetaFilter<WordCounter> metaFilter = new PreSinkMetaFilter<>(WORD_HASH);
+    final PreBarrierMetaFilter<WordCounter> metaFilter = new PreBarrierMetaFilter<>(WORD_HASH);
 
-    final ChaincallGraph chain = new ChaincallGraph(
+    final ChaincallGraph logicChain = new ChaincallGraph(
             merge.fuse(grouping, merge.outPort(), grouping.inPort())
                     .fuse(filter, grouping.outPort(), filter.inPort())
                     .fuse(counter, filter.outPort(), counter.inPort())
@@ -143,11 +144,14 @@ public final class WordCountRunner implements ClusterRunner {
         return Arrays.stream(s.split("\\s")).map(WordEntry::new);
       }
     }, HashFunction.OBJECT_HASH);
-    final RemoteActorConsumer<WordCounter> sink = new RemoteActorConsumer<>(consumer);
+
+    final RemoteActorSink sink = new RemoteActorSink(consumerPath);
+    final BarrierSink barrierSink = new BarrierSink(sink);
 
     final Graph graph = splitter
-            .fuse(chain, splitter.outPort(), merge.inPorts().get(0))
-            .fuse(sink, metaFilter.outPort(), sink.inPort());
+            .fuse(logicChain, splitter.outPort(), merge.inPorts().get(0))
+            .fuse(barrierSink, metaFilter.outPort(), barrierSink.inPort());
+
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(toMap(Function.identity(), e -> splitter.inPort()));
     return new TheGraph(graph, frontBindings);

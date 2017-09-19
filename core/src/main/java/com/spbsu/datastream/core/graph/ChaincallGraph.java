@@ -45,7 +45,7 @@ public final class ChaincallGraph implements AtomicGraph {
 
   @Override
   public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-    composedGraph.subGraphs().forEach(atomic -> atomic.onMinGTimeUpdate(globalTime, handle));
+    composedGraph.subGraphs().forEach(atomic -> atomic.onMinGTimeUpdate(globalTime, new ChainHandle(handle)));
   }
 
   @Override

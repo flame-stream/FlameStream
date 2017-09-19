@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
-public final class Merge<R> extends AbstractAtomicGraph {
+public final class Merge extends AbstractAtomicGraph {
   private final List<InPort> inPorts;
   private final OutPort outPort = new OutPort();
 

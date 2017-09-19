@@ -1,8 +1,9 @@
 package com.spbsu.datastream.core;
 
 import akka.actor.ActorPath;
-import com.spbsu.datastream.core.barrier.PreSinkMetaFilter;
-import com.spbsu.datastream.core.barrier.RemoteActorConsumer;
+import com.spbsu.datastream.core.barrier.BarrierSink;
+import com.spbsu.datastream.core.barrier.PreBarrierMetaFilter;
+import com.spbsu.datastream.core.barrier.RemoteActorSink;
 import com.spbsu.datastream.core.graph.Graph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.TheGraph;
@@ -147,7 +148,7 @@ public final class GroupingAcceptanceTest {
     return mustHave;
   }
 
-  private static TheGraph groupGraph(Collection<Integer> fronts, ActorPath consumer,
+  private static TheGraph groupGraph(Collection<Integer> fronts, ActorPath consumerPath,
                                      int window,
                                      HashFunction<? super Long> groupHash,
                                      BiPredicate<? super Long, ? super Long> equalz,
@@ -155,12 +156,13 @@ public final class GroupingAcceptanceTest {
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
     final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window);
 
-    final PreSinkMetaFilter<List<Long>> metaFilter = new PreSinkMetaFilter<>(HashFunction.OBJECT_HASH);
-    final RemoteActorConsumer<List<Long>> sink = new RemoteActorConsumer<>(consumer);
+    final PreBarrierMetaFilter<List<Long>> metaFilter = new PreBarrierMetaFilter<>(HashFunction.OBJECT_HASH);
+    final RemoteActorSink sink = new RemoteActorSink(consumerPath);
+    final BarrierSink barrierSink = new BarrierSink(sink);
 
     final Graph graph = filter.fuse(grouping, filter.outPort(), grouping.inPort())
             .fuse(metaFilter, grouping.outPort(), metaFilter.inPort())
-            .fuse(sink, metaFilter.outPort(), sink.inPort());
+            .fuse(barrierSink, metaFilter.outPort(), barrierSink.inPort());
 
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(Collectors.toMap(Function.identity(), e -> filter.inPort()));

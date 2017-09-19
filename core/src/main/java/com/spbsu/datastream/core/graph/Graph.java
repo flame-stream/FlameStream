@@ -52,8 +52,4 @@ public interface Graph {
   }
 
   ComposedGraph<AtomicGraph> flattened();
-
-  default boolean isClosed() {
-    return this.inPorts().isEmpty() && this.outPorts().isEmpty();
-  }
 }

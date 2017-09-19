@@ -12,11 +12,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.ToIntFunction;
 
-public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
+public final class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
-  public PreSinkMetaFilter(ToIntFunction<? super T> hashFunction) {
+  public PreBarrierMetaFilter(ToIntFunction<? super T> hashFunction) {
     this.inPort = new InPort(hashFunction);
   }
 
@@ -24,7 +24,7 @@ public final class PreSinkMetaFilter<T> extends AbstractAtomicGraph {
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     final DataItem<?> newItem = new PayloadDataItem<>(
             item.meta().advanced(this.incrementLocalTimeAndGet()),
-            new PreSinkMetaElement<>(item.payload(), HashFunction.UNIFORM_OBJECT_HASH.hash(item.meta().globalTime().front())));
+            new PreBarrierMetaElement<>(item.payload(), HashFunction.UNIFORM_OBJECT_HASH.hash(item.meta().globalTime().front())));
     handle.push(this.outPort(), newItem);
   }
 
