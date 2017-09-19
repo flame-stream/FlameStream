@@ -1,6 +1,6 @@
 package com.spbsu.datastream.core.ack.impl;
 
-import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.ack.AckLedger;
 import com.spbsu.datastream.core.ack.AckTable;
 import com.spbsu.datastream.core.tick.TickInfo;

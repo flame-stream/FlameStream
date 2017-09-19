@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.graph;
 import akka.actor.ActorPath;
 import akka.actor.ActorSelection;
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 import com.spbsu.datastream.core.stat.Statistics;
 import com.spbsu.datastream.core.tick.TickInfo;

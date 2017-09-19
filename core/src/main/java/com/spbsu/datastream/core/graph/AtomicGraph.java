@@ -1,7 +1,7 @@
 package com.spbsu.datastream.core.graph;
 
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
 
 /**

@@ -1,4 +1,6 @@
-package com.spbsu.datastream.core;
+package com.spbsu.datastream.core.message;
+
+import com.spbsu.datastream.core.message.Message;
 
 public final class AckerMessage<T> implements Message<T> {
   private final T payload;

@@ -1,6 +1,8 @@
-package com.spbsu.datastream.core;
+package com.spbsu.datastream.core.message;
 
+import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.InPort;
+import com.spbsu.datastream.core.message.Message;
 
 public final class AtomicMessage<T extends DataItem<?>> implements Message<T> {
   private final long tick;

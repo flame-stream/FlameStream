@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.node;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.LoggingActor;
-import com.spbsu.datastream.core.Message;
+import com.spbsu.datastream.core.message.Message;
 import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 

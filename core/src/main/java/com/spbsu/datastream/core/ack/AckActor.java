@@ -2,8 +2,8 @@ package com.spbsu.datastream.core.ack;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import com.spbsu.datastream.core.BroadcastMessage;
-import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.message.BroadcastMessage;
+import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.impl.AckLedgerImpl;
 import com.spbsu.datastream.core.configuration.HashRange;

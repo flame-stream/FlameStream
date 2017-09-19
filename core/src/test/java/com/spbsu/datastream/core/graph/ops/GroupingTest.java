@@ -2,7 +2,7 @@ package com.spbsu.datastream.core.graph.ops;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.FakeAtomicHandle;
-import com.spbsu.datastream.core.GlobalTime;
+import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.HashFunction;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.meta.Meta;

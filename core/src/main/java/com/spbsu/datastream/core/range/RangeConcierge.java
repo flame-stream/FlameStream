@@ -2,8 +2,8 @@ package com.spbsu.datastream.core.range;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import com.spbsu.datastream.core.AckerMessage;
-import com.spbsu.datastream.core.AtomicMessage;
+import com.spbsu.datastream.core.message.AckerMessage;
+import com.spbsu.datastream.core.message.AtomicMessage;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.Commit;
 import com.spbsu.datastream.core.ack.CommitDone;

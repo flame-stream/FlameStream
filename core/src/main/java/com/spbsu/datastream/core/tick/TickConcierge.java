@@ -2,11 +2,11 @@ package com.spbsu.datastream.core.tick;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import com.spbsu.datastream.core.AckerMessage;
-import com.spbsu.datastream.core.AtomicMessage;
-import com.spbsu.datastream.core.BroadcastMessage;
+import com.spbsu.datastream.core.message.AckerMessage;
+import com.spbsu.datastream.core.message.AtomicMessage;
+import com.spbsu.datastream.core.message.BroadcastMessage;
 import com.spbsu.datastream.core.LoggingActor;
-import com.spbsu.datastream.core.Message;
+import com.spbsu.datastream.core.message.Message;
 import com.spbsu.datastream.core.ack.AckActor;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.range.RangeConcierge;

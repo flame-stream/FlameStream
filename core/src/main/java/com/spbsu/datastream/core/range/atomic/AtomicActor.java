@@ -2,7 +2,7 @@ package com.spbsu.datastream.core.range.atomic;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import com.spbsu.datastream.core.AtomicMessage;
+import com.spbsu.datastream.core.message.AtomicMessage;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.Commit;
 import com.spbsu.datastream.core.ack.MinTimeUpdate;

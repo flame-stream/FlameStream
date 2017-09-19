@@ -1,7 +1,5 @@
 package com.spbsu.datastream.core.meta;
 
-import com.spbsu.datastream.core.GlobalTime;
-
 import java.util.Comparator;
 import java.util.Objects;
 

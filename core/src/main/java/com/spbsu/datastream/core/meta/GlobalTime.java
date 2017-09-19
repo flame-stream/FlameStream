@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core;
+package com.spbsu.datastream.core.meta;
 
 import java.util.Comparator;
 import java.util.Objects;

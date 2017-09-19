@@ -1,4 +1,4 @@
-package com.spbsu.datastream.core;
+package com.spbsu.datastream.core.range.atomic;
 
 public class RoutingException extends RuntimeException {
   private static final long serialVersionUID = 5189602567459523932L;
