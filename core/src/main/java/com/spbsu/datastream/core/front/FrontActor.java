@@ -3,11 +3,12 @@ package com.spbsu.datastream.core.front;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.PayloadDataItem;
 import com.spbsu.datastream.core.graph.InPort;
+import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.meta.Meta;
+import com.spbsu.datastream.core.raw.RawData;
 import com.spbsu.datastream.core.tick.TickInfo;
 
 import java.util.TreeMap;
@@ -30,10 +31,12 @@ public final class FrontActor extends LoggingActor {
 
   @Override
   public Receive createReceive() {
+    //noinspection unchecked
     return this.receiveBuilder()
-            .match(RawData.class, this::redirectItem)
+            .match(RawData.class, rawData -> rawData.forEach(this::redirectItem))
             .match(TickInfo.class, this::createTick)
-            .match(String.class, this::onPing).build();
+            .match(String.class, this::onPing)
+            .build();
   }
 
   private void onPing(String ping) {
@@ -55,7 +58,7 @@ public final class FrontActor extends LoggingActor {
     this.tickFronts.put(tickInfo.startTs(), tickFront);
   }
 
-  private void redirectItem(RawData<?> data) {
+  private void redirectItem(Object payload) {
     long globalTs = System.nanoTime();
     if (globalTs <= prevGlobalTs) {
       globalTs = prevGlobalTs + 1;
@@ -64,7 +67,7 @@ public final class FrontActor extends LoggingActor {
 
     final GlobalTime globalTime = new GlobalTime(globalTs, this.id);
     final Meta now = Meta.meta(globalTime);
-    final DataItem<?> dataItem = new PayloadDataItem<>(now, data.payload());
+    final DataItem<?> dataItem = new PayloadDataItem<>(now, payload);
 
     final long tick = this.tickFronts.floorKey(globalTime.time());
 

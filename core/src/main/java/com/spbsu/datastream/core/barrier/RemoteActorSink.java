@@ -4,11 +4,11 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import com.spbsu.datastream.core.DataItem;
-import com.spbsu.datastream.core.front.RawData;
 import com.spbsu.datastream.core.graph.AbstractAtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
 import com.spbsu.datastream.core.range.atomic.AtomicHandle;
+import com.spbsu.datastream.core.raw.SingleRawData;
 
 import java.util.List;
 
@@ -35,7 +35,7 @@ public final class RemoteActorSink extends AbstractAtomicGraph {
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     final PreBarrierMetaElement<?> element = (PreBarrierMetaElement<?>) item.payload();
-    actor.tell(new RawData<>(element.payload()), ActorRef.noSender());
+    actor.tell(new SingleRawData<>(element.payload()), ActorRef.noSender());
   }
 
   public InPort inPort() {

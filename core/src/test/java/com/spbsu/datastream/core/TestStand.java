@@ -1,14 +1,9 @@
 package com.spbsu.datastream.core;
 
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
-import akka.actor.ActorSystem;
-import akka.actor.Address;
-import akka.actor.RootActorPath;
+import akka.actor.*;
 import com.spbsu.datastream.core.configuration.HashRange;
-import com.spbsu.datastream.core.front.RawData;
 import com.spbsu.datastream.core.graph.TheGraph;
+import com.spbsu.datastream.core.raw.SingleRawData;
 import com.spbsu.datastream.core.tick.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -19,14 +14,7 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -77,7 +65,7 @@ public final class TestStand implements AutoCloseable {
   public <T> ActorPath wrap(Consumer<T> collection) {
     try {
       final String id = UUID.randomUUID().toString();
-      final ActorRef consumerActor = this.localSystem.actorOf(CollectingActor.props(collection), id);
+      localSystem.actorOf(CollectingActor.props(collection), id);
       final Address add = Address.apply("akka.tcp", "requester",
               InetAddress.getLocalHost().getHostName(),
               TestStand.LOCAL_SYSTEM_PORT);
@@ -123,7 +111,7 @@ public final class TestStand implements AutoCloseable {
 
     for (InetSocketAddress front : frontAddresses) {
       final ActorSelection frontActor = frontActor(front);
-      final Consumer<Object> consumer = obj -> frontActor.tell(new RawData<>(obj), ActorRef.noSender());
+      final Consumer<Object> consumer = obj -> frontActor.tell(new SingleRawData<>(obj), ActorRef.noSender());
       result.add(consumer);
     }
 
