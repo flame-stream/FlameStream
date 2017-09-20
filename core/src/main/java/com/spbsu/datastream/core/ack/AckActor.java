@@ -58,9 +58,8 @@ public final class AckActor extends LoggingActor {
 
   private void handleAck(Ack ack) {
     final long start = System.nanoTime();
-    assertMonotonicAck(ack.time());
+    //assertMonotonicAck(ack.time());
 
-    LOG().debug("Ack received: {}", ack);
     if (ledger.ack(ack.time(), ack.xor())) {
       checkLedgerTime();
       stat.recordReleasingAck(System.nanoTime() - start);
