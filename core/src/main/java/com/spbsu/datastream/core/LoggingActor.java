@@ -14,7 +14,6 @@ public abstract class LoggingActor extends AbstractActor {
 
   @Override
   public void aroundReceive(PartialFunction<Object, BoxedUnit> receive, Object msg) {
-    super.aroundReceive(receive, msg);
     receive.apply(msg);
   }
 
