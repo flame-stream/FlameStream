@@ -36,7 +36,7 @@ public final class AckActor extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder()
+    return receiveBuilder()
             .match(AckerReport.class, this::handleReport)
             .match(Ack.class, this::handleAck)
             .build();
@@ -47,22 +47,22 @@ public final class AckActor extends LoggingActor {
     super.postStop();
     LOG().info("Acker statistics: {}", stat);
 
-    this.LOG().debug("Acker ledger: {}", this.ledger);
+    LOG().debug("Acker ledger: {}", ledger);
   }
 
   private void handleReport(AckerReport report) {
-    this.LOG().debug("Front report received: {}", report);
-    this.ledger.report(report.globalTime(), report.xor());
-    this.checkLedgerTime();
+    LOG().debug("Front report received: {}", report);
+    ledger.report(report.globalTime(), report.xor());
+    checkLedgerTime();
   }
 
   private void handleAck(Ack ack) {
     final long start = System.nanoTime();
-    this.assertMonotonicAck(ack.time());
+    assertMonotonicAck(ack.time());
 
-    this.LOG().debug("Ack received: {}", ack);
-    if (this.ledger.ack(ack.time(), ack.xor())) {
-      this.checkLedgerTime();
+    LOG().debug("Ack received: {}", ack);
+    if (ledger.ack(ack.time(), ack.xor())) {
+      checkLedgerTime();
       stat.recordReleasingAck(System.nanoTime() - start);
     } else {
       stat.recordNormalAck(System.nanoTime() - start);
@@ -70,40 +70,40 @@ public final class AckActor extends LoggingActor {
   }
 
   private void checkLedgerTime() {
-    final GlobalTime ledgerMin = this.ledger.min();
-    if (ledgerMin.compareTo(this.currentMin) > 0) {
+    final GlobalTime ledgerMin = ledger.min();
+    if (ledgerMin.compareTo(currentMin) > 0) {
       this.currentMin = ledgerMin;
-      this.sendMinUpdates(this.currentMin);
+      sendMinUpdates(currentMin);
     }
 
-    if (ledgerMin.time() >= this.tickInfo.stopTs()) {
-      this.sendCommit();
-      this.getContext().become(this.receiveBuilder().match(CommitDone.class, this::handleDone).build());
+    if (ledgerMin.time() >= tickInfo.stopTs()) {
+      sendCommit();
+      getContext().become(receiveBuilder().match(CommitDone.class, this::handleDone).build());
     }
   }
 
   private void assertMonotonicAck(GlobalTime newTime) {
-    if (newTime.compareTo(this.currentMin) < 0) {
+    if (newTime.compareTo(currentMin) < 0) {
       throw new IllegalStateException("Not monotonic acks. Fixme");
     }
   }
 
   private void handleDone(CommitDone commitDone) {
-    this.LOG().debug("Received: {}", commitDone);
+    LOG().debug("Received: {}", commitDone);
     final HashRange committer = commitDone.committer();
-    this.committers.add(committer);
-    if (this.committers.equals(this.tickInfo.hashMapping().asMap().keySet())) {
-      this.LOG().info("COOOOMMMMITTTITITITITITI");
+    committers.add(committer);
+    if (committers.equals(tickInfo.hashMapping().asMap().keySet())) {
+      LOG().info("COOOOMMMMITTTITITITITITI");
     }
   }
 
   private void sendCommit() {
-    this.LOG().info("Committing");
-    this.dns.tell(new UnresolvedMessage<>(new BroadcastMessage<>(new Commit(), this.tickInfo.startTs())), this.self());
+    LOG().info("Committing");
+    dns.tell(new UnresolvedMessage<>(new BroadcastMessage<>(new Commit(), tickInfo.startTs())), self());
   }
 
   private void sendMinUpdates(GlobalTime min) {
-    this.LOG().debug("New min time: {}", min);
-    this.dns.tell(new UnresolvedMessage<>(new BroadcastMessage<>(new MinTimeUpdate(min), this.tickInfo.startTs())), this.self());
+    LOG().debug("New min time: {}", min);
+    dns.tell(new UnresolvedMessage<>(new BroadcastMessage<>(new MinTimeUpdate(min), tickInfo.startTs())), self());
   }
 }

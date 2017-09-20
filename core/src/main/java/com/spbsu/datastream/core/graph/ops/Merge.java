@@ -23,23 +23,23 @@ public final class Merge extends AbstractAtomicGraph {
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
-    final DataItem<?> newItem = new PayloadDataItem<>(item.meta().advanced(this.incrementLocalTimeAndGet()),
+    final DataItem<?> newItem = new PayloadDataItem<>(item.meta().advanced(incrementLocalTimeAndGet()),
             item.payload());
 
-    handler.push(this.outPort(), newItem);
+    handler.push(outPort(), newItem);
   }
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.unmodifiableList(this.inPorts);
+    return Collections.unmodifiableList(inPorts);
   }
 
   public OutPort outPort() {
-    return this.outPort;
+    return outPort;
   }
 
   @Override
   public List<OutPort> outPorts() {
-    return Collections.singletonList(this.outPort);
+    return Collections.singletonList(outPort);
   }
 }

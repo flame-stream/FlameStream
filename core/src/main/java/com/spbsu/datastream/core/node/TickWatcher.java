@@ -34,36 +34,36 @@ public final class TickWatcher extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    this.fetchTicks();
+    fetchTicks();
   }
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder().match(WatchedEvent.class, this::onEvent).build();
+    return receiveBuilder().match(WatchedEvent.class, this::onEvent).build();
   }
 
   private void fetchTicks() throws KeeperException, InterruptedException {
-    final List<String> ticks = this.zooKeeper.getChildren("/ticks", this.selfWatcher());
+    final List<String> ticks = zooKeeper.getChildren("/ticks", selfWatcher());
 
     for (String tick : ticks) {
-      if (!this.seenTicks.containsKey(Long.valueOf(tick))) {
-        final byte[] data = this.zooKeeper.getData("/ticks/" + tick, false, null);
-        final TickInfo tickInfo = this.serializer.deserialize(data);
-        this.seenTicks.put(Long.valueOf(tick), tickInfo);
-        this.notify.tell(tickInfo, this.sender());
+      if (!seenTicks.containsKey(Long.valueOf(tick))) {
+        final byte[] data = zooKeeper.getData("/ticks/" + tick, false, null);
+        final TickInfo tickInfo = serializer.deserialize(data);
+        seenTicks.put(Long.valueOf(tick), tickInfo);
+        notify.tell(tickInfo, sender());
       }
     }
   }
 
   private Watcher selfWatcher() {
-    return event -> this.self().tell(event, this.self());
+    return event -> self().tell(event, self());
   }
 
   private void onEvent(WatchedEvent event) throws KeeperException, InterruptedException {
     if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
-      this.fetchTicks();
+      fetchTicks();
     } else {
-      this.LOG().warning("Unexpected event {}", event);
+      LOG().warning("Unexpected event {}", event);
     }
   }
 }

@@ -21,11 +21,11 @@ public final class GlobalTime implements Comparable<GlobalTime> {
   }
 
   public long time() {
-    return this.time;
+    return time;
   }
 
   public int front() {
-    return this.front;
+    return front;
   }
 
   @Override
@@ -36,19 +36,19 @@ public final class GlobalTime implements Comparable<GlobalTime> {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || this.getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     final GlobalTime that = (GlobalTime) o;
-    return this.time == that.time &&
-            Objects.equals(this.front, that.front);
+    return time == that.time &&
+            Objects.equals(front, that.front);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.time, this.front);
+    return Objects.hash(time, front);
   }
 
   @Override
   public String toString() {
-    return "(" + this.time + ':' + this.front + ')';
+    return "(" + time + ':' + front + ')';
   }
 }

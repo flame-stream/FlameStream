@@ -10,43 +10,45 @@ import scala.runtime.BoxedUnit;
 import java.util.Optional;
 
 public abstract class LoggingActor extends AbstractActor {
-  private final LoggingAdapter LOG = Logging.getLogger(this.context().system(), this.self());
+  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
 
   @Override
   public void aroundReceive(PartialFunction<Object, BoxedUnit> receive, Object msg) {
+    super.aroundReceive(receive, msg);
     receive.apply(msg);
   }
 
   @Override
   public void preStart() throws Exception {
-    this.LOG().info("Starting...");
+    LOG().info("Starting...");
     super.preStart();
   }
 
   @Override
   public void postStop() throws Exception {
-    this.LOG().info("Stopped");
+    LOG().info("Stopped");
     super.postStop();
   }
 
   @Override
   public void preRestart(Throwable reason, Optional<Object> message) throws Exception {
-    this.LOG().error("Restarting, reason: {}, payload: {}", reason, message);
+    LOG().error("Restarting, reason: {}, payload: {}", reason, message);
     super.preRestart(reason, message);
   }
 
   @Override
   public void unhandled(Object message) {
-    this.LOG().error("Can't handle payload: {}", message);
+    LOG().error("Can't handle payload: {}", message);
     super.unhandled(message);
   }
 
   @Override
   public SupervisorStrategy supervisorStrategy() {
+    final SupervisorStrategy supervisorStrategy = super.supervisorStrategy();
     return SupervisorStrategy.stoppingStrategy();
   }
 
   protected final LoggingAdapter LOG() {
-    return this.LOG;
+    return LOG;
   }
 }

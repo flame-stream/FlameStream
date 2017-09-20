@@ -7,7 +7,7 @@ import java.util.Map;
 public interface Statistics {
   Map<String, Double> metrics();
 
-  public static Map<String, Double> asMap(String prefix, LongSummaryStatistics summaryStatistics) {
+  static Map<String, Double> asMap(String prefix, LongSummaryStatistics summaryStatistics) {
     final Map<String, Double> result = new HashMap<>();
     result.put(prefix + " count", (double) summaryStatistics.getCount());
     result.put(prefix + " average", summaryStatistics.getAverage());

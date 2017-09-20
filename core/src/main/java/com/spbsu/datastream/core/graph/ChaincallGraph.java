@@ -78,9 +78,9 @@ public final class ChaincallGraph implements AtomicGraph {
     //TODO: refactor atomic handle
     @Override
     public void push(OutPort out, DataItem<?> result) {
-      final InPort destination = ChaincallGraph.this.composedGraph.downstreams().get(out);
+      final InPort destination = composedGraph.downstreams().get(out);
       if (destination != null) {
-        final AtomicGraph atomic = ChaincallGraph.this.upstreams.get(destination);
+        final AtomicGraph atomic = upstreams.get(destination);
         atomic.onPush(destination, result, this);
       } else {
         superHandle.push(out, result);

@@ -20,25 +20,27 @@ final class ArrayAckTable implements AckTable {
     this.toBeReported = startTs;
   }
 
+  @Override
   public void report(long windowHead, long xor) {
-    if (windowHead == this.toBeReported) {
-      this.ack(windowHead, xor);
-      this.toBeReported += this.window;
+    if (windowHead == toBeReported) {
+      ack(windowHead, xor);
+      this.toBeReported += window;
     } else {
-      throw new IllegalArgumentException("Not monotonic reports. Expected: " + this.toBeReported + ", got: " + windowHead);
+      throw new IllegalArgumentException("Not monotonic reports. Expected: " + toBeReported + ", got: " + windowHead);
     }
   }
 
+  @Override
   public boolean ack(long ts, long xor) {
-    final int position = Math.toIntExact(((ts - this.startTs) / this.window));
-    final long updatedXor = xor ^ this.xorStorage[position];
-    this.xorStorage[position] = updatedXor;
+    final int position = Math.toIntExact(((ts - startTs) / window));
+    final long updatedXor = xor ^ xorStorage[position];
+    xorStorage[position] = updatedXor;
 
-    if (updatedXor == 0 && xor != 0 && position == this.minPosition) {
-      while (this.minPosition < this.xorStorage.length && this.xorStorage[this.minPosition] == 0)
+    if (updatedXor == 0 && xor != 0 && position == minPosition) {
+      while (minPosition < xorStorage.length && xorStorage[minPosition] == 0)
         this.minPosition++;
       return true;
-    } else if (updatedXor != 0 && position < this.minPosition) {
+    } else if (updatedXor != 0 && position < minPosition) {
       this.minPosition = position;
       return true;
     } else {
@@ -46,16 +48,17 @@ final class ArrayAckTable implements AckTable {
     }
   }
 
+  @Override
   public long min() {
-    return Math.min(this.toBeReported, this.startTs + this.window * this.minPosition);
+    return Math.min(toBeReported, startTs + window * minPosition);
   }
 
   @Override
   public String toString() {
     return "ArrayAckTable{" +
-            ", startTs=" + this.startTs +
-            ", window=" + this.window +
-            ", toBeReported=" + this.toBeReported +
+            ", startTs=" + startTs +
+            ", window=" + window +
+            ", toBeReported=" + toBeReported +
             '}';
   }
 }

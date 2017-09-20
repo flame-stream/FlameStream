@@ -29,7 +29,7 @@ public final class RemoteActorSink extends AbstractAtomicGraph {
 
   @Override
   public void onStart(AtomicHandle handle) {
-    this.actor = handle.actorSelection(this.path);
+    this.actor = handle.actorSelection(path);
   }
 
   @Override
@@ -39,12 +39,12 @@ public final class RemoteActorSink extends AbstractAtomicGraph {
   }
 
   public InPort inPort() {
-    return this.inPort;
+    return inPort;
   }
 
   @Override
   public List<InPort> inPorts() {
-    return singletonList(this.inPort);
+    return singletonList(inPort);
   }
 
   @Override

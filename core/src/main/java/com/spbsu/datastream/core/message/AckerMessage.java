@@ -1,7 +1,5 @@
 package com.spbsu.datastream.core.message;
 
-import com.spbsu.datastream.core.message.Message;
-
 public final class AckerMessage<T> implements Message<T> {
   private final T payload;
   private final long tick;
@@ -13,18 +11,18 @@ public final class AckerMessage<T> implements Message<T> {
 
   @Override
   public T payload() {
-    return this.payload;
+    return payload;
   }
 
   @Override
   public long tick() {
-    return this.tick;
+    return tick;
   }
 
   @Override
   public String toString() {
-    return "AckerMessage{" + "payload=" + this.payload +
-            ", tick=" + this.tick +
+    return "AckerMessage{" + "payload=" + payload +
+            ", tick=" + tick +
             '}';
   }
 }

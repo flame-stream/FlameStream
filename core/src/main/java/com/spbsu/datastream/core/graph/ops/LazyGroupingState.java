@@ -15,7 +15,7 @@ import java.util.function.ToIntFunction;
  * Date: 22.02.2017
  * Time: 22:29
  */
-@SuppressWarnings({"TypeMayBeWeakened", "OptionalContainsCollection"})
+@SuppressWarnings({"TypeMayBeWeakened"})
 public final class LazyGroupingState<T> implements GroupingState<T> {
   private final ToIntFunction<? super T> hash;
   private final BiPredicate<? super T, ? super T> equalz;
@@ -29,26 +29,26 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
   @SuppressWarnings("unchecked")
   @Override
   public List<DataItem<T>> getGroupFor(DataItem<T> item) {
-    final long hashValue = this.hash.applyAsInt(item.payload());
-    final Object obj = this.buffers.get(hashValue);
+    final long hashValue = hash.applyAsInt(item.payload());
+    final Object obj = buffers.get(hashValue);
     if (obj == null) {
       final List<DataItem<T>> newBucket = new ArrayList<>();
-      this.buffers.put(hashValue, newBucket);
+      buffers.put(hashValue, newBucket);
       return newBucket;
     } else {
       final List<?> list = (List<?>) obj;
       if (list.get(0) instanceof List) {
         final List<List<DataItem<T>>> container = (List<List<DataItem<T>>>) list;
-        return this.getFromContainer(item, container);
+        return getFromContainer(item, container);
       } else {
         final List<DataItem<T>> bucket = (List<DataItem<T>>) list;
-        return this.getFromBucket(item, bucket);
+        return getFromBucket(item, bucket);
       }
     }
   }
 
   private List<DataItem<T>> getFromContainer(DataItem<T> item, List<List<DataItem<T>>> container) {
-    final List<DataItem<T>> result = this.searchBucket(item, container);
+    final List<DataItem<T>> result = searchBucket(item, container);
     if (result.isEmpty()) {
       container.add(result);
       return result;
@@ -58,21 +58,21 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
   }
 
   private List<DataItem<T>> getFromBucket(DataItem<T> item, List<DataItem<T>> bucket) {
-    if (this.equalz.test(bucket.get(0).payload(), item.payload())) {
+    if (equalz.test(bucket.get(0).payload(), item.payload())) {
       return bucket;
     } else {
       final List<List<DataItem<T>>> container = new ArrayList<>();
       container.add(bucket);
       final List<DataItem<T>> newList = new ArrayList<>();
       container.add(newList);
-      this.buffers.put(this.hash.applyAsInt(item.payload()), container);
+      buffers.put(hash.applyAsInt(item.payload()), container);
       return newList;
     }
   }
 
   @Override
   public void forEach(Consumer<List<DataItem<T>>> consumer) {
-    this.buffers.forEachValue(obj -> {
+    buffers.forEachValue(obj -> {
       final List<?> list = (List<?>) obj;
       if (list.get(0) instanceof List) {
         //noinspection unchecked
@@ -88,7 +88,7 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
 
   private List<DataItem<T>> searchBucket(DataItem<T> item, List<List<DataItem<T>>> container) {
     return container.stream()
-            .filter(bucket -> this.equalz.test(bucket.get(0).payload(), item.payload()))
+            .filter(bucket -> equalz.test(bucket.get(0).payload(), item.payload()))
             .findAny()
             .orElse(new ArrayList<>());
   }

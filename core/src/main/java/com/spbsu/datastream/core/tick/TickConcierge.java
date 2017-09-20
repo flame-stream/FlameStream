@@ -34,11 +34,11 @@ public final class TickConcierge extends LoggingActor {
     this.localId = localId;
 
     this.concierges = new TreeMap<>();
-    this.myRanges(tickInfo.hashMapping().asMap())
-            .forEach(range -> this.concierges.put(range.from(), this.rangeConcierge(range)));
+    myRanges(tickInfo.hashMapping().asMap())
+            .forEach(range -> concierges.put(range.from(), rangeConcierge(range)));
     this.db = db;
     if (tickInfo.ackerLocation() == localId) {
-      this.acker = this.context().actorOf(AckActor.props(tickInfo, dns), "acker");
+      this.acker = context().actorOf(AckActor.props(tickInfo, dns), "acker");
     } else {
       this.acker = null;
     }
@@ -46,15 +46,15 @@ public final class TickConcierge extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder()
-            .match(AckerMessage.class, m -> this.acker.tell(m.payload(), this.sender()))
+    return receiveBuilder()
+            .match(AckerMessage.class, m -> acker.tell(m.payload(), sender()))
             .match(AtomicMessage.class, this::routeAtomicMessage)
             .match(BroadcastMessage.class, this::broadcast)
             .build();
   }
 
   private ActorRef rangeConcierge(HashRange range) {
-    return this.context().actorOf(RangeConcierge.props(this.info, this.dns, range, this.db), range.toString());
+    return context().actorOf(RangeConcierge.props(info, dns, range, db), range.toString());
   }
 
   public static Props props(TickInfo tickInfo, DB db, int localId,
@@ -63,17 +63,17 @@ public final class TickConcierge extends LoggingActor {
   }
 
   private Iterable<HashRange> myRanges(Map<HashRange, Integer> mappings) {
-    return mappings.entrySet().stream().filter(e -> e.getValue().equals(this.localId))
+    return mappings.entrySet().stream().filter(e -> e.getValue().equals(localId))
             .map(Map.Entry::getKey).collect(Collectors.toSet());
   }
 
   private void broadcast(Message<?> broadcastMessage) {
-    this.concierges.values().forEach(v -> v.tell(broadcastMessage.payload(), this.sender()));
+    concierges.values().forEach(v -> v.tell(broadcastMessage.payload(), sender()));
   }
 
   private void routeAtomicMessage(AtomicMessage<?> atomicMessage) {
-    final ActorRef receiver = this.concierges
+    final ActorRef receiver = concierges
             .floorEntry(atomicMessage.hash()).getValue();
-    receiver.tell(atomicMessage, this.sender());
+    receiver.tell(atomicMessage, sender());
   }
 }

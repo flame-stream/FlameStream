@@ -16,12 +16,12 @@ public class SingleRawData<T> implements RawData<T> {
   }
 
   public T payload() {
-    return this.payload;
+    return payload;
   }
 
   @Override
   public String toString() {
-    return "RawData{" + "payload=" + this.payload +
+    return "RawData{" + "payload=" + payload +
             '}';
   }
 

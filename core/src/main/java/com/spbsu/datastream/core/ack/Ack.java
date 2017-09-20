@@ -13,17 +13,17 @@ public final class Ack {
   }
 
   public long xor() {
-    return this.xor;
+    return xor;
   }
 
   public GlobalTime time() {
-    return this.time;
+    return time;
   }
 
   @Override
   public String toString() {
-    return "Ack{" + "xor=" + this.xor +
-            ", time=" + this.time +
+    return "Ack{" + "xor=" + xor +
+            ", time=" + time +
             '}';
   }
 }

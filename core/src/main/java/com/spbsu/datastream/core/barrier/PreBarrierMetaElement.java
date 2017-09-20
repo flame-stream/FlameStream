@@ -3,7 +3,7 @@ package com.spbsu.datastream.core.barrier;
 import com.spbsu.datastream.core.HashFunction;
 
 final class PreBarrierMetaElement<T> {
-  @SuppressWarnings("Convert2Lambda")
+  @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
   static final HashFunction<PreBarrierMetaElement<?>> HASH_FUNCTION = new HashFunction<PreBarrierMetaElement<?>>() {
     @Override
     public int hash(PreBarrierMetaElement<?> value) {
@@ -21,18 +21,18 @@ final class PreBarrierMetaElement<T> {
   }
 
   T payload() {
-    return this.payload;
+    return payload;
   }
 
   int metaHash() {
-    return this.metaHash;
+    return metaHash;
   }
 
 
   @Override
   public String toString() {
-    return "PreBarrierMetaElement{" + "payload=" + this.payload +
-            ", metaHash=" + this.metaHash +
+    return "PreBarrierMetaElement{" + "payload=" + payload +
+            ", metaHash=" + metaHash +
             '}';
   }
 }

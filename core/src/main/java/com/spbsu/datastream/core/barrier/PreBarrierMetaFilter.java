@@ -23,26 +23,26 @@ public final class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     final DataItem<?> newItem = new PayloadDataItem<>(
-            item.meta().advanced(this.incrementLocalTimeAndGet()),
+            item.meta().advanced(incrementLocalTimeAndGet()),
             new PreBarrierMetaElement<>(item.payload(), HashFunction.UNIFORM_OBJECT_HASH.hash(item.meta().globalTime().front())));
-    handle.push(this.outPort(), newItem);
+    handle.push(outPort(), newItem);
   }
 
   public OutPort outPort() {
-    return this.outPort;
+    return outPort;
   }
 
   public InPort inPort() {
-    return this.inPort;
+    return inPort;
   }
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.singletonList(this.inPort);
+    return Collections.singletonList(inPort);
   }
 
   @Override
   public List<OutPort> outPorts() {
-    return Collections.singletonList(this.outPort);
+    return Collections.singletonList(outPort);
   }
 }

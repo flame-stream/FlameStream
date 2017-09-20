@@ -46,7 +46,7 @@ public final class TestStand implements AutoCloseable {
   @Override
   public void close() {
     try {
-      Await.ready(this.localSystem.terminate(), Duration.Inf());
+      Await.ready(localSystem.terminate(), Duration.Inf());
     } catch (InterruptedException | TimeoutException e) {
       throw new RuntimeException(e);
     }

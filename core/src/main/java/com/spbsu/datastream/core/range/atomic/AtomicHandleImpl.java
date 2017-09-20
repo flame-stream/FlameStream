@@ -39,34 +39,34 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public ActorSelection actorSelection(ActorPath path) {
-    return this.context.actorSelection(path);
+    return context.actorSelection(path);
   }
 
   @Override
   public void push(OutPort out, DataItem<?> result) {
-    final InPort destination = this.tickInfo.graph().graph().downstreams().get(out);
+    final InPort destination = tickInfo.graph().graph().downstreams().get(out);
     if (destination == null) throw new RoutingException("Unable to find port for " + out);
 
     @SuppressWarnings("rawtypes") final ToIntFunction hashFunction = destination.hashFunction();
     @SuppressWarnings("unchecked") final int hash = hashFunction.applyAsInt(result.payload());
-    final int receiver = this.tickInfo.hashMapping().workerForHash(hash);
+    final int receiver = tickInfo.hashMapping().workerForHash(hash);
 
     final UnresolvedMessage<AtomicMessage<?>> message = new UnresolvedMessage<>(
             receiver,
-            new AtomicMessage<>(this.tickInfo.startTs(), hash, destination, result)
+            new AtomicMessage<>(tickInfo.startTs(), hash, destination, result)
     );
 
-    this.ack(result);
-    this.dns.tell(message, this.context.self());
+    ack(result);
+    dns.tell(message, context.self());
   }
 
   @Override
   public void ack(DataItem<?> item) {
-    final int id = this.tickInfo.ackerLocation();
+    final int id = tickInfo.ackerLocation();
 
     final UnresolvedMessage<AckerMessage<?>> message = new UnresolvedMessage<>(id,
-            new AckerMessage<>(new Ack(item.ack(), item.meta().globalTime()), this.tickInfo.startTs()));
-    this.dns.tell(message, this.context.self());
+            new AckerMessage<>(new Ack(item.ack(), item.meta().globalTime()), tickInfo.startTs()));
+    dns.tell(message, context.self());
   }
 
   @Override

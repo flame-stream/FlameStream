@@ -19,11 +19,11 @@ public final class TheGraph {
   }
 
   public ComposedGraph<AtomicGraph> graph() {
-    return this.composedGraph;
+    return composedGraph;
   }
 
   public Map<Integer, InPort> frontBindings() {
-    return Collections.unmodifiableMap(this.frontBindings);
+    return Collections.unmodifiableMap(frontBindings);
   }
 
   private static void assertFrontMapping(Graph tail,

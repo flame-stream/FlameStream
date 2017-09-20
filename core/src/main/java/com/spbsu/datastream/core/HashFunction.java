@@ -8,9 +8,10 @@ public interface HashFunction<T> extends ToIntFunction<T> {
 
   @Override
   default int applyAsInt(T value) {
-    return this.hash(value);
+    return hash(value);
   }
 
+  @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
   HashFunction<Object> OBJECT_HASH = new HashFunction<Object>() {
     @Override
     public int hash(Object value) {
@@ -18,6 +19,7 @@ public interface HashFunction<T> extends ToIntFunction<T> {
     }
   };
 
+  @SuppressWarnings("Convert2Lambda")
   HashFunction<Object> UNIFORM_OBJECT_HASH = new HashFunction<Object>() {
     @Override
     public int hash(Object value) {
@@ -48,7 +50,9 @@ public interface HashFunction<T> extends ToIntFunction<T> {
     };
   }
 
+  @SuppressWarnings("Convert2Lambda")
   static <T> HashFunction<T> constantHash(int hash) {
+    //noinspection Convert2Lambda
     return new HashFunction<T>() {
       @Override
       public int hash(T value) {

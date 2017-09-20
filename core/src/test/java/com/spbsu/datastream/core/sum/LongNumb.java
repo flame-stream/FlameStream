@@ -11,25 +11,25 @@ public final class LongNumb implements Numb {
 
   @Override
   public long value() {
-    return this.value;
+    return value;
   }
 
   @Override
   public String toString() {
-    return "LongNumb{" + "value=" + this.value +
+    return "LongNumb{" + "value=" + value +
             '}';
   }
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || this.getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     final LongNumb longNumb = (LongNumb) o;
-    return this.value == longNumb.value;
+    return value == longNumb.value;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.value);
+    return Objects.hash(value);
   }
 }

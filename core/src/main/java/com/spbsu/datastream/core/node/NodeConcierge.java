@@ -46,59 +46,59 @@ public final class NodeConcierge extends LoggingActor {
   public void preStart() throws Exception {
     super.preStart();
 
-    this.db = new DbImpl(new Options().createIfMissing(true), new File("./leveldb/" + this.id));
+    this.db = new DbImpl(new Options().createIfMissing(true), new File("./leveldb/" + id));
 
-    this.tickRouter = this.context().actorOf(TickRouter.props(), "tickRouter");
+    this.tickRouter = context().actorOf(TickRouter.props(), "tickRouter");
 
-    final Map<Integer, InetSocketAddress> dns = this.fetchDNS();
-    this.LOG().info("DNS fetched: {}", dns);
-    this.dnsRouter = this.context().actorOf(DNSRouter.props(dns, this.tickRouter, this.id), "dns");
+    final Map<Integer, InetSocketAddress> dns = fetchDNS();
+    LOG().info("DNS fetched: {}", dns);
+    this.dnsRouter = context().actorOf(DNSRouter.props(dns, tickRouter, id), "dns");
 
-    final Set<Integer> fronts = this.fetchFronts();
-    this.LOG().info("Fronts fetched: {}", fronts);
+    final Set<Integer> fronts = fetchFronts();
+    LOG().info("Fronts fetched: {}", fronts);
 
-    if (fronts.contains(this.id)) {
-      this.front = this.context().actorOf(FrontActor.props(this.dnsRouter, this.id), "front");
+    if (fronts.contains(id)) {
+      this.front = context().actorOf(FrontActor.props(dnsRouter, id), "front");
     }
 
-    this.context().actorOf(TickWatcher.props(this.zooKeeper, this.self()), "tickWatcher");
+    context().actorOf(TickWatcher.props(zooKeeper, self()), "tickWatcher");
   }
 
   @Override
   public void postStop() throws Exception {
     super.postStop();
 
-    this.db.close();
+    db.close();
   }
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder().match(TickInfo.class, this::onNewTick).build();
+    return receiveBuilder().match(TickInfo.class, this::onNewTick).build();
   }
 
   private void onNewTick(TickInfo tickInfo) {
     // FIXME: 7/6/17 this two events are not ordered
-    final ActorRef tickConcierge = this.context().actorOf(
-            TickConcierge.props(tickInfo, this.db, this.id, this.dnsRouter),
+    final ActorRef tickConcierge = context().actorOf(
+            TickConcierge.props(tickInfo, db, id, dnsRouter),
             String.valueOf(tickInfo.startTs())
     );
-    this.tickRouter.tell(new TickRouter.RegisterTick(tickInfo.startTs(), tickConcierge), this.self());
+    tickRouter.tell(new TickRouter.RegisterTick(tickInfo.startTs(), tickConcierge), self());
 
-    if (this.front != null) {
-      this.front.tell(tickInfo, this.self());
+    if (front != null) {
+      front.tell(tickInfo, self());
     }
   }
 
   private Map<Integer, InetSocketAddress> fetchDNS() throws IOException, KeeperException, InterruptedException {
     final String path = "/dns";
-    final byte[] data = this.zooKeeper.getData(path, false, new Stat());
+    final byte[] data = zooKeeper.getData(path, false, new Stat());
     return NodeConcierge.MAPPER.readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {
     });
   }
 
   private Set<Integer> fetchFronts() throws KeeperException, InterruptedException, IOException {
     final String path = "/fronts";
-    final byte[] data = this.zooKeeper.getData(path, false, new Stat());
+    final byte[] data = zooKeeper.getData(path, false, new Stat());
     return NodeConcierge.MAPPER.readValue(data, new TypeReference<Set<Integer>>() {
     });
   }

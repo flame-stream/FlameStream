@@ -32,7 +32,7 @@ public final class FrontActor extends LoggingActor {
   @Override
   public Receive createReceive() {
     //noinspection unchecked
-    return this.receiveBuilder()
+    return receiveBuilder()
             .match(RawData.class, rawData -> rawData.forEach(this::redirectItem))
             .match(TickInfo.class, this::createTick)
             .match(String.class, this::onPing)
@@ -40,22 +40,22 @@ public final class FrontActor extends LoggingActor {
   }
 
   private void onPing(String ping) {
-    this.sender().tell(System.nanoTime(), this.self());
+    sender().tell(System.nanoTime(), self());
   }
 
 
   private void createTick(TickInfo tickInfo) {
-    this.LOG().info("Creating tickFront for startTs: {}", tickInfo);
+    LOG().info("Creating tickFront for startTs: {}", tickInfo);
 
-    final InPort target = tickInfo.graph().frontBindings().get(this.id);
+    final InPort target = tickInfo.graph().frontBindings().get(id);
 
-    final ActorRef tickFront = this.context().actorOf(TickFrontActor.props(this.dns,
+    final ActorRef tickFront = context().actorOf(TickFrontActor.props(dns,
             target,
-            this.id,
+            id,
             tickInfo),
             Long.toString(tickInfo.startTs()));
 
-    this.tickFronts.put(tickInfo.startTs(), tickFront);
+    tickFronts.put(tickInfo.startTs(), tickFront);
   }
 
   private void redirectItem(Object payload) {
@@ -65,14 +65,14 @@ public final class FrontActor extends LoggingActor {
     }
     prevGlobalTs = globalTs;
 
-    final GlobalTime globalTime = new GlobalTime(globalTs, this.id);
+    final GlobalTime globalTime = new GlobalTime(globalTs, id);
     final Meta now = Meta.meta(globalTime);
     final DataItem<?> dataItem = new PayloadDataItem<>(now, payload);
 
-    final long tick = this.tickFronts.floorKey(globalTime.time());
+    final long tick = tickFronts.floorKey(globalTime.time());
 
-    final ActorRef tickFront = this.tickFronts.get(tick);
-    tickFront.tell(dataItem, this.self());
+    final ActorRef tickFront = tickFronts.get(tick);
+    tickFront.tell(dataItem, self());
   }
 }
 

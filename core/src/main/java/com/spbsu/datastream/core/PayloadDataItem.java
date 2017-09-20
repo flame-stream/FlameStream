@@ -20,38 +20,38 @@ public final class PayloadDataItem<T> implements DataItem<T> {
 
   @Override
   public Meta meta() {
-    return this.meta;
+    return meta;
   }
 
   @Override
   public T payload() {
-    return this.payload;
+    return payload;
   }
 
   @Override
   public long ack() {
-    return this.ackHashCode;
+    return ackHashCode;
   }
 
   @Override
   public String toString() {
-    return '{' + "meta=" + this.meta +
-            ", payload=" + this.payload +
+    return '{' + "meta=" + meta +
+            ", payload=" + payload +
             '}';
   }
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || this.getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     final PayloadDataItem<?> that = (PayloadDataItem<?>) o;
-    return this.ackHashCode == that.ackHashCode &&
-            Objects.equals(this.meta, that.meta) &&
-            Objects.equals(this.payload, that.payload);
+    return ackHashCode == that.ackHashCode &&
+            Objects.equals(meta, that.meta) &&
+            Objects.equals(payload, that.payload);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.meta, this.payload, this.ackHashCode);
+    return Objects.hash(meta, payload, ackHashCode);
   }
 }

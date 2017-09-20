@@ -20,37 +20,40 @@ final class TreeAckTable implements AckTable {
     this.toBeReported = startTs;
   }
 
+  @Override
   public void report(long windowHead, long xor) {
-    if (windowHead == this.toBeReported) {
-      this.ack(windowHead, xor);
-      this.toBeReported += this.window;
+    if (windowHead == toBeReported) {
+      ack(windowHead, xor);
+      this.toBeReported += window;
     } else {
-      throw new IllegalArgumentException("Not monotonic reports. Expected: " + this.toBeReported + ", got: " + windowHead);
+      throw new IllegalArgumentException("Not monotonic reports. Expected: " + toBeReported + ", got: " + windowHead);
     }
   }
 
+  @Override
   public boolean ack(long ts, long xor) {
-    final long lowerBound = this.startTs + this.window * ((ts - this.startTs) / this.window);
-    final long updatedXor = xor ^ this.table.getOrDefault(lowerBound, 0L);
+    final long lowerBound = startTs + window * ((ts - startTs) / window);
+    final long updatedXor = xor ^ table.getOrDefault(lowerBound, 0L);
     if (updatedXor == 0) {
-      this.table.remove(lowerBound);
+      table.remove(lowerBound);
       return true;
     } else {
-      this.table.put(lowerBound, updatedXor);
+      table.put(lowerBound, updatedXor);
       return false;
     }
   }
 
+  @Override
   public long min() {
-    return this.table.isEmpty() ? this.toBeReported : Math.min(this.toBeReported, this.table.firstKey());
+    return table.isEmpty() ? toBeReported : Math.min(toBeReported, table.firstKey());
   }
 
   @Override
   public String toString() {
-    return "TreeAckTable{" + "table=" + this.table +
-            ", startTs=" + this.startTs +
-            ", window=" + this.window +
-            ", toBeReported=" + this.toBeReported +
+    return "TreeAckTable{" + "table=" + table +
+            ", startTs=" + startTs +
+            ", window=" + window +
+            ", toBeReported=" + toBeReported +
             '}';
   }
 }

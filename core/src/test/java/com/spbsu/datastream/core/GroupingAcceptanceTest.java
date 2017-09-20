@@ -28,8 +28,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class GroupingAcceptanceTest {
+  @SuppressWarnings("Convert2Lambda")
   @Test
   public void noReorderingSingleHash() throws Exception {
+    //noinspection Convert2Lambda
     GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100), new BiPredicate<Long, Long>() {
       @Override
       public boolean test(Long aLong, Long aLong2) {
@@ -52,8 +54,10 @@ public final class GroupingAcceptanceTest {
     });
   }
 
+  @SuppressWarnings("Convert2Lambda")
   @Test
   public void reorderingSingleHash() throws Exception {
+    //noinspection Convert2Lambda
     GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.uniformLimitedHash(100), new BiPredicate<Long, Long>() {
       @Override
       public boolean test(Long aLong, Long aLong2) {
@@ -100,11 +104,13 @@ public final class GroupingAcceptanceTest {
     }
   }
 
+  @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
   @Test(enabled = false)
   public void infiniteTest() throws Exception {
     try (LocalCluster cluster = new LocalCluster(5, 1);
          TestStand stage = new TestStand(cluster)) {
 
+      //noinspection Convert2Lambda,Anonymous2MethodRef
       stage.deploy(GroupingAcceptanceTest.groupGraph(stage.frontIds(),
               stage.wrap(d -> {
               }),

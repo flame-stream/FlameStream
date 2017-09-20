@@ -15,7 +15,7 @@ public final class LinearCollector implements BarrierCollector {
 
   @Override
   public void releaseFrom(GlobalTime minTime, Consumer<DataItem<?>> consumer) {
-    final SortedMap<GlobalTime, List<DataItem<Object>>> headMap = this.invalidationPool.headMap(minTime);
+    final SortedMap<GlobalTime, List<DataItem<Object>>> headMap = invalidationPool.headMap(minTime);
     headMap.values().stream().flatMap(List::stream).forEach(consumer::accept);
     headMap.clear();
   }
@@ -24,7 +24,7 @@ public final class LinearCollector implements BarrierCollector {
   public void enqueue(DataItem<?> item) {
     //noinspection unchecked
     final DataItem<Object> dataItem = (DataItem<Object>) item;
-    this.invalidationPool.compute(item.meta().globalTime(), (globalTime, dataItems) -> {
+    invalidationPool.compute(item.meta().globalTime(), (globalTime, dataItems) -> {
       if (dataItems == null) {
         dataItems = new ArrayList<>();
       }
@@ -35,6 +35,6 @@ public final class LinearCollector implements BarrierCollector {
 
   @Override
   public boolean isEmpty() {
-    return this.invalidationPool.isEmpty();
+    return invalidationPool.isEmpty();
   }
 }

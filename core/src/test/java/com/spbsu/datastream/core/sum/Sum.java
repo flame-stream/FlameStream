@@ -11,24 +11,24 @@ public final class Sum implements Numb {
 
   @Override
   public String toString() {
-    return Long.toString(this.value);
+    return Long.toString(value);
   }
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || this.getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     final Sum sum = (Sum) o;
-    return this.value == sum.value;
+    return value == sum.value;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.value);
+    return Objects.hash(value);
   }
 
   @Override
   public long value() {
-    return this.value;
+    return value;
   }
 }

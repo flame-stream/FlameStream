@@ -20,21 +20,21 @@ public final class UnresolvedMessage<T extends Message<?>> {
   }
 
   public boolean isBroadcast() {
-    return this.broadcast;
+    return broadcast;
   }
 
   public int destination() {
-    return this.destination;
+    return destination;
   }
 
   public T payload() {
-    return this.payload;
+    return payload;
   }
 
   @Override
   public String toString() {
-    return "UnresolvedMessage{" + "destination=" + this.destination +
-            ", payload=" + this.payload +
+    return "UnresolvedMessage{" + "destination=" + destination +
+            ", payload=" + payload +
             '}';
   }
 }

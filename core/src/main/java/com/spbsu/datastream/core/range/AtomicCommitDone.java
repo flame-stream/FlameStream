@@ -10,12 +10,12 @@ public final class AtomicCommitDone {
   }
 
   public AtomicGraph graph() {
-    return this.atomicGraph;
+    return atomicGraph;
   }
 
   @Override
   public String toString() {
-    return "AtomicCommitDone{" + "atomicGraph=" + this.atomicGraph +
+    return "AtomicCommitDone{" + "atomicGraph=" + atomicGraph +
             '}';
   }
 }

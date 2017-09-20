@@ -24,29 +24,29 @@ final class ZookeeperDeployer implements Closeable {
   private final ZooKeeper zooKeeper;
 
   ZookeeperDeployer(String zkString) throws IOException {
-    this.zooKeeper = new ZooKeeper(zkString, 5000, e -> this.LOG.info("Init zookeeperString ZKEvent: {}", e));
+    this.zooKeeper = new ZooKeeper(zkString, 5000, e -> LOG.info("Init zookeeperString ZKEvent: {}", e));
   }
 
   public void pushDNS(Map<Integer, InetSocketAddress> dns) throws Exception {
-    this.zooKeeper.create("/dns",
-            this.mapper.writeValueAsBytes(dns),
+    zooKeeper.create("/dns",
+            mapper.writeValueAsBytes(dns),
             ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT);
   }
 
   public void pushFronts(Set<Integer> fronts) throws Exception {
-    this.zooKeeper.create("/fronts",
-            this.mapper.writeValueAsBytes(fronts),
+    zooKeeper.create("/fronts",
+            mapper.writeValueAsBytes(fronts),
             ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT);
   }
 
   public void pushTick(TickInfo tickInfo) throws Exception {
-    this.zooKeeper.create("/ticks/" + tickInfo.startTs(), this.serializer.serialize(tickInfo),
+    zooKeeper.create("/ticks/" + tickInfo.startTs(), serializer.serialize(tickInfo),
             ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
-    this.zooKeeper.create("/ticks/" + tickInfo.startTs() + "/ready", new byte[0],
+    zooKeeper.create("/ticks/" + tickInfo.startTs() + "/ready", new byte[0],
             ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
-    this.zooKeeper.create("/ticks/" + tickInfo.startTs() + "/committed", new byte[0],
+    zooKeeper.create("/ticks/" + tickInfo.startTs() + "/committed", new byte[0],
             ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
 
   }
@@ -54,15 +54,15 @@ final class ZookeeperDeployer implements Closeable {
   @Override
   public void close() {
     try {
-      this.zooKeeper.close();
+      zooKeeper.close();
     } catch (InterruptedException e) {
-      this.LOG.error("Smth bad happens during closing ZookeeperDeployer", e);
+      LOG.error("Smth bad happens during closing ZookeeperDeployer", e);
       throw new RuntimeException(e);
     }
   }
 
   public void createDirs() throws Exception {
-    this.zooKeeper.create("/ticks", new byte[0],
+    zooKeeper.create("/ticks", new byte[0],
             ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
   }
 }

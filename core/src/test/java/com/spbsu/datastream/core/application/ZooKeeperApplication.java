@@ -24,7 +24,7 @@ public final class ZooKeeperApplication extends ZooKeeperServerMain {
     final ServerConfig serverConfig = new ServerConfig();
     serverConfig.readFrom(quorumConfig);
 
-    this.runFromConfig(serverConfig);
+    runFromConfig(serverConfig);
   }
 
   @Override

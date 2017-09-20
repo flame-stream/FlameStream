@@ -10,12 +10,12 @@ public final class CommitDone {
   }
 
   public HashRange committer() {
-    return this.participant;
+    return participant;
   }
 
   @Override
   public String toString() {
-    return "CommitDone{" + "participant=" + this.participant +
+    return "CommitDone{" + "participant=" + participant +
             '}';
   }
 }

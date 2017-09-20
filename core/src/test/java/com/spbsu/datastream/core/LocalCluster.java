@@ -50,11 +50,11 @@ public final class LocalCluster implements Cluster {
 
   @Override
   public void close() throws Exception {
-    this.workerApplication.forEach(WorkerApplication::shutdown);
-    this.workerApplication.clear();
+    workerApplication.forEach(WorkerApplication::shutdown);
+    workerApplication.clear();
 
-    this.zk.shutdown();
-    this.zkThread.join();
+    zk.shutdown();
+    zkThread.join();
 
     FileUtils.deleteDirectory(new File("zookeeper"));
     FileUtils.deleteDirectory(new File("leveldb"));
@@ -66,19 +66,19 @@ public final class LocalCluster implements Cluster {
       FileUtils.deleteDirectory(new File("leveldb"));
 
       this.dns = freeSockerts(workersCount);
-      this.fronts = this.dns.keySet().stream().limit(frontCount).collect(toSet());
+      this.fronts = dns.keySet().stream().limit(frontCount).collect(toSet());
 
       this.zk = new ZooKeeperApplication();
-      this.zkThread = new Thread(Unchecked.runnable(this.zk::run));
-      this.zkThread.start();
+      this.zkThread = new Thread(Unchecked.runnable(zk::run));
+      zkThread.start();
 
       TimeUnit.SECONDS.sleep(1);
-      this.deployPartitioning();
+      deployPartitioning();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
 
-    this.workerApplication.addAll(this.startWorkers());
+    workerApplication.addAll(startWorkers());
   }
 
   private Map<Integer, InetSocketAddress> freeSockerts(int workersCount) {
@@ -96,7 +96,7 @@ public final class LocalCluster implements Cluster {
   }
 
   private Collection<WorkerApplication> startWorkers() {
-    final Set<WorkerApplication> apps = this.dns.entrySet().stream()
+    final Set<WorkerApplication> apps = dns.entrySet().stream()
             .map(f -> new WorkerApplication(f.getKey(), f.getValue(), ZK_STRING))
             .collect(toSet());
 

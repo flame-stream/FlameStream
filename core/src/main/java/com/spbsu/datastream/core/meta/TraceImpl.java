@@ -7,7 +7,6 @@ import static com.spbsu.datastream.core.meta.LocalEvent.childIdOf;
 import static com.spbsu.datastream.core.meta.LocalEvent.localEvent;
 import static com.spbsu.datastream.core.meta.LocalEvent.localTimeOf;
 
-@SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
 final class TraceImpl implements Trace {
 
   @SuppressWarnings("PackageVisibleField")
@@ -19,7 +18,7 @@ final class TraceImpl implements Trace {
 
   @Override
   public TraceImpl advanced(int localTime, int childId) {
-    final long[] newTrace = Arrays.copyOf(this.trace, this.trace.length + 1);
+    final long[] newTrace = Arrays.copyOf(trace, trace.length + 1);
     newTrace[newTrace.length - 1] = localEvent(localTime, childId);
     return new TraceImpl(newTrace);
   }
@@ -52,17 +51,17 @@ final class TraceImpl implements Trace {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final TraceImpl trace1 = (TraceImpl) o;
-    return Arrays.equals(this.trace, trace1.trace);
+    return Arrays.equals(trace, trace1.trace);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(this.trace);
+    return Arrays.hashCode(trace);
   }
 
   @Override
   public String toString() {
-    return Arrays.stream(this.trace).mapToObj(event -> localTimeOf(event) + ":" + childIdOf(event))
+    return Arrays.stream(trace).mapToObj(event -> localTimeOf(event) + ":" + childIdOf(event))
             .collect(Collectors.joining(", ", "[", "]"));
   }
 }

@@ -56,17 +56,17 @@ public final class WorkerApplication {
   }
 
   public void run() {
-    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + this.host.getPort())
-            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + this.host.getHostString()))
+    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + host.getPort())
+            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + host.getHostString()))
             .withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);
 
-    this.system.actorOf(LifecycleWatcher.props(this.zkConnectString, this.id), "watcher");
+    system.actorOf(LifecycleWatcher.props(zkConnectString, id), "watcher");
   }
 
   public void shutdown() {
     try {
-      Await.ready(this.system.terminate(), Duration.Inf());
+      Await.ready(system.terminate(), Duration.Inf());
     } catch (InterruptedException | TimeoutException e) {
       throw new RuntimeException(e);
     }

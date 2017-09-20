@@ -40,9 +40,9 @@ public class AckTableTest {
             .limit(items)
             .map(ts -> new Pair<>(ts, ThreadLocalRandom.current().nextLong()))
             .collect(Collectors.toList());
-    final SortedSet<Long> sortedSet = new TreeSet<>();
 
     LongStream.range(0, windowsCount).forEach(value -> ackTable.report(window * value, 0));
+    final SortedSet<Long> sortedSet = new TreeSet<>();
     xors.forEach(pair -> {
       ackTable.ack(pair.first, pair.second);
       sortedSet.add(pair.first);

@@ -25,33 +25,33 @@ public final class Filter<T> extends AbstractAtomicGraph {
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
-    @SuppressWarnings("unchecked") final boolean ok = this.predicate.test((T) item.payload());
+    @SuppressWarnings("unchecked") final boolean ok = predicate.test((T) item.payload());
 
     if (ok) {
-      final DataItem<?> result = new PayloadDataItem<>(item.meta().advanced(this.incrementLocalTimeAndGet()), item.payload());
+      final DataItem<?> result = new PayloadDataItem<>(item.meta().advanced(incrementLocalTimeAndGet()), item.payload());
 
-      handler.push(this.outPort(), result);
+      handler.push(outPort(), result);
     } else {
       // TODO: 5/9/17 DELIVER NULL
     }
   }
 
   public InPort inPort() {
-    return this.inPort;
+    return inPort;
   }
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.singletonList(this.inPort);
+    return Collections.singletonList(inPort);
   }
 
   public OutPort outPort() {
-    return this.outPort;
+    return outPort;
   }
 
   @Override
   public List<OutPort> outPorts() {
-    return Collections.singletonList(this.outPort);
+    return Collections.singletonList(outPort);
   }
 }
 

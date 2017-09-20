@@ -38,33 +38,33 @@ public final class TickInfo {
   }
 
   public long stopTs() {
-    return this.stopTs;
+    return stopTs;
   }
 
   public int ackerLocation() {
-    return this.ackerLocation;
+    return ackerLocation;
   }
 
   public long window() {
-    return this.window;
+    return window;
   }
 
   public TheGraph graph() {
-    return this.graph;
+    return graph;
   }
 
   public long startTs() {
-    return this.startTs;
+    return startTs;
   }
 
   @Override
   public String toString() {
-    return "TickInfo{" + "graph=" + this.graph +
-            ", hashMapping=" + this.hashMapping +
-            ", startTs=" + this.startTs +
-            ", stopTs=" + this.stopTs +
-            ", window=" + this.window +
-            ", ackerLocation=" + this.ackerLocation +
+    return "TickInfo{" + "graph=" + graph +
+            ", hashMapping=" + hashMapping +
+            ", startTs=" + startTs +
+            ", stopTs=" + stopTs +
+            ", window=" + window +
+            ", ackerLocation=" + ackerLocation +
             '}';
   }
 }

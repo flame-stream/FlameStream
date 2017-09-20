@@ -18,17 +18,17 @@ public final class InPort {
   }
 
   public long id() {
-    return this.id;
+    return id;
   }
 
   public ToIntFunction<?> hashFunction() {
-    return this.hashFunction;
+    return hashFunction;
   }
 
   @Override
   public String toString() {
-    return "InPort{" + "id=" + this.id +
-            ", hashFunction=" + this.hashFunction +
+    return "InPort{" + "id=" + id +
+            ", hashFunction=" + hashFunction +
             '}';
   }
 
@@ -37,16 +37,16 @@ public final class InPort {
     if (this == o) {
       return true;
     }
-    if (o == null || this.getClass() != o.getClass()) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
     final InPort port = (InPort) o;
-    return this.id == port.id;
+    return id == port.id;
   }
 
   @Override
   public int hashCode() {
-    return Long.hashCode(this.id);
+    return Long.hashCode(id);
   }
 }
 

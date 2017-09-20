@@ -10,12 +10,12 @@ public final class MinTimeUpdate {
   }
 
   public GlobalTime minTime() {
-    return this.minTime;
+    return minTime;
   }
 
   @Override
   public String toString() {
-    return "MinTimeUpdate{" + "minTime=" + this.minTime +
+    return "MinTimeUpdate{" + "minTime=" + minTime +
             '}';
   }
 }

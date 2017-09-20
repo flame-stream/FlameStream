@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
-@SuppressWarnings({"rawtypes", "ConditionalExpression"})
+@SuppressWarnings({"ConditionalExpression"})
 public final class Grouping<T> extends AbstractAtomicGraph {
   private static final int MIN_BUFFER_SIZE_FOR_MIN_TIME_UPDATE = 200; //magic number, tuning is welcome
   private final GroupingStatistics stat = new GroupingStatistics();
@@ -40,7 +40,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   @Override
   public void onStart(AtomicHandle handle) {
     // TODO: 5/18/17 Load state
-    this.buffers = new LazyGroupingState<>(this.hash, equalz);
+    this.buffers = new LazyGroupingState<>(hash, equalz);
   }
 
   @Override
@@ -48,19 +48,19 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     //noinspection unchecked
     final DataItem<T> dataItem = (DataItem<T>) item;
 
-    final List<DataItem<T>> group = this.buffers.getGroupFor(dataItem);
+    final List<DataItem<T>> group = buffers.getGroupFor(dataItem);
     final int position = insert(group, dataItem);
     stat.recordBucketSize(group.size());
-    this.replayAround(position, group, handle);
+    replayAround(position, group, handle);
   }
 
   private void replayAround(int position, List<DataItem<T>> group, AtomicHandle handle) {
     int replayCount = 0;
 
-    for (int right = position + 1; right <= Math.min(position + this.window, group.size()); ++right) {
+    for (int right = position + 1; right <= Math.min(position + window, group.size()); ++right) {
       replayCount++;
-      final int left = Math.max(right - this.window, 0);
-      this.pushSubGroup(group, left, right, handle);
+      final int left = Math.max(right - window, 0);
+      pushSubGroup(group, left, right, handle);
     }
 
     stat.recordReplaySize(replayCount);
@@ -69,11 +69,11 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private void pushSubGroup(List<DataItem<T>> group, int left, int right, AtomicHandle handle) {
     final List<DataItem<T>> outGroup = group.subList(left, right);
 
-    final Meta meta = outGroup.get(outGroup.size() - 1).meta().advanced(this.incrementLocalTimeAndGet());
+    final Meta meta = outGroup.get(outGroup.size() - 1).meta().advanced(incrementLocalTimeAndGet());
     final List<T> groupingResult = outGroup.stream().map(DataItem::payload).collect(Collectors.toList());
 
     final DataItem<List<T>> result = new PayloadDataItem<>(meta, groupingResult);
-    handle.push(this.outPort(), result);
+    handle.push(outPort(), result);
   }
 
   public static <T> int insert(List<DataItem<T>> group, DataItem<T> insertee) {
@@ -149,24 +149,24 @@ public final class Grouping<T> extends AbstractAtomicGraph {
         group.subList(0, position).clear();
       }
     };
-    this.buffers.forEach(removeOldConsumer);
+    buffers.forEach(removeOldConsumer);
   }
 
   public InPort inPort() {
-    return this.inPort;
+    return inPort;
   }
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.singletonList(this.inPort);
+    return Collections.singletonList(inPort);
   }
 
   public OutPort outPort() {
-    return this.outPort;
+    return outPort;
   }
 
   @Override
   public List<OutPort> outPorts() {
-    return Collections.singletonList(this.outPort);
+    return Collections.singletonList(outPort);
   }
 }

@@ -73,7 +73,7 @@ public final class FilterAcceptanceTest {
 
     @Override
     public Integer apply(Integer s) {
-      return s * this.factor;
+      return s * factor;
     }
   }
 }

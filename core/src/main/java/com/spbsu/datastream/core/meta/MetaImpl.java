@@ -20,28 +20,28 @@ final class MetaImpl implements Meta {
 
   @Override
   public Meta advanced(int newLocalTime) {
-    return new MetaImpl(this.globalTime, this.trace.advanced(newLocalTime, 0));
+    return new MetaImpl(globalTime, trace.advanced(newLocalTime, 0));
   }
 
   @Override
   public Meta advanced(int newLocalTime, int childId) {
-    return new MetaImpl(this.globalTime, this.trace.advanced(newLocalTime, childId));
+    return new MetaImpl(globalTime, trace.advanced(newLocalTime, childId));
   }
 
   @Override
   public boolean isInvalidatedBy(Meta that) {
-    return this.globalTime.equals(that.globalTime())
-            && this.trace.isInvalidatedBy(that.trace());
+    return globalTime.equals(that.globalTime())
+            && trace.isInvalidatedBy(that.trace());
   }
 
   @Override
   public GlobalTime globalTime() {
-    return this.globalTime;
+    return globalTime;
   }
 
   @Override
   public Trace trace() {
-    return this.trace;
+    return trace;
   }
 
   @Override
@@ -56,19 +56,19 @@ final class MetaImpl implements Meta {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || this.getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     final MetaImpl meta = (MetaImpl) o;
-    return Objects.equals(this.globalTime, meta.globalTime) &&
-            Objects.equals(this.trace, meta.trace);
+    return Objects.equals(globalTime, meta.globalTime) &&
+            Objects.equals(trace, meta.trace);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.globalTime, this.trace);
+    return Objects.hash(globalTime, trace);
   }
 
   @Override
   public String toString() {
-    return "(" + this.globalTime + ", " + this.trace + ')';
+    return "(" + globalTime + ", " + trace + ')';
   }
 }

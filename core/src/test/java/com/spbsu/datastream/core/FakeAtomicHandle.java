@@ -23,7 +23,7 @@ public final class FakeAtomicHandle implements AtomicHandle {
 
   @Override
   public void push(OutPort out, DataItem<?> result) {
-    this.pushConsumer.accept(out, result);
+    pushConsumer.accept(out, result);
   }
 
   @Override

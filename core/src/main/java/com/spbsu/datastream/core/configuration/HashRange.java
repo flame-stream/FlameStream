@@ -13,15 +13,15 @@ public final class HashRange {
   }
 
   public int from() {
-    return this.from;
+    return from;
   }
 
   public int to() {
-    return this.to;
+    return to;
   }
 
   public boolean contains(int hash) {
-    return this.from <= hash && hash < this.to;
+    return from <= hash && hash < to;
   }
 
   @Override
@@ -29,21 +29,21 @@ public final class HashRange {
     if (this == o) {
       return true;
     }
-    if (o == null || this.getClass() != o.getClass()) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
     final HashRange hashRange = (HashRange) o;
-    return this.from == hashRange.from &&
-            this.to == hashRange.to;
+    return from == hashRange.from &&
+            to == hashRange.to;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.from, this.to);
+    return Objects.hash(from, to);
   }
 
   @Override
   public String toString() {
-    return this.from + "_" + this.to;
+    return from + "_" + to;
   }
 }

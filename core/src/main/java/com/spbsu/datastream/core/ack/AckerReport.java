@@ -18,17 +18,17 @@ public final class AckerReport {
   }
 
   public GlobalTime globalTime() {
-    return this.globalTime;
+    return globalTime;
   }
 
   public long xor() {
-    return this.xor;
+    return xor;
   }
 
   @Override
   public String toString() {
-    return "AckerReport{" + "globalTime=" + this.globalTime +
-            ", xor=" + this.xor +
+    return "AckerReport{" + "globalTime=" + globalTime +
+            ", xor=" + xor +
             '}';
   }
 }

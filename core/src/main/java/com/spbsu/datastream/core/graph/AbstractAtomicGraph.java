@@ -7,7 +7,7 @@ public abstract class AbstractAtomicGraph implements AtomicGraph {
 
   protected final int incrementLocalTimeAndGet() {
     this.localTime += 1;
-    return this.localTime;
+    return localTime;
   }
 
   @Override

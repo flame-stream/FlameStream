@@ -36,18 +36,18 @@ public final class SumTest {
 
   @Test
   public void testSingleFront() throws Exception {
-    this.test(20, 1000, 1, 123);
+    test(20, 1000, 1, 123);
   }
 
   @Test
   public void testMultipleFronts() throws Exception {
-    this.test(30, 1000, 4, 123);
+    test(30, 1000, 4, 123);
   }
 
   @Test
   public void shortRepeatedTests() throws Exception {
     for (int i = 0; i < 10; ++i) {
-      this.test(5, 10, 4, i);
+      test(5, 10, 4, i);
     }
   }
 
@@ -78,10 +78,12 @@ public final class SumTest {
     }
   }
 
+  @SuppressWarnings("Convert2Lambda")
   private static TheGraph sumGraph(Collection<Integer> fronts, ActorPath consumerPath) {
     final HashFunction<Numb> identity = HashFunction.constantHash(1);
     final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
-    final BiPredicate<Numb, Numb> predicate = new BiPredicate<Numb, Numb>() {
+    //noinspection Convert2Lambda
+    @SuppressWarnings("Convert2Lambda") final BiPredicate<Numb, Numb> predicate = new BiPredicate<Numb, Numb>() {
       @Override
       public boolean test(Numb o, Numb o2) {
         return true;

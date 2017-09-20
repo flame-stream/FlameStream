@@ -11,19 +11,19 @@ public final class KryoInfoSerializer implements TickInfoSerializer {
 
   public KryoInfoSerializer() {
     this.kryo = new Kryo();
-    ((Kryo.DefaultInstantiatorStrategy) this.kryo.getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+    ((Kryo.DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
   }
 
   @Override
   public byte[] serialize(TickInfo tickInfo) {
     final ByteBufferOutput o = new ByteBufferOutput(1000, 20000);
-    this.kryo.writeObject(o, tickInfo);
+    kryo.writeObject(o, tickInfo);
     return o.toBytes();
   }
 
   @Override
   public TickInfo deserialize(byte[] date) {
     final ByteBufferInput input = new ByteBufferInput(date);
-    return this.kryo.readObject(input, TickInfo.class);
+    return kryo.readObject(input, TickInfo.class);
   }
 }

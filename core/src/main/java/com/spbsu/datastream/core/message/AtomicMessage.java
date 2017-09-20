@@ -2,7 +2,6 @@ package com.spbsu.datastream.core.message;
 
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.message.Message;
 
 public final class AtomicMessage<T extends DataItem<?>> implements Message<T> {
   private final long tick;
@@ -21,29 +20,29 @@ public final class AtomicMessage<T extends DataItem<?>> implements Message<T> {
   }
 
   public int hash() {
-    return this.hash;
+    return hash;
   }
 
   public InPort port() {
-    return this.port;
+    return port;
   }
 
   @Override
   public T payload() {
-    return this.payload;
+    return payload;
   }
 
   @Override
   public long tick() {
-    return this.tick;
+    return tick;
   }
 
   @Override
   public String toString() {
-    return "AtomicMessage{" + "tick=" + this.tick +
-            ", hash=" + this.hash +
-            ", port=" + this.port +
-            ", payload=" + this.payload +
+    return "AtomicMessage{" + "tick=" + tick +
+            ", hash=" + hash +
+            ", port=" + port +
+            ", payload=" + payload +
             '}';
   }
 }

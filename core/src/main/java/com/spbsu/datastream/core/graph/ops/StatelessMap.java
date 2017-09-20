@@ -24,34 +24,34 @@ public final class StatelessMap<T, R> extends AbstractAtomicGraph {
   }
 
   public Function<? super T, ? extends R> function() {
-    return this.function;
+    return function;
   }
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
-    @SuppressWarnings("unchecked") final R res = this.function.apply((T) item.payload());
+    @SuppressWarnings("unchecked") final R res = function.apply((T) item.payload());
 
-    final DataItem<R> result = new PayloadDataItem<>(item.meta().advanced(this.incrementLocalTimeAndGet()), res);
+    final DataItem<R> result = new PayloadDataItem<>(item.meta().advanced(incrementLocalTimeAndGet()), res);
 
-    handler.push(this.outPort(), result);
+    handler.push(outPort(), result);
   }
 
   public InPort inPort() {
-    return this.inPort;
+    return inPort;
   }
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.singletonList(this.inPort);
+    return Collections.singletonList(inPort);
   }
 
   public OutPort outPort() {
-    return this.outPort;
+    return outPort;
   }
 
   @Override
   public List<OutPort> outPorts() {
-    return Collections.singletonList(this.outPort);
+    return Collections.singletonList(outPort);
   }
 }
 

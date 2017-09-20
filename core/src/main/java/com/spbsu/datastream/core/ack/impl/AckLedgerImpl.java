@@ -14,19 +14,19 @@ public final class AckLedgerImpl implements AckLedger {
     tickInfo.graph()
             .frontBindings()
             .keySet()
-            .forEach(i -> this.tables.put(i, new ArrayAckTable(tickInfo.startTs(), tickInfo.stopTs(), tickInfo.window())));
+            .forEach(i -> tables.put(i, new ArrayAckTable(tickInfo.startTs(), tickInfo.stopTs(), tickInfo.window())));
   }
 
   @Override
   public void report(GlobalTime windowHead, long xor) {
-    this.tables.get(windowHead.front()).report(windowHead.time(), xor);
+    tables.get(windowHead.front()).report(windowHead.time(), xor);
   }
 
   @Override
   public GlobalTime min() {
     final int[] frontMin = {Integer.MAX_VALUE};
     final long[] timeMin = {Long.MAX_VALUE};
-    this.tables.forEachEntry((f, table) -> {
+    tables.forEachEntry((f, table) -> {
       final long tmpMin = table.min();
       if (tmpMin < timeMin[0] || tmpMin == timeMin[0] && f < frontMin[0]) {
         frontMin[0] = f;
@@ -40,12 +40,12 @@ public final class AckLedgerImpl implements AckLedger {
 
   @Override
   public boolean ack(GlobalTime windowHead, long xor) {
-    return this.tables.get(windowHead.front()).ack(windowHead.time(), xor);
+    return tables.get(windowHead.front()).ack(windowHead.time(), xor);
   }
 
   @Override
   public String toString() {
-    return "AckLedgerImpl{" + "tables=" + this.tables +
+    return "AckLedgerImpl{" + "tables=" + tables +
             '}';
   }
 }

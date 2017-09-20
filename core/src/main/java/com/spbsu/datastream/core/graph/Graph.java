@@ -22,7 +22,7 @@ public interface Graph {
    **/
 
   default Graph fuse(Graph that, OutPort from, InPort to) {
-    return this.compose(that).wire(from, to);
+    return compose(that).wire(from, to);
   }
 
   /**

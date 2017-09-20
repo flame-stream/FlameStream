@@ -78,18 +78,17 @@ public final class BarrierSink implements AtomicGraph {
 
     @Override
     public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
-      this.collector.enqueue(item);
+      collector.enqueue(item);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-      this.collector.releaseFrom(globalTime, di -> handle.push(outPort, di));
+      collector.releaseFrom(globalTime, di -> handle.push(outPort, di));
     }
 
     @Override
     public void onCommit(AtomicHandle handle) {
-      if (!this.collector.isEmpty()) {
+      if (!collector.isEmpty()) {
         throw new IllegalStateException("Barrier should be empty");
       }
     }

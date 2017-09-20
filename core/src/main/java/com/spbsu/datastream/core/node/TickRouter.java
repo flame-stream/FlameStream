@@ -16,22 +16,22 @@ final class TickRouter extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder()
+    return receiveBuilder()
             .match(Message.class, this::handleTickMessage)
             .match(RegisterTick.class, this::registerTick)
             .build();
   }
 
   private void registerTick(RegisterTick tick) {
-    this.ticks.putIfAbsent(tick.tick(), tick.tickConcierge());
+    ticks.putIfAbsent(tick.tick(), tick.tickConcierge());
   }
 
   private void handleTickMessage(Message<?> tickMessage) {
-    final ActorRef receiver = this.ticks.get(tickMessage.tick());
+    final ActorRef receiver = ticks.get(tickMessage.tick());
     if (receiver != null) {
-      receiver.tell(tickMessage, this.sender());
+      receiver.tell(tickMessage, sender());
     } else {
-      this.LOG().error("Unknown tick {}", tickMessage.tick());
+      LOG().error("Unknown tick {}", tickMessage.tick());
     }
   }
 
@@ -46,11 +46,11 @@ final class TickRouter extends LoggingActor {
     }
 
     public ActorRef tickConcierge() {
-      return this.tickConcierge;
+      return tickConcierge;
     }
 
     public long tick() {
-      return this.tick;
+      return tick;
     }
   }
 }

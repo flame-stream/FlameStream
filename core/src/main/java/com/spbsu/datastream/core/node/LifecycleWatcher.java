@@ -26,20 +26,20 @@ public final class LifecycleWatcher extends LoggingActor {
   public void preStart() throws Exception {
     super.preStart();
 
-    this.zk = new ZooKeeper(this.zkConnectString, 5000,
-            event -> this.self().tell(event, this.self()));
+    this.zk = new ZooKeeper(zkConnectString, 5000,
+            event -> self().tell(event, self()));
   }
 
   @Override
   public void postStop() throws Exception {
     super.postStop();
 
-    this.zk.close();
+    zk.close();
   }
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder().match(WatchedEvent.class, this::onWatchedEvent).build();
+    return receiveBuilder().match(WatchedEvent.class, this::onWatchedEvent).build();
   }
 
   private void onWatchedEvent(WatchedEvent event) {
@@ -48,22 +48,22 @@ public final class LifecycleWatcher extends LoggingActor {
 
       switch (state) {
         case SyncConnected:
-          this.LOG().info("Connected to ZK");
-          this.initConcierge();
+          LOG().info("Connected to ZK");
+          initConcierge();
           break;
         case Expired:
-          this.LOG().info("Session expired");
-          this.context().stop(this.self());
+          LOG().info("Session expired");
+          context().stop(self());
           break;
         default:
-          this.unhandled(event);
+          unhandled(event);
       }
     } else {
-      this.unhandled(event);
+      unhandled(event);
     }
   }
 
   private void initConcierge() {
-    this.context().actorOf(NodeConcierge.props(this.id, this.zk), "concierge");
+    context().actorOf(NodeConcierge.props(id, zk), "concierge");
   }
 }

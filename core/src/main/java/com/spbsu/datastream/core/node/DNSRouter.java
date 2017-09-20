@@ -28,7 +28,7 @@ final class DNSRouter extends LoggingActor {
                     ActorRef localRouter,
                     int localId) {
     this.dns = new TIntObjectHashMap<>();
-    dns.forEach((i, addr) -> this.dns.put(i, this.selectionFor(i, addr)));
+    dns.forEach((i, addr) -> this.dns.put(i, selectionFor(i, addr)));
 
     this.localRouter = localRouter;
     this.localId = localId;
@@ -36,31 +36,31 @@ final class DNSRouter extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder().match(UnresolvedMessage.class, this::onUnresolved).build();
+    return receiveBuilder().match(UnresolvedMessage.class, this::onUnresolved).build();
   }
 
 
   private void onUnresolved(UnresolvedMessage<?> message) {
-    this.LOG().debug("Received: {}", message);
-    if (message.destination() == this.localId) {
-      this.localRouter.tell(message.payload(), this.sender());
+    LOG().debug("Received: {}", message);
+    if (message.destination() == localId) {
+      localRouter.tell(message.payload(), sender());
     } else {
-      this.sendRemote(message);
+      sendRemote(message);
     }
   }
 
   private void sendRemote(UnresolvedMessage<?> message) {
     if (message.isBroadcast()) {
-      this.dns.forEachEntry((key, value) -> {
-        value.tell(new UnresolvedMessage<>(key, message.payload()), this.sender());
+      dns.forEachEntry((key, value) -> {
+        value.tell(new UnresolvedMessage<>(key, message.payload()), sender());
         return true;
       });
     } else {
-      final ActorSelection receiver = this.dns.get(message.destination());
+      final ActorSelection receiver = dns.get(message.destination());
       if (receiver != null) {
-        receiver.tell(message, this.sender());
+        receiver.tell(message, sender());
       } else {
-        this.LOG().error("Unknown destanation {}", message.destination());
+        LOG().error("Unknown destanation {}", message.destination());
       }
     }
   }
@@ -73,6 +73,6 @@ final class DNSRouter extends LoggingActor {
             .$div("watcher")
             .$div("concierge")
             .$div("dns");
-    return this.context().actorSelection(path);
+    return context().actorSelection(path);
   }
 }

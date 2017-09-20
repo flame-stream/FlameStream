@@ -19,8 +19,8 @@ final class CollectingActor<T> extends LoggingActor {
   @SuppressWarnings("unchecked")
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder()
-            .match(RawData.class, m -> m.forEach(o -> this.queue.accept((T) o)))
+    return receiveBuilder()
+            .match(RawData.class, m -> m.forEach(o -> queue.accept((T) o)))
             .build();
   }
 }

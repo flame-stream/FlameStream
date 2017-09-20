@@ -19,7 +19,7 @@ public final class AtomicActor extends LoggingActor {
 
   private AtomicActor(AtomicGraph atomic, TickInfo tickInfo, ActorRef dns, DB db) {
     this.atomic = atomic;
-    this.handle = new AtomicHandleImpl(tickInfo, dns, db, this.context());
+    this.handle = new AtomicHandleImpl(tickInfo, dns, db, context());
   }
 
   public static Props props(AtomicGraph atomic, TickInfo tickInfo, ActorRef dns, DB db) {
@@ -28,13 +28,13 @@ public final class AtomicActor extends LoggingActor {
 
   @Override
   public void preStart() throws Exception {
-    this.atomic.onStart(this.handle);
+    atomic.onStart(handle);
     super.preStart();
   }
 
   @Override
   public Receive createReceive() {
-    return this.receiveBuilder()
+    return receiveBuilder()
             .match(AtomicMessage.class, this::onAtomicMessage)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
             .match(Commit.class, this::onCommit)
@@ -42,17 +42,17 @@ public final class AtomicActor extends LoggingActor {
   }
 
   private void onCommit(Commit commit) {
-    this.atomic.onCommit(this.handle);
-    this.context().parent().tell(new AtomicCommitDone(this.atomic), this.self());
-    this.LOG().info("Commit done");
-    this.context().stop(this.self());
+    atomic.onCommit(handle);
+    context().parent().tell(new AtomicCommitDone(atomic), self());
+    LOG().info("Commit done");
+    context().stop(self());
 
-    this.LOG().info("Atomic {} statistics: {}", atomic, stat);
+    LOG().info("Atomic {} statistics: {}", atomic, stat);
   }
 
   @Override
   public void postStop() throws Exception {
-    this.LOG().info("Atomic {} statistics: {}", atomic, stat);
+    LOG().info("Atomic {} statistics: {}", atomic, stat);
 
     super.postStop();
   }
@@ -60,8 +60,8 @@ public final class AtomicActor extends LoggingActor {
   private void onAtomicMessage(AtomicMessage<?> message) {
     final long start = System.nanoTime();
 
-    this.atomic.onPush(message.port(), message.payload(), this.handle);
-    this.handle.ack(message.payload());
+    atomic.onPush(message.port(), message.payload(), handle);
+    handle.ack(message.payload());
 
     final long stop = System.nanoTime();
     stat.recordOnAtomicMessage(stop - start);
@@ -70,7 +70,7 @@ public final class AtomicActor extends LoggingActor {
   private void onMinTimeUpdate(MinTimeUpdate message) {
     final long start = System.nanoTime();
 
-    this.atomic.onMinGTimeUpdate(message.minTime(), this.handle);
+    atomic.onMinGTimeUpdate(message.minTime(), handle);
 
     final long stop = System.nanoTime();
     stat.recordOnMinTimeUpdate(stop - start);
