@@ -8,6 +8,7 @@ import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.impl.AckLedgerImpl;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.node.UnresolvedMessage;
+import com.spbsu.datastream.core.stat.AckerStatistics;
 import com.spbsu.datastream.core.tick.TickInfo;
 
 import java.util.Collection;
@@ -18,6 +19,8 @@ public final class AckActor extends LoggingActor {
   private final TickInfo tickInfo;
   private final ActorRef dns;
   private GlobalTime currentMin = GlobalTime.MIN;
+
+  private final AckerStatistics stat = new AckerStatistics();
 
   private final Collection<HashRange> committers = new HashSet<>();
 
@@ -42,6 +45,7 @@ public final class AckActor extends LoggingActor {
   @Override
   public void postStop() throws Exception {
     super.postStop();
+    LOG().info("Acker statistics: {}", stat);
 
     this.LOG().debug("Acker ledger: {}", this.ledger);
   }
@@ -53,11 +57,15 @@ public final class AckActor extends LoggingActor {
   }
 
   private void handleAck(Ack ack) {
+    final long start = System.nanoTime();
     this.assertMonotonicAck(ack.time());
 
     this.LOG().debug("Ack received: {}", ack);
     if (this.ledger.ack(ack.time(), ack.xor())) {
       this.checkLedgerTime();
+      stat.recordReleasingAck(System.nanoTime() - start);
+    } else {
+      stat.recordNormalAck(System.nanoTime() - start);
     }
   }
 

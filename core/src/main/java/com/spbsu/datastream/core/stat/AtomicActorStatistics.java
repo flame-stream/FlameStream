@@ -24,7 +24,7 @@ public final class AtomicActorStatistics implements Statistics {
   public Map<String, Double> metrics() {
     final Map<String, Double> result = new HashMap<>();
     result.putAll(asMap("onAtomicMessage duration", onAtomic));
-    result.putAll(asMap("Average onMinTime duration", onMinTime));
+    result.putAll(asMap("onMinTime duration", onMinTime));
     return result;
   }
 
