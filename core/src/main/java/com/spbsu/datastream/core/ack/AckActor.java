@@ -1,15 +1,15 @@
 package com.spbsu.datastream.core.ack;
 
-import akka.actor.ActorRef;
 import akka.actor.Props;
-import com.spbsu.datastream.core.message.BroadcastMessage;
-import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.impl.AckLedgerImpl;
 import com.spbsu.datastream.core.configuration.HashRange;
-import com.spbsu.datastream.core.node.UnresolvedMessage;
+import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.stat.AckerStatistics;
+import com.spbsu.datastream.core.tick.RoutingInfo;
+import com.spbsu.datastream.core.tick.StartTick;
 import com.spbsu.datastream.core.tick.TickInfo;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -17,25 +17,36 @@ import java.util.HashSet;
 public final class AckActor extends LoggingActor {
   private final AckLedger ledger;
   private final TickInfo tickInfo;
-  private final ActorRef dns;
   private GlobalTime currentMin = GlobalTime.MIN;
+
+  @Nullable
+  private RoutingInfo routingInfo;
 
   private final AckerStatistics stat = new AckerStatistics();
 
   private final Collection<HashRange> committers = new HashSet<>();
 
-  private AckActor(TickInfo tickInfo, ActorRef dns) {
+  private AckActor(TickInfo tickInfo) {
     this.ledger = new AckLedgerImpl(tickInfo);
     this.tickInfo = tickInfo;
-    this.dns = dns;
   }
 
-  public static Props props(TickInfo tickInfo, ActorRef dns) {
-    return Props.create(AckActor.class, tickInfo, dns);
+  public static Props props(TickInfo tickInfo) {
+    return Props.create(AckActor.class, tickInfo);
   }
 
   @Override
   public Receive createReceive() {
+    return receiveBuilder()
+            .match(StartTick.class, start -> {
+              LOG().info("Received start tick");
+              routingInfo = start.tickRoutingInfo();
+              getContext().become(acking());
+            })
+            .build();
+  }
+
+  private Receive acking() {
     return receiveBuilder()
             .match(AckerReport.class, this::handleReport)
             .match(Ack.class, this::handleAck)
@@ -98,11 +109,11 @@ public final class AckActor extends LoggingActor {
 
   private void sendCommit() {
     LOG().info("Committing");
-    dns.tell(new UnresolvedMessage<>(new BroadcastMessage<>(new Commit(), tickInfo.startTs())), self());
+    routingInfo.rangeConcierges().values().forEach(r -> r.tell(new Commit(), self());
   }
 
   private void sendMinUpdates(GlobalTime min) {
     LOG().debug("New min time: {}", min);
-    dns.tell(new UnresolvedMessage<>(new BroadcastMessage<>(new MinTimeUpdate(min), tickInfo.startTs())), self());
+    routingInfo.rangeConcierges().values().forEach(r -> r.tell(new MinTimeUpdate(min), self());
   }
 }

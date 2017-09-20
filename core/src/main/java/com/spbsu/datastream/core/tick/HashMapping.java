@@ -8,33 +8,33 @@ import java.util.Map;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
-public interface HashMapping {
-  static HashMapping hashMapping(Map<HashRange, Integer> nodeMapping) {
-    return new ListHashMapping(nodeMapping);
+public interface HashMapping<T> {
+  static <T> HashMapping<T> hashMapping(Map<HashRange, T> nodeMapping) {
+    return new ListHashMapping<T>(nodeMapping);
   }
 
-  Map<HashRange, Integer> asMap();
+  Map<HashRange, T> asMap();
 
-  int workerForHash(int hash);
+  T valueFor(int hash);
 }
 
-final class ListHashMapping implements HashMapping {
-  private final List<RangeEntry> mapping;
+final class ListHashMapping<T> implements HashMapping<T> {
+  private final List<RangeEntry<T>> mapping;
 
-  ListHashMapping(Map<HashRange, Integer> nodeMapping) {
+  ListHashMapping(Map<HashRange, T> nodeMapping) {
     this.mapping = nodeMapping.entrySet().stream()
-            .map(e -> new RangeEntry(e.getKey(), e.getValue()))
+            .map(e -> new RangeEntry<>(e.getKey(), e.getValue()))
             .collect(toList());
   }
 
   @Override
-  public Map<HashRange, Integer> asMap() {
+  public Map<HashRange, T> asMap() {
     return mapping.stream().collect(toMap(e -> e.range, e -> e.node));
   }
 
   @Override
-  public int workerForHash(int hash) {
-    for (RangeEntry entry : mapping) {
+  public T valueFor(int hash) {
+    for (RangeEntry<T> entry : mapping) {
       if (entry.range.contains(hash)) {
         return entry.node;
       }
@@ -43,11 +43,11 @@ final class ListHashMapping implements HashMapping {
     throw new IllegalStateException("Hash ranges doesn't cover Integer space");
   }
 
-  private static final class RangeEntry {
+  private static final class RangeEntry<T> {
     public final HashRange range;
-    public final int node;
+    public final T node;
 
-    private RangeEntry(HashRange range, int node) {
+    private RangeEntry(HashRange range, T node) {
       this.range = range;
       this.node = node;
     }

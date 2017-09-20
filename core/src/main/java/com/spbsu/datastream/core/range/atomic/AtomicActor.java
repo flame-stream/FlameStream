@@ -1,29 +1,28 @@
 package com.spbsu.datastream.core.range.atomic;
 
-import akka.actor.ActorRef;
 import akka.actor.Props;
-import com.spbsu.datastream.core.message.AtomicMessage;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.Commit;
 import com.spbsu.datastream.core.ack.MinTimeUpdate;
 import com.spbsu.datastream.core.graph.AtomicGraph;
+import com.spbsu.datastream.core.range.AddressedItem;
 import com.spbsu.datastream.core.range.AtomicCommitDone;
 import com.spbsu.datastream.core.stat.AtomicActorStatistics;
+import com.spbsu.datastream.core.tick.RoutingInfo;
 import com.spbsu.datastream.core.tick.TickInfo;
-import org.iq80.leveldb.DB;
 
 public final class AtomicActor extends LoggingActor {
   private final AtomicActorStatistics stat = new AtomicActorStatistics();
   private final AtomicGraph atomic;
   private final AtomicHandle handle;
 
-  private AtomicActor(AtomicGraph atomic, TickInfo tickInfo, ActorRef dns, DB db) {
+  private AtomicActor(AtomicGraph atomic, TickInfo tickInfo, RoutingInfo routingInfo) {
     this.atomic = atomic;
-    this.handle = new AtomicHandleImpl(tickInfo, dns, db, context());
+    this.handle = new AtomicHandleImpl(tickInfo, routingInfo, context());
   }
 
-  public static Props props(AtomicGraph atomic, TickInfo tickInfo, ActorRef dns, DB db) {
-    return Props.create(AtomicActor.class, atomic, tickInfo, dns, db);
+  public static Props props(AtomicGraph atomic, TickInfo tickInfo, RoutingInfo routingInfo) {
+    return Props.create(AtomicActor.class, atomic, tickInfo, routingInfo);
   }
 
   @Override
@@ -35,7 +34,7 @@ public final class AtomicActor extends LoggingActor {
   @Override
   public Receive createReceive() {
     return receiveBuilder()
-            .match(AtomicMessage.class, this::onAtomicMessage)
+            .match(AddressedItem.class, this::onAtomicMessage)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
             .match(Commit.class, this::onCommit)
             .build();
@@ -57,11 +56,11 @@ public final class AtomicActor extends LoggingActor {
     super.postStop();
   }
 
-  private void onAtomicMessage(AtomicMessage<?> message) {
+  private void onAtomicMessage(AddressedItem message) {
     final long start = System.nanoTime();
 
-    atomic.onPush(message.port(), message.payload(), handle);
-    handle.ack(message.payload());
+    atomic.onPush(message.port(), message.item(), handle);
+    handle.ack(message.item());
 
     final long stop = System.nanoTime();
     stat.recordOnAtomicMessage(stop - start);

@@ -1,79 +1,106 @@
 package com.spbsu.datastream.core.tick;
 
+import akka.actor.ActorIdentity;
+import akka.actor.ActorPath;
 import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.Identify;
 import akka.actor.Props;
-import com.spbsu.datastream.core.message.AckerMessage;
-import com.spbsu.datastream.core.message.AtomicMessage;
-import com.spbsu.datastream.core.message.BroadcastMessage;
+import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.datastream.core.LoggingActor;
-import com.spbsu.datastream.core.message.Message;
 import com.spbsu.datastream.core.ack.AckActor;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.range.RangeConcierge;
-import org.iq80.leveldb.DB;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public final class TickConcierge extends LoggingActor {
   private final TickInfo info;
-  private final ActorRef dns;
   private final int localId;
-  private final DB db;
 
-  private final TreeMap<Integer, ActorRef> concierges;
+  private final Map<Integer, ActorPath> cluster;
 
-  private final ActorRef acker;
-
-  private TickConcierge(TickInfo tickInfo,
-                        int localId,
-                        ActorRef dns, DB db) {
+  private TickConcierge(TickInfo tickInfo, int localId, Map<Integer, ActorPath> cluster) {
     this.info = tickInfo;
-    this.dns = dns;
     this.localId = localId;
+    this.cluster = cluster;
 
-    this.concierges = new TreeMap<>();
     myRanges(tickInfo.hashMapping().asMap())
-            .forEach(range -> concierges.put(range.from(), rangeConcierge(range)));
-    this.db = db;
+            .forEach(this::rangeConcierge);
     if (tickInfo.ackerLocation() == localId) {
-      this.acker = context().actorOf(AckActor.props(tickInfo, dns), "acker");
-    } else {
-      this.acker = null;
+      context().actorOf(AckActor.props(tickInfo), "acker");
     }
   }
 
+  private final Map<HashRange, ActorSelection> tmpRanges = new HashMap<>();
+
+  public static Props props(TickInfo tickInfo, int localId, Map<Integer, ActorPath> cluster) {
+    return Props.create(TickConcierge.class, tickInfo, localId, cluster);
+  }
+
+  private ActorSelection acker;
+
+  @Override
+  public void preStart() throws Exception {
+    final Map<HashRange, Integer> map = info.hashMapping().asMap();
+    map.forEach((range, id) -> {
+      final ActorPath path = cluster.get(id).child(range.toString());
+      final ActorSelection selection = context().actorSelection(path);
+      tmpRanges.put(range, selection);
+      selection.tell(new Identify(range), self());
+    });
+
+    acker = context().actorSelection(cluster.get(info.ackerLocation()).child("acker"));
+    acker.tell(new Identify("Hey acker"), self());
+
+    super.preStart();
+  }
+
+  private final Map<HashRange, ActorRef> refs = new HashMap<>();
+
+  @Nullable
+  private ActorRef ackerRef;
+
   @Override
   public Receive createReceive() {
-    return receiveBuilder()
-            .match(AckerMessage.class, m -> acker.tell(m.payload(), sender()))
-            .match(AtomicMessage.class, this::routeAtomicMessage)
-            .match(BroadcastMessage.class, this::broadcast)
+    return ReceiveBuilder.create()
+            .match(ActorIdentity.class, id -> id.getActorRef().isPresent(), id -> {
+              if (id.correlationId() instanceof HashRange) {
+                refs.put((HashRange) id.correlationId(), sender());
+              } else if (id.correlationId() instanceof String) {
+                ackerRef = sender();
+              } else {
+                unhandled(id);
+              }
+
+              if (refs.size() == cluster.size() && acker != null) {
+                LOG().info("Collected all refs!");
+                getContext().getChildren()
+                        .forEach(c -> c.tell(new StartTick(new RoutingInfo(refs, ackerRef)), self()));
+              }
+              getContext().become(emptyBehavior());
+            })
+            .match(ActorIdentity.class, id -> !id.getActorRef().isPresent(), id -> {
+              if (id.correlationId() instanceof HashRange) {
+                tmpRanges.get(id.correlationId()).tell(new Identify(id.correlationId()), self());
+              } else if (id.correlationId() instanceof String) {
+                acker.tell(new Identify("Hey acker"), self());
+              } else {
+                unhandled(id);
+              }
+            })
             .build();
   }
 
   private ActorRef rangeConcierge(HashRange range) {
-    return context().actorOf(RangeConcierge.props(info, dns, range, db), range.toString());
-  }
-
-  public static Props props(TickInfo tickInfo, DB db, int localId,
-                            ActorRef dns) {
-    return Props.create(TickConcierge.class, tickInfo, localId, dns, db);
+    return context().actorOf(RangeConcierge.props(info), range.toString());
   }
 
   private Iterable<HashRange> myRanges(Map<HashRange, Integer> mappings) {
     return mappings.entrySet().stream().filter(e -> e.getValue().equals(localId))
             .map(Map.Entry::getKey).collect(Collectors.toSet());
-  }
-
-  private void broadcast(Message<?> broadcastMessage) {
-    concierges.values().forEach(v -> v.tell(broadcastMessage.payload(), sender()));
-  }
-
-  private void routeAtomicMessage(AtomicMessage<?> atomicMessage) {
-    final ActorRef receiver = concierges
-            .floorEntry(atomicMessage.hash()).getValue();
-    receiver.tell(atomicMessage, sender());
   }
 }
