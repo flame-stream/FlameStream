@@ -26,7 +26,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   private final HashMapping<ActorRef> hashMapping;
 
-  public AtomicHandleImpl(TickInfo tickInfo, TickRoutes tickRoutes, ActorContext context) {
+  AtomicHandleImpl(TickInfo tickInfo, TickRoutes tickRoutes, ActorContext context) {
     this.tickInfo = tickInfo;
     this.tickRoutes = tickRoutes;
     this.context = context;
@@ -59,8 +59,6 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void ack(DataItem<?> item) {
-    final int id = tickInfo.ackerLocation();
-
     final Ack message = new Ack(item.ack(), item.meta().globalTime());
     tickRoutes.acker().tell(message, context.self());
   }

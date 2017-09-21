@@ -43,7 +43,7 @@ public final class TickInfo {
     return stopTs;
   }
 
-  public int ackerLocation() {
+  int ackerLocation() {
     return ackerLocation;
   }
 
