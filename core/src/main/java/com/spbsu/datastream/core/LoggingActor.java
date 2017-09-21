@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core;
 
 import akka.actor.AbstractActor;
+import akka.actor.AbstractActorWithStash;
 import akka.actor.SupervisorStrategy;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -9,7 +10,7 @@ import scala.runtime.BoxedUnit;
 
 import java.util.Optional;
 
-public abstract class LoggingActor extends AbstractActor {
+public abstract class LoggingActor extends AbstractActorWithStash {
   private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
 
   @Override
@@ -24,7 +25,7 @@ public abstract class LoggingActor extends AbstractActor {
   }
 
   @Override
-  public void postStop() throws Exception {
+  public void postStop() {
     LOG().info("Stopped");
     super.postStop();
   }

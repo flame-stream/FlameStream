@@ -14,12 +14,8 @@ import com.spbsu.datastream.core.tick.TickInfo;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
-import org.iq80.leveldb.DB;
-import org.iq80.leveldb.Options;
-import org.iq80.leveldb.impl.DbImpl;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -33,7 +29,7 @@ public final class NodeConcierge extends LoggingActor {
   private final int id;
 
   @Nullable
-  private Map<Integer, ActorPath> nodeConcierges = null;
+  private Map<Integer, ActorPath> nodeConierges = null;
 
   private ActorRef front = null;
 
@@ -48,14 +44,14 @@ public final class NodeConcierge extends LoggingActor {
 
   @Override
   public void preStart() throws Exception {
-    nodeConcierges = fetchDNS();
-    LOG().info("DNS fetched: {}", nodeConcierges);
+    nodeConierges = fetchDNS();
+    LOG().info("DNS fetched: {}", nodeConierges);
 
     final Set<Integer> fronts = fetchFronts();
     LOG().info("Fronts fetched: {}", fronts);
 
     if (fronts.contains(id)) {
-      this.front = context().actorOf(FrontActor.props(nodeConcierges, id), "front");
+      this.front = context().actorOf(FrontActor.props(nodeConierges, id), "front");
     }
 
     context().actorOf(TickWatcher.props(zooKeeper, self()), "tickWatcher");
@@ -68,7 +64,7 @@ public final class NodeConcierge extends LoggingActor {
   }
 
   private void onNewTick(TickInfo tickInfo) {
-    context().actorOf(TickConcierge.props(tickInfo, id, nodeConcierges), String.valueOf(tickInfo.startTs()));
+    context().actorOf(TickConcierge.props(tickInfo, id, nodeConierges), String.valueOf(tickInfo.startTs()));
 
     if (front != null) {
       front.tell(tickInfo, self());
@@ -86,7 +82,13 @@ public final class NodeConcierge extends LoggingActor {
 
   private ActorPath pathFor(InetSocketAddress socketAddress) {
     // TODO: 5/8/17 Properly resolve ActorRef
-    final Address address = Address.apply("akka.tcp", "worker", socketAddress.getAddress().getHostName(), address.getPort());
+    final Address address = Address.apply(
+            "akka.tcp",
+            "worker",
+            socketAddress.getAddress().getHostName(),
+            socketAddress.getPort()
+    );
+
     return RootActorPath.apply(address, "/")
             .child("user")
             .child("watcher")

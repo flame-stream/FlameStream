@@ -6,10 +6,12 @@ import com.spbsu.datastream.core.graph.TheGraph;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.unmodifiableMap;
+
 public final class TickInfo {
   private final TheGraph graph;
 
-  private final HashMapping hashMapping;
+  private final Map<HashRange, Integer> hashMapping;
 
   private final long startTs;
 
@@ -26,15 +28,15 @@ public final class TickInfo {
                   long stopTs,
                   long window) {
     this.ackerLocation = ackerLocation;
-    this.hashMapping = HashMapping.hashMapping(new HashMap<>(hashMapping));
+    this.hashMapping = new HashMap<>(hashMapping);
     this.graph = graph;
     this.startTs = startTs;
     this.window = window;
     this.stopTs = stopTs;
   }
 
-  public HashMapping hashMapping() {
-    return hashMapping;
+  public Map<HashRange, Integer> hashMapping() {
+    return unmodifiableMap(hashMapping);
   }
 
   public long stopTs() {

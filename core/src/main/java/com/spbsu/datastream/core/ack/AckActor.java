@@ -6,7 +6,7 @@ import com.spbsu.datastream.core.ack.impl.AckLedgerImpl;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.meta.GlobalTime;
 import com.spbsu.datastream.core.stat.AckerStatistics;
-import com.spbsu.datastream.core.tick.RoutingInfo;
+import com.spbsu.datastream.core.tick.TickRoutes;
 import com.spbsu.datastream.core.tick.StartTick;
 import com.spbsu.datastream.core.tick.TickInfo;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +20,7 @@ public final class AckActor extends LoggingActor {
   private GlobalTime currentMin = GlobalTime.MIN;
 
   @Nullable
-  private RoutingInfo routingInfo;
+  private TickRoutes tickRoutes;
 
   private final AckerStatistics stat = new AckerStatistics();
 
@@ -40,7 +40,7 @@ public final class AckActor extends LoggingActor {
     return receiveBuilder()
             .match(StartTick.class, start -> {
               LOG().info("Received start tick");
-              routingInfo = start.tickRoutingInfo();
+              tickRoutes = start.tickRoutingInfo();
               getContext().become(acking());
             })
             .build();
@@ -54,7 +54,7 @@ public final class AckActor extends LoggingActor {
   }
 
   @Override
-  public void postStop() throws Exception {
+  public void postStop() {
     super.postStop();
     LOG().info("Acker statistics: {}", stat);
 
@@ -102,18 +102,18 @@ public final class AckActor extends LoggingActor {
     LOG().debug("Received: {}", commitDone);
     final HashRange committer = commitDone.committer();
     committers.add(committer);
-    if (committers.equals(tickInfo.hashMapping().asMap().keySet())) {
+    if (committers.equals(tickInfo.hashMapping().keySet())) {
       LOG().info("COOOOMMMMITTTITITITITITI");
     }
   }
 
   private void sendCommit() {
     LOG().info("Committing");
-    routingInfo.rangeConcierges().values().forEach(r -> r.tell(new Commit(), self());
+    tickRoutes.rangeConcierges().values().forEach(r -> r.tell(new Commit(), self()));
   }
 
   private void sendMinUpdates(GlobalTime min) {
     LOG().debug("New min time: {}", min);
-    routingInfo.rangeConcierges().values().forEach(r -> r.tell(new MinTimeUpdate(min), self());
+    tickRoutes.rangeConcierges().values().forEach(r -> r.tell(new MinTimeUpdate(min), self()));
   }
 }

@@ -31,10 +31,14 @@ public final class LifecycleWatcher extends LoggingActor {
   }
 
   @Override
-  public void postStop() throws Exception {
+  public void postStop() {
     super.postStop();
 
-    zk.close();
+    try {
+      zk.close();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

@@ -8,11 +8,11 @@ import java.util.Map;
 
 import static java.util.Collections.*;
 
-public final class RoutingInfo {
+public final class TickRoutes {
   private final Map<HashRange, ActorRef> rangeConcierges;
   private final ActorRef acker;
 
-  public RoutingInfo(Map<HashRange, ActorRef> rangeConcierges, ActorRef acker) {
+  public TickRoutes(Map<HashRange, ActorRef> rangeConcierges, ActorRef acker) {
     this.rangeConcierges = new HashMap<>(rangeConcierges);
     this.acker = acker;
   }
@@ -27,7 +27,7 @@ public final class RoutingInfo {
 
   @Override
   public String toString() {
-    return "RoutingInfo{" +
+    return "TickRoutes{" +
             "rangeConcierges=" + rangeConcierges +
             ", acker=" + acker +
             '}';

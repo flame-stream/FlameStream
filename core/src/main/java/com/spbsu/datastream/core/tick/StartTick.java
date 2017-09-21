@@ -1,20 +1,20 @@
 package com.spbsu.datastream.core.tick;
 
 public final class StartTick {
-  private final RoutingInfo routingInfo;
+  private final TickRoutes tickRoutes;
 
-  public StartTick(RoutingInfo routingInfo) {
-    this.routingInfo = routingInfo;
+  public StartTick(TickRoutes tickRoutes) {
+    this.tickRoutes = tickRoutes;
   }
 
-  public RoutingInfo tickRoutingInfo() {
-    return routingInfo;
+  public TickRoutes tickRoutingInfo() {
+    return tickRoutes;
   }
 
   @Override
   public String toString() {
     return "StartTick{" +
-            "routingInfo=" + routingInfo +
+            "tickRoutes=" + tickRoutes +
             '}';
   }
 }

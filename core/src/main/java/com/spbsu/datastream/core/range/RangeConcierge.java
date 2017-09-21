@@ -10,20 +10,16 @@ import com.spbsu.datastream.core.ack.MinTimeUpdate;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.graph.InPort;
-import com.spbsu.datastream.core.message.AckerMessage;
-import com.spbsu.datastream.core.message.AtomicMessage;
-import com.spbsu.datastream.core.node.UnresolvedMessage;
 import com.spbsu.datastream.core.range.atomic.AtomicActor;
 import com.spbsu.datastream.core.tick.StartTick;
 import com.spbsu.datastream.core.tick.TickInfo;
-import com.spbsu.datastream.core.tick.RoutingInfo;
+import com.spbsu.datastream.core.tick.TickRoutes;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.*;
 
@@ -33,7 +29,7 @@ public final class RangeConcierge extends LoggingActor {
 
   private Map<InPort, ActorRef> routingTable;
   private Map<AtomicGraph, ActorRef> initializedGraph;
-  private RoutingInfo routingInfo;
+  private TickRoutes tickRoutes;
 
   private RangeConcierge(TickInfo tickInfo, HashRange range) {
     this.tickInfo = tickInfo;
@@ -49,8 +45,8 @@ public final class RangeConcierge extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(StartTick.class, startTick -> {
-              routingInfo = startTick.tickRoutingInfo();
-              initializedGraph = initializedAtomics(tickInfo.graph().graph().subGraphs(), routingInfo);
+              tickRoutes = startTick.tickRoutingInfo();
+              initializedGraph = initializedAtomics(tickInfo.graph().graph().subGraphs(), tickRoutes);
               routingTable = RangeConcierge.withFlattenedKey(initializedGraph);
 
               getContext().become(ranging());
@@ -87,7 +83,7 @@ public final class RangeConcierge extends LoggingActor {
   private void processCommitDone(AtomicGraph atomicGraph) {
     initializedGraph.remove(atomicGraph);
     if (initializedGraph.isEmpty()) {
-      routingInfo.acker().tell(new CommitDone(range), self());
+      tickRoutes.acker().tell(new CommitDone(range), self());
       LOG().info("Commit done");
       context().stop(self());
     }
@@ -103,14 +99,14 @@ public final class RangeConcierge extends LoggingActor {
     return result;
   }
 
-  private Map<AtomicGraph, ActorRef> initializedAtomics(Collection<? extends AtomicGraph> atomicGraphs, RoutingInfo routingInfo) {
+  private Map<AtomicGraph, ActorRef> initializedAtomics(Collection<? extends AtomicGraph> atomicGraphs, TickRoutes tickRoutes) {
     return atomicGraphs.stream()
-            .collect(toMap(Function.identity(), atomic -> actorForAtomic(atomic, routingInfo)));
+            .collect(toMap(Function.identity(), atomic -> actorForAtomic(atomic, tickRoutes)));
   }
 
-  private ActorRef actorForAtomic(AtomicGraph atomic, RoutingInfo routingInfo) {
+  private ActorRef actorForAtomic(AtomicGraph atomic, TickRoutes tickRoutes) {
     final String id = UUID.randomUUID().toString();
     LOG().debug("Creating actor for atomic: id= {}, class={}", id, atomic.getClass());
-    return context().actorOf(AtomicActor.props(atomic, tickInfo, routingInfo), id);
+    return context().actorOf(AtomicActor.props(atomic, tickInfo, tickRoutes), id);
   }
 }

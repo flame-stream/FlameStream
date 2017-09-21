@@ -6,20 +6,15 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.spbsu.datastream.core.message.AckerMessage;
-import com.spbsu.datastream.core.message.AtomicMessage;
 import com.spbsu.datastream.core.DataItem;
 import com.spbsu.datastream.core.ack.Ack;
 import com.spbsu.datastream.core.graph.InPort;
 import com.spbsu.datastream.core.graph.OutPort;
-import com.spbsu.datastream.core.node.UnresolvedMessage;
 import com.spbsu.datastream.core.range.AddressedItem;
 import com.spbsu.datastream.core.stat.Statistics;
 import com.spbsu.datastream.core.tick.HashMapping;
-import com.spbsu.datastream.core.tick.RoutingInfo;
+import com.spbsu.datastream.core.tick.TickRoutes;
 import com.spbsu.datastream.core.tick.TickInfo;
-import com.sun.org.apache.bcel.internal.generic.ARETURN;
-import org.iq80.leveldb.DB;
 
 import java.util.function.ToIntFunction;
 
@@ -27,16 +22,16 @@ public final class AtomicHandleImpl implements AtomicHandle {
   private final TickInfo tickInfo;
   private final ActorContext context;
   private final LoggingAdapter LOG;
-  private final RoutingInfo routingInfo;
+  private final TickRoutes tickRoutes;
 
   private final HashMapping<ActorRef> hashMapping;
 
-  public AtomicHandleImpl(TickInfo tickInfo, RoutingInfo routingInfo, ActorContext context) {
+  public AtomicHandleImpl(TickInfo tickInfo, TickRoutes tickRoutes, ActorContext context) {
     this.tickInfo = tickInfo;
-    this.routingInfo = routingInfo;
+    this.tickRoutes = tickRoutes;
     this.context = context;
     LOG = Logging.getLogger(context.system(), context.self());
-    this.hashMapping = HashMapping.hashMapping(routingInfo.rangeConcierges());
+    this.hashMapping = HashMapping.hashMapping(tickRoutes.rangeConcierges());
   }
 
   @Override
@@ -67,7 +62,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
     final int id = tickInfo.ackerLocation();
 
     final Ack message = new Ack(item.ack(), item.meta().globalTime());
-    routingInfo.acker().tell(message, context.self());
+    tickRoutes.acker().tell(message, context.self());
   }
 
   @Override

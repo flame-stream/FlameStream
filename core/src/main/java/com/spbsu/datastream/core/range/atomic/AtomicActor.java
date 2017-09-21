@@ -8,7 +8,7 @@ import com.spbsu.datastream.core.graph.AtomicGraph;
 import com.spbsu.datastream.core.range.AddressedItem;
 import com.spbsu.datastream.core.range.AtomicCommitDone;
 import com.spbsu.datastream.core.stat.AtomicActorStatistics;
-import com.spbsu.datastream.core.tick.RoutingInfo;
+import com.spbsu.datastream.core.tick.TickRoutes;
 import com.spbsu.datastream.core.tick.TickInfo;
 
 public final class AtomicActor extends LoggingActor {
@@ -16,13 +16,13 @@ public final class AtomicActor extends LoggingActor {
   private final AtomicGraph atomic;
   private final AtomicHandle handle;
 
-  private AtomicActor(AtomicGraph atomic, TickInfo tickInfo, RoutingInfo routingInfo) {
+  private AtomicActor(AtomicGraph atomic, TickInfo tickInfo, TickRoutes tickRoutes) {
     this.atomic = atomic;
-    this.handle = new AtomicHandleImpl(tickInfo, routingInfo, context());
+    this.handle = new AtomicHandleImpl(tickInfo, tickRoutes, context());
   }
 
-  public static Props props(AtomicGraph atomic, TickInfo tickInfo, RoutingInfo routingInfo) {
-    return Props.create(AtomicActor.class, atomic, tickInfo, routingInfo);
+  public static Props props(AtomicGraph atomic, TickInfo tickInfo, TickRoutes tickRoutes) {
+    return Props.create(AtomicActor.class, atomic, tickInfo, tickRoutes);
   }
 
   @Override
@@ -50,7 +50,7 @@ public final class AtomicActor extends LoggingActor {
   }
 
   @Override
-  public void postStop() throws Exception {
+  public void postStop() {
     LOG().info("Atomic {} statistics: {}", atomic, stat);
 
     super.postStop();
