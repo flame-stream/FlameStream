@@ -34,6 +34,7 @@ public final class TickRoutesResolver extends LoggingActor {
 
   @Override
   public void preStart() throws Exception {
+    LOG().info("Identifying {}", cluster);
     final Map<HashRange, Integer> map = tickInfo.hashMapping();
     map.forEach((range, id) -> {
       final ActorPath path = cluster.get(id).child(range.toString());
@@ -42,7 +43,7 @@ public final class TickRoutesResolver extends LoggingActor {
       selection.tell(new Identify(range), self());
     });
 
-    tmpAcker = context().actorSelection(cluster.get(tickInfo.ackerLocation()).child("tmpAcker"));
+    tmpAcker = context().actorSelection(cluster.get(tickInfo.ackerLocation()).child("acker"));
     tmpAcker.tell(new Identify("Hey tmpAcker"), self());
 
     super.preStart();
@@ -52,21 +53,23 @@ public final class TickRoutesResolver extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(ActorIdentity.class, id -> id.getActorRef().isPresent(), id -> {
+              LOG().info("Got identity {}", id);
               if (id.correlationId() instanceof HashRange) {
-                refs.put((HashRange) id.correlationId(), sender());
+                refs.put((HashRange) id.correlationId(), id.getActorRef().get());
               } else if (id.correlationId() instanceof String) {
-                acker = sender();
+                acker = id.getActorRef().get();
               } else {
                 unhandled(id);
               }
 
-              if (refs.size() == cluster.size() && tmpAcker != null) {
+              if (refs.size() == cluster.size() && acker != null) {
                 LOG().info("Collected all refs!");
                 getContext().getParent().tell(new TickRoutes(refs, acker), self());
+                context().stop(self());
               }
-              context().stop(self());
             })
             .match(ActorIdentity.class, id -> !id.getActorRef().isPresent(), id -> {
+              LOG().info("Got empty identity {}", id);
               if (id.correlationId() instanceof HashRange) {
                 tmpRanges.get(id.correlationId()).tell(new Identify(id.correlationId()), self());
               } else if (id.correlationId() instanceof String) {

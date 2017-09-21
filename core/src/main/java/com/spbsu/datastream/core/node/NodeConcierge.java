@@ -20,7 +20,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toMap;
 
 public final class NodeConcierge extends LoggingActor {
   private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -64,7 +65,11 @@ public final class NodeConcierge extends LoggingActor {
   }
 
   private void onNewTick(TickInfo tickInfo) {
-    context().actorOf(TickConcierge.props(tickInfo, id, nodeConierges), String.valueOf(tickInfo.startTs()));
+    final String suffix = String.valueOf(tickInfo.startTs());
+    final Map<Integer, ActorPath> rangeConcierges = nodeConierges.entrySet().stream()
+            .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(suffix)));
+
+    context().actorOf(TickConcierge.props(tickInfo, id, rangeConcierges), suffix);
 
     if (front != null) {
       front.tell(tickInfo, self());
@@ -77,7 +82,7 @@ public final class NodeConcierge extends LoggingActor {
     final Map<Integer, InetSocketAddress> dns = NodeConcierge.MAPPER
             .readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {});
 
-    return dns.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> pathFor(e.getValue())));
+    return dns.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> pathFor(e.getValue())));
   }
 
   private ActorPath pathFor(InetSocketAddress socketAddress) {
@@ -92,8 +97,7 @@ public final class NodeConcierge extends LoggingActor {
     return RootActorPath.apply(address, "/")
             .child("user")
             .child("watcher")
-            .child("concierge")
-            .child("dns");
+            .child("concierge");
   }
 
   private Set<Integer> fetchFronts() throws KeeperException, InterruptedException, IOException {

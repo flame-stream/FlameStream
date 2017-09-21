@@ -6,13 +6,12 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.AckActor;
-import com.spbsu.datastream.core.ack.AckerReport;
 import com.spbsu.datastream.core.configuration.HashRange;
 import com.spbsu.datastream.core.range.RangeConcierge;
 
-import javax.annotation.Nullable;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.*;
 
 public final class TickConcierge extends LoggingActor {
   private final TickInfo info;
@@ -27,7 +26,7 @@ public final class TickConcierge extends LoggingActor {
       context().actorOf(AckActor.props(tickInfo), "acker");
     }
 
-    context().actorOf(TickRoutesResolver.props(cluster, tickInfo));
+    context().actorOf(TickRoutesResolver.props(cluster, tickInfo), "resolver");
   }
 
   public static Props props(TickInfo tickInfo, int localId, Map<Integer, ActorPath> cluster) {
@@ -49,7 +48,8 @@ public final class TickConcierge extends LoggingActor {
   }
 
   private Iterable<HashRange> myRanges(Map<HashRange, Integer> mappings) {
-    return mappings.entrySet().stream().filter(e -> e.getValue().equals(localId))
-            .map(Map.Entry::getKey).collect(Collectors.toSet());
+    return mappings.entrySet().stream()
+            .filter(e -> e.getValue().equals(localId))
+            .map(Map.Entry::getKey).collect(toSet());
   }
 }

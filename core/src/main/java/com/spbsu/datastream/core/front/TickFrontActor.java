@@ -19,15 +19,15 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.ToIntFunction;
 
 import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.stream.Collectors.toMap;
 
 final class TickFrontActor extends LoggingActor {
-  private final Map<Integer, ActorPath> cluster;
+  private final Map<Integer, ActorPath> tickConcierges;
   private final InPort target;
   private final int frontId;
   private final TickInfo tickInfo;
@@ -44,10 +44,15 @@ final class TickFrontActor extends LoggingActor {
                          InPort target,
                          int frontId,
                          TickInfo info) {
-    this.cluster = new HashMap<>(cluster);
     this.target = target;
     this.frontId = frontId;
     this.tickInfo = info;
+
+    this.tickConcierges = cluster.entrySet().stream()
+            .collect(toMap(
+                    Map.Entry::getKey,
+                    e -> e.getValue().child(String.valueOf(tickInfo.startTs()))
+            ));
 
     this.currentWindowHead = tickInfo.startTs();
   }
@@ -61,13 +66,15 @@ final class TickFrontActor extends LoggingActor {
 
   @Override
   public void preStart() throws Exception {
-    context().actorOf(TickRoutesResolver.props(cluster, tickInfo), "resolver");
+    context().actorOf(TickRoutesResolver.props(tickConcierges, tickInfo), "resolver");
     super.preStart();
   }
 
   @Override
   public void postStop() {
-    pingMe.cancel();
+    if (pingMe != null) {
+      pingMe.cancel();
+    }
     super.postStop();
   }
 
@@ -145,7 +152,6 @@ final class TickFrontActor extends LoggingActor {
 
   private void closeWindow(long windowHead, long xor) {
     final AckerReport report = new AckerReport(new GlobalTime(windowHead, frontId), xor);
-    LOG().debug("Closing window {}", report);
     routes.acker().tell(report, self());
   }
 }
