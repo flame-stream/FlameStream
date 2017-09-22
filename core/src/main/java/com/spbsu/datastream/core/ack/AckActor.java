@@ -41,8 +41,10 @@ public final class AckActor extends LoggingActor {
             .match(StartTick.class, start -> {
               LOG().info("Received start tick");
               tickRoutes = start.tickRoutingInfo();
+              unstashAll();
               getContext().become(acking());
             })
+            .matchAny(m -> stash())
             .build();
   }
 
