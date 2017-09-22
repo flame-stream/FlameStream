@@ -49,8 +49,10 @@ public final class RangeConcierge extends LoggingActor {
               initializedGraph = initializedAtomics(tickInfo.graph().graph().subGraphs(), tickRoutes);
               routingTable = RangeConcierge.withFlattenedKey(initializedGraph);
 
+              unstashAll();
               getContext().become(ranging());
             })
+            .matchAny(m -> stash())
             .build();
   }
 
