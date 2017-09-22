@@ -1,6 +1,7 @@
 package com.spbsu.datastream.core.ack;
 
 import akka.actor.Props;
+import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.datastream.core.LoggingActor;
 import com.spbsu.datastream.core.ack.impl.AckLedgerImpl;
 import com.spbsu.datastream.core.configuration.HashRange;
@@ -37,7 +38,7 @@ public final class AckActor extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder()
+    return ReceiveBuilder.create()
             .match(StartTick.class, start -> {
               LOG().info("Received start tick");
               tickRoutes = start.tickRoutingInfo();
@@ -49,7 +50,7 @@ public final class AckActor extends LoggingActor {
   }
 
   private Receive acking() {
-    return receiveBuilder()
+    return ReceiveBuilder.create()
             .match(AckerReport.class, this::handleReport)
             .match(Ack.class, this::handleAck)
             .build();
