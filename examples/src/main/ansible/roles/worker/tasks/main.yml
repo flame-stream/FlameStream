@@ -1,32 +1,32 @@
 ---
-- name: Stop the ds worker
+- name: Stop the fs worker
   shell: pkill worker.jar || true
   tags: deploy
 
-- name: Clean the ds directory
+- name: Clean the fs directory
   file:
-    path: "{{ ds_dir }}"
+    path: "{{ fs_dir }}"
     state: absent
   tags: deploy
 
-- name: Create the ds dir
+- name: Create the fs dir
   file:
-    path: "{{ ds_dir }}"
+    path: "{{ fs_dir }}"
     state: directory
   tags: deploy
 
 - name: Copy the worker application
   copy:
-    src: datastreams-benchmarks-1.0-SNAPSHOT-worker.jar
-    dest: "{{ ds_dir }}/worker.jar"
+    src: flamestream-benchmarks-1.0-SNAPSHOT-worker.jar
+    dest: "{{ fs_dir }}/worker.jar"
   tags: deploy
 
 - name: Copy the configuraion file
   template:
-    src: ds.conf.j2
-    dest: "{{ ds_dir }}/ds.conf"
+    src: fs.conf.j2
+    dest: "{{ fs_dir }}/fs.conf"
   tags: deploy
 
-- name: Start the ds worker
-  shell: nohup java -jar {{ ds_dir }}/worker.jar {{ ds_dir }}/ds.conf > /worker.log 2>&1 &
+- name: Start the fs worker
+  shell: nohup java -jar {{ fs_dir }}/worker.jar {{ fs_dir }}/fs.conf > /worker.log 2>&1 &
   tags: deploy

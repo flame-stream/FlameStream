@@ -5,8 +5,8 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.spbsu.datastreams</groupId>
-    <artifactId>datastreams</artifactId>
+    <groupId>com.spbsu.flamestream</groupId>
+    <artifactId>flamestream</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 

@@ -3,25 +3,25 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>datastreams-parent</artifactId>
-        <groupId>com.spbsu.datastreams</groupId>
+        <artifactId>flamestream-parent</artifactId>
+        <groupId>com.spbsu.flamestream</groupId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>../parent</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>datastreams-examples</artifactId>
+    <artifactId>flamestream-examples</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>com.spbsu.datastreams</groupId>
-            <artifactId>datastreams-core</artifactId>
+            <groupId>com.spbsu.flamestream</groupId>
+            <artifactId>flamestream-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
-            <groupId>com.spbsu.datastreams</groupId>
-            <artifactId>datastreams-core</artifactId>
+            <groupId>com.spbsu.flamestream</groupId>
+            <artifactId>flamestream-core</artifactId>
             <version>1.0-SNAPSHOT</version>
             <type>test-jar</type>
         </dependency>
@@ -66,7 +66,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>com.spbsu.datastream.core.application.WorkerApplication</Main-Class>
+                                        <Main-Class>com.spbsu.flamestream.core.application.WorkerApplication</Main-Class>
                                     </manifestEntries>
                                 </transformer>
                                 <transformer
@@ -94,7 +94,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>com.spbsu.datastream.benchmarks.BenchmarkLauncher</Main-Class>
+                                        <Main-Class>com.spbsu.flamestream.benchmarks.BenchmarkLauncher</Main-Class>
                                     </manifestEntries>
                                 </transformer>
                                 <transformer

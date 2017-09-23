@@ -13,7 +13,7 @@
 
 - name: Copy the bench application
   copy:
-    src: datastreams-benchmarks-1.0-SNAPSHOT-bench.jar
+    src: flamestream-benchmarks-1.0-SNAPSHOT-bench.jar
     dest: "{{ bench_dir }}/bench.jar"
   tags: run
 
@@ -23,6 +23,6 @@
     dest: "{{ bench_dir }}/bench.conf"
   tags: run
 
-- name: Start the ds worker
+- name: Start the fs worker
   shell: java -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf > /bench.log
   tags: run

@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>datastreams-parent</artifactId>
-        <groupId>com.spbsu.datastreams</groupId>
+        <artifactId>flamestream-parent</artifactId>
+        <groupId>com.spbsu.flamestream</groupId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>../parent</relativePath>
     </parent>
 
-    <artifactId>datastreams-core</artifactId>
+    <artifactId>flamestream-core</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -153,7 +153,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>com.spbsu.datastream.core.application.WorkerApplication</Main-Class>
+                                        <Main-Class>com.spbsu.flamestream.core.application.WorkerApplication</Main-Class>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
