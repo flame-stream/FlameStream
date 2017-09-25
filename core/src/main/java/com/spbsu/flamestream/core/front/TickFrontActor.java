@@ -103,10 +103,12 @@ final class TickFrontActor extends LoggingActor {
   }
 
   private Receive receiving() {
-    return receiveBuilder()
+    return ReceiveBuilder.create()
             .match(DataItem.class, this::dispatchItem)
             .match(String.class, m -> context().parent().tell("PING ME", self()))
-            .match(Long.class, this::processPing).build();
+            .match(Long.class, this::processPing)
+            .matchAny(this::unhandled)
+            .build();
   }
 
   private void processPing(long ping) {

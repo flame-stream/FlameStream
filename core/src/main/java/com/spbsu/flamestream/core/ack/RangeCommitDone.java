@@ -2,10 +2,10 @@ package com.spbsu.flamestream.core.ack;
 
 import com.spbsu.flamestream.core.configuration.HashRange;
 
-public final class CommitDone {
+public final class RangeCommitDone {
   private final HashRange participant;
 
-  public CommitDone(HashRange participant) {
+  public RangeCommitDone(HashRange participant) {
     this.participant = participant;
   }
 
@@ -15,7 +15,7 @@ public final class CommitDone {
 
   @Override
   public String toString() {
-    return "CommitDone{" + "participant=" + participant +
+    return "RangeCommitDone{" + "participant=" + participant +
             '}';
   }
 }

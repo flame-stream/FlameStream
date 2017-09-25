@@ -1,16 +1,16 @@
 package com.spbsu.flamestream.core.ack;
 
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.LoggingActor;
 import com.spbsu.flamestream.core.ack.impl.AckLedgerImpl;
 import com.spbsu.flamestream.core.configuration.HashRange;
 import com.spbsu.flamestream.core.meta.GlobalTime;
-import com.spbsu.flamestream.core.range.atomic.AtomicHandleImpl;
 import com.spbsu.flamestream.core.stat.AckerStatistics;
-import com.spbsu.flamestream.core.tick.TickRoutes;
 import com.spbsu.flamestream.core.tick.StartTick;
 import com.spbsu.flamestream.core.tick.TickInfo;
+import com.spbsu.flamestream.core.tick.TickRoutes;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
@@ -19,6 +19,8 @@ import java.util.HashSet;
 public final class AckActor extends LoggingActor {
   private final AckLedger ledger;
   private final TickInfo tickInfo;
+  private final ActorRef tickWatcher;
+
   private GlobalTime currentMin = GlobalTime.MIN;
 
   @Nullable
@@ -28,13 +30,14 @@ public final class AckActor extends LoggingActor {
 
   private final Collection<HashRange> committers = new HashSet<>();
 
-  private AckActor(TickInfo tickInfo) {
+  private AckActor(TickInfo tickInfo, ActorRef tickWatcher) {
     this.ledger = new AckLedgerImpl(tickInfo);
     this.tickInfo = tickInfo;
+    this.tickWatcher = tickWatcher;
   }
 
-  public static Props props(TickInfo tickInfo) {
-    return Props.create(AckActor.class, tickInfo);
+  public static Props props(TickInfo tickInfo, ActorRef tickWatcher) {
+    return Props.create(AckActor.class, tickInfo, tickWatcher);
   }
 
   @Override
@@ -90,9 +93,15 @@ public final class AckActor extends LoggingActor {
       sendMinUpdates(currentMin);
     }
 
-    if (ledgerMin.time() >= tickInfo.stopTs()) {
+    if (ledgerMin.time() == tickInfo.stopTs()) {
       sendCommit();
-      getContext().become(receiveBuilder().match(CommitDone.class, this::handleDone).build());
+      getContext().become(
+              ReceiveBuilder.create()
+                      .match(RangeCommitDone.class, this::handleDone)
+                      .build()
+      );
+    } else if (ledgerMin.time() > tickInfo.stopTs()) {
+      throw new IllegalStateException("Ledger min must be less or equal to tick stop ts");
     }
   }
 
@@ -102,22 +111,27 @@ public final class AckActor extends LoggingActor {
     }
   }
 
-  private void handleDone(CommitDone commitDone) {
-    LOG().debug("Received: {}", commitDone);
-    final HashRange committer = commitDone.committer();
+  private void handleDone(RangeCommitDone rangeCommitDone) {
+    LOG().debug("Received: {}", rangeCommitDone);
+
+    final HashRange committer = rangeCommitDone.committer();
     committers.add(committer);
     if (committers.equals(tickInfo.hashMapping().keySet())) {
-      LOG().info("COOOOMMMMITTTITITITITITI");
+      LOG().info("Tick commit done");
+      tickWatcher.tell(new CommitTick(tickInfo.id()), self());
+      context().stop(self());
     }
   }
 
   private void sendCommit() {
     LOG().info("Committing");
-    tickRoutes.rangeConcierges().values().forEach(r -> r.tell(new Commit(), self()));
+    tickRoutes.rangeConcierges().values()
+            .forEach(r -> r.tell(new Commit(), self()));
   }
 
   private void sendMinUpdates(GlobalTime min) {
     LOG().debug("New min time: {}", min);
-    tickRoutes.rangeConcierges().values().forEach(r -> r.tell(new MinTimeUpdate(min), self()));
+    tickRoutes.rangeConcierges().values()
+            .forEach(r -> r.tell(new MinTimeUpdate(min), self()));
   }
 }

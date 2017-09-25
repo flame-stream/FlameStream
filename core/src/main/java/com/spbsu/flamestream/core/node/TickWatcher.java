@@ -2,10 +2,15 @@ package com.spbsu.flamestream.core.node;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.LoggingActor;
+import com.spbsu.flamestream.core.ack.CommitTick;
 import com.spbsu.flamestream.core.configuration.KryoInfoSerializer;
 import com.spbsu.flamestream.core.configuration.TickInfoSerializer;
+import com.spbsu.flamestream.core.tick.TickCommitDone;
 import com.spbsu.flamestream.core.tick.TickInfo;
+import org.apache.hadoop.util.ZKUtil;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -18,13 +23,13 @@ import java.util.Map;
 public final class TickWatcher extends LoggingActor {
   private final TickInfoSerializer serializer = new KryoInfoSerializer();
   private final ZooKeeper zooKeeper;
-  private final ActorRef notify;
+  private final ActorRef subscriber;
 
   private final Map<Long, TickInfo> seenTicks = new HashMap<>();
 
-  private TickWatcher(ZooKeeper zooKeeper, ActorRef notify) {
+  private TickWatcher(ZooKeeper zooKeeper, ActorRef subscriber) {
     this.zooKeeper = zooKeeper;
-    this.notify = notify;
+    this.subscriber = subscriber;
   }
 
   public static Props props(ZooKeeper zooKeeper, ActorRef notify) {
@@ -39,31 +44,53 @@ public final class TickWatcher extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder().match(WatchedEvent.class, this::onEvent).build();
+    return ReceiveBuilder.create()
+            .match(WatchedEvent.class, this::onEvent)
+            .match(CommitTick.class, this::commitTick)
+            .matchAny(this::unhandled)
+            .build();
+  }
+
+  private void onEvent(WatchedEvent event) throws KeeperException, InterruptedException {
+    if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+      fetchTicks();
+    }
+    if (event.getType() == Watcher.Event.EventType.NodeCreated
+            && event.getPath().endsWith("committed")) {
+      final long tickId = Long.parseLong(event.getPath().split("/")[2]);
+      subscriber.tell(new TickCommitDone(tickId), self());
+    } else {
+      LOG().warning("Unexpected event {}", event);
+    }
+  }
+
+  private void commitTick(CommitTick commit) throws KeeperException, InterruptedException {
+    zooKeeper.create(
+            "/ticks/" + commit.tickId() + "/committed",
+            new byte[0], ZKUtil.parseACLs("world:anyone:crdwa"),
+            CreateMode.PERSISTENT
+    );
   }
 
   private void fetchTicks() throws KeeperException, InterruptedException {
     final List<String> ticks = zooKeeper.getChildren("/ticks", selfWatcher());
 
     for (String tick : ticks) {
-      if (!seenTicks.containsKey(Long.valueOf(tick))) {
+      if (!seenTicks.containsKey(Long.parseLong(tick))) {
         final byte[] data = zooKeeper.getData("/ticks/" + tick, false, null);
-        final TickInfo tickInfo = serializer.deserialize(data);
-        seenTicks.put(Long.valueOf(tick), tickInfo);
-        notify.tell(tickInfo, sender());
+        final boolean committed = zooKeeper.exists("/ticks/" + tick + "/committed", selfWatcher()) != null;
+        if (!committed) {
+          final TickInfo tickInfo = serializer.deserialize(data);
+          seenTicks.put(Long.parseLong(tick), tickInfo);
+          subscriber.tell(tickInfo, sender());
+        } else {
+          subscriber.tell(new TickCommitDone(Long.parseLong(tick)), self());
+        }
       }
     }
   }
 
   private Watcher selfWatcher() {
     return event -> self().tell(event, self());
-  }
-
-  private void onEvent(WatchedEvent event) throws KeeperException, InterruptedException {
-    if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
-      fetchTicks();
-    } else {
-      LOG().warning("Unexpected event {}", event);
-    }
   }
 }

@@ -3,6 +3,7 @@ package com.spbsu.flamestream.core.front;
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.LoggingActor;
 import com.spbsu.flamestream.core.PayloadDataItem;
@@ -35,10 +36,13 @@ public final class FrontActor extends LoggingActor {
   @Override
   public Receive createReceive() {
     //noinspection unchecked
-    return receiveBuilder()
+    return ReceiveBuilder.create()
+            // TODO: We will use this information to clear mini-kafka buffers
+            //.match(TickCommitDone.class, committed -> )
             .match(RawData.class, rawData -> rawData.forEach(this::redirectItem))
             .match(TickInfo.class, this::createTick)
             .match(String.class, this::onPing)
+            .matchAny(this::unhandled)
             .build();
   }
 

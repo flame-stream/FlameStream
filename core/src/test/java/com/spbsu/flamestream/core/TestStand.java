@@ -89,8 +89,8 @@ public final class TestStand implements AutoCloseable {
             theGraph,
             workers.values().stream().findAny().orElseThrow(RuntimeException::new),
             workers,
-            TimeUnit.MILLISECONDS.toNanos(10)
-    );
+            TimeUnit.MILLISECONDS.toNanos(10),
+            Collections.emptySet());
 
     try (final ZookeeperDeployer zkDeployer = new ZookeeperDeployer(cluster.zookeeperString())) {
       zkDeployer.pushTick(tickInfo);

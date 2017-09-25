@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.LoggingActor;
 import com.spbsu.flamestream.core.front.FrontActor;
+import com.spbsu.flamestream.core.tick.TickCommitDone;
 import com.spbsu.flamestream.core.tick.TickConcierge;
 import com.spbsu.flamestream.core.tick.TickInfo;
 import org.apache.zookeeper.KeeperException;
@@ -18,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,10 +31,15 @@ public final class NodeConcierge extends LoggingActor {
   private final ZooKeeper zooKeeper;
   private final int id;
 
+  private final Set<Long> committedTicks = new HashSet<>();
+
   @Nullable
   private Map<Integer, ActorPath> nodeConierges = null;
 
   private ActorRef front = null;
+
+  @Nullable
+  private ActorRef tickWatcher = null;
 
   private NodeConcierge(int id, ZooKeeper zooKeeper) {
     this.zooKeeper = zooKeeper;
@@ -55,13 +62,16 @@ public final class NodeConcierge extends LoggingActor {
       this.front = context().actorOf(FrontActor.props(nodeConierges, id), "front");
     }
 
-    context().actorOf(TickWatcher.props(zooKeeper, self()), "tickWatcher");
+    tickWatcher = context().actorOf(TickWatcher.props(zooKeeper, self()), "tickWatcher");
     super.preStart();
   }
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder().match(TickInfo.class, this::onNewTick).build();
+    return receiveBuilder()
+            .match(TickInfo.class, this::onNewTick)
+            .match(TickCommitDone.class, this::onTickCommitted)
+            .build();
   }
 
   private void onNewTick(TickInfo tickInfo) {
@@ -69,11 +79,19 @@ public final class NodeConcierge extends LoggingActor {
     final Map<Integer, ActorPath> rangeConcierges = nodeConierges.entrySet().stream()
             .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(suffix)));
 
-    context().actorOf(TickConcierge.props(tickInfo, id, rangeConcierges), suffix);
+    final ActorRef tickConcierge = context().actorOf(TickConcierge.props(tickInfo, id, rangeConcierges, tickWatcher), suffix);
+
+    //FIXME: in long term future we need to store every single tick.
+    committedTicks.forEach(t -> tickConcierge.tell(new TickCommitDone(t), self()));
 
     if (front != null) {
       front.tell(tickInfo, self());
     }
+  }
+
+  private void onTickCommitted(TickCommitDone committed) {
+    committedTicks.add(committed.tickId());
+    getContext().getChildren().forEach(c -> c.tell(committed, sender()));
   }
 
   private Map<Integer, ActorPath> fetchDNS() throws IOException, KeeperException, InterruptedException {

@@ -5,7 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.LoggingActor;
 import com.spbsu.flamestream.core.ack.Commit;
-import com.spbsu.flamestream.core.ack.CommitDone;
+import com.spbsu.flamestream.core.ack.RangeCommitDone;
 import com.spbsu.flamestream.core.ack.MinTimeUpdate;
 import com.spbsu.flamestream.core.configuration.HashRange;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toMap;
 
 public final class RangeConcierge extends LoggingActor {
   private final TickInfo tickInfo;
@@ -65,12 +65,8 @@ public final class RangeConcierge extends LoggingActor {
 
   }
 
-  private void handleCommit(Commit commit) {
-    initializedGraph.values().forEach(atom -> atom.tell(commit, sender()));
-
-    getContext().become(receiveBuilder()
-            .match(AtomicCommitDone.class, cd -> processCommitDone(cd.graph()))
-            .build());
+  private void broadcast(Object message) {
+    routingTable.values().forEach(atomic -> atomic.tell(message, sender()));
   }
 
   private void routeToPort(AddressedItem atomicMessage) {
@@ -78,15 +74,22 @@ public final class RangeConcierge extends LoggingActor {
     route.tell(atomicMessage, sender());
   }
 
-  private void broadcast(Object message) {
-    routingTable.values().forEach(atomic -> atomic.tell(message, sender()));
+  private void handleCommit(Commit commit) {
+    initializedGraph.values().forEach(atom -> atom.tell(commit, sender()));
+
+    getContext().become(
+            ReceiveBuilder.create()
+                    .match(AtomicCommitDone.class, cd -> processCommitDone(cd.graph()))
+                    .build()
+    );
   }
 
   private void processCommitDone(AtomicGraph atomicGraph) {
     initializedGraph.remove(atomicGraph);
+
     if (initializedGraph.isEmpty()) {
-      tickRoutes.acker().tell(new CommitDone(range), self());
-      LOG().info("Commit done");
+      tickRoutes.acker().tell(new RangeCommitDone(range), self());
+      LOG().info("Range commit done");
       context().stop(self());
     }
   }
@@ -101,7 +104,8 @@ public final class RangeConcierge extends LoggingActor {
     return result;
   }
 
-  private Map<AtomicGraph, ActorRef> initializedAtomics(Collection<? extends AtomicGraph> atomicGraphs, TickRoutes tickRoutes) {
+  private Map<AtomicGraph, ActorRef> initializedAtomics(Collection<? extends AtomicGraph> atomicGraphs,
+                                                        TickRoutes tickRoutes) {
     return atomicGraphs.stream()
             .collect(toMap(Function.identity(), atomic -> actorForAtomic(atomic, tickRoutes)));
   }
