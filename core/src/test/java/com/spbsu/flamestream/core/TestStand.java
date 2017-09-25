@@ -83,11 +83,12 @@ public final class TestStand implements AutoCloseable {
     final Map<HashRange, Integer> workers = rangeMappingForTick();
 
     final TickInfo tickInfo = new TickInfo(
+            1,
+            startTs,
+            startTs + timeUnit.toNanos(tickLength),
             theGraph,
             workers.values().stream().findAny().orElseThrow(RuntimeException::new),
             workers,
-            startTs,
-            startTs + timeUnit.toNanos(tickLength),
             TimeUnit.MILLISECONDS.toNanos(10)
     );
 

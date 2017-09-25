@@ -9,6 +9,8 @@ import java.util.Map;
 import static java.util.Collections.unmodifiableMap;
 
 public final class TickInfo {
+  private final long id;
+
   private final TheGraph graph;
 
   private final Map<HashRange, Integer> hashMapping;
@@ -21,12 +23,14 @@ public final class TickInfo {
 
   private final int ackerLocation;
 
-  public TickInfo(TheGraph graph,
-                  int ackerLocation,
-                  Map<HashRange, Integer> hashMapping,
+  public TickInfo(long id,
                   long startTs,
                   long stopTs,
+                  TheGraph graph,
+                  int ackerLocation,
+                  Map<HashRange, Integer> hashMapping,
                   long window) {
+    this.id = id;
     this.ackerLocation = ackerLocation;
     this.hashMapping = new HashMap<>(hashMapping);
     this.graph = graph;
@@ -35,33 +39,39 @@ public final class TickInfo {
     this.stopTs = stopTs;
   }
 
-  public Map<HashRange, Integer> hashMapping() {
-    return unmodifiableMap(hashMapping);
-  }
-
-  public long stopTs() {
-    return stopTs;
-  }
-
-  int ackerLocation() {
-    return ackerLocation;
-  }
-
-  public long window() {
-    return window;
-  }
-
-  public TheGraph graph() {
-    return graph;
+  public long id() {
+    return id;
   }
 
   public long startTs() {
     return startTs;
   }
 
+  public long stopTs() {
+    return stopTs;
+  }
+
+  public TheGraph graph() {
+    return graph;
+  }
+
+  public int ackerLocation() {
+    return ackerLocation;
+  }
+
+  public Map<HashRange, Integer> hashMapping() {
+    return unmodifiableMap(hashMapping);
+  }
+
+  public long window() {
+    return window;
+  }
+
   @Override
   public String toString() {
-    return "TickInfo{" + "graph=" + graph +
+    return "TickInfo{" +
+            "id=" + id +
+            ", graph=" + graph +
             ", hashMapping=" + hashMapping +
             ", startTs=" + startTs +
             ", stopTs=" + stopTs +

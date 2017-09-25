@@ -58,7 +58,7 @@ public final class FrontActor extends LoggingActor {
                     id,
                     tickInfo
             ),
-            Long.toString(tickInfo.startTs()));
+            Long.toString(tickInfo.id()));
 
     tickFronts.put(tickInfo.startTs(), tickFront);
   }

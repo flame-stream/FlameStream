@@ -51,7 +51,7 @@ final class TickFrontActor extends LoggingActor {
     this.tickConcierges = cluster.entrySet().stream()
             .collect(toMap(
                     Map.Entry::getKey,
-                    e -> e.getValue().child(String.valueOf(tickInfo.startTs()))
+                    e -> e.getValue().child(String.valueOf(tickInfo.id()))
             ));
 
     this.currentWindowHead = tickInfo.startTs();

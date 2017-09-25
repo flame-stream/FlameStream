@@ -65,7 +65,7 @@ public final class NodeConcierge extends LoggingActor {
   }
 
   private void onNewTick(TickInfo tickInfo) {
-    final String suffix = String.valueOf(tickInfo.startTs());
+    final String suffix = String.valueOf(tickInfo.id());
     final Map<Integer, ActorPath> rangeConcierges = nodeConierges.entrySet().stream()
             .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(suffix)));
 

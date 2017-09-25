@@ -42,11 +42,11 @@ final class ZookeeperDeployer implements Closeable {
   }
 
   public void pushTick(TickInfo tickInfo) throws Exception {
-    zooKeeper.create("/ticks/" + tickInfo.startTs(), serializer.serialize(tickInfo),
+    zooKeeper.create("/ticks/" + tickInfo.id(), serializer.serialize(tickInfo),
             ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
-    zooKeeper.create("/ticks/" + tickInfo.startTs() + "/ready", new byte[0],
+    zooKeeper.create("/ticks/" + tickInfo.id() + "/ready", new byte[0],
             ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
-    zooKeeper.create("/ticks/" + tickInfo.startTs() + "/committed", new byte[0],
+    zooKeeper.create("/ticks/" + tickInfo.id() + "/committed", new byte[0],
             ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
 
   }
