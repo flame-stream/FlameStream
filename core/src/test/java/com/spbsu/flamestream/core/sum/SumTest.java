@@ -57,7 +57,7 @@ public final class SumTest {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
-      stage.deploy(SumTest.sumGraph(stage.frontIds(), stage.wrap(k -> result.add((Sum) k))), tickLength, TimeUnit.SECONDS);
+      stage.deploy(SumTest.sumGraph(stage.frontIds(), stage.wrap(k -> result.add((Sum) k))), tickLength, 1);
 
       final List<LongNumb> source = new Random(seed).ints(inputSize).map(i -> i % 100).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(seed);

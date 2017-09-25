@@ -32,12 +32,34 @@ public final class FilterAcceptanceTest {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(FilterAcceptanceTest.multiGraph(stage.frontIds(), stage.wrap(result::add)), 10, TimeUnit.SECONDS);
+      stage.deploy(FilterAcceptanceTest.multiGraph(stage.frontIds(), stage.wrap(result::add)), 10, 1);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(123);
       source.forEach(sink);
       stage.waitTick(12, TimeUnit.SECONDS);
+
+      Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
+    }
+  }
+
+  @Test
+  public void multipleTicksLinearFilter() throws Exception {
+    try (LocalCluster cluster = new LocalCluster(4, 4);
+         TestStand stage = new TestStand(cluster)) {
+
+      final Queue<Integer> result = new ArrayDeque<>();
+
+      stage.deploy(
+              FilterAcceptanceTest.multiGraph(stage.frontIds(), stage.wrap(result::add)),
+              1,
+              20
+              );
+
+      final List<Integer> source = new Random().ints(20000).boxed().collect(Collectors.toList());
+      final Consumer<Object> sink = stage.randomFrontConsumer(123);
+      source.forEach(sink);
+      TimeUnit.SECONDS.sleep(20);
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }

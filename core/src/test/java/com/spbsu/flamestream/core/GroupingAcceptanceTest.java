@@ -93,7 +93,7 @@ public final class GroupingAcceptanceTest {
               window,
               groupHash,
               equalz,
-              filterHash), 10, TimeUnit.SECONDS);
+              filterHash), 10, 1);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = stage.randomFrontConsumer(123);
@@ -121,7 +121,7 @@ public final class GroupingAcceptanceTest {
                 public boolean test(Long aLong, Long aLong2) {
                   return aLong.equals(aLong2);
                 }
-              }, HashFunction.OBJECT_HASH), 15, TimeUnit.HOURS);
+              }, HashFunction.OBJECT_HASH), 15, 1);
 
       final Consumer<Object> sink = stage.randomFrontConsumer(123);
 

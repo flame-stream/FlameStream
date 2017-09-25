@@ -12,15 +12,18 @@ import com.spbsu.flamestream.core.meta.GlobalTime;
 import com.spbsu.flamestream.core.meta.Meta;
 import com.spbsu.flamestream.core.raw.RawData;
 import com.spbsu.flamestream.core.tick.TickInfo;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.TreeMap;
 
 public final class FrontActor extends LoggingActor {
   private final Map<Integer, ActorPath> cluster;
   private final int id;
-  private final TreeMap<Long, ActorRef> tickFronts = new TreeMap<>();
+  private final NavigableMap<Long, ActorRef> tickFronts = new TreeMap<>();
+  private final Map<Long, TickInfo> tickInfos = new HashMap<>();
 
   private long prevGlobalTs = -1;
 
@@ -65,6 +68,8 @@ public final class FrontActor extends LoggingActor {
             Long.toString(tickInfo.id()));
 
     tickFronts.put(tickInfo.startTs(), tickFront);
+    tickInfos.put(tickInfo.startTs(), tickInfo);
+    unstashAll();
   }
 
   private void redirectItem(Object payload) {
@@ -78,10 +83,29 @@ public final class FrontActor extends LoggingActor {
     final Meta now = Meta.meta(globalTime);
     final DataItem<?> dataItem = new PayloadDataItem<>(now, payload);
 
-    final long tick = tickFronts.floorKey(globalTime.time());
+    final ActorRef tickFront = tickFrontFor(globalTs);
+    if (tickFront != null) {
+      tickFront.tell(dataItem, self());
+    } else {
+      stash();
+      LOG().warning("There is no tick fronts for {}, stashing", globalTs);
+    }
+  }
 
-    final ActorRef tickFront = tickFronts.get(tick);
-    tickFront.tell(dataItem, self());
+  @Nullable
+  private ActorRef tickFrontFor(long ts) {
+    final Long tick = tickFronts.floorKey(ts);
+    final TickInfo info = tickInfos.get(tick);
+
+    //noinspection OverlyComplexBooleanExpression
+    if (tick != null
+            && info != null
+            && ts < info.stopTs()
+            && ts >= info.startTs()) {
+      return tickFronts.get(tick);
+    } else {
+      return null;
+    }
   }
 }
 

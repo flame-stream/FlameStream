@@ -1,6 +1,11 @@
 package com.spbsu.flamestream.core;
 
-import akka.actor.*;
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.ActorSystem;
+import akka.actor.Address;
+import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.configuration.HashRange;
 import com.spbsu.flamestream.core.graph.TheGraph;
 import com.spbsu.flamestream.core.raw.SingleRawData;
@@ -14,13 +19,24 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableSet;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class TestStand implements AutoCloseable {
   private static final int LOCAL_SYSTEM_PORT = 12345;
@@ -77,24 +93,25 @@ public final class TestStand implements AutoCloseable {
     }
   }
 
-  public void deploy(TheGraph theGraph, int tickLength, TimeUnit timeUnit) {
-    final long startTs = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
-
+  public void deploy(TheGraph theGraph, int tickLengthSeconds, int ticksCount) {
     final Map<HashRange, Integer> workers = rangeMappingForTick();
-
-    final TickInfo tickInfo = new TickInfo(
-            1,
-            startTs,
-            startTs + timeUnit.toNanos(tickLength),
-            theGraph,
-            workers.values().stream().findAny().orElseThrow(RuntimeException::new),
-            workers,
-            TimeUnit.MILLISECONDS.toNanos(10),
-            Collections.emptySet());
-
+    final long tickNanos = SECONDS.toNanos(tickLengthSeconds);
     try (final ZookeeperDeployer zkDeployer = new ZookeeperDeployer(cluster.zookeeperString())) {
-      zkDeployer.pushTick(tickInfo);
-      TimeUnit.SECONDS.sleep(2);
+
+      long startTs = System.nanoTime();
+      for (int i = 0; i < ticksCount; ++i, startTs += tickNanos) {
+        final TickInfo tickInfo = new TickInfo(
+                i,
+                startTs,
+                startTs + tickNanos,
+                theGraph,
+                workers.values().stream().findAny().orElseThrow(RuntimeException::new),
+                workers,
+                MILLISECONDS.toNanos(10),
+                i == 0 ? emptySet() : singleton(i - 1L)
+        );
+        zkDeployer.pushTick(tickInfo);
+      }
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

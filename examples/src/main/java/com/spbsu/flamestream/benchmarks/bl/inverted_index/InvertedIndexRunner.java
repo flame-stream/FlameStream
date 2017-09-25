@@ -83,7 +83,7 @@ public class InvertedIndexRunner implements ClusterRunner {
                    Consumer<Object> outputConsumer,
                    int tickLength) throws InterruptedException {
     try (final TestStand stage = new TestStand(cluster)) {
-      stage.deploy(chaincallGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, TimeUnit.SECONDS);
+      stage.deploy(chaincallGraph(stage.frontIds(), stage.wrap(outputConsumer)), tickLength, 1);
 
       final Consumer<Object> sink = stage.randomFrontConsumer(122);
       //noinspection Duplicates

@@ -72,7 +72,7 @@ public final class LocalCluster implements Cluster {
       this.zkThread = new Thread(Unchecked.runnable(zk::run));
       zkThread.start();
 
-      TimeUnit.SECONDS.sleep(1);
+      TimeUnit.SECONDS.sleep(3);
       deployPartitioning();
     } catch (Exception e) {
       throw new RuntimeException(e);
