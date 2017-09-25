@@ -9,9 +9,11 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.LoggingActor;
 import com.spbsu.flamestream.core.configuration.HashRange;
+import scala.concurrent.duration.Duration;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public final class TickRoutesResolver extends LoggingActor {
   private final Map<Integer, ActorPath> cluster;
@@ -71,9 +73,17 @@ public final class TickRoutesResolver extends LoggingActor {
             .match(ActorIdentity.class, id -> !id.getActorRef().isPresent(), id -> {
               LOG().info("Got empty identity {}", id);
               if (id.correlationId() instanceof HashRange) {
-                tmpRanges.get(id.correlationId()).tell(new Identify(id.correlationId()), self());
+                context().system().scheduler().scheduleOnce(
+                        Duration.create(10, TimeUnit.MILLISECONDS),
+                        () -> tmpRanges.get(id.correlationId()).tell(new Identify(id.correlationId()), self()),
+                        context().dispatcher()
+                );
               } else if (id.correlationId() instanceof String) {
-                tmpAcker.tell(new Identify("Hey tmpAcker"), self());
+                context().system().scheduler().scheduleOnce(
+                        Duration.create(10, TimeUnit.MILLISECONDS),
+                        () -> tmpAcker.tell(new Identify("Hey tmpAcker"), self()),
+                        context().dispatcher()
+                );
               } else {
                 unhandled(id);
               }
