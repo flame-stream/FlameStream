@@ -54,13 +54,12 @@ public final class TickWatcher extends LoggingActor {
   private void onEvent(WatchedEvent event) throws KeeperException, InterruptedException {
     if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
       fetchTicks();
-    }
-    if (event.getType() == Watcher.Event.EventType.NodeCreated
+    } else if (event.getType() == Watcher.Event.EventType.NodeCreated
             && event.getPath().endsWith("committed")) {
       final long tickId = Long.parseLong(event.getPath().split("/")[2]);
       subscriber.tell(new TickCommitDone(tickId), self());
     } else {
-      LOG().warning("Unexpected event {}", event);
+      LOG().info("Unexpected event {}", event);
     }
   }
 
