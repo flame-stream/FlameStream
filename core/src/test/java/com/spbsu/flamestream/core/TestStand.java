@@ -112,6 +112,10 @@ public final class TestStand implements AutoCloseable {
         );
         zkDeployer.pushTick(tickInfo);
       }
+
+      //This sleep doesn't affect correctness.
+      // Only reduces stashing overhead for first several items
+      SECONDS.sleep(2);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
