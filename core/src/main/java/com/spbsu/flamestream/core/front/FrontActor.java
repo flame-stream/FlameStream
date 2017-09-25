@@ -44,13 +44,13 @@ public final class FrontActor extends LoggingActor {
             //.match(TickCommitDone.class, committed -> )
             .match(RawData.class, rawData -> rawData.forEach(this::redirectItem))
             .match(TickInfo.class, this::createTick)
-            .match(String.class, this::onPing)
+            .match(TsRequest.class, this::onTsRequest)
             .matchAny(this::unhandled)
             .build();
   }
 
-  private void onPing(String ping) {
-    sender().tell(System.nanoTime(), self());
+  private void onTsRequest(@SuppressWarnings("unused") TsRequest tsRequest) {
+    sender().tell(new TsResponse(System.nanoTime()), self());
   }
 
   private void createTick(TickInfo tickInfo) {

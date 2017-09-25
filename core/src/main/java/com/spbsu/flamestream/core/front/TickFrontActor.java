@@ -90,7 +90,7 @@ final class TickFrontActor extends LoggingActor {
                       start,
                       FiniteDuration.apply(tickInfo.window(), NANOSECONDS),
                       self(),
-                      "REMIND YOUR PARENT TO PING YOU",
+                      new TsRequest(),
                       context().system().dispatcher(),
                       self()
               );
@@ -105,18 +105,19 @@ final class TickFrontActor extends LoggingActor {
   private Receive receiving() {
     return ReceiveBuilder.create()
             .match(DataItem.class, this::dispatchItem)
-            .match(String.class, m -> context().parent().tell("PING ME", self()))
-            .match(Long.class, this::processPing)
+            .match(TsRequest.class, m -> context().parent().tell(m, self()))
+            .match(TsResponse.class, this::processTsResponse)
             .matchAny(this::unhandled)
             .build();
   }
 
-  private void processPing(long ping) {
-    if (ping >= tickInfo.stopTs()) {
+  private void processTsResponse(TsResponse tsResponse) {
+    final long ts = tsResponse.ts();
+    if (ts >= tickInfo.stopTs()) {
       reportUpTo(tickInfo.stopTs());
       context().stop(self());
-    } else if (ping >= currentWindowHead + tickInfo.window()) {
-      reportUpTo(lower(ping));
+    } else if (ts >= currentWindowHead + tickInfo.window()) {
+      reportUpTo(lower(ts));
     }
   }
 
