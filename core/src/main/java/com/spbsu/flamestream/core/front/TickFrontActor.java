@@ -90,7 +90,7 @@ final class TickFrontActor extends LoggingActor {
                       start,
                       FiniteDuration.apply(tickInfo.window(), NANOSECONDS),
                       self(),
-                      new TsRequest(),
+                      TsRequest.REQUEST,
                       context().system().dispatcher(),
                       self()
               );
