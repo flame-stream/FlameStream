@@ -9,7 +9,7 @@ import com.spbsu.flamestream.core.graph.ComposedGraphImpl;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.meta.GlobalTime;
-import com.spbsu.flamestream.core.range.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 
 import java.util.List;
 

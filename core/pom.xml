@@ -14,50 +14,10 @@
     <artifactId>flamestream-core</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <properties>
-        <new.akka.version>2.5.1</new.akka.version>
-    </properties>
-
     <dependencies>
-        <!--Akka-->
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_2.11</artifactId>
-            <version>${new.akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-remote_2.11</artifactId>
-            <version>${new.akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.iq80.leveldb</groupId>
-            <artifactId>leveldb</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.fusesource.leveldbjni</groupId>
-            <artifactId>leveldbjni-all</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>net.sf.trove4j</groupId>
             <artifactId>trove4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-        </dependency>
-
-        <!--Fast serialization-->
-        <dependency>
-            <groupId>com.github.romix.akka</groupId>
-            <artifactId>akka-kryo-serialization_2.11</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
         </dependency>
 
         <!--Logging-->
@@ -65,49 +25,23 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-slf4j_2.11</artifactId>
-            <version>${new.akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-        </dependency>
-
-        <!--Pretty serialization-->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
 
         <!--Utils-->
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.jooq</groupId>
             <artifactId>jool</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.spbsu</groupId>
             <artifactId>commons</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!--Tests-->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -153,7 +87,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>com.spbsu.flamestream.core.application.WorkerApplication</Main-Class>
+                                        <Main-Class>com.spbsu.flamestream.runtime.application.WorkerApplication</Main-Class>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>

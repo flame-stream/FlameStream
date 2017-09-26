@@ -4,9 +4,8 @@ import akka.actor.ActorPath;
 import akka.actor.ActorSelection;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.meta.GlobalTime;
-import com.spbsu.flamestream.core.range.atomic.AtomicHandle;
 import com.spbsu.flamestream.core.stat.Statistics;
-import com.spbsu.flamestream.core.tick.TickInfo;
+import com.spbsu.flamestream.core.TickInfo;
 
 import java.util.Collections;
 import java.util.HashMap;

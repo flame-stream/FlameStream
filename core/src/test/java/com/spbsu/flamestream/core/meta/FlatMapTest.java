@@ -5,7 +5,7 @@ import com.spbsu.flamestream.core.FakeAtomicHandle;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.PayloadDataItem;
 import com.spbsu.flamestream.core.graph.ops.FlatMap;
-import com.spbsu.flamestream.core.range.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

@@ -2,7 +2,6 @@ package com.spbsu.flamestream.core.graph;
 
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.meta.GlobalTime;
-import com.spbsu.flamestream.core.range.atomic.AtomicHandle;
 
 /**
  * AtomicGraph - graph without inner down or upstreams

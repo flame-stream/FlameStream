@@ -19,7 +19,7 @@ import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.TestStand;
 import com.spbsu.flamestream.core.barrier.BarrierSink;
 import com.spbsu.flamestream.core.barrier.PreBarrierMetaFilter;
-import com.spbsu.flamestream.core.barrier.RemoteActorSink;
+import com.spbsu.flamestream.examples.RemoteActorSink;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.ChaincallGraph;
 import com.spbsu.flamestream.core.graph.Graph;

@@ -6,7 +6,7 @@ import com.spbsu.flamestream.core.meta.GlobalTime;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.PayloadDataItem;
 import com.spbsu.flamestream.core.meta.Meta;
-import com.spbsu.flamestream.core.range.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.slf4j.Logger;

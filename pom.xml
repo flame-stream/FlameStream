@@ -17,5 +17,6 @@
         <module>paper</module>
         <module>spbsu-commons</module>
         <module>examples</module>
+        <module>runtime</module>
     </modules>
 </project>
