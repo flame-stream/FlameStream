@@ -1,0 +1,32 @@
+---
+- name: Stop the fs worker
+  shell: pkill worker.jar || true
+  tags: destroy
+
+- name: Clean the fs directory
+  file:
+    path: "{{ flamestream_dir }}"
+    state: absent
+  tags: deliver
+
+- name: Create the fs dir
+  file:
+    path: "{{ flamestream_dir }}"
+    state: directory
+  tags: deliver
+
+- name: Copy the worker application
+  copy:
+    src: flamestream-examples-1.0-SNAPSHOT-worker.jar
+    dest: "{{ flamestream_dir }}/worker.jar"
+  tags: deliver
+
+- name: Copy the configuraion file
+  template:
+    src: fs.conf.j2
+    dest: "{{ flamestream_dir }}/fs.conf"
+  tags: deliver
+
+- name: Start the fs worker
+  shell: nohup java -jar {{ flamestream_dir }}/worker.jar {{ flamestream_dir }}/fs.conf > /worker.log 2>&1 &
+  tags: bootstrap

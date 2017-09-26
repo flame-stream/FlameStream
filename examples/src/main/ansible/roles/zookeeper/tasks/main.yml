@@ -3,38 +3,42 @@
   file:
     path: "{{ zookeeper_dir }}"
     state: directory
-  tags: bootstrap
+  tags: deliver
 
 - name: Ensure the tarball dir exists {{ zookeeper_tarball_dir }}
   file:
     path: "{{ zookeeper_tarball_dir }}"
     state: directory
-  tags: bootstrap
+  tags: deliver
 
 - name: Download zk tarball
   get_url: 
     url: "{{ zookeeper_url }}"
     dest: "{{ zookeeper_tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz"
-  tags: bootstrap
+  tags: deliver
 
 - name: Unpack the tarball
   command: tar -xf {{ zookeeper_tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz --strip-components=1
   args: 
     chdir: "{{ zookeeper_dir }}" 
     creates: "{{ zookeeper_dir }}/bin"
-  tags: bootstrap
+  tags: deliver
 
 - name: Create the zookeeper data directory at {{ data_dir }}
   file:
-    path: "{{ data_dir }}"
+    path: "{{ zookeeper_data_dir }}"
     state: directory
-  tags: bootstrap
+  tags: deliver
 
 - name: Configure the zookeeper
   template:
     src: zoo.cfg.j2
     dest: "{{ zookeeper_dir }}/conf/zoo.cfg"
-  tags: bootstrap
+  tags: deliver
+
+- name: Stop zookeeper
+  shell: "{{ zookeeper_dir }}/bin/zkServer.sh stop"
+  tags: destroy
 
 - name: Restart zookeeper
   shell: "{{ zookeeper_dir }}/bin/zkServer.sh restart"
@@ -44,30 +48,30 @@
   template:
     src: dns.json.j2
     dest: "{{ zookeeper_dir }}/dns.json"
-  tags: deploy
+  tags: bootstrap
 
 - name: Copy fronts json
   template:
     src: fronts.json.j2
     dest: "{{ zookeeper_dir }}/fronts.json"
-  tags: deploy
+  tags: bootstrap
 
 - name: Clean zookeeper {{ item }}
-  shell: "{{ zk_cli }} deleteall {{ item }}"
-  tags: deploy
+  shell: "{{ zookeeper_cli }} deleteall {{ item }}"
+  tags: bootstrap
   with_items:
     - /ticks
     - /dns
     - /fronts
 
 - name: Create ticks dir
-  shell: "{{ zk_cli }} create /ticks \"\""
-  tags: deploy
+  shell: "{{ zookeeper_cli }} create /ticks \"\""
+  tags: bootstrap
 
 - name: Deploy dns
-  shell: "{{ zk_cli }} create /dns \"$(cat {{ zookeeper_dir }}/dns.json)\""
-  tags: deploy
+  shell: "{{ zookeeper_cli }} create /dns \"$(cat {{ zookeeper_dir }}/dns.json)\""
+  tags: bootstrap
 
 - name: Deploy fronts
-  shell: "{{ zk_cli }} create /fronts \"$(cat {{ zookeeper_dir }}/fronts.json)\""
-  tags: deploy
+  shell: "{{ zookeeper_cli }} create /fronts \"$(cat {{ zookeeper_dir }}/fronts.json)\""
+  tags: bootstrap

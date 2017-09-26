@@ -1,11 +1,8 @@
-[zookeeper]
-127.1.6.8  ansible_user=root  ansible_port=32768  inner_dn=worker1
+[manager]
+172.18.0.2  ansible_user=root id=1
 
 [workers]
-127.1.6.8  ansible_user=root  ansible_port=32768  ds_id=1  inner_dn=worker1
-127.1.6.9  ansible_user=root  ansible_port=32769  ds_id=2  inner_dn=worker2
-127.1.7.0  ansible_user=root  ansible_port=32770  ds_id=3  inner_dn=worker3
-127.1.7.1  ansible_user=root  ansible_port=32771  ds_id=4  inner_dn=worker4
-
-[bench]
-127.1.6.8  ansible_user=root  ansible_port=32768  ds_id=1  inner_dn=worker1
+172.18.0.2  ansible_user=root  id=1
+172.18.0.3  ansible_user=root  id=2
+172.18.0.4  ansible_user=root  id=3
+172.18.0.5  ansible_user=root  id=4
