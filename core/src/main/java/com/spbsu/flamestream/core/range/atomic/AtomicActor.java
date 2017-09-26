@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.core.range.atomic;
 
 import akka.actor.Props;
-import com.spbsu.flamestream.core.LoggingActor;
+import com.spbsu.flamestream.core.actor.LoggingActor;
 import com.spbsu.flamestream.core.ack.Commit;
 import com.spbsu.flamestream.core.ack.MinTimeUpdate;
 import com.spbsu.flamestream.core.graph.AtomicGraph;

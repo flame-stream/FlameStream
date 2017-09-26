@@ -3,7 +3,7 @@ package com.spbsu.flamestream.core.range;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.LoggingActor;
+import com.spbsu.flamestream.core.actor.LoggingActor;
 import com.spbsu.flamestream.core.ack.Commit;
 import com.spbsu.flamestream.core.ack.RangeCommitDone;
 import com.spbsu.flamestream.core.ack.MinTimeUpdate;

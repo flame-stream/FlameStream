@@ -3,7 +3,7 @@ package com.spbsu.flamestream.core.ack;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.LoggingActor;
+import com.spbsu.flamestream.core.actor.LoggingActor;
 import com.spbsu.flamestream.core.ack.impl.AckLedgerImpl;
 import com.spbsu.flamestream.core.configuration.HashRange;
 import com.spbsu.flamestream.core.meta.GlobalTime;

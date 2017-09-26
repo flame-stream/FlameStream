@@ -3,7 +3,7 @@ package com.spbsu.flamestream.core.node;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.LoggingActor;
+import com.spbsu.flamestream.core.actor.LoggingActor;
 import com.spbsu.flamestream.core.ack.CommitTick;
 import com.spbsu.flamestream.core.configuration.KryoInfoSerializer;
 import com.spbsu.flamestream.core.configuration.TickInfoSerializer;

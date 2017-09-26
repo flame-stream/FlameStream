@@ -4,7 +4,7 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.LoggingActor;
+import com.spbsu.flamestream.core.actor.LoggingActor;
 import com.spbsu.flamestream.core.ack.AckActor;
 import com.spbsu.flamestream.core.configuration.HashRange;
 import com.spbsu.flamestream.core.range.RangeConcierge;

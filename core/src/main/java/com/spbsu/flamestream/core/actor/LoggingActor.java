@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core;
+package com.spbsu.flamestream.core.actor;
 
 import akka.actor.AbstractActor;
 import akka.actor.AbstractActorWithStash;

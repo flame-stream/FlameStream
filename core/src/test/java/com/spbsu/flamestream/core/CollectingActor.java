@@ -1,8 +1,7 @@
 package com.spbsu.flamestream.core;
 
 import akka.actor.Props;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
+import com.spbsu.flamestream.core.actor.LoggingActor;
 import com.spbsu.flamestream.core.raw.RawData;
 
 import java.util.function.Consumer;

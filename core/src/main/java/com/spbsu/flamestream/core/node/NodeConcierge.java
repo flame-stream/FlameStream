@@ -7,7 +7,7 @@ import akka.actor.Props;
 import akka.actor.RootActorPath;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.flamestream.core.LoggingActor;
+import com.spbsu.flamestream.core.actor.LoggingActor;
 import com.spbsu.flamestream.core.front.FrontActor;
 import com.spbsu.flamestream.core.tick.TickCommitDone;
 import com.spbsu.flamestream.core.tick.TickConcierge;

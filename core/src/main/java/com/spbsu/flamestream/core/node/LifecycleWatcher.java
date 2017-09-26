@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.core.node;
 
 import akka.actor.Props;
-import com.spbsu.flamestream.core.LoggingActor;
+import com.spbsu.flamestream.core.actor.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
 

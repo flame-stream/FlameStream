@@ -6,7 +6,7 @@ import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.LoggingActor;
+import com.spbsu.flamestream.core.actor.LoggingActor;
 import com.spbsu.flamestream.core.ack.AckerReport;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.meta.GlobalTime;
