@@ -8,6 +8,8 @@ import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.TheGraph;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.runtime.environmet.local.LocalCluster;
+import com.spbsu.flamestream.runtime.environmet.local.TestStand;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;

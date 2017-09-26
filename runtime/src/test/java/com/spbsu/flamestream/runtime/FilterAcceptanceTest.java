@@ -8,6 +8,8 @@ import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.TheGraph;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.runtime.environmet.local.LocalCluster;
+import com.spbsu.flamestream.runtime.environmet.local.TestStand;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

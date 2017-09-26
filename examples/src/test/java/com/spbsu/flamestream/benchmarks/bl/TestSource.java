@@ -9,4 +9,5 @@ import java.util.stream.Stream;
  */
 public interface TestSource<T, R> {
   void test(Stream<T> input, Consumer<R> output);
+
 }

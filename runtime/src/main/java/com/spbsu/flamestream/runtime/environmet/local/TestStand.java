@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime;
+package com.spbsu.flamestream.runtime.environmet.local;
 
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
@@ -8,12 +8,8 @@ import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.graph.TheGraph;
 import com.spbsu.flamestream.core.raw.SingleRawData;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import scala.concurrent.Await;
-import scala.concurrent.duration.Duration;
+import com.spbsu.flamestream.runtime.application.WorkerApplication;
 
-import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -26,49 +22,15 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
-import static java.util.Collections.unmodifiableSet;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class TestStand implements AutoCloseable {
-  private static final int LOCAL_SYSTEM_PORT = 12345;
-
-  private final ActorSystem localSystem;
-
-  private final Cluster cluster;
-
-  public TestStand(Cluster cluster) {
-    this.cluster = cluster;
-
-    try {
-      final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + TestStand.LOCAL_SYSTEM_PORT)
-              .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + InetAddress.getLocalHost().getHostName()))
-              .withFallback(ConfigFactory.load("remote"));
-
-      this.localSystem = ActorSystem.create("requester", config);
-    } catch (UnknownHostException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
-
-  @Override
-  public void close() {
-    try {
-      Await.ready(localSystem.terminate(), Duration.Inf());
-    } catch (InterruptedException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public Collection<Integer> frontIds() {
-    return unmodifiableSet(cluster.fronts());
-  }
 
 
   /**
@@ -92,31 +54,6 @@ public final class TestStand implements AutoCloseable {
   }
 
   public void deploy(TheGraph theGraph, int tickLengthSeconds, int ticksCount) {
-    final Map<HashRange, Integer> workers = rangeMappingForTick();
-    final long tickNanos = SECONDS.toNanos(tickLengthSeconds);
-    try (final ZookeeperDeployer zkDeployer = new ZookeeperDeployer(cluster.zookeeperString())) {
-
-      long startTs = System.nanoTime();
-      for (int i = 0; i < ticksCount; ++i, startTs += tickNanos) {
-        final TickInfo tickInfo = new TickInfo(
-                i,
-                startTs,
-                startTs + tickNanos,
-                theGraph,
-                workers.values().stream().findAny().orElseThrow(RuntimeException::new),
-                workers,
-                MILLISECONDS.toNanos(10),
-                i == 0 ? emptySet() : singleton(i - 1L)
-        );
-        zkDeployer.pushTick(tickInfo);
-      }
-
-      //This sleep doesn't affect correctness.
-      // Only reduces stashing overhead for first several items
-      SECONDS.sleep(2);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   public void waitTick(int tickLength, TimeUnit unit) throws InterruptedException {

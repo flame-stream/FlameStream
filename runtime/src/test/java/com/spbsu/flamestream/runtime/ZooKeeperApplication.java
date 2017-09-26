@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.application;
+package com.spbsu.flamestream.runtime;
 
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;

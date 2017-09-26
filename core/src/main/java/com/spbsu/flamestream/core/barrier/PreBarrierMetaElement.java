@@ -15,16 +15,16 @@ public final class PreBarrierMetaElement<T> {
 
   private final int metaHash;
 
-  PreBarrierMetaElement(T payload, int metaHash) {
+  public PreBarrierMetaElement(T payload, int metaHash) {
     this.payload = payload;
     this.metaHash = metaHash;
   }
 
-  T payload() {
+  public T payload() {
     return payload;
   }
 
-  int metaHash() {
+  public int metaHash() {
     return metaHash;
   }
 

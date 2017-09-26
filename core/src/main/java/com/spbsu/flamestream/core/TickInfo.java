@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.core;
 
-import com.spbsu.flamestream.core.HashRange;
 import com.spbsu.flamestream.core.graph.TheGraph;
 
 import java.util.HashMap;
