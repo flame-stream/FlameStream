@@ -1,0 +1,25 @@
+---
+- name: Clean the flink directory
+  file:
+    path: "{{ fl_dir }}"
+    state: absent
+  tags: deploy
+
+- name: Create the flink dir
+  file:
+    path: "{{ fl_dir }}"
+    state: directory
+  tags: deploy
+
+- name: Download flink application
+  copy:
+    src: "{{ fl_url }}"
+    dest: "{{ fl_tarball_dir }}/flink.tgz"
+  tags: deploy
+
+- name: Unpack flink tarball
+  command: tar -xf {{ fl_tarball_dir }}/flink.tgz --strip-components=1
+  args:
+    chdir: "{{ fl_dir }}"
+    creates: "{{ fl_dir }}/bin"
+  tags: bootstrap

@@ -1,0 +1,6 @@
+{
+  id: {{ hostvars[inventory_hostname].ds_id }},
+  port: {{ worker_port }},
+  host: "{{ hostvars[inventory_hostname].inner_dn }}",
+  zk_string: "{{ hostvars[groups['zookeeper'][0]].inner_dn }}:{{ client_port }}"
+}
