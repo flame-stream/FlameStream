@@ -66,4 +66,8 @@ public final class AtomicHandleImpl implements AtomicHandle {
   public void error(String format, Object... args) {
     LOG.warning(format, args);
   }
+
+  public ActorContext backdoor() {
+    return context;
+  }
 }
