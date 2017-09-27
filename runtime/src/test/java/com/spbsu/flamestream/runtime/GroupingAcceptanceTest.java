@@ -4,82 +4,22 @@ import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
-import com.spbsu.flamestream.core.graph.TheGraph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
 import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
-import org.jooq.lambda.Unchecked;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class GroupingAcceptanceTest {
-  @SuppressWarnings("Convert2Lambda")
-  @Test
-  public void noReorderingSingleHash() throws Exception {
-    //noinspection Convert2Lambda
-    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100), new BiPredicate<Long, Long>() {
-      @Override
-      public boolean test(Long aLong, Long aLong2) {
-        return true;
-      }
-    });
-  }
-
-  @Test
-  public void noReorderingMultipleHash() throws Exception {
-    final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
-    GroupingAcceptanceTest.doIt(hash, HashFunction.constantHash(100), new BiPredicate<Long, Long>() {
-
-      final HashFunction<Long> hashFunction = hash;
-
-      @Override
-      public boolean test(Long aLong, Long aLong2) {
-        return hashFunction.hash(aLong) == hashFunction.hash(aLong2);
-      }
-    });
-  }
-
-  @SuppressWarnings("Convert2Lambda")
-  @Test
-  public void reorderingSingleHash() throws Exception {
-    //noinspection Convert2Lambda
-    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.uniformLimitedHash(100), new BiPredicate<Long, Long>() {
-      @Override
-      public boolean test(Long aLong, Long aLong2) {
-        return true;
-      }
-    });
-  }
-
-  @Test
-  public void reorderingMultipleHash() throws Exception {
-    final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
-
-    GroupingAcceptanceTest.doIt(hash, HashFunction.uniformLimitedHash(100), new BiPredicate<Long, Long>() {
-      private final HashFunction<Long> hashFunction = hash;
-
-      @Override
-      public boolean test(Long aLong, Long aLong2) {
-        return hashFunction.hash(aLong) == hashFunction.hash(aLong2);
-      }
-    });
-  }
-
   private static void doIt(HashFunction<? super Long> groupHash,
                            HashFunction<? super Long> filterHash,
                            BiPredicate<? super Long, ? super Long> equalz) throws Exception {
@@ -143,6 +83,58 @@ public final class GroupingAcceptanceTest {
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(Collectors.toMap(Function.identity(), e -> filter.inPort()));
     return new TheGraph(graph, frontBindings);
+  }
+
+  @SuppressWarnings("Convert2Lambda")
+  @Test
+  public void noReorderingSingleHash() throws Exception {
+    //noinspection Convert2Lambda
+    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100), new BiPredicate<Long, Long>() {
+      @Override
+      public boolean test(Long aLong, Long aLong2) {
+        return true;
+      }
+    });
+  }
+
+  @Test
+  public void noReorderingMultipleHash() throws Exception {
+    final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
+    GroupingAcceptanceTest.doIt(hash, HashFunction.constantHash(100), new BiPredicate<Long, Long>() {
+
+      final HashFunction<Long> hashFunction = hash;
+
+      @Override
+      public boolean test(Long aLong, Long aLong2) {
+        return hashFunction.hash(aLong) == hashFunction.hash(aLong2);
+      }
+    });
+  }
+
+  @SuppressWarnings("Convert2Lambda")
+  @Test
+  public void reorderingSingleHash() throws Exception {
+    //noinspection Convert2Lambda
+    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.uniformLimitedHash(100), new BiPredicate<Long, Long>() {
+      @Override
+      public boolean test(Long aLong, Long aLong2) {
+        return true;
+      }
+    });
+  }
+
+  @Test
+  public void reorderingMultipleHash() throws Exception {
+    final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
+
+    GroupingAcceptanceTest.doIt(hash, HashFunction.uniformLimitedHash(100), new BiPredicate<Long, Long>() {
+      private final HashFunction<Long> hashFunction = hash;
+
+      @Override
+      public boolean test(Long aLong, Long aLong2) {
+        return hashFunction.hash(aLong) == hashFunction.hash(aLong2);
+      }
+    });
   }
 
   private static final class Id implements Function<Long, Long> {

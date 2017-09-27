@@ -4,8 +4,8 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.ack.AckActor;
+import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.runtime.range.RangeConcierge;
 
@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toSet;
 
 public final class TickConcierge extends LoggingActor {
   private final TickInfo tickInfo;

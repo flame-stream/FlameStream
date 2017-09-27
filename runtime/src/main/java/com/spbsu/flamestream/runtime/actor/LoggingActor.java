@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.runtime.actor;
 
-import akka.actor.AbstractActor;
 import akka.actor.AbstractActorWithStash;
 import akka.actor.SupervisorStrategy;
 import akka.event.Logging;

@@ -3,10 +3,10 @@ package com.spbsu.flamestream.runtime.ack;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.ack.impl.AckLedgerImpl;
-import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.runtime.ack.impl.AckLedgerImpl;
+import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.runtime.tick.StartTick;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
@@ -19,15 +19,11 @@ public final class AckActor extends LoggingActor {
   private final AckLedger ledger;
   private final TickInfo tickInfo;
   private final ActorRef tickWatcher;
-
+  private final AckerStatistics stat = new AckerStatistics();
+  private final Collection<HashRange> committers = new HashSet<>();
   private GlobalTime currentMin = GlobalTime.MIN;
-
   @Nullable
   private TickRoutes tickRoutes;
-
-  private final AckerStatistics stat = new AckerStatistics();
-
-  private final Collection<HashRange> committers = new HashSet<>();
 
   private AckActor(TickInfo tickInfo, ActorRef tickWatcher) {
     this.ledger = new AckLedgerImpl(tickInfo);

@@ -6,7 +6,7 @@ import com.spbsu.flamestream.runtime.range.HashRange;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.*;
+import static java.util.Collections.unmodifiableMap;
 
 public final class TickRoutes {
   private final Map<HashRange, ActorRef> rangeConcierges;

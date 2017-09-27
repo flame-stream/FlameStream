@@ -3,12 +3,12 @@ package com.spbsu.flamestream.runtime.range;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.ack.Commit;
-import com.spbsu.flamestream.runtime.ack.RangeCommitDone;
-import com.spbsu.flamestream.runtime.ack.MinTimeUpdate;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.InPort;
+import com.spbsu.flamestream.runtime.ack.Commit;
+import com.spbsu.flamestream.runtime.ack.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.ack.RangeCommitDone;
+import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.atomic.AtomicActor;
 import com.spbsu.flamestream.runtime.tick.StartTick;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
@@ -38,6 +38,16 @@ public final class RangeConcierge extends LoggingActor {
 
   public static Props props(TickInfo info, HashRange range) {
     return Props.create(RangeConcierge.class, info, range);
+  }
+
+  private static Map<InPort, ActorRef> withFlattenedKey(Map<AtomicGraph, ActorRef> map) {
+    final Map<InPort, ActorRef> result = new HashMap<>();
+    for (Map.Entry<AtomicGraph, ActorRef> e : map.entrySet()) {
+      for (InPort port : e.getKey().inPorts()) {
+        result.put(port, e.getValue());
+      }
+    }
+    return result;
   }
 
   @Override
@@ -91,16 +101,6 @@ public final class RangeConcierge extends LoggingActor {
       LOG().info("Range commit done");
       context().stop(self());
     }
-  }
-
-  private static Map<InPort, ActorRef> withFlattenedKey(Map<AtomicGraph, ActorRef> map) {
-    final Map<InPort, ActorRef> result = new HashMap<>();
-    for (Map.Entry<AtomicGraph, ActorRef> e : map.entrySet()) {
-      for (InPort port : e.getKey().inPorts()) {
-        result.put(port, e.getValue());
-      }
-    }
-    return result;
   }
 
   private Map<AtomicGraph, ActorRef> initializedAtomics(Collection<? extends AtomicGraph> atomicGraphs,

@@ -4,32 +4,57 @@ import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
-import com.spbsu.flamestream.core.graph.TheGraph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
 import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
-import com.spbsu.flamestream.core.graph.ops.Broadcast;
-import com.spbsu.flamestream.core.graph.ops.Filter;
-import com.spbsu.flamestream.core.graph.ops.Grouping;
-import com.spbsu.flamestream.core.graph.ops.Merge;
-import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.core.graph.ops.*;
 import com.spbsu.flamestream.runtime.TestStand;
+import com.spbsu.flamestream.runtime.TheGraph;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Random;
+import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class SumTest {
+
+  @SuppressWarnings("Convert2Lambda")
+  private static TheGraph sumGraph(Collection<Integer> fronts, AtomicGraph sink) {
+    final HashFunction<Numb> identity = HashFunction.constantHash(1);
+    final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
+    //noinspection Convert2Lambda
+    @SuppressWarnings("Convert2Lambda") final BiPredicate<Numb, Numb> predicate = new BiPredicate<Numb, Numb>() {
+      @Override
+      public boolean test(Numb o, Numb o2) {
+        return true;
+      }
+    };
+
+    final Merge merge = new Merge(Arrays.asList(identity, identity));
+    final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2);
+    final StatelessMap<List<Numb>, List<Numb>> enricher = new StatelessMap<>(new IdentityEnricher(), groupIdentity);
+    final Filter<List<Numb>> junkFilter = new Filter<>(new WrongOrderingFilter(), groupIdentity);
+    final StatelessMap<List<Numb>, Sum> reducer = new StatelessMap<>(new Reduce(), groupIdentity);
+    final Broadcast<Sum> broadcast = new Broadcast<>(identity, 2);
+
+    final PreBarrierMetaFilter<Sum> metaFilter = new PreBarrierMetaFilter<>(identity);
+    final BarrierSink barrierSink = new BarrierSink(sink);
+
+    final Graph graph = merge.fuse(grouping, merge.outPort(), grouping.inPort())
+            .fuse(enricher, grouping.outPort(), enricher.inPort())
+            .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
+            .fuse(reducer, junkFilter.outPort(), reducer.inPort())
+            .fuse(broadcast, reducer.outPort(), broadcast.inPort())
+            .fuse(metaFilter, broadcast.outPorts().get(0), metaFilter.inPort())
+            .fuse(barrierSink, metaFilter.outPorts().get(0), barrierSink.inPort())
+            .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
+
+    final Map<Integer, InPort> frontBindings = fronts.stream()
+            .collect(Collectors.toMap(Function.identity(), e -> merge.inPorts().get(0)));
+    return new TheGraph(graph, frontBindings);
+  }
 
   @Test
   public void testSingleFront() throws Exception {
@@ -76,41 +101,5 @@ public final class SumTest {
 
       Assert.assertEquals(actual, expected);
     }
-  }
-
-  @SuppressWarnings("Convert2Lambda")
-  private static TheGraph sumGraph(Collection<Integer> fronts, AtomicGraph sink) {
-    final HashFunction<Numb> identity = HashFunction.constantHash(1);
-    final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
-    //noinspection Convert2Lambda
-    @SuppressWarnings("Convert2Lambda") final BiPredicate<Numb, Numb> predicate = new BiPredicate<Numb, Numb>() {
-      @Override
-      public boolean test(Numb o, Numb o2) {
-        return true;
-      }
-    };
-
-    final Merge merge = new Merge(Arrays.asList(identity, identity));
-    final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2);
-    final StatelessMap<List<Numb>, List<Numb>> enricher = new StatelessMap<>(new IdentityEnricher(), groupIdentity);
-    final Filter<List<Numb>> junkFilter = new Filter<>(new WrongOrderingFilter(), groupIdentity);
-    final StatelessMap<List<Numb>, Sum> reducer = new StatelessMap<>(new Reduce(), groupIdentity);
-    final Broadcast<Sum> broadcast = new Broadcast<>(identity, 2);
-
-    final PreBarrierMetaFilter<Sum> metaFilter = new PreBarrierMetaFilter<>(identity);
-    final BarrierSink barrierSink = new BarrierSink(sink);
-
-    final Graph graph = merge.fuse(grouping, merge.outPort(), grouping.inPort())
-            .fuse(enricher, grouping.outPort(), enricher.inPort())
-            .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
-            .fuse(reducer, junkFilter.outPort(), reducer.inPort())
-            .fuse(broadcast, reducer.outPort(), broadcast.inPort())
-            .fuse(metaFilter, broadcast.outPorts().get(0), metaFilter.inPort())
-            .fuse(barrierSink, metaFilter.outPorts().get(0), barrierSink.inPort())
-            .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
-
-    final Map<Integer, InPort> frontBindings = fronts.stream()
-            .collect(Collectors.toMap(Function.identity(), e -> merge.inPorts().get(0)));
-    return new TheGraph(graph, frontBindings);
   }
 }

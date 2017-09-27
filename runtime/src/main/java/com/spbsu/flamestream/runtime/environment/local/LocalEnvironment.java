@@ -1,18 +1,12 @@
-package com.spbsu.flamestream.runtime.environmet.local;
+package com.spbsu.flamestream.runtime.environment.local;
 
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Address;
-import akka.actor.Props;
-import akka.actor.RootActorPath;
+import akka.actor.*;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.runtime.LocalActorSink;
 import com.spbsu.flamestream.runtime.ack.CommitTick;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.environmet.CollectingActor;
-import com.spbsu.flamestream.runtime.environmet.Environment;
+import com.spbsu.flamestream.runtime.environment.CollectingActor;
+import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.front.FrontActor;
 import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickCommitDone;

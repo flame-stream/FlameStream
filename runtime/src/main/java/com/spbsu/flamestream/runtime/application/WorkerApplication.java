@@ -18,9 +18,8 @@ import java.nio.file.Paths;
 import java.util.concurrent.TimeoutException;
 
 public final class WorkerApplication {
-  private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
   public static final int PORT = 4387;
-
+  private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
   private final InetSocketAddress host;
   private final String zkConnectString;
   private final int id;

@@ -1,11 +1,6 @@
 package com.spbsu.flamestream.runtime.tick;
 
-import akka.actor.ActorIdentity;
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
-import akka.actor.Identify;
-import akka.actor.Props;
+import akka.actor.*;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.HashRange;
@@ -18,12 +13,10 @@ import java.util.concurrent.TimeUnit;
 public final class TickRoutesResolver extends LoggingActor {
   private final Map<Integer, ActorPath> cluster;
   private final TickInfo tickInfo;
-
-  private ActorSelection tmpAcker;
   private final Map<HashRange, ActorSelection> tmpRanges = new HashMap<>();
-
-  private ActorRef acker;
   private final Map<HashRange, ActorRef> refs = new HashMap<>();
+  private ActorSelection tmpAcker;
+  private ActorRef acker;
 
   private TickRoutesResolver(Map<Integer, ActorPath> cluster, TickInfo tickInfo) {
     this.cluster = new HashMap<>(cluster);

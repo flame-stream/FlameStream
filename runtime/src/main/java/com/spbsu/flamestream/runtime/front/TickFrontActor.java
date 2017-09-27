@@ -6,10 +6,10 @@ import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.ack.AckerReport;
-import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.graph.InPort;
+import com.spbsu.flamestream.runtime.ack.AckerReport;
+import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.AddressedItem;
 import com.spbsu.flamestream.runtime.tick.HashMapping;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
@@ -39,6 +39,8 @@ final class TickFrontActor extends LoggingActor {
   private HashMapping<ActorRef> mapping;
 
   private Cancellable pingMe;
+  private long currentWindowHead;
+  private long currentXor = 0;
 
   private TickFrontActor(Map<Integer, ActorPath> cluster,
                          InPort target,
@@ -132,9 +134,6 @@ final class TickFrontActor extends LoggingActor {
 
     report(item.meta().globalTime().time(), item.ack());
   }
-
-  private long currentWindowHead;
-  private long currentXor = 0;
 
   private long lower(long ts) {
     return tickInfo.startTs() + tickInfo.window() * ((ts - tickInfo.startTs()) / tickInfo.window());

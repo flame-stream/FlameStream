@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.environmet;
+package com.spbsu.flamestream.runtime.environment;
 
 import akka.actor.Props;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;

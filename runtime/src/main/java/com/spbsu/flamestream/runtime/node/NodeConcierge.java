@@ -1,10 +1,6 @@
 package com.spbsu.flamestream.runtime.node;
 
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.Address;
-import akka.actor.Props;
-import akka.actor.RootActorPath;
+import akka.actor.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
@@ -98,7 +94,8 @@ public final class NodeConcierge extends LoggingActor {
     final String path = "/dns";
     final byte[] data = zooKeeper.getData(path, false, new Stat());
     final Map<Integer, InetSocketAddress> dns = NodeConcierge.MAPPER
-            .readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {});
+            .readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {
+            });
 
     return dns.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> pathFor(e.getValue())));
   }
@@ -121,6 +118,7 @@ public final class NodeConcierge extends LoggingActor {
   private Set<Integer> fetchFronts() throws KeeperException, InterruptedException, IOException {
     final String path = "/fronts";
     final byte[] data = zooKeeper.getData(path, false, new Stat());
-    return NodeConcierge.MAPPER.readValue(data, new TypeReference<Set<Integer>>() {});
+    return NodeConcierge.MAPPER.readValue(data, new TypeReference<Set<Integer>>() {
+    });
   }
 }

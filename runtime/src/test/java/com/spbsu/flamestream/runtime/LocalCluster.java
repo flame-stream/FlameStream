@@ -29,13 +29,10 @@ import static java.util.stream.Collectors.toSet;
 
 public final class LocalCluster implements AutoCloseable {
   private static final String ZK_STRING = "localhost:2181";
-
+  private static final int START_WORKER_PORT = 5223;
+  public final Collection<WorkerApplication> workerApplication = new HashSet<>();
   private final Logger LOG = LoggerFactory.getLogger(LocalCluster.class);
   private final ObjectMapper mapper = new ObjectMapper();
-
-  private static final int START_WORKER_PORT = 5223;
-
-  public final Collection<WorkerApplication> workerApplication = new HashSet<>();
   private final ZooKeeper zooKeeper;
   private final ZooKeeperApplication zk;
   private final Thread zkThread;

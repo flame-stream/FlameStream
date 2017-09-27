@@ -1,19 +1,13 @@
-package com.spbsu.flamestream.runtime.environmet.remote;
+package com.spbsu.flamestream.runtime.environment.remote;
 
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
-import akka.actor.ActorSystem;
-import akka.actor.Address;
-import akka.actor.RootActorPath;
+import akka.actor.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.runtime.RemoteActorSink;
 import com.spbsu.flamestream.runtime.configuration.KryoInfoSerializer;
 import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
-import com.spbsu.flamestream.runtime.environmet.CollectingActor;
-import com.spbsu.flamestream.runtime.environmet.Environment;
+import com.spbsu.flamestream.runtime.environment.CollectingActor;
+import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.typesafe.config.Config;
@@ -39,9 +33,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 public final class RemoteEnvironment implements Environment {
-  private final Logger LOG = LoggerFactory.getLogger(RemoteEnvironment.class);
   private static final String SYSTEM_NAME = "remote-environment";
   private static final int SYSTEM_PORT = 12345;
+  private final Logger LOG = LoggerFactory.getLogger(RemoteEnvironment.class);
   private final InetAddress environmentAddress;
 
   private final ObjectMapper mapper = new ObjectMapper();
@@ -79,7 +73,8 @@ public final class RemoteEnvironment implements Environment {
   public Set<Integer> availableFronts() {
     try {
       final byte[] data = zooKeeper.getData("/fronts", false, new Stat());
-      return mapper.readValue(data, new TypeReference<Set<Integer>>() {});
+      return mapper.readValue(data, new TypeReference<Set<Integer>>() {
+      });
     } catch (IOException | KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -94,7 +89,7 @@ public final class RemoteEnvironment implements Environment {
   public <T> AtomicGraph wrapInSink(Consumer<T> mySuperConsumer) {
     final String suffix = UUID.randomUUID().toString();
     localSystem.actorOf(CollectingActor.props(mySuperConsumer), suffix);
-   return new RemoteActorSink(wrapperPath(suffix));
+    return new RemoteActorSink(wrapperPath(suffix));
   }
 
   private ActorPath wrapperPath(String suffix) {
@@ -140,7 +135,8 @@ public final class RemoteEnvironment implements Environment {
   private Map<Integer, InetSocketAddress> dns() {
     try {
       final byte[] data = zooKeeper.getData("/dns", false, new Stat());
-      return mapper.readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {});
+      return mapper.readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {
+      });
     } catch (IOException | InterruptedException | KeeperException e) {
       throw new RuntimeException(e);
     }

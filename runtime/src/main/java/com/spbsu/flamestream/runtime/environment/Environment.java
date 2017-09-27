@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.environmet;
+package com.spbsu.flamestream.runtime.environment;
 
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.tick.TickInfo;

@@ -6,15 +6,16 @@ import java.util.HashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 
-import static com.spbsu.flamestream.core.stat.Statistics.*;
+import static com.spbsu.flamestream.core.stat.Statistics.asMap;
 
 public final class AckerStatistics implements Statistics {
   private final LongSummaryStatistics normalAck = new LongSummaryStatistics();
+  private final LongSummaryStatistics releasingAck = new LongSummaryStatistics();
+
   public void recordNormalAck(long ts) {
     normalAck.accept(ts);
   }
 
-  private final LongSummaryStatistics releasingAck = new LongSummaryStatistics();
   public void recordReleasingAck(long ts) {
     releasingAck.accept(ts);
   }

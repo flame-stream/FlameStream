@@ -1,15 +1,15 @@
 package com.spbsu.flamestream.runtime.range.atomic;
 
 import akka.actor.Props;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.ack.Commit;
 import com.spbsu.flamestream.runtime.ack.MinTimeUpdate;
-import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.AddressedItem;
 import com.spbsu.flamestream.runtime.range.AtomicCommitDone;
-import com.spbsu.flamestream.runtime.tick.TickRoutes;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.tick.TickRoutes;
 
 public final class AtomicActor extends LoggingActor {
   private final AtomicActorStatistics stat = new AtomicActorStatistics();
