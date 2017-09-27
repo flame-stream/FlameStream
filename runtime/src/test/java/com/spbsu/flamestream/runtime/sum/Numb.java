@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core.sum;
+package com.spbsu.flamestream.runtime.sum;
 
 public interface Numb {
   long value();

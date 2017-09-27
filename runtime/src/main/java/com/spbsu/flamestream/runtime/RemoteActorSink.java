@@ -5,39 +5,46 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import com.spbsu.flamestream.core.data.DataItem;
-import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaElement;
 import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.core.data.raw.SingleRawData;
-import com.typesafe.config.Config;
+import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaElement;
+import com.spbsu.flamestream.runtime.raw.SingleRawData;
+import com.typesafe.config.ConfigFactory;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 public final class RemoteActorSink extends AbstractAtomicGraph {
-  private final ActorSystem system;
   private final ActorPath path;
+
+  private ActorSystem system;
 
   @Nullable
   private ActorSelection actor = null;
 
   private final InPort inPort;
 
-  public RemoteActorSink(ActorPath path, Config config) {
-    this.path = path;
-    final String id = UUID.randomUUID().toString();
-    this.system = ActorSystem.create("sink-system-" + id, config);
+  public RemoteActorSink(ActorPath receiverPath) {
+    this.path = receiverPath;
     this.inPort = new InPort(PreBarrierMetaElement.HASH_FUNCTION);
   }
 
   @Override
   public void onStart(AtomicHandle handle) {
+    final String id = UUID.randomUUID().toString();
+    final int port = new Random(System.nanoTime()).nextInt(10000) + 30000;
+    system = ActorSystem.create(
+            "sink-system-" + id,
+            ConfigFactory
+                    .parseString("akka.remote.netty.tcp.port=" + port)
+                    .withFallback(ConfigFactory.load("remote")));
     actor = system.actorSelection(path);
   }
 

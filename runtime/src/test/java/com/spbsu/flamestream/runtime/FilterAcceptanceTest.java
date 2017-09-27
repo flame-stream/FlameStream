@@ -1,15 +1,13 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.ActorPath;
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
-import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.TheGraph;
+import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
+import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
-import com.spbsu.flamestream.runtime.environmet.local.LocalCluster;
-import com.spbsu.flamestream.runtime.environmet.local.TestStand;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -20,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -29,17 +26,20 @@ public final class FilterAcceptanceTest {
 
   @Test
   public void linearFilter() throws Exception {
-    try (LocalCluster cluster = new LocalCluster(4, 4);
-         TestStand stage = new TestStand(cluster)) {
+    try (TestStand stage = new TestStand(4)) {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(FilterAcceptanceTest.multiGraph(stage.frontIds(), stage.wrap(result::add)), 10, 1);
+      stage.deploy(FilterAcceptanceTest.multiGraph(
+              stage.environment().availableFronts(),
+              stage.environment().wrapInSink(result::add)
+      ), 10, 1);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = stage.randomFrontConsumer(123);
+      final Consumer<Object> sink = stage.randomFrontConsumer(4);
       source.forEach(sink);
-      stage.waitTick(12, TimeUnit.SECONDS);
+
+      stage.awaitTick(10);
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }
@@ -47,34 +47,31 @@ public final class FilterAcceptanceTest {
 
   @Test
   public void multipleTicksLinearFilter() throws Exception {
-    try (LocalCluster cluster = new LocalCluster(4, 4);
-         TestStand stage = new TestStand(cluster)) {
+    try (TestStand stage = new TestStand(4)) {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
-      stage.deploy(
-              FilterAcceptanceTest.multiGraph(stage.frontIds(), stage.wrap(result::add)),
-              2,
-              20
-              );
+      stage.deploy(FilterAcceptanceTest.multiGraph(
+              stage.environment().availableFronts(),
+              stage.environment().wrapInSink(result::add)
+      ), 2, 10);
 
       final List<Integer> source = new Random().ints(20000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = stage.randomFrontConsumer(123);
+      final Consumer<Object> sink = stage.randomFrontConsumer(4);
       source.forEach(sink);
-      TimeUnit.SECONDS.sleep(50);
+      stage.awaitTick(40);
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }
   }
 
-  private static TheGraph multiGraph(Collection<Integer> fronts, ActorPath consumerPath) {
+  private static TheGraph multiGraph(Collection<Integer> fronts, AtomicGraph sink) {
     final StatelessMap<Integer, Integer> filter1 = new StatelessMap<>(new HumbleFiler(-1), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter2 = new StatelessMap<>(new HumbleFiler(-2), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter3 = new StatelessMap<>(new HumbleFiler(-3), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter4 = new StatelessMap<>(new HumbleFiler(-4), HashFunction.OBJECT_HASH);
 
     final PreBarrierMetaFilter<Integer> metaFilter = new PreBarrierMetaFilter<>(HashFunction.OBJECT_HASH);
-    final RemoteActorSink sink = new RemoteActorSink(consumerPath);
     final BarrierSink barrierSink = new BarrierSink(sink);
 
     final Graph graph = filter1.fuse(filter2, filter1.outPort(), filter2.inPort())

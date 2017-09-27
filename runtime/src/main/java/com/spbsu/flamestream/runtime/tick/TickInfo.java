@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.tick;
 
 import com.spbsu.flamestream.core.graph.TheGraph;
-import com.spbsu.flamestream.core.HashRange;
+import com.spbsu.flamestream.runtime.range.HashRange;
 
 import java.util.HashMap;
 import java.util.HashSet;

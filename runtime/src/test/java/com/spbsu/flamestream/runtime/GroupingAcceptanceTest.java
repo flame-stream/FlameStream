@@ -1,15 +1,14 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.ActorPath;
-import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
-import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
+import com.spbsu.flamestream.core.HashFunction;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.TheGraph;
+import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
+import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
-import com.spbsu.flamestream.runtime.environmet.local.LocalCluster;
-import com.spbsu.flamestream.runtime.environmet.local.TestStand;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
@@ -84,55 +83,25 @@ public final class GroupingAcceptanceTest {
   private static void doIt(HashFunction<? super Long> groupHash,
                            HashFunction<? super Long> filterHash,
                            BiPredicate<? super Long, ? super Long> equalz) throws Exception {
-    try (com.spbsu.flamestream.core.LocalCluster cluster = new LocalCluster(5, 1);
-         TestStand stage = new TestStand(cluster)) {
+    try (TestStand stand = new TestStand(5)) {
       final Set<List<Long>> result = new HashSet<>();
       final int window = 7;
 
-      stage.deploy(GroupingAcceptanceTest.groupGraph(stage.frontIds(),
-              stage.wrap(di -> result.add((List<Long>) di)),
+      stand.deploy(GroupingAcceptanceTest.groupGraph(
+              stand.environment().availableFronts(),
+              stand.environment().wrapInSink(di -> result.add((List<Long>) di)),
               window,
               groupHash,
               equalz,
-              filterHash), 10, 1);
+              filterHash
+      ), 10, 1);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = stage.randomFrontConsumer(123);
+      final Consumer<Object> sink = stand.randomFrontConsumer(1);
       source.forEach(sink);
-      stage.waitTick(12, TimeUnit.SECONDS);
+      stand.awaitTick(12);
 
       Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, groupHash, window));
-    }
-  }
-
-  @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
-  @Test(enabled = false)
-  public void infiniteTest() throws Exception {
-    try (LocalCluster cluster = new LocalCluster(5, 1);
-         TestStand stage = new TestStand(cluster)) {
-
-      //noinspection Convert2Lambda,Anonymous2MethodRef
-      stage.deploy(GroupingAcceptanceTest.groupGraph(stage.frontIds(),
-              stage.wrap(d -> {
-              }),
-              3,
-              HashFunction.OBJECT_HASH,
-              new BiPredicate<Long, Long>() {
-                @Override
-                public boolean test(Long aLong, Long aLong2) {
-                  return aLong.equals(aLong2);
-                }
-              }, HashFunction.OBJECT_HASH), 15, 1);
-
-      final Consumer<Object> sink = stage.randomFrontConsumer(123);
-
-      new Random().longs().boxed()
-              .forEach(Unchecked.consumer(l -> {
-                sink.accept(l);
-                Thread.sleep(1);
-              }));
-
-      stage.waitTick(15, TimeUnit.HOURS);
     }
   }
 
@@ -155,7 +124,8 @@ public final class GroupingAcceptanceTest {
     return mustHave;
   }
 
-  private static TheGraph groupGraph(Collection<Integer> fronts, ActorPath consumerPath,
+  private static TheGraph groupGraph(Collection<Integer> fronts,
+                                     AtomicGraph sink,
                                      int window,
                                      HashFunction<? super Long> groupHash,
                                      BiPredicate<? super Long, ? super Long> equalz,
@@ -164,7 +134,6 @@ public final class GroupingAcceptanceTest {
     final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window);
 
     final PreBarrierMetaFilter<List<Long>> metaFilter = new PreBarrierMetaFilter<>(HashFunction.OBJECT_HASH);
-    final RemoteActorSink sink = new RemoteActorSink(consumerPath);
     final BarrierSink barrierSink = new BarrierSink(sink);
 
     final Graph graph = filter.fuse(grouping, filter.outPort(), grouping.inPort())

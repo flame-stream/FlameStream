@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.runtime.ack;
 
-import com.spbsu.flamestream.core.HashRange;
+import com.spbsu.flamestream.runtime.range.HashRange;
 
 public final class RangeCommitDone {
   private final HashRange participant;

@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core.data.raw;
+package com.spbsu.flamestream.runtime.raw;
 
 public interface RawData<T> extends Iterable<T> {
 }

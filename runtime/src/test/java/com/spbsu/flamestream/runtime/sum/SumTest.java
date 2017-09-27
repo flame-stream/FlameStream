@@ -1,20 +1,18 @@
-package com.spbsu.flamestream.core.sum;
+package com.spbsu.flamestream.runtime.sum;
 
-import akka.actor.ActorPath;
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.LocalCluster;
-import com.spbsu.flamestream.core.TestStand;
-import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
-import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
-import com.spbsu.flamestream.runtime.RemoteActorSink;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.TheGraph;
+import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
+import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
 import com.spbsu.flamestream.core.graph.ops.Broadcast;
 import com.spbsu.flamestream.core.graph.ops.Filter;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.Merge;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.runtime.TestStand;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -26,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -36,31 +33,33 @@ public final class SumTest {
 
   @Test
   public void testSingleFront() throws Exception {
-    test(20, 1000, 1, 123);
+    test(20, 1000, 1);
   }
 
   @Test
   public void testMultipleFronts() throws Exception {
-    test(30, 1000, 4, 123);
+    test(30, 1000, 4);
   }
 
   @Test
   public void shortRepeatedTests() throws Exception {
     for (int i = 0; i < 10; ++i) {
-      test(5, 10, 4, i);
+      test(5, 10, 4);
     }
   }
 
-  private void test(int tickLength, int inputSize, int fronts, int seed) throws Exception {
-    try (LocalCluster cluster = new LocalCluster(4, fronts);
-         TestStand stage = new TestStand(cluster)) {
+  private void test(int tickLength, int inputSize, int fronts) throws Exception {
+    try (TestStand stand = new TestStand(4)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
-      stage.deploy(SumTest.sumGraph(stage.frontIds(), stage.wrap(k -> result.add((Sum) k))), tickLength, 1);
+      stand.deploy(SumTest.sumGraph(
+              stand.environment().availableFronts(),
+              stand.environment().wrapInSink(k -> result.add((Sum) k))
+      ), tickLength, 1);
 
-      final List<LongNumb> source = new Random(seed).ints(inputSize).map(i -> i % 100).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
-      final Consumer<Object> sink = stage.randomFrontConsumer(seed);
+      final List<LongNumb> source = new Random().ints(inputSize).map(i -> i % 100).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
+      final Consumer<Object> sink = stand.randomFrontConsumer(fronts);
       source.forEach(longNumb -> {
         sink.accept(longNumb);
         try {
@@ -69,7 +68,8 @@ public final class SumTest {
           throw new RuntimeException(e);
         }
       });
-      stage.waitTick(tickLength + 5, TimeUnit.SECONDS);
+
+      stand.awaitTick(tickLength + 5);
 
       final long expected = source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value();
       final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
@@ -79,7 +79,7 @@ public final class SumTest {
   }
 
   @SuppressWarnings("Convert2Lambda")
-  private static TheGraph sumGraph(Collection<Integer> fronts, ActorPath consumerPath) {
+  private static TheGraph sumGraph(Collection<Integer> fronts, AtomicGraph sink) {
     final HashFunction<Numb> identity = HashFunction.constantHash(1);
     final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
     //noinspection Convert2Lambda
@@ -98,7 +98,6 @@ public final class SumTest {
     final Broadcast<Sum> broadcast = new Broadcast<>(identity, 2);
 
     final PreBarrierMetaFilter<Sum> metaFilter = new PreBarrierMetaFilter<>(identity);
-    final RemoteActorSink sink = new RemoteActorSink(consumerPath);
     final BarrierSink barrierSink = new BarrierSink(sink);
 
     final Graph graph = merge.fuse(grouping, merge.outPort(), grouping.inPort())

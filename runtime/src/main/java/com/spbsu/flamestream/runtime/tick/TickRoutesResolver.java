@@ -8,7 +8,7 @@ import akka.actor.Identify;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.core.HashRange;
+import com.spbsu.flamestream.runtime.range.HashRange;
 import scala.concurrent.duration.Duration;
 
 import java.util.HashMap;

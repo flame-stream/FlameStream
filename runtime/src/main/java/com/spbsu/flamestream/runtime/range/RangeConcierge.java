@@ -7,7 +7,6 @@ import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.ack.Commit;
 import com.spbsu.flamestream.runtime.ack.RangeCommitDone;
 import com.spbsu.flamestream.runtime.ack.MinTimeUpdate;
-import com.spbsu.flamestream.core.HashRange;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.runtime.range.atomic.AtomicActor;

@@ -7,7 +7,7 @@ import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.core.data.raw.SingleRawData;
+import com.spbsu.flamestream.runtime.raw.SingleRawData;
 
 import java.util.List;
 

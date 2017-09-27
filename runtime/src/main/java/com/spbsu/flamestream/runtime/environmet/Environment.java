@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.environmet;
 
-import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 
 import java.util.Set;
 import java.util.function.Consumer;
@@ -11,8 +11,9 @@ public interface Environment extends AutoCloseable {
 
   Set<Integer> availableFronts();
 
-  // TODO: 9/26/17 Sink interface?
-  AtomicGraph wrapInSink(Consumer<Object> mySuperConsumer);
+  Set<Integer> availableWorkers();
+
+  <T> AtomicGraph wrapInSink(Consumer<T> mySuperConsumer);
 
   Consumer<Object> frontConsumer(int frontId);
 }

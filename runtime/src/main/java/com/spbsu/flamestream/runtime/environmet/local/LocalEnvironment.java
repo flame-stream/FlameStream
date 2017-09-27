@@ -7,16 +7,17 @@ import akka.actor.Address;
 import akka.actor.Props;
 import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.core.data.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.LocalActorSink;
 import com.spbsu.flamestream.runtime.ack.CommitTick;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.runtime.environmet.CollectingActor;
 import com.spbsu.flamestream.runtime.environmet.Environment;
 import com.spbsu.flamestream.runtime.front.FrontActor;
+import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickCommitDone;
 import com.spbsu.flamestream.runtime.tick.TickConcierge;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import org.apache.commons.io.FileUtils;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
@@ -33,7 +34,7 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 
 public final class LocalEnvironment implements Environment {
-  private static final String SYSTEM_NAME = "system_name";
+  private static final String SYSTEM_NAME = "local-system";
 
   private final ConcurrentMap<Long, ActorRef> tickConcierges = new ConcurrentHashMap<>();
   private final ActorRef fakeWatcher;
@@ -71,7 +72,12 @@ public final class LocalEnvironment implements Environment {
   }
 
   @Override
-  public AtomicGraph wrapInSink(Consumer<Object> mySuperConsumer) {
+  public Set<Integer> availableWorkers() {
+    return singleton(1);
+  }
+
+  @Override
+  public <T> AtomicGraph wrapInSink(Consumer<T> mySuperConsumer) {
     return new LocalActorSink(localSystem.actorOf(CollectingActor.props(mySuperConsumer), "collector"));
   }
 

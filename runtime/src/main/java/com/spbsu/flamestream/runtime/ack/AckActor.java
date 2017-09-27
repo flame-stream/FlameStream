@@ -5,7 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.ack.impl.AckLedgerImpl;
-import com.spbsu.flamestream.core.HashRange;
+import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.tick.StartTick;
 import com.spbsu.flamestream.runtime.tick.TickInfo;

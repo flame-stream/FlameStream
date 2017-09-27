@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core.sum;
+package com.spbsu.flamestream.runtime.sum;
 
 import java.util.List;
 import java.util.function.Function;

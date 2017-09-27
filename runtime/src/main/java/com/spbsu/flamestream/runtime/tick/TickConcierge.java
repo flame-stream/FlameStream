@@ -6,7 +6,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.ack.AckActor;
-import com.spbsu.flamestream.core.HashRange;
+import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.runtime.range.RangeConcierge;
 
 import javax.annotation.Nullable;
