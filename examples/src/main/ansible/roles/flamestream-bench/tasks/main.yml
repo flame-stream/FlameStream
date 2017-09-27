@@ -13,7 +13,7 @@
 
 - name: Copy the bench application
   copy:
-    src: flamestream-benchmarks-1.0-SNAPSHOT-bench.jar
+    src: flamestream-example-1.0-SNAPSHOT-bench.jar
     dest: "{{ bench_dir }}/bench.jar"
   tags: run
 
