@@ -1,6 +1,6 @@
-package com.spbsu.flamestream.benchmark.config;
+package com.spbsu.flamestream.config;
 
-import com.spbsu.flamestream.benchmark.EnvironmentRunner;
+import com.spbsu.flamestream.EnvironmentRunner;
 
 /**
  * User: Artem

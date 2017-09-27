@@ -19,7 +19,7 @@ public final class LocalActorSink extends AbstractAtomicGraph {
 
   private final InPort inPort;
 
-  LocalActorSink(ActorRef actor) {
+  public LocalActorSink(ActorRef actor) {
     this.actor = actor;
     this.inPort = new InPort(PreBarrierMetaElement.HASH_FUNCTION);
   }

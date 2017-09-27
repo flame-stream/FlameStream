@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.benchmark;
+package com.spbsu.flamestream;
 
 public final class RealCluster {
   /*private final String zookeeperString;

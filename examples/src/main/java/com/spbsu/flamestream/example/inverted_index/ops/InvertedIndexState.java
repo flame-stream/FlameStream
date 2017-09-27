@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.example.inverted_index.ops;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.spbsu.flamestream.example.inverted_index.utils.IndexLongUtil;
+import com.spbsu.flamestream.example.inverted_index.IndexItemInLong;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 
@@ -32,15 +32,15 @@ public class InvertedIndexState {
 
   public long updateOrInsert(long[] pagePositions) {
     final long first = pagePositions[0];
-    final int pageId = IndexLongUtil.pageId(first);
+    final int pageId = IndexItemInLong.pageId(first);
 
-    final long valueForSearch = IndexLongUtil.createPagePosition(pageId, 0, 0);
-    final int newPosition = IndexLongUtil.position(first);
+    final long valueForSearch = IndexItemInLong.createPagePosition(pageId, 0, 0);
+    final int newPosition = IndexItemInLong.position(first);
     final int newRange = pagePositions.length;
 
     final long prevValue = tryToFindAndUpdate(valueForSearch, newPosition, newRange);
     if (prevValue == InvertedIndexState.PREV_VALUE_NOT_FOUND) {
-      final long newValue = IndexLongUtil.setRange(first, newRange);
+      final long newValue = IndexItemInLong.setRange(first, newRange);
       insert(newValue);
     }
     return prevValue;
@@ -56,8 +56,8 @@ public class InvertedIndexState {
     }
 
     final long searchValue;
-    if (searchIndex < window.size() && IndexLongUtil.pageId(searchValue = window.get(searchIndex)) == IndexLongUtil.pageId(value)) {
-      final long newValue = IndexLongUtil.createPagePosition(IndexLongUtil.pageId(value), newPosition, IndexLongUtil.version(value), newRange);
+    if (searchIndex < window.size() && IndexItemInLong.pageId(searchValue = window.get(searchIndex)) == IndexItemInLong.pageId(value)) {
+      final long newValue = IndexItemInLong.createPagePosition(IndexItemInLong.pageId(value), newPosition, IndexItemInLong.version(value), newRange);
       window.set(searchIndex, newValue);
       return searchValue;
     } else {

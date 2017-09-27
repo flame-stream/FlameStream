@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.benchmark.config;
+package com.spbsu.flamestream.config;
 
 import com.typesafe.config.Config;
 

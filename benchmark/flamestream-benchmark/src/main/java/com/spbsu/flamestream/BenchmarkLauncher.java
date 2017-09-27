@@ -1,7 +1,7 @@
-package com.spbsu.flamestream.benchmark;
+package com.spbsu.flamestream;
 
-import com.spbsu.flamestream.benchmark.config.ClusterRunnerCfg;
-import com.spbsu.flamestream.benchmark.config.TypesafeClusterRunnerCfg;
+import com.spbsu.flamestream.config.ClusterRunnerCfg;
+import com.spbsu.flamestream.config.TypesafeClusterRunnerCfg;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 

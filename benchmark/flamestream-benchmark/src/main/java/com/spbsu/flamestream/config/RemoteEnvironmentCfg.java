@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.benchmark.config;
+package com.spbsu.flamestream.config;
 
 import java.net.InetSocketAddress;
 import java.util.Map;

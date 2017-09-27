@@ -24,7 +24,7 @@ public final class RemoteActorSink extends AbstractAtomicGraph {
   @Nullable
   private ActorSelection actor = null;
 
-  RemoteActorSink(ActorPath receiverPath) {
+  public RemoteActorSink(ActorPath receiverPath) {
     this.path = receiverPath;
     this.inPort = new InPort(PreBarrierMetaElement.HASH_FUNCTION);
   }

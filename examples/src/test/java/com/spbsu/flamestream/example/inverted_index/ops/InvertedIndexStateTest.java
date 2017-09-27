@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.inverted_index.ops;
 
-import com.spbsu.flamestream.example.inverted_index.utils.IndexLongUtil;
+import com.spbsu.flamestream.example.inverted_index.IndexItemInLong;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 import org.testng.Assert;
@@ -25,7 +25,7 @@ public class InvertedIndexStateTest {
     shuffleArray(pageIds);
 
     for (int pageId : pageIds) {
-      final long value = IndexLongUtil.createPagePosition(pageId, 0, 0);
+      final long value = IndexItemInLong.createPagePosition(pageId, 0, 0);
       final int newPosition = ThreadLocalRandom.current().nextInt(1, 101);
       final int newRange = ThreadLocalRandom.current().nextInt(1, 101);
       //Act
@@ -33,7 +33,7 @@ public class InvertedIndexStateTest {
 
       //Assert
       Assert.assertEquals(value, tree.tryToFindAndUpdate(value, newPosition, newRange));
-      expectedValues.add(IndexLongUtil.createPagePosition(IndexLongUtil.pageId(value), newPosition, IndexLongUtil.version(value), newRange));
+      expectedValues.add(IndexItemInLong.createPagePosition(IndexItemInLong.pageId(value), newPosition, IndexItemInLong.version(value), newRange));
     }
 
     expectedValues.sort();

@@ -94,11 +94,6 @@
             <artifactId>testng</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.spbsu.flamestream</groupId>
-            <artifactId>wikiforia-parser</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
     </dependencies>
     <parent>
         <artifactId>flamestream-parent</artifactId>

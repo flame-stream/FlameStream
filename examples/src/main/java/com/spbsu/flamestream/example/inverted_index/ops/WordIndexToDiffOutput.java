@@ -5,7 +5,7 @@ import com.spbsu.flamestream.example.inverted_index.model.WordIndex;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexRemove;
 import com.spbsu.flamestream.example.inverted_index.model.WordPagePositions;
-import com.spbsu.flamestream.example.inverted_index.utils.IndexLongUtil;
+import com.spbsu.flamestream.example.inverted_index.IndexItemInLong;
 
 import java.util.List;
 import java.util.Objects;
@@ -37,7 +37,7 @@ public class WordIndexToDiffOutput implements Function<List<WordContainer>, Stre
     WordIndexRemove wordRemoveOutput = null;
     final long prevValue = wordIndex.state().updateOrInsert(wordPagePosition.positions());
     if (prevValue != InvertedIndexState.PREV_VALUE_NOT_FOUND) {
-      wordRemoveOutput = new WordIndexRemove(wordIndex.word(), IndexLongUtil.setRange(prevValue, 0), IndexLongUtil.range(prevValue));
+      wordRemoveOutput = new WordIndexRemove(wordIndex.word(), IndexItemInLong.setRange(prevValue, 0), IndexItemInLong.range(prevValue));
     }
 
     final WordIndex newWordIndex = new WordIndex(wordIndex.word(), wordIndex.state());

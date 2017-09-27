@@ -23,10 +23,11 @@ public final class GroupingAcceptanceTest {
   private static void doIt(HashFunction<? super Long> groupHash,
                            HashFunction<? super Long> filterHash,
                            BiPredicate<? super Long, ? super Long> equalz) throws Exception {
-    try (TestStand stand = new TestStand(5)) {
+    try (RemoteTestStand stand = new RemoteTestStand(5)) {
       final Set<List<Long>> result = new HashSet<>();
       final int window = 7;
 
+      //noinspection unchecked
       stand.deploy(GroupingAcceptanceTest.groupGraph(
               stand.environment().availableFronts(),
               stand.environment().wrapInSink(di -> result.add((List<Long>) di)),

@@ -39,7 +39,7 @@ public final class FilterAcceptanceTest {
 
   @Test
   public void linearFilter() throws Exception {
-    try (TestStand stage = new TestStand(4)) {
+    try (RemoteTestStand stage = new RemoteTestStand(4)) {
 
       final Queue<Integer> result = new ArrayDeque<>();
 
@@ -60,7 +60,7 @@ public final class FilterAcceptanceTest {
 
   @Test
   public void multipleTicksLinearFilter() throws Exception {
-    try (TestStand stage = new TestStand(4)) {
+    try (RemoteTestStand stage = new RemoteTestStand(4)) {
 
       final Queue<Integer> result = new ArrayDeque<>();
 

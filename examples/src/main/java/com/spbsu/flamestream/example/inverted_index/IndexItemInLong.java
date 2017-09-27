@@ -1,10 +1,10 @@
-package com.spbsu.flamestream.example.inverted_index.utils;
+package com.spbsu.flamestream.example.inverted_index;
 
 /**
  * User: Artem
  * Date: 10.07.2017
  */
-public class IndexLongUtil {
+public class IndexItemInLong {
   private static final int pageIdBitLength = 24;
   private static final int positionBitLength = 20;
   private static final int versionBitLength = 8;

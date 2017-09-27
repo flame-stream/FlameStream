@@ -5,7 +5,7 @@ import com.spbsu.commons.text.lexical.Tokenizer;
 import com.spbsu.commons.text.stem.Stemmer;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import com.spbsu.flamestream.example.inverted_index.model.WordPagePositions;
-import com.spbsu.flamestream.example.inverted_index.utils.IndexLongUtil;
+import com.spbsu.flamestream.example.inverted_index.IndexItemInLong;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 
@@ -30,7 +30,7 @@ public class WikipediaPageToWordPositions implements Function<WikipediaPage, Str
     int position = 0;
     while (tokenizer.hasNext()) {
       final String word = tokenizer.next().toString().toLowerCase();
-      final long pagePosition = IndexLongUtil.createPagePosition(wikipediaPage.id(), position, wikipediaPage.version());
+      final long pagePosition = IndexItemInLong.createPagePosition(wikipediaPage.id(), position, wikipediaPage.version());
       if (!wordPositions.containsKey(word)) {
         final TLongList positions = new TLongArrayList();
         positions.add(pagePosition);

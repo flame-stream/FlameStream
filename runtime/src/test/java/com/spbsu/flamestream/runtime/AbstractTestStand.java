@@ -1,7 +1,6 @@
 package com.spbsu.flamestream.runtime;
 
 import com.spbsu.flamestream.runtime.environment.Environment;
-import com.spbsu.flamestream.runtime.environment.remote.RemoteEnvironment;
 import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 
@@ -14,18 +13,12 @@ import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public final class TestStand implements AutoCloseable {
-  private final LocalCluster cluster;
-  private final RemoteEnvironment environment;
-
-  public TestStand(int workerCount) {
-    this.cluster = new LocalCluster(workerCount);
-    this.environment = new RemoteEnvironment(cluster.zookeeperString());
-  }
-
-  public Environment environment() {
-    return environment;
-  }
+/**
+ * User: Artem
+ * Date: 28.09.2017
+ */
+public abstract class AbstractTestStand implements AutoCloseable {
+  public abstract Environment environment();
 
   public void deploy(TheGraph theGraph, int tickLengthSeconds, int ticksCount) {
     final Map<HashRange, Integer> workers = rangeMappingForTick();
@@ -43,7 +36,7 @@ public final class TestStand implements AutoCloseable {
               MILLISECONDS.toNanos(10),
               i == 0 ? emptySet() : singleton(i - 1L)
       );
-      environment.deploy(tickInfo);
+      environment().deploy(tickInfo);
     }
 
     //This sleep doesn't affect correctness.
@@ -57,9 +50,9 @@ public final class TestStand implements AutoCloseable {
   }
 
   public Consumer<Object> randomFrontConsumer(int maxFrontsCount) {
-    final Set<Integer> fronts = environment.availableFronts();
+    final Set<Integer> fronts = environment().availableFronts();
     final List<Consumer<Object>> collectors = fronts.stream()
-            .map(environment::frontConsumer)
+            .map(environment()::frontConsumer)
             .limit(maxFrontsCount)
             .collect(Collectors.toList());
 
@@ -69,7 +62,7 @@ public final class TestStand implements AutoCloseable {
 
   private Map<HashRange, Integer> rangeMappingForTick() {
     final Map<HashRange, Integer> result = new HashMap<>();
-    final Set<Integer> workerIds = environment.availableWorkers();
+    final Set<Integer> workerIds = environment().availableWorkers();
 
     final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / workerIds.size());
     long left = Integer.MIN_VALUE;
@@ -91,11 +84,5 @@ public final class TestStand implements AutoCloseable {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  @Override
-  public void close() {
-    environment.close();
-    cluster.close();
   }
 }

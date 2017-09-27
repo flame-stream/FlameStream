@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.inverted_index.utils;
+package com.spbsu.flamestream.example.inverted_index;
 
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import gnu.trove.map.TIntIntMap;

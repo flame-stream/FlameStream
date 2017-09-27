@@ -7,7 +7,7 @@ import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
 import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
 import com.spbsu.flamestream.core.graph.ops.*;
-import com.spbsu.flamestream.runtime.TestStand;
+import com.spbsu.flamestream.runtime.RemoteTestStand;
 import com.spbsu.flamestream.runtime.TheGraph;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -74,7 +74,7 @@ public final class SumTest {
   }
 
   private void test(int tickLength, int inputSize, int fronts) throws Exception {
-    try (TestStand stand = new TestStand(4)) {
+    try (RemoteTestStand stand = new RemoteTestStand(4)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 

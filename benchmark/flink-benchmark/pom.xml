@@ -12,4 +12,11 @@
 
     <artifactId>flink-benchmark</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-streaming-java_2.11</artifactId>
+        </dependency>
+    </dependencies>
+
 </project>

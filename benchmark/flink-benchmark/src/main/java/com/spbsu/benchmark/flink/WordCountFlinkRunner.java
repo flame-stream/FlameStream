@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.wordcount;
+package com.spbsu.benchmark.flink;
 
 import com.spbsu.flamestream.example.ClusterRunner;
 import com.spbsu.flamestream.example.wordcount.model.WordCounter;

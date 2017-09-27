@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.benchmark;
+package com.spbsu.flamestream;
 
 import com.spbsu.flamestream.runtime.environment.Environment;
 

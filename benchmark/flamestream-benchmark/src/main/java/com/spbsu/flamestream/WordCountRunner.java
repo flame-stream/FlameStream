@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.wordcount;
+package com.spbsu.flamestream;
 
 import akka.actor.ActorPath;
 import com.spbsu.flamestream.example.ClusterRunner;

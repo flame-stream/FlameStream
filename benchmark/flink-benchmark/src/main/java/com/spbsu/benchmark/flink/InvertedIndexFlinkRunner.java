@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.inverted_index;
+package com.spbsu.benchmark.flink;
 
 import com.spbsu.flamestream.example.ClusterRunner;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
