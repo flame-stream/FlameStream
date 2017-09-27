@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core.raw;
+package com.spbsu.flamestream.core.data.raw;
 
 import java.util.ArrayList;
 import java.util.Collection;

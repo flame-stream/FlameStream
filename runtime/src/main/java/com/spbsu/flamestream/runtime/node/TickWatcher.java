@@ -8,7 +8,7 @@ import com.spbsu.flamestream.runtime.ack.CommitTick;
 import com.spbsu.flamestream.runtime.configuration.KryoInfoSerializer;
 import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
 import com.spbsu.flamestream.runtime.tick.TickCommitDone;
-import com.spbsu.flamestream.core.TickInfo;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;

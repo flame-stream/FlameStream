@@ -1,21 +1,19 @@
 package com.spbsu.flamestream.runtime.range.atomic;
 
 import akka.actor.ActorContext;
-import akka.actor.ActorPath;
 import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
-import com.spbsu.flamestream.runtime.ack.Ack;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.runtime.range.AddressedItem;
 import com.spbsu.flamestream.core.stat.Statistics;
+import com.spbsu.flamestream.runtime.ack.Ack;
+import com.spbsu.flamestream.runtime.range.AddressedItem;
 import com.spbsu.flamestream.runtime.tick.HashMapping;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
-import com.spbsu.flamestream.core.TickInfo;
 
 import java.util.function.ToIntFunction;
 
@@ -33,11 +31,6 @@ public final class AtomicHandleImpl implements AtomicHandle {
     this.context = context;
     LOG = Logging.getLogger(context.system(), context.self());
     this.hashMapping = HashMapping.hashMapping(tickRoutes.rangeConcierges());
-  }
-
-  @Override
-  public ActorSelection actorSelection(ActorPath path) {
-    return context.actorSelection(path);
   }
 
   @Override
@@ -67,11 +60,6 @@ public final class AtomicHandleImpl implements AtomicHandle {
   @Override
   public void submitStatistics(Statistics stat) {
     LOG.info("Inner statistics: {}", stat);
-  }
-
-  @Override
-  public TickInfo tickInfo() {
-    return tickInfo;
   }
 
   @Override

@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.environmet.remote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.flamestream.core.TickInfo;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.configuration.KryoInfoSerializer;
 import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
 import org.apache.hadoop.util.ZKUtil;

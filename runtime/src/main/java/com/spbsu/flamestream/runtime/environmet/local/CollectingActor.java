@@ -2,7 +2,7 @@ package com.spbsu.flamestream.runtime.environmet.local;
 
 import akka.actor.Props;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.core.raw.RawData;
+import com.spbsu.flamestream.core.data.raw.RawData;
 
 import java.util.function.Consumer;
 

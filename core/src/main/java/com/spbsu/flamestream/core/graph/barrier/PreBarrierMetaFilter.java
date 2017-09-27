@@ -1,12 +1,12 @@
-package com.spbsu.flamestream.core.barrier;
+package com.spbsu.flamestream.core.graph.barrier;
 
-import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.PayloadDataItem;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.core.graph.AtomicHandle;
 
 import java.util.Collections;
 import java.util.List;

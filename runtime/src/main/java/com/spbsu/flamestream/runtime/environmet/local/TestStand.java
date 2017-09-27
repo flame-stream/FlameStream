@@ -3,18 +3,15 @@ package com.spbsu.flamestream.runtime.environmet.local;
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
-import akka.actor.ActorSystem;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.graph.TheGraph;
-import com.spbsu.flamestream.core.raw.SingleRawData;
-import com.spbsu.flamestream.runtime.application.WorkerApplication;
+import com.spbsu.flamestream.core.data.raw.SingleRawData;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,11 +21,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class TestStand implements AutoCloseable {
 

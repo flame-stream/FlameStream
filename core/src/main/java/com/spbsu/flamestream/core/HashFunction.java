@@ -4,13 +4,6 @@ import java.util.function.ToIntFunction;
 
 @FunctionalInterface
 public interface HashFunction<T> extends ToIntFunction<T> {
-  int hash(T value);
-
-  @Override
-  default int applyAsInt(T value) {
-    return hash(value);
-  }
-
   @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
   HashFunction<Object> OBJECT_HASH = new HashFunction<Object>() {
     @Override
@@ -18,7 +11,6 @@ public interface HashFunction<T> extends ToIntFunction<T> {
       return value.hashCode();
     }
   };
-
   @SuppressWarnings("Convert2Lambda")
   HashFunction<Object> UNIFORM_OBJECT_HASH = new HashFunction<Object>() {
     @Override
@@ -59,5 +51,12 @@ public interface HashFunction<T> extends ToIntFunction<T> {
         return hash;
       }
     };
+  }
+
+  int hash(T value);
+
+  @Override
+  default int applyAsInt(T value) {
+    return hash(value);
   }
 }

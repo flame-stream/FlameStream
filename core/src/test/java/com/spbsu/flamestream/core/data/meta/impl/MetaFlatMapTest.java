@@ -1,11 +1,13 @@
-package com.spbsu.flamestream.core.meta;
+package com.spbsu.flamestream.core.data.meta.impl;
 
-import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.FakeAtomicHandle;
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.PayloadDataItem;
-import com.spbsu.flamestream.core.graph.ops.FlatMap;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.ops.FlatMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -20,7 +22,7 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 01.07.2017
  */
-public class FlatMapTest {
+public class MetaFlatMapTest {
   @Test
   public void testFlatFilterLogic() {
     final int flatNumber = 10;

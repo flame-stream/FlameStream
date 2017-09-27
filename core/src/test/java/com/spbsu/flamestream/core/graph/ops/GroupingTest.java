@@ -1,33 +1,35 @@
 package com.spbsu.flamestream.core.graph.ops;
 
-import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.FakeAtomicHandle;
-import com.spbsu.flamestream.core.meta.GlobalTime;
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.PayloadDataItem;
-import com.spbsu.flamestream.core.meta.Meta;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @SuppressWarnings("unchecked")
 public final class GroupingTest {
 
-  private final Logger LOG = LoggerFactory.getLogger(GroupingTest.class);
+  private static <T> List<List<T>> groupMe(Iterable<DataItem<T>> input, int window) {
+    final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window);
+
+    final List<List<T>> out = new ArrayList<>();
+
+    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((List<T>) di.payload()));
+
+    grouping.onStart(handle);
+    input.forEach(in -> grouping.onPush(grouping.inPort(), in, handle));
+    return out;
+  }
 
   @Test
   public void withoutReordering() {
@@ -272,17 +274,5 @@ public final class GroupingTest {
       );
       Assert.assertEquals(actualResult, expectedResult, "Brothers invalidation with reordering #2");
     }
-  }
-
-  private static <T> List<List<T>> groupMe(Iterable<DataItem<T>> input, int window) {
-    final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window);
-
-    final List<List<T>> out = new ArrayList<>();
-
-    final AtomicHandle handle = new FakeAtomicHandle((port, di) -> out.add((List<T>) di.payload()));
-
-    grouping.onStart(handle);
-    input.forEach(in -> grouping.onPush(grouping.inPort(), in, handle));
-    return out;
   }
 }

@@ -1,12 +1,6 @@
 package com.spbsu.flamestream.core.graph;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
@@ -44,6 +38,21 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
             .collect(Collectors.toList());
   }
 
+  private static void assertCorrectWires(Collection<? extends Graph> graphs,
+                                         Map<OutPort, InPort> wires) {
+    wires.forEach((from, to) -> ComposedGraphImpl.assertCorrectWire(graphs, from, to));
+  }
+
+  private static void assertCorrectWire(Collection<? extends Graph> graphs, OutPort from, InPort to) {
+    if (graphs.stream().noneMatch(graph -> graph.outPorts().contains(from))) {
+      throw new WiringException("Out ports of " + graphs + " hasn't got " + from);
+    }
+
+    if (graphs.stream().noneMatch(graph -> graph.inPorts().contains(to))) {
+      throw new WiringException("In ports of " + graphs + " hasn't got " + to);
+    }
+  }
+
   @Override
   public Set<T> subGraphs() {
     return Collections.unmodifiableSet(subGraphs);
@@ -77,20 +86,5 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
   @Override
   public Map<OutPort, InPort> downstreams() {
     return Collections.unmodifiableMap(downstreams);
-  }
-
-  private static void assertCorrectWires(Collection<? extends Graph> graphs,
-                                         Map<OutPort, InPort> wires) {
-    wires.forEach((from, to) -> ComposedGraphImpl.assertCorrectWire(graphs, from, to));
-  }
-
-  private static void assertCorrectWire(Collection<? extends Graph> graphs, OutPort from, InPort to) {
-    if (graphs.stream().noneMatch(graph -> graph.outPorts().contains(from))) {
-      throw new WiringException("Out ports of " + graphs + " hasn't got " + from);
-    }
-
-    if (graphs.stream().noneMatch(graph -> graph.inPorts().contains(to))) {
-      throw new WiringException("In ports of " + graphs + " hasn't got " + to);
-    }
   }
 }

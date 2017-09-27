@@ -4,7 +4,6 @@ import java.util.Objects;
 
 public final class HashRange {
   private final int from;
-
   private final int to;
 
   public HashRange(int from, int to) {

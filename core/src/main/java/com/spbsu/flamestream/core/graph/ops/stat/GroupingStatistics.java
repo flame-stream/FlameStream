@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core.graph.ops;
+package com.spbsu.flamestream.core.graph.ops.stat;
 
 import com.spbsu.flamestream.core.stat.Statistics;
 
@@ -11,12 +11,11 @@ import static com.spbsu.flamestream.core.stat.Statistics.asMap;
 public final class GroupingStatistics implements Statistics {
 
   private final LongSummaryStatistics replay = new LongSummaryStatistics();
+  private final LongSummaryStatistics bucketSize = new LongSummaryStatistics();
 
   public void recordReplaySize(int replaySize) {
     replay.accept(replaySize);
   }
-
-  private final LongSummaryStatistics bucketSize = new LongSummaryStatistics();
 
   public void recordBucketSize(long size) {
     bucketSize.accept(size);

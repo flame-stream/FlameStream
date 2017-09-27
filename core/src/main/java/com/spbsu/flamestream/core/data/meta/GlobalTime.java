@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core.meta;
+package com.spbsu.flamestream.core.data.meta;
 
 import java.util.Comparator;
 import java.util.Objects;

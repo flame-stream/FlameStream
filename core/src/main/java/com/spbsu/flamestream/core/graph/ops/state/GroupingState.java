@@ -1,6 +1,6 @@
-package com.spbsu.flamestream.core.graph.ops;
+package com.spbsu.flamestream.core.graph.ops.state;
 
-import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.DataItem;
 
 import java.util.List;
 import java.util.function.Consumer;

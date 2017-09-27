@@ -1,10 +1,6 @@
 package com.spbsu.flamestream.core.graph;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public final class TheGraph {
   private final ComposedGraph<AtomicGraph> composedGraph;
@@ -16,14 +12,6 @@ public final class TheGraph {
 
     this.composedGraph = graph.flattened();
     this.frontBindings = new HashMap<>(frontBindings);
-  }
-
-  public ComposedGraph<AtomicGraph> graph() {
-    return composedGraph;
-  }
-
-  public Map<Integer, InPort> frontBindings() {
-    return Collections.unmodifiableMap(frontBindings);
   }
 
   private static void assertFrontMapping(Graph tail,
@@ -38,5 +26,13 @@ public final class TheGraph {
     if (!bindPorts.stream().allMatch(freePorts::contains)) {
       throw new IllegalArgumentException("Unknow port binding");
     }
+  }
+
+  public ComposedGraph<AtomicGraph> graph() {
+    return composedGraph;
+  }
+
+  public Map<Integer, InPort> frontBindings() {
+    return Collections.unmodifiableMap(frontBindings);
   }
 }

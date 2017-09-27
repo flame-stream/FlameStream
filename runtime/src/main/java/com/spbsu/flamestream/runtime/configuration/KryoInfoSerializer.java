@@ -3,7 +3,7 @@ package com.spbsu.flamestream.runtime.configuration;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
-import com.spbsu.flamestream.core.TickInfo;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 public final class KryoInfoSerializer implements TickInfoSerializer {

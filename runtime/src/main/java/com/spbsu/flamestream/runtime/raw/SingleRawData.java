@@ -1,6 +1,4 @@
-package com.spbsu.flamestream.core.raw;
-
-import com.sun.xml.internal.xsom.impl.scd.Iterators;
+package com.spbsu.flamestream.core.data.raw;
 
 import java.util.Iterator;
 
@@ -27,6 +25,19 @@ public class SingleRawData<T> implements RawData<T> {
 
   @Override
   public Iterator<T> iterator() {
-    return Iterators.singleton(payload);
+    return new Iterator<T>() {
+      private boolean done = false;
+
+      @Override
+      public boolean hasNext() {
+        return !done;
+      }
+
+      @Override
+      public T next() {
+        done = true;
+        return payload;
+      }
+    };
   }
 }

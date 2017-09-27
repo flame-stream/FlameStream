@@ -1,9 +1,8 @@
 package com.spbsu.flamestream.runtime.environmet.remote;
 
-import com.spbsu.flamestream.core.TickInfo;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.environmet.Environment;
-import org.apache.zookeeper.ZooDefs;
 
 import java.util.Set;
 import java.util.function.Consumer;

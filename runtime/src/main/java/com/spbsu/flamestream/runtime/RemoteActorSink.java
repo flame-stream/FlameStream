@@ -4,13 +4,13 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
-import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.barrier.PreBarrierMetaElement;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaElement;
 import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.core.raw.SingleRawData;
+import com.spbsu.flamestream.core.data.raw.SingleRawData;
 import com.typesafe.config.Config;
 import org.jetbrains.annotations.Nullable;
 

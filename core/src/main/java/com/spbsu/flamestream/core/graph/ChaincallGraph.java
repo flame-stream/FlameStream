@@ -1,11 +1,8 @@
 package com.spbsu.flamestream.core.graph;
 
-import akka.actor.ActorPath;
-import akka.actor.ActorSelection;
-import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.stat.Statistics;
-import com.spbsu.flamestream.core.TickInfo;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,7 +15,6 @@ public final class ChaincallGraph implements AtomicGraph {
 
   public ChaincallGraph(ComposedGraph<AtomicGraph> composedGraph) {
     this.composedGraph = composedGraph;
-
     for (AtomicGraph atomicGraph : composedGraph.subGraphs()) {
       for (InPort port : atomicGraph.inPorts()) {
         upstreams.put(port, atomicGraph);
@@ -69,11 +65,6 @@ public final class ChaincallGraph implements AtomicGraph {
       this.superHandle = superHandle;
     }
 
-    @Override
-    public ActorSelection actorSelection(ActorPath path) {
-      return superHandle.actorSelection(path);
-    }
-
     //TODO: refactor atomic handle
     @Override
     public void push(OutPort out, DataItem<?> result) {
@@ -94,11 +85,6 @@ public final class ChaincallGraph implements AtomicGraph {
     @Override
     public void submitStatistics(Statistics stat) {
       superHandle.submitStatistics(stat);
-    }
-
-    @Override
-    public TickInfo tickInfo() {
-      return superHandle.tickInfo();
     }
 
     @Override

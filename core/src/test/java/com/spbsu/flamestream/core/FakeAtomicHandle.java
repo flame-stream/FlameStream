@@ -1,11 +1,8 @@
-package com.spbsu.flamestream.runtime;
+package com.spbsu.flamestream.core;
 
-import akka.actor.ActorPath;
-import akka.actor.ActorSelection;
-import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.TickInfo;
-import com.spbsu.flamestream.core.graph.OutPort;
+import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.stat.Statistics;
 
 import java.util.function.BiConsumer;
@@ -28,11 +25,6 @@ public final class FakeAtomicHandle implements AtomicHandle {
 
   @Override
   public void submitStatistics(Statistics stat) {
-  }
-
-  @Override
-  public TickInfo tickInfo() {
-    throw new UnsupportedOperationException();
   }
 
   @Override

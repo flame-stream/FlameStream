@@ -1,13 +1,16 @@
 package com.spbsu.flamestream.core.graph.ops;
 
-import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.meta.GlobalTime;
-import com.spbsu.flamestream.core.PayloadDataItem;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.core.meta.Meta;
-import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.ops.stat.GroupingStatistics;
+import com.spbsu.flamestream.core.graph.ops.state.GroupingState;
+import com.spbsu.flamestream.core.graph.ops.state.LazyGroupingState;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,45 +37,6 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     this.window = window;
     this.hash = hash;
     this.equalz = equalz;
-  }
-
-  @Override
-  public void onStart(AtomicHandle handle) {
-    // TODO: 5/18/17 Load state
-    this.buffers = new LazyGroupingState<>(hash, equalz);
-  }
-
-  @Override
-  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
-    //noinspection unchecked
-    final DataItem<T> dataItem = (DataItem<T>) item;
-
-    final List<DataItem<T>> group = buffers.getGroupFor(dataItem);
-    final int position = insert(group, dataItem);
-    stat.recordBucketSize(group.size());
-    replayAround(position, group, handle);
-  }
-
-  private void replayAround(int position, List<DataItem<T>> group, AtomicHandle handle) {
-    int replayCount = 0;
-
-    for (int right = position + 1; right <= Math.min(position + window, group.size()); ++right) {
-      replayCount++;
-      final int left = Math.max(right - window, 0);
-      pushSubGroup(group, left, right, handle);
-    }
-
-    stat.recordReplaySize(replayCount);
-  }
-
-  private void pushSubGroup(List<DataItem<T>> group, int left, int right, AtomicHandle handle) {
-    final List<DataItem<T>> outGroup = group.subList(left, right);
-
-    final Meta meta = outGroup.get(outGroup.size() - 1).meta().advanced(incrementLocalTimeAndGet());
-    final List<T> groupingResult = outGroup.stream().map(DataItem::payload).collect(Collectors.toList());
-
-    final DataItem<List<T>> result = new PayloadDataItem<>(meta, groupingResult);
-    handle.push(outPort(), result);
   }
 
   public static <T> int insert(List<DataItem<T>> group, DataItem<T> insertee) {
@@ -116,6 +80,45 @@ public final class Grouping<T> extends AbstractAtomicGraph {
       }
     }
     return position + 1;
+  }
+
+  @Override
+  public void onStart(AtomicHandle handle) {
+    // TODO: 5/18/17 Load state
+    this.buffers = new LazyGroupingState<>(hash, equalz);
+  }
+
+  @Override
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
+    //noinspection unchecked
+    final DataItem<T> dataItem = (DataItem<T>) item;
+
+    final List<DataItem<T>> group = buffers.getGroupFor(dataItem);
+    final int position = insert(group, dataItem);
+    stat.recordBucketSize(group.size());
+    replayAround(position, group, handle);
+  }
+
+  private void replayAround(int position, List<DataItem<T>> group, AtomicHandle handle) {
+    int replayCount = 0;
+
+    for (int right = position + 1; right <= Math.min(position + window, group.size()); ++right) {
+      replayCount++;
+      final int left = Math.max(right - window, 0);
+      pushSubGroup(group, left, right, handle);
+    }
+
+    stat.recordReplaySize(replayCount);
+  }
+
+  private void pushSubGroup(List<DataItem<T>> group, int left, int right, AtomicHandle handle) {
+    final List<DataItem<T>> outGroup = group.subList(left, right);
+
+    final Meta meta = outGroup.get(outGroup.size() - 1).meta().advanced(incrementLocalTimeAndGet());
+    final List<T> groupingResult = outGroup.stream().map(DataItem::payload).collect(Collectors.toList());
+
+    final DataItem<List<T>> result = new PayloadDataItem<>(meta, groupingResult);
+    handle.push(outPort(), result);
   }
 
   @Override

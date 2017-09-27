@@ -1,8 +1,8 @@
-package com.spbsu.flamestream.core.barrier;
+package com.spbsu.flamestream.core.graph.barrier.collector;
 
-import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
-import com.spbsu.flamestream.core.meta.GlobalTime;
 
 import java.util.ArrayList;
 import java.util.List;

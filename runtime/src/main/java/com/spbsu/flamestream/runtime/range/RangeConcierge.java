@@ -12,7 +12,7 @@ import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.runtime.range.atomic.AtomicActor;
 import com.spbsu.flamestream.runtime.tick.StartTick;
-import com.spbsu.flamestream.core.TickInfo;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
 
 import java.util.Collection;

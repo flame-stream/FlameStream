@@ -1,12 +1,12 @@
 package com.spbsu.flamestream.core.graph.ops;
 
-import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.PayloadDataItem;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.core.meta.Meta;
-import com.spbsu.flamestream.core.graph.AtomicHandle;
 
 import java.util.Collections;
 import java.util.List;
@@ -43,10 +43,6 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
 
   public InPort inPort() {
     return this.inPort;
-  }
-
-  public List<OutPort> broadcastPorts() {
-    return Collections.unmodifiableList(this.broadcastPorts);
   }
 
   @Override

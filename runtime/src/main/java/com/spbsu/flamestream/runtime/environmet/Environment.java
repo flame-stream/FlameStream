@@ -1,8 +1,7 @@
 package com.spbsu.flamestream.runtime.environmet;
 
-import com.spbsu.flamestream.core.TickInfo;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.core.graph.TheGraph;
 
 import java.util.Set;
 import java.util.function.Consumer;

@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.runtime.ack;
 
-import com.spbsu.flamestream.core.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
 public final class MinTimeUpdate {
   private final GlobalTime minTime;

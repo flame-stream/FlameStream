@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.core.graph;
 
-import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
 /**
  * AtomicGraph - graph without inner down or upstreams

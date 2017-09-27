@@ -1,6 +1,6 @@
-package com.spbsu.flamestream.core;
+package com.spbsu.flamestream.core.data;
 
-import com.spbsu.flamestream.core.meta.Meta;
+import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;

@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core.meta;
+package com.spbsu.flamestream.core.data.meta.impl;
 
 /**
  * Wrapper class for localEvents
@@ -12,7 +12,7 @@ final class LocalEvent {
   }
 
   static int childIdOf(long localEvent) {
-    return (int) (localEvent & 0xffffffffl);
+    return (int) (localEvent & 0xffffffffL);
   }
 
   static int localTimeOf(long localEvent) {

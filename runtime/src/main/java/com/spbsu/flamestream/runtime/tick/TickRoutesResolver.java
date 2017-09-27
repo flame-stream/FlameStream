@@ -7,7 +7,6 @@ import akka.actor.ActorSelection;
 import akka.actor.Identify;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.TickInfo;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.core.HashRange;
 import scala.concurrent.duration.Duration;

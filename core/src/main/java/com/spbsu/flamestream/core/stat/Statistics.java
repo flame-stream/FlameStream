@@ -5,8 +5,6 @@ import java.util.LongSummaryStatistics;
 import java.util.Map;
 
 public interface Statistics {
-  Map<String, Double> metrics();
-
   static Map<String, Double> asMap(String prefix, LongSummaryStatistics summaryStatistics) {
     final Map<String, Double> result = new HashMap<>();
     result.put(prefix + " count", (double) summaryStatistics.getCount());
@@ -15,4 +13,6 @@ public interface Statistics {
     result.put(prefix + " max", (double) summaryStatistics.getMax());
     return result;
   }
+
+  Map<String, Double> metrics();
 }

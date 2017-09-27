@@ -1,19 +1,25 @@
-package com.spbsu.flamestream.core.meta;
+package com.spbsu.flamestream.core.data.meta.impl;
+
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
+import com.spbsu.flamestream.core.data.meta.Trace;
 
 import java.util.Comparator;
 import java.util.Objects;
 
-final class MetaImpl implements Meta {
+public final class MetaImpl implements Meta {
+  private static final Comparator<Meta> NATURAL_ORDER = Comparator
+          .comparing(Meta::globalTime)
+          .thenComparing(Meta::trace);
   private final GlobalTime globalTime;
-
   private final Trace trace;
 
-  MetaImpl(GlobalTime globalTime) {
+  public MetaImpl(GlobalTime globalTime) {
     this.globalTime = globalTime;
     this.trace = Trace.EMPTY_TRACE;
   }
 
-  MetaImpl(GlobalTime globalTime, Trace trace) {
+  private MetaImpl(GlobalTime globalTime, Trace trace) {
     this.globalTime = globalTime;
     this.trace = trace;
   }
@@ -48,10 +54,6 @@ final class MetaImpl implements Meta {
   public int compareTo(Meta that) {
     return NATURAL_ORDER.compare(this, that);
   }
-
-  private static final Comparator<Meta> NATURAL_ORDER = Comparator
-          .comparing(Meta::globalTime)
-          .thenComparing(Meta::trace);
 
   @Override
   public boolean equals(Object o) {

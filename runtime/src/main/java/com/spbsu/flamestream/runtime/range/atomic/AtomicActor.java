@@ -9,7 +9,7 @@ import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.range.AddressedItem;
 import com.spbsu.flamestream.runtime.range.AtomicCommitDone;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
-import com.spbsu.flamestream.core.TickInfo;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 
 public final class AtomicActor extends LoggingActor {
   private final AtomicActorStatistics stat = new AtomicActorStatistics();

@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.runtime.range;
 
-import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.InPort;
 
 public final class AddressedItem {

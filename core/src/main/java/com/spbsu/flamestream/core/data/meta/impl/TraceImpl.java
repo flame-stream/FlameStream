@@ -1,18 +1,17 @@
-package com.spbsu.flamestream.core.meta;
+package com.spbsu.flamestream.core.data.meta.impl;
+
+import com.spbsu.flamestream.core.data.meta.Trace;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static com.spbsu.flamestream.core.meta.LocalEvent.childIdOf;
-import static com.spbsu.flamestream.core.meta.LocalEvent.localEvent;
-import static com.spbsu.flamestream.core.meta.LocalEvent.localTimeOf;
+import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.*;
 
-final class TraceImpl implements Trace {
-
+public final class TraceImpl implements Trace {
   @SuppressWarnings("PackageVisibleField")
   final long[] trace;
 
-  TraceImpl(long[] trace) {
+  public TraceImpl(long[] trace) {
     this.trace = trace;
   }
 
@@ -26,7 +25,6 @@ final class TraceImpl implements Trace {
   @Override
   public boolean isInvalidatedBy(Trace trace) {
     final TraceImpl that = (TraceImpl) trace;
-
     for (int i = 0; i < Math.min(this.trace.length, that.trace.length); ++i) {
       if (this.trace[i] != that.trace[i]) {
         return localTimeOf(this.trace[i]) < localTimeOf(that.trace[i]);

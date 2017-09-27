@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core.barrier;
+package com.spbsu.flamestream.core.graph.barrier;
 
 import com.spbsu.flamestream.core.HashFunction;
 
@@ -12,7 +12,6 @@ public final class PreBarrierMetaElement<T> {
   };
 
   private final T payload;
-
   private final int metaHash;
 
   public PreBarrierMetaElement(T payload, int metaHash) {
@@ -24,7 +23,7 @@ public final class PreBarrierMetaElement<T> {
     return payload;
   }
 
-  public int metaHash() {
+  private int metaHash() {
     return metaHash;
   }
 

@@ -1,15 +1,10 @@
-package com.spbsu.flamestream.core.barrier;
+package com.spbsu.flamestream.core.graph.barrier;
 
-import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
-import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.core.graph.ChaincallGraph;
-import com.spbsu.flamestream.core.graph.ComposedGraph;
-import com.spbsu.flamestream.core.graph.ComposedGraphImpl;
-import com.spbsu.flamestream.core.graph.InPort;
-import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.core.meta.GlobalTime;
-import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.graph.*;
+import com.spbsu.flamestream.core.graph.barrier.collector.BarrierCollector;
+import com.spbsu.flamestream.core.graph.barrier.collector.LinearCollector;
 
 import java.util.List;
 

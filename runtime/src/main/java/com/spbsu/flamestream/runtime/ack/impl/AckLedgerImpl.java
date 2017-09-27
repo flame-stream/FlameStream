@@ -1,9 +1,9 @@
 package com.spbsu.flamestream.runtime.ack.impl;
 
-import com.spbsu.flamestream.core.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.ack.AckLedger;
 import com.spbsu.flamestream.runtime.ack.AckTable;
-import com.spbsu.flamestream.core.TickInfo;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 

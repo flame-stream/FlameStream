@@ -2,8 +2,8 @@ package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorPath;
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.barrier.BarrierSink;
-import com.spbsu.flamestream.core.barrier.PreBarrierMetaFilter;
+import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
+import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.TheGraph;
