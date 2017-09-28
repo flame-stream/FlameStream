@@ -7,8 +7,9 @@ import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
 import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
 import com.spbsu.flamestream.core.graph.ops.*;
-import com.spbsu.flamestream.runtime.RemoteTestStand;
+import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.TheGraph;
+import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -74,17 +75,17 @@ public final class SumTest {
   }
 
   private void test(int tickLength, int inputSize, int fronts) throws Exception {
-    try (RemoteTestStand stand = new RemoteTestStand(4)) {
+    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4); TestEnvironment environment = new TestEnvironment(lce)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
-      stand.deploy(SumTest.sumGraph(
-              stand.environment().availableFronts(),
-              stand.environment().wrapInSink(k -> result.add((Sum) k))
+      environment.deploy(SumTest.sumGraph(
+              environment.availableFronts(),
+              environment.wrapInSink(k -> result.add((Sum) k))
       ), tickLength, 1);
 
       final List<LongNumb> source = new Random().ints(inputSize).map(i -> i % 100).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());
-      final Consumer<Object> sink = stand.randomFrontConsumer(fronts);
+      final Consumer<Object> sink = environment.randomFrontConsumer(fronts);
       source.forEach(longNumb -> {
         sink.accept(longNumb);
         try {
@@ -94,7 +95,7 @@ public final class SumTest {
         }
       });
 
-      stand.awaitTick(tickLength + 5);
+      environment.awaitTick(tickLength + 5);
 
       final long expected = source.stream().reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value())).value();
       final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);

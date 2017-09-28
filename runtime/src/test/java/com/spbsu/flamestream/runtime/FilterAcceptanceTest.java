@@ -7,6 +7,7 @@ import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
 import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -39,20 +40,18 @@ public final class FilterAcceptanceTest {
 
   @Test
   public void linearFilter() throws Exception {
-    try (RemoteTestStand stage = new RemoteTestStand(4)) {
-
+    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4); TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
-
-      stage.deploy(FilterAcceptanceTest.multiGraph(
-              stage.environment().availableFronts(),
-              stage.environment().wrapInSink(result::add)
+      environment.deploy(FilterAcceptanceTest.multiGraph(
+              environment.availableFronts(),
+              environment.wrapInSink(result::add)
       ), 10, 1);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = stage.randomFrontConsumer(4);
+      final Consumer<Object> sink = environment.randomFrontConsumer(4);
       source.forEach(sink);
 
-      stage.awaitTick(10);
+      environment.awaitTick(10);
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }
@@ -60,19 +59,17 @@ public final class FilterAcceptanceTest {
 
   @Test
   public void multipleTicksLinearFilter() throws Exception {
-    try (RemoteTestStand stage = new RemoteTestStand(4)) {
-
+    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4); TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
-
-      stage.deploy(FilterAcceptanceTest.multiGraph(
-              stage.environment().availableFronts(),
-              stage.environment().wrapInSink(result::add)
+      environment.deploy(FilterAcceptanceTest.multiGraph(
+              environment.availableFronts(),
+              environment.wrapInSink(result::add)
       ), 2, 10);
 
       final List<Integer> source = new Random().ints(20000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = stage.randomFrontConsumer(4);
+      final Consumer<Object> sink = environment.randomFrontConsumer(4);
       source.forEach(sink);
-      stage.awaitTick(40);
+      environment.awaitTick(40);
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }
@@ -81,7 +78,7 @@ public final class FilterAcceptanceTest {
   public static final class HumbleFiler implements Function<Integer, Integer> {
     private final int factor;
 
-    public HumbleFiler(int factor) {
+    HumbleFiler(int factor) {
       this.factor = factor;
     }
 

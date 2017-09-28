@@ -8,6 +8,7 @@ import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
 import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.testng.Assert;
@@ -23,14 +24,14 @@ public final class GroupingAcceptanceTest {
   private static void doIt(HashFunction<? super Long> groupHash,
                            HashFunction<? super Long> filterHash,
                            BiPredicate<? super Long, ? super Long> equalz) throws Exception {
-    try (RemoteTestStand stand = new RemoteTestStand(5)) {
+    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(5); TestEnvironment environment = new TestEnvironment(lce)) {
       final Set<List<Long>> result = new HashSet<>();
       final int window = 7;
 
       //noinspection unchecked
-      stand.deploy(GroupingAcceptanceTest.groupGraph(
-              stand.environment().availableFronts(),
-              stand.environment().wrapInSink(di -> result.add((List<Long>) di)),
+      environment.deploy(GroupingAcceptanceTest.groupGraph(
+              environment.availableFronts(),
+              environment.wrapInSink(di -> result.add((List<Long>) di)),
               window,
               groupHash,
               equalz,
@@ -38,9 +39,9 @@ public final class GroupingAcceptanceTest {
       ), 10, 1);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = stand.randomFrontConsumer(1);
+      final Consumer<Object> sink = environment.randomFrontConsumer(1);
       source.forEach(sink);
-      stand.awaitTick(12);
+      environment.awaitTick(12);
 
       Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, groupHash, window));
     }

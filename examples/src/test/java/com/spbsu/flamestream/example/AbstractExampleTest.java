@@ -1,9 +1,9 @@
 package com.spbsu.flamestream.example;
 
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.runtime.AbstractTestStand;
-import com.spbsu.flamestream.runtime.RemoteTestStand;
+import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.TheGraph;
+import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,14 +18,14 @@ public abstract class AbstractExampleTest {
   protected abstract TheGraph graph(Collection<Integer> fronts, AtomicGraph sink);
 
   protected <T> void test(ExampleChecker<T> checker, int fronts, int workers, int tickLengthInSec, int waitTickInSec) {
-    try (AbstractTestStand stage = new RemoteTestStand(workers)) {
+    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(workers); TestEnvironment environment = new TestEnvironment(lce)) {
       final List<Object> result = new ArrayList<>();
-      stage.deploy(graph(
-              stage.environment().availableFronts(),
-              stage.environment().wrapInSink(result::add)
+      environment.deploy(graph(
+              environment.availableFronts(),
+              environment.wrapInSink(result::add)
       ), tickLengthInSec, 1);
 
-      final Consumer<Object> sink = stage.randomFrontConsumer(fronts);
+      final Consumer<Object> sink = environment.randomFrontConsumer(fronts);
       checker.input().forEach(wikipediaPage -> {
         sink.accept(wikipediaPage);
         try {
@@ -35,7 +35,7 @@ public abstract class AbstractExampleTest {
         }
       });
 
-      stage.awaitTick(waitTickInSec);
+      environment.awaitTick(waitTickInSec);
       //noinspection unchecked
       checker.check(result.stream());
     }

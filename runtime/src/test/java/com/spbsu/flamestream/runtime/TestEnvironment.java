@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime;
 
+import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
@@ -17,8 +18,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * User: Artem
  * Date: 28.09.2017
  */
-public abstract class AbstractTestStand implements AutoCloseable {
-  public abstract Environment environment();
+public class TestEnvironment implements Environment {
+  private final Environment innerEnvironment;
+
+  public TestEnvironment(Environment inner) {
+    this.innerEnvironment = inner;
+  }
 
   public void deploy(TheGraph theGraph, int tickLengthSeconds, int ticksCount) {
     final Map<HashRange, Integer> workers = rangeMappingForTick();
@@ -36,7 +41,7 @@ public abstract class AbstractTestStand implements AutoCloseable {
               MILLISECONDS.toNanos(10),
               i == 0 ? emptySet() : singleton(i - 1L)
       );
-      environment().deploy(tickInfo);
+      innerEnvironment.deploy(tickInfo);
     }
 
     //This sleep doesn't affect correctness.
@@ -50,9 +55,9 @@ public abstract class AbstractTestStand implements AutoCloseable {
   }
 
   public Consumer<Object> randomFrontConsumer(int maxFrontsCount) {
-    final Set<Integer> fronts = environment().availableFronts();
+    final Set<Integer> fronts = innerEnvironment.availableFronts();
     final List<Consumer<Object>> collectors = fronts.stream()
-            .map(environment()::frontConsumer)
+            .map(innerEnvironment::frontConsumer)
             .limit(maxFrontsCount)
             .collect(Collectors.toList());
 
@@ -62,7 +67,7 @@ public abstract class AbstractTestStand implements AutoCloseable {
 
   private Map<HashRange, Integer> rangeMappingForTick() {
     final Map<HashRange, Integer> result = new HashMap<>();
-    final Set<Integer> workerIds = environment().availableWorkers();
+    final Set<Integer> workerIds = innerEnvironment.availableWorkers();
 
     final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / workerIds.size());
     long left = Integer.MIN_VALUE;
@@ -88,5 +93,35 @@ public abstract class AbstractTestStand implements AutoCloseable {
 
   @Override
   public void close() {
+    try {
+      innerEnvironment.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void deploy(TickInfo tickInfo) {
+    innerEnvironment.deploy(tickInfo);
+  }
+
+  @Override
+  public Set<Integer> availableFronts() {
+    return innerEnvironment.availableFronts();
+  }
+
+  @Override
+  public Set<Integer> availableWorkers() {
+    return innerEnvironment.availableWorkers();
+  }
+
+  @Override
+  public <T> AtomicGraph wrapInSink(Consumer<T> mySuperConsumer) {
+    return innerEnvironment.wrapInSink(mySuperConsumer);
+  }
+
+  @Override
+  public Consumer<Object> frontConsumer(int frontId) {
+    return innerEnvironment.frontConsumer(frontId);
   }
 }
