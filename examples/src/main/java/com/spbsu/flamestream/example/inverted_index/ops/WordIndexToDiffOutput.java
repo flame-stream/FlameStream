@@ -1,11 +1,7 @@
 package com.spbsu.flamestream.example.inverted_index.ops;
 
-import com.spbsu.flamestream.example.inverted_index.model.WordContainer;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndex;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndexRemove;
-import com.spbsu.flamestream.example.inverted_index.model.WordPagePositions;
 import com.spbsu.flamestream.example.inverted_index.IndexItemInLong;
+import com.spbsu.flamestream.example.inverted_index.model.*;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,15 +12,15 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 10.07.2017
  */
-public class WordIndexToDiffOutput implements Function<List<WordContainer>, Stream<WordContainer>> {
+public class WordIndexToDiffOutput implements Function<List<WordBase>, Stream<WordBase>> {
   @Override
-  public Stream<WordContainer> apply(List<WordContainer> wordContainers) {
-    final WordContainer first = wordContainers.get(0);
-    if (wordContainers.size() < 2) {
+  public Stream<WordBase> apply(List<WordBase> wordBases) {
+    final WordBase first = wordBases.get(0);
+    if (wordBases.size() < 2) {
       final WordPagePositions wordPagePosition = (WordPagePositions) first;
       return createOutputStream(new WordIndex(wordPagePosition.word(), new InvertedIndexState()), wordPagePosition);
     } else {
-      final WordContainer second = wordContainers.get(1);
+      final WordBase second = wordBases.get(1);
       if (first instanceof WordIndex && second instanceof WordPagePositions) {
         return createOutputStream((WordIndex) first, (WordPagePositions) second);
       } else {
@@ -33,7 +29,7 @@ public class WordIndexToDiffOutput implements Function<List<WordContainer>, Stre
     }
   }
 
-  private Stream<WordContainer> createOutputStream(WordIndex wordIndex, WordPagePositions wordPagePosition) {
+  private Stream<WordBase> createOutputStream(WordIndex wordIndex, WordPagePositions wordPagePosition) {
     WordIndexRemove wordRemoveOutput = null;
     final long prevValue = wordIndex.state().updateOrInsert(wordPagePosition.positions());
     if (prevValue != InvertedIndexState.PREV_VALUE_NOT_FOUND) {

@@ -85,4 +85,8 @@ public abstract class AbstractTestStand implements AutoCloseable {
       throw new RuntimeException(e);
     }
   }
+
+  @Override
+  public void close() {
+  }
 }

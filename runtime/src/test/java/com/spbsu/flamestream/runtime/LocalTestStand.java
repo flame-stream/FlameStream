@@ -16,7 +16,7 @@ public class LocalTestStand extends AbstractTestStand {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     environment.close();
   }
 }

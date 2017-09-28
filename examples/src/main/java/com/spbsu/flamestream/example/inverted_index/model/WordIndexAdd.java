@@ -6,7 +6,7 @@ import java.util.Arrays;
  * User: Artem
  * Date: 10.07.2017
  */
-public class WordIndexAdd implements WordContainer {
+public class WordIndexAdd implements WordBase {
   private final String word;
   private final long[] positions;
 

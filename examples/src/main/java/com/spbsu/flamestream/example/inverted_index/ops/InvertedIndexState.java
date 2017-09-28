@@ -11,17 +11,17 @@ import gnu.trove.list.array.TLongArrayList;
  * Time: 13:05
  */
 public class InvertedIndexState {
-  public static final int PREV_VALUE_NOT_FOUND = -1;
+  static final int PREV_VALUE_NOT_FOUND = -1;
   private static final int DEFAULT_MAX_WINDOW_SIZE = 100;
 
   private final int maxWindowSize;
   private TLongArrayList[] storage;
 
-  public InvertedIndexState() {
+  InvertedIndexState() {
     this(DEFAULT_MAX_WINDOW_SIZE);
   }
 
-  public InvertedIndexState(int maxWindowSize) {
+  private InvertedIndexState(int maxWindowSize) {
     if (maxWindowSize <= 1) {
       throw new IllegalArgumentException("Max window size should be > 1");
     }
@@ -30,7 +30,7 @@ public class InvertedIndexState {
     storage[0] = new TLongArrayList();
   }
 
-  public long updateOrInsert(long[] pagePositions) {
+  long updateOrInsert(long[] pagePositions) {
     final long first = pagePositions[0];
     final int pageId = IndexItemInLong.pageId(first);
 

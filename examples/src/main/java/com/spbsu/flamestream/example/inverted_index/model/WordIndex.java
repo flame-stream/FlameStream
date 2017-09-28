@@ -6,7 +6,7 @@ import com.spbsu.flamestream.example.inverted_index.ops.InvertedIndexState;
  * User: Artem
  * Date: 10.07.2017
  */
-public class WordIndex implements WordContainer {
+public class WordIndex implements WordBase {
   private final String word;
   private final InvertedIndexState state;
 

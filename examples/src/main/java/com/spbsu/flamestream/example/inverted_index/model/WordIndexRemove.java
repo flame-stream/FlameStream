@@ -4,7 +4,7 @@ package com.spbsu.flamestream.example.inverted_index.model;
  * User: Artem
  * Date: 10.07.2017
  */
-public class WordIndexRemove implements WordContainer {
+public class WordIndexRemove implements WordBase {
   private final String word;
   private final long start;
   private final int range;

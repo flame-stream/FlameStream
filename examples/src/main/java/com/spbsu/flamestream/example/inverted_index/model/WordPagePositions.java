@@ -4,7 +4,7 @@ package com.spbsu.flamestream.example.inverted_index.model;
  * User: Artem
  * Date: 10.07.2017
  */
-public class WordPagePositions implements WordContainer {
+public class WordPagePositions implements WordBase {
   private final String word;
   private final long[] positions;
 

@@ -29,6 +29,7 @@ public class WikipediaPage {
     return text;
   }
 
+  @SuppressWarnings("unused")
   public String title() {
     return title;
   }

@@ -15,6 +15,16 @@ import java.util.stream.IntStream;
  * Date: 10.07.2017
  */
 public class InvertedIndexStateTest {
+  private static void shuffleArray(int[] ar) {
+    final Random rnd = ThreadLocalRandom.current();
+    for (int i = ar.length - 1; i > 0; i--) {
+      final int index = rnd.nextInt(i + 1);
+      final int a = ar[index];
+      ar[index] = ar[i];
+      ar[i] = a;
+    }
+  }
+
   @Test
   public void storageInsertAndFindTest() {
     //Arrange
@@ -38,15 +48,5 @@ public class InvertedIndexStateTest {
 
     expectedValues.sort();
     Assert.assertEquals(expectedValues.toArray(), tree.toList().toArray());
-  }
-
-  private static void shuffleArray(int[] ar) {
-    final Random rnd = ThreadLocalRandom.current();
-    for (int i = ar.length - 1; i > 0; i--) {
-      final int index = rnd.nextInt(i + 1);
-      final int a = ar[index];
-      ar[index] = ar[i];
-      ar[i] = a;
-    }
   }
 }

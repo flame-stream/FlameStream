@@ -16,10 +16,12 @@ public class Rank implements Comparable<Rank> {
     this.score = score;
   }
 
+  @SuppressWarnings("WeakerAccess")
   public Document document() {
     return document;
   }
 
+  @SuppressWarnings("WeakerAccess")
   public double score() {
     return score;
   }
