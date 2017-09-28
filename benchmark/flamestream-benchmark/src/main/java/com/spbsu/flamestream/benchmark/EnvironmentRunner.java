@@ -1,4 +1,4 @@
-package com.spbsu.flamestream;
+package com.spbsu.flamestream.benchmark;
 
 import com.spbsu.flamestream.runtime.environment.Environment;
 
@@ -7,5 +7,5 @@ import com.spbsu.flamestream.runtime.environment.Environment;
  * Date: 18.08.2017
  */
 public interface EnvironmentRunner {
-  void run(Environment cluster);
+  void run(Environment environment);
 }

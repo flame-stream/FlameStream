@@ -12,6 +12,8 @@ import com.spbsu.flamestream.example.inverted_index.ranking.RankingFunction;
 import com.spbsu.flamestream.example.inverted_index.ranking.RankingStorage;
 import com.spbsu.flamestream.example.inverted_index.ranking.impl.BM25;
 import com.spbsu.flamestream.example.inverted_index.ranking.impl.InMemRankingStorage;
+import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
+import com.spbsu.flamestream.example.inverted_index.utils.WikipeadiaInput;
 import org.testng.Assert;
 
 import java.util.ArrayList;

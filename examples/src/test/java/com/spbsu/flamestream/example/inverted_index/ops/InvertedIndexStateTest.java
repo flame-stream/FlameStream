@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.inverted_index.ops;
 
-import com.spbsu.flamestream.example.inverted_index.IndexItemInLong;
+import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 import org.testng.Assert;

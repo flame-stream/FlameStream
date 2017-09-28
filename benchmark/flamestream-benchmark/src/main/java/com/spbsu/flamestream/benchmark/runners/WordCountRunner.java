@@ -1,42 +1,20 @@
-package com.spbsu.flamestream;
+package com.spbsu.flamestream.benchmark.runners;
 
-import akka.actor.ActorPath;
-import com.spbsu.flamestream.example.ClusterRunner;
-import com.spbsu.flamestream.example.wordcount.model.WordContainer;
+import com.spbsu.benchmark.LatencyMeasurer;
+import com.spbsu.flamestream.benchmark.EnvironmentRunner;
+import com.spbsu.flamestream.example.FlameStreamExample;
+import com.spbsu.flamestream.example.FlamesStreamTestGraphs;
 import com.spbsu.flamestream.example.wordcount.model.WordCounter;
-import com.spbsu.flamestream.example.wordcount.model.WordEntry;
-import com.spbsu.flamestream.example.wordcount.ops.CountWordEntries;
-import com.spbsu.flamestream.example.wordcount.ops.WordContainerOrderingFilter;
-import com.spbsu.flamestream.example.measure.LatencyMeasurer;
-import com.spbsu.flamestream.core.Cluster;
-import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.TestStand;
-import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
-import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
-import com.spbsu.flamestream.examples.RemoteActorSink;
-import com.spbsu.flamestream.core.graph.ChaincallGraph;
-import com.spbsu.flamestream.core.graph.Graph;
-import com.spbsu.flamestream.core.graph.InPort;
-import com.spbsu.flamestream.core.graph.TheGraph;
-import com.spbsu.flamestream.core.graph.ops.Broadcast;
-import com.spbsu.flamestream.core.graph.ops.Filter;
-import com.spbsu.flamestream.core.graph.ops.FlatMap;
-import com.spbsu.flamestream.core.graph.ops.Grouping;
-import com.spbsu.flamestream.core.graph.ops.Merge;
-import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.runtime.TestEnvironment;
+import com.spbsu.flamestream.runtime.environment.Environment;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.LongSummaryStatistics;
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -46,8 +24,54 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
 @SuppressWarnings("Convert2Lambda")
-public final class WordCountRunner implements ClusterRunner {
-  private final Logger LOG = LoggerFactory.getLogger(WordCountRunner.class);
+public final class WordCountRunner implements EnvironmentRunner {
+  private static final Logger LOG = LoggerFactory.getLogger(InvertedIndexRunner.class);
+
+  @Override
+  public void run(Environment environment) {
+    final LatencyMeasurer<WordCounter> latencyMeasurer = new LatencyMeasurer<>(1000 * 10, 1000 * 10);
+    final TObjectIntMap<String> expected = new TObjectIntHashMap<>();
+    final Stream<String> input = input().peek(
+            text -> {
+              final Pattern pattern = Pattern.compile("\\s");
+              Arrays.stream(pattern.split(text))
+                      .collect(toMap(Function.identity(), o -> 1, Integer::sum))
+                      .forEach((k, v) -> {
+                        expected.adjustOrPutValue(k, v, v);
+                        latencyMeasurer.start(new WordCounter(k, expected.get(k)));
+                      });
+            }
+    );
+
+    try (final TestEnvironment testEnvironment = new TestEnvironment(environment)) {
+      testEnvironment.deploy(FlamesStreamTestGraphs.createTheGraph(
+              FlameStreamExample.WORD_COUNT,
+              testEnvironment.availableFronts(),
+              testEnvironment.wrapInSink(o -> latencyMeasurer.finish((WordCounter) o))
+      ), 60, 1);
+
+      final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1);
+      input.forEach(s -> {
+        sink.accept(s);
+        try {
+          Thread.sleep(50);
+        } catch (InterruptedException e) {
+          throw new RuntimeException();
+        }
+      });
+      testEnvironment.awaitTick(20);
+
+      final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
+      LOG.info("Result: {}", stat);
+    }
+  }
+
+  private static Stream<String> input() {
+    return Stream.generate(() -> new Random().ints(1000, 0, 1000)
+            .mapToObj(num -> "word" + num).collect(joining(" ")))
+            .limit(500);
+  }
+  /*private final Logger LOG = LoggerFactory.getLogger(WordCountRunner.class);
 
   @Override
   public void run(Cluster cluster) throws InterruptedException {
@@ -155,5 +179,5 @@ public final class WordCountRunner implements ClusterRunner {
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(toMap(Function.identity(), e -> splitter.inPort()));
     return new TheGraph(graph, frontBindings);
-  }
+  }*/
 }

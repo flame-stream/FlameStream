@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  * Date: 27.09.2017
  */
 @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
-public enum FlameStreamExamples {
+public enum FlameStreamExample {
   INVERTED_INDEX {
     private final HashFunction<WikipediaPage> WIKI_PAGE_HASH = new HashFunction<WikipediaPage>() {
       @Override

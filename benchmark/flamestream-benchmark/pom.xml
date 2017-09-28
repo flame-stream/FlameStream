@@ -13,10 +13,33 @@
     <artifactId>flamestream-benchmark</artifactId>
 
     <dependencies>
+        <!--FlameStream-->
+        <dependency>
+            <groupId>com.spbsu.flamestream</groupId>
+            <artifactId>benchmark-commons</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>com.spbsu.flamestream</groupId>
             <artifactId>flamestream-runtime</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.spbsu.flamestream</groupId>
+            <artifactId>flamestream-runtime</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.spbsu.flamestream</groupId>
+            <artifactId>flamestream-examples</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.spbsu.flamestream</groupId>
+            <artifactId>flamestream-examples</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>test-jar</type>
         </dependency>
 
         <!--Utils-->

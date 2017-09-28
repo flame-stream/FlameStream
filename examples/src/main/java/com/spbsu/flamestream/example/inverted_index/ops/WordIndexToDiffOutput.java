@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.inverted_index.ops;
 
-import com.spbsu.flamestream.example.inverted_index.IndexItemInLong;
+import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.inverted_index.model.*;
 
 import java.util.List;

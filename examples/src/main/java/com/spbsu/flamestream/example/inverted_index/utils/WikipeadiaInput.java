@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.inverted_index;
+package com.spbsu.flamestream.example.inverted_index.utils;
 
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 

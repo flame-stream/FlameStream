@@ -1,17 +1,17 @@
-package com.spbsu.flamestream.config;
+package com.spbsu.flamestream.benchmark.config;
 
-import com.spbsu.flamestream.EnvironmentRunner;
+import com.spbsu.flamestream.benchmark.EnvironmentRunner;
 import com.typesafe.config.Config;
 
 /**
  * User: Artem
  * Date: 18.08.2017
  */
-public class TypesafeClusterRunnerCfg implements ClusterRunnerCfg {
+public class TypesafeEnvironmentRunnerCfg implements EnvironmentRunnerCfg {
   private final Class<? extends EnvironmentRunner> runner;
 
-  public TypesafeClusterRunnerCfg(Config load) {
-    final Config config = load.getConfig("cluster-runner");
+  public TypesafeEnvironmentRunnerCfg(Config load) {
+    final Config config = load.getConfig("environment-runner");
     try {
       //noinspection unchecked
       this.runner = ((Class<? extends EnvironmentRunner>) Class.forName(config.getString("runner")));

@@ -3,7 +3,7 @@ package com.spbsu.flamestream.example.inverted_index.ops;
 import com.spbsu.commons.text.lexical.StemsTokenizer;
 import com.spbsu.commons.text.lexical.Tokenizer;
 import com.spbsu.commons.text.stem.Stemmer;
-import com.spbsu.flamestream.example.inverted_index.IndexItemInLong;
+import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import com.spbsu.flamestream.example.inverted_index.model.WordPagePositions;
 import gnu.trove.list.TLongList;
