@@ -12,6 +12,7 @@ import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickCommitDone;
 import com.spbsu.flamestream.runtime.tick.TickConcierge;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.typesafe.config.ConfigFactory;
 import org.apache.commons.io.FileUtils;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
@@ -38,7 +39,7 @@ public final class LocalEnvironment implements Environment {
   private final ActorRef front;
 
   public LocalEnvironment() {
-    this.localSystem = ActorSystem.create(SYSTEM_NAME);
+    this.localSystem = ActorSystem.create(SYSTEM_NAME, ConfigFactory.load("remote"));
     this.fakeWatcher = localSystem.actorOf(FakeTickWatcher.props(tickConcierges), "fake-watcher");
 
     final ActorPath myPath = RootActorPath.apply(Address.apply("akka", SYSTEM_NAME), "/").child("user");
