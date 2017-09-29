@@ -15,13 +15,12 @@ import com.spbsu.flamestream.core.graph.ops.state.LazyGroupingState;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"ConditionalExpression"})
 public final class Grouping<T> extends AbstractAtomicGraph {
-  private static final int MIN_BUFFER_SIZE_FOR_MIN_TIME_UPDATE = 200; //magic number, tuning is welcome
+  //private static final int MIN_BUFFER_SIZE_FOR_MIN_TIME_UPDATE = 200; //magic number, tuning is welcome
   private final GroupingStatistics stat = new GroupingStatistics();
 
   private final InPort inPort;
@@ -129,7 +128,8 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   @Override
   public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-    final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
+    // TODO: 29.09.2017 optimize or remove
+    /*final Consumer<List<DataItem<T>>> removeOldConsumer = group -> {
       if (group.size() < MIN_BUFFER_SIZE_FOR_MIN_TIME_UPDATE)
         return;
 
@@ -151,7 +151,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
         group.subList(0, position).clear();
       }
     };
-    buffers.forEach(removeOldConsumer);
+    buffers.forEach(removeOldConsumer);*/
   }
 
   public InPort inPort() {
