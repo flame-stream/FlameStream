@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.benchmark.runners;
 
-import com.spbsu.benchmark.LatencyMeasurer;
+import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.benchmark.EnvironmentRunner;
 import com.spbsu.flamestream.example.FlameStreamExample;
 import com.spbsu.flamestream.example.FlamesStreamTestGraphs;
@@ -18,6 +18,8 @@ import java.util.LongSummaryStatistics;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 /**
  * User: Artem
  * Date: 18.08.2017
@@ -32,7 +34,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
     final Stream<WikipediaPage> source = WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
             .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
-    try (final TestEnvironment testEnvironment = new TestEnvironment(environment)) {
+    try (final TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
       testEnvironment.deploy(FlamesStreamTestGraphs.createTheGraph(
               FlameStreamExample.INVERTED_INDEX,
               testEnvironment.availableFronts(),

@@ -19,10 +19,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Date: 28.09.2017
  */
 public class TestEnvironment implements Environment {
+  private static final long DEFAULT_TEST_WINDOW = MILLISECONDS.toNanos(10);
+
   private final Environment innerEnvironment;
+  private final long window;
 
   public TestEnvironment(Environment inner) {
+    this(inner, DEFAULT_TEST_WINDOW);
+  }
+
+  public TestEnvironment(Environment inner, long window) {
     this.innerEnvironment = inner;
+    this.window = window;
   }
 
   public void deploy(TheGraph theGraph, int tickLengthSeconds, int ticksCount) {
@@ -38,7 +46,7 @@ public class TestEnvironment implements Environment {
               theGraph,
               workers.values().stream().findAny().orElseThrow(RuntimeException::new),
               workers,
-              MILLISECONDS.toNanos(10),
+              window,
               i == 0 ? emptySet() : singleton(i - 1L)
       );
       innerEnvironment.deploy(tickInfo);

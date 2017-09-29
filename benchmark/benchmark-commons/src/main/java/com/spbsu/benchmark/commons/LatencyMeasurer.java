@@ -1,4 +1,4 @@
-package com.spbsu.benchmark;
+package com.spbsu.benchmark.commons;
 
 import gnu.trove.map.TObjectLongMap;
 import gnu.trove.map.hash.TObjectLongHashMap;
@@ -14,7 +14,7 @@ import java.util.Map;
  * Date: 17.08.2017
  */
 public class LatencyMeasurer<T> {
-  private final Logger LOG = LoggerFactory.getLogger(LatencyMeasurer.class);
+  private static final Logger LOG = LoggerFactory.getLogger(LatencyMeasurer.class);
 
   private final TObjectLongMap<T> starts = new TObjectLongHashMap<>();
   private final Map<T, LongSummaryStatistics> latencies = new HashMap<>();
