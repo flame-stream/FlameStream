@@ -1,28 +1,26 @@
 package com.spbsu.flamestream.example;
 
-import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.TestEnvironment;
-import com.spbsu.flamestream.runtime.TheGraph;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.ToIntFunction;
 
 /**
  * User: Artem
  * Date: 28.09.2017
  */
 public abstract class AbstractExampleTest {
-  protected abstract TheGraph graph(Collection<Integer> fronts, AtomicGraph sink);
+  protected abstract FlameStreamExample example();
 
   protected <T> void test(ExampleChecker<T> checker, int fronts, int workers, int tickLengthInSec, int waitTickInSec) {
-    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(workers); TestEnvironment environment = new TestEnvironment(lce)) {
+    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(workers);
+         TestEnvironment environment = new TestEnvironment(lce)) {
       final List<Object> result = new ArrayList<>();
-      environment.deploy(graph(
-              environment.availableFronts(),
-              environment.wrapInSink(result::add)
+      environment.deploy(environment.withFusedFronts(
+              example().graph(h -> environment.wrapInSink((ToIntFunction<? super T>) h, result::add))
       ), tickLengthInSec, 1);
 
       final Consumer<Object> sink = environment.randomFrontConsumer(fronts);
@@ -37,7 +35,7 @@ public abstract class AbstractExampleTest {
 
       environment.awaitTick(waitTickInSec);
       //noinspection unchecked
-      checker.check(result.stream());
+      checker.assertCorrect(result.stream());
     }
   }
 }

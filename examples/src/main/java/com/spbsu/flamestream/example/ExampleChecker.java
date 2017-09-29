@@ -9,5 +9,5 @@ import java.util.stream.Stream;
 public interface ExampleChecker<T> {
   Stream<T> input();
 
-  void check(Stream<Object> output);
+  void assertCorrect(Stream<Object> output);
 }

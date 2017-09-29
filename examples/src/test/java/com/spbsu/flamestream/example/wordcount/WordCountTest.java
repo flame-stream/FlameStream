@@ -1,14 +1,9 @@
 package com.spbsu.flamestream.example.wordcount;
 
-import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.example.AbstractExampleTest;
 import com.spbsu.flamestream.example.FlameStreamExample;
-import com.spbsu.flamestream.example.FlamesStreamTestGraphs;
-import com.spbsu.flamestream.runtime.TheGraph;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import java.util.Collection;
 
 /**
  * User: Artem
@@ -32,7 +27,7 @@ public class WordCountTest extends AbstractExampleTest {
   }
 
   @Override
-  protected TheGraph graph(Collection<Integer> fronts, AtomicGraph sink) {
-    return FlamesStreamTestGraphs.createTheGraph(FlameStreamExample.WORD_COUNT, fronts, sink);
+  protected FlameStreamExample example() {
+    return FlameStreamExample.WORD_COUNT;
   }
 }

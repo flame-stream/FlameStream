@@ -1,13 +1,8 @@
 package com.spbsu.flamestream.example.inverted_index;
 
-import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.example.AbstractExampleTest;
 import com.spbsu.flamestream.example.FlameStreamExample;
-import com.spbsu.flamestream.example.FlamesStreamTestGraphs;
-import com.spbsu.flamestream.runtime.TheGraph;
 import org.testng.annotations.Test;
-
-import java.util.Collection;
 
 /**
  * User: Artem
@@ -31,7 +26,7 @@ public class InvertedIndexTest extends AbstractExampleTest {
   }
 
   @Override
-  protected TheGraph graph(Collection<Integer> fronts, AtomicGraph sink) {
-    return FlamesStreamTestGraphs.createTheGraph(FlameStreamExample.INVERTED_INDEX, fronts, sink);
+  protected FlameStreamExample example() {
+    return FlameStreamExample.INVERTED_INDEX;
   }
 }

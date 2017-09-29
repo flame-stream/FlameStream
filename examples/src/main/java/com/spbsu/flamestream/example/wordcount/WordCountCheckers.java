@@ -26,7 +26,7 @@ public enum WordCountCheckers implements ExampleChecker<String> {
     }
 
     @Override
-    public void check(Stream<Object> output) {
+    public void assertCorrect(Stream<Object> output) {
       final Map<String, Integer> actual = new HashMap<>();
       output.forEach(o -> {
         final WordCounter wordContainer = (WordCounter) o;

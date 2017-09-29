@@ -3,7 +3,6 @@ package com.spbsu.flamestream.benchmark.runners;
 import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.benchmark.EnvironmentRunner;
 import com.spbsu.flamestream.example.FlameStreamExample;
-import com.spbsu.flamestream.example.FlamesStreamTestGraphs;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
@@ -16,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.LongSummaryStatistics;
 import java.util.function.Consumer;
+import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -34,17 +34,17 @@ public class InvertedIndexRunner implements EnvironmentRunner {
     final Stream<WikipediaPage> source = WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
             .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
-    try (final TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
-      testEnvironment.deploy(FlamesStreamTestGraphs.createTheGraph(
-              FlameStreamExample.INVERTED_INDEX,
-              testEnvironment.availableFronts(),
-              testEnvironment.wrapInSink(container -> {
-                if (container instanceof WordIndexAdd) {
-                  final WordIndexAdd indexAdd = (WordIndexAdd) container;
-                  final int docId = IndexItemInLong.pageId(indexAdd.positions()[0]);
-                  latencyMeasurer.finish(docId);
-                }
-              })
+    try (TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
+      testEnvironment.deploy(testEnvironment.withFusedFronts(
+              FlameStreamExample.INVERTED_INDEX.graph(
+                      hash -> testEnvironment.wrapInSink(((ToIntFunction<? super WordIndexAdd>) hash), container -> {
+                        if (container instanceof WordIndexAdd) {
+                          final WordIndexAdd indexAdd = (WordIndexAdd) container;
+                          final int docId = IndexItemInLong.pageId(indexAdd.positions()[0]);
+                          latencyMeasurer.finish(docId);
+                        }
+                      })
+              )
       ), 40, 1);
 
       final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1);

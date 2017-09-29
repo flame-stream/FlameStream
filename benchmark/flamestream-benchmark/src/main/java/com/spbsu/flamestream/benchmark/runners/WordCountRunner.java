@@ -3,7 +3,6 @@ package com.spbsu.flamestream.benchmark.runners;
 import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.benchmark.EnvironmentRunner;
 import com.spbsu.flamestream.example.FlameStreamExample;
-import com.spbsu.flamestream.example.FlamesStreamTestGraphs;
 import com.spbsu.flamestream.example.wordcount.model.WordCounter;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.Environment;
@@ -17,6 +16,7 @@ import java.util.LongSummaryStatistics;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -44,11 +44,11 @@ public final class WordCountRunner implements EnvironmentRunner {
             }
     );
 
-    try (final TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
-      testEnvironment.deploy(FlamesStreamTestGraphs.createTheGraph(
-              FlameStreamExample.WORD_COUNT,
-              testEnvironment.availableFronts(),
-              testEnvironment.wrapInSink(o -> latencyMeasurer.finish((WordCounter) o))
+    try (TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
+      testEnvironment.deploy(testEnvironment.withFusedFronts(
+              FlameStreamExample.WORD_COUNT.graph(
+                      hash -> testEnvironment.wrapInSink((ToIntFunction<? super WordCounter>)hash, o -> latencyMeasurer.finish((WordCounter) o))
+              )
       ), 60, 1);
 
       final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1);

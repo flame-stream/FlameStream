@@ -33,7 +33,7 @@ public enum InvertedIndexCheckers implements ExampleChecker<WikipediaPage> {
     }
 
     @Override
-    public void check(Stream<Object> output) {
+    public void assertCorrect(Stream<Object> output) {
       final List<WordBase> outputList = new ArrayList<>();
       output.forEach(o -> outputList.add((WordBase) o));
       Assert.assertEquals(outputList.size(), 3481);
@@ -104,7 +104,7 @@ public enum InvertedIndexCheckers implements ExampleChecker<WikipediaPage> {
     }
 
     @Override
-    public void check(Stream<Object> output) {
+    public void assertCorrect(Stream<Object> output) {
       final RankingStorage rankingStorage = rankingStorage(output);
 
       final Document litvaDoc = new Document(7, 2);
@@ -151,7 +151,7 @@ public enum InvertedIndexCheckers implements ExampleChecker<WikipediaPage> {
     }
 
     @Override
-    public void check(Stream<Object> output) {
+    public void assertCorrect(Stream<Object> output) {
       final RankingStorage rankingStorage = rankingStorage(output);
       final RankingFunction rankingFunction = new BM25(rankingStorage);
       {
