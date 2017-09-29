@@ -2,6 +2,17 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>flamestream-parent</artifactId>
+        <groupId>com.spbsu.flamestream</groupId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../parent/pom.xml</relativePath>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>flamestream-runtime</artifactId>
+
     <dependencies>
         <dependency>
             <groupId>com.spbsu.flamestream</groupId>
@@ -95,16 +106,22 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <parent>
-        <artifactId>flamestream-parent</artifactId>
-        <groupId>com.spbsu.flamestream</groupId>
-        <version>1.0-SNAPSHOT</version>
-        <relativePath>../parent/pom.xml</relativePath>
-    </parent>
 
-    <modelVersion>4.0.0</modelVersion>
-
-    <artifactId>flamestream-runtime</artifactId>
-
-
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
