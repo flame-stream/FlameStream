@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.core.graph.barrier;
 
 import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.*;
 import com.spbsu.flamestream.core.graph.barrier.collector.BarrierCollector;
@@ -12,10 +13,10 @@ import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
-public final class BarrierSink implements AtomicGraph {
+final class BarrierSink implements AtomicGraph {
   private final ChaincallGraph innerGraph;
 
-  public BarrierSink(AtomicGraph sink) {
+  BarrierSink(AtomicGraph sink) {
     if (!(sink.inPorts().size() == 1 && sink.outPorts().isEmpty())) {
       throw new IllegalArgumentException(format(
               "sink should have one input and no outputs, found %d inputs, %d outputs",
@@ -28,7 +29,7 @@ public final class BarrierSink implements AtomicGraph {
     this.innerGraph = new ChaincallGraph(barrier.fuse(sink, barrier.outPort(), sink.inPorts().get(0)).flattened());
   }
 
-  public InPort inPort() {
+  InPort inPort() {
     return inPorts().get(0);
   }
 
@@ -92,7 +93,10 @@ public final class BarrierSink implements AtomicGraph {
 
     @Override
     public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-      collector.releaseFrom(globalTime, di -> handle.push(outPort, di));
+      collector.releaseFrom(globalTime, di -> {
+        final Object data = ((PreBarrierMetaElement) di.payload()).payload();
+        handle.push(outPort, new PayloadDataItem<>(di.meta(), data));
+      });
     }
 
     @Override

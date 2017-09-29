@@ -12,11 +12,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.ToIntFunction;
 
-public final class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
+final class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
-  public PreBarrierMetaFilter(ToIntFunction<? super T> hashFunction) {
+  PreBarrierMetaFilter(ToIntFunction<? super T> hashFunction) {
     this.inPort = new InPort(hashFunction);
   }
 
@@ -28,11 +28,11 @@ public final class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
     handle.push(outPort(), newItem);
   }
 
-  public OutPort outPort() {
+  OutPort outPort() {
     return outPort;
   }
 
-  public InPort inPort() {
+  InPort inPort() {
     return inPort;
   }
 

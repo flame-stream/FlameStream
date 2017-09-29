@@ -2,9 +2,9 @@ package com.spbsu.flamestream.core.graph.barrier;
 
 import com.spbsu.flamestream.core.HashFunction;
 
-public final class PreBarrierMetaElement<T> {
+final class PreBarrierMetaElement<T> {
   @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
-  public static final HashFunction<PreBarrierMetaElement<?>> HASH_FUNCTION = new HashFunction<PreBarrierMetaElement<?>>() {
+  static final HashFunction<PreBarrierMetaElement<?>> HASH_FUNCTION = new HashFunction<PreBarrierMetaElement<?>>() {
     @Override
     public int hash(PreBarrierMetaElement<?> value) {
       return value.metaHash();
@@ -14,16 +14,16 @@ public final class PreBarrierMetaElement<T> {
   private final T payload;
   private final int metaHash;
 
-  public PreBarrierMetaElement(T payload, int metaHash) {
+  PreBarrierMetaElement(T payload, int metaHash) {
     this.payload = payload;
     this.metaHash = metaHash;
   }
 
-  public T payload() {
+  T payload() {
     return payload;
   }
 
-  private int metaHash() {
+  int metaHash() {
     return metaHash;
   }
 
