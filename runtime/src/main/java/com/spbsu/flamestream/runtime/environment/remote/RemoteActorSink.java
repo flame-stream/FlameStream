@@ -8,25 +8,25 @@ import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaElement;
 import com.spbsu.flamestream.runtime.range.atomic.AtomicHandleImpl;
 import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.ToIntFunction;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
-public final class RemoteActorSink extends AbstractAtomicGraph {
+public final class RemoteActorSink<T> extends AbstractAtomicGraph {
   private final ActorPath path;
   private final InPort inPort;
   @Nullable
   private ActorSelection actor = null;
 
-  public RemoteActorSink(ActorPath receiverPath) {
+  public RemoteActorSink(ToIntFunction<? super T> hashFunction, ActorPath receiverPath) {
     this.path = receiverPath;
-    this.inPort = new InPort(PreBarrierMetaElement.HASH_FUNCTION);
+    this.inPort = new InPort(hashFunction);
   }
 
   @Override
@@ -36,9 +36,8 @@ public final class RemoteActorSink extends AbstractAtomicGraph {
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
-    final PreBarrierMetaElement<?> element = (PreBarrierMetaElement<?>) item.payload();
     assert actor != null;
-    actor.tell(new SingleRawData<>(element.payload()), ActorRef.noSender());
+    actor.tell(new SingleRawData<>(item.payload()), ActorRef.noSender());
   }
 
   @Override

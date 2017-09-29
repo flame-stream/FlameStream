@@ -4,14 +4,19 @@ import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
-import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
-import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
+import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,14 +29,12 @@ public final class FilterAcceptanceTest {
     final StatelessMap<Integer, Integer> filter3 = new StatelessMap<>(new HumbleFiler(-3), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter4 = new StatelessMap<>(new HumbleFiler(-4), HashFunction.OBJECT_HASH);
 
-    final PreBarrierMetaFilter<Integer> metaFilter = new PreBarrierMetaFilter<>(HashFunction.OBJECT_HASH);
-    final BarrierSink barrierSink = new BarrierSink(sink);
+    final BarrierSuite<Integer> barrier = new BarrierSuite<Integer>(sink);
 
     final Graph graph = filter1.fuse(filter2, filter1.outPort(), filter2.inPort())
             .fuse(filter3, filter2.outPort(), filter3.inPort())
             .fuse(filter4, filter3.outPort(), filter4.inPort())
-            .fuse(metaFilter, filter4.outPort(), metaFilter.inPort())
-            .fuse(barrierSink, metaFilter.outPort(), barrierSink.inPort());
+            .fuse(barrier, filter4.outPort(), barrier.inPort());
 
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(Collectors.toMap(Function.identity(), e -> filter1.inPort()));
@@ -44,7 +47,7 @@ public final class FilterAcceptanceTest {
       final Queue<Integer> result = new ArrayDeque<>();
       environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.availableFronts(),
-              environment.wrapInSink(result::add)
+              environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
       ), 10, 1);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
@@ -63,7 +66,7 @@ public final class FilterAcceptanceTest {
       final Queue<Integer> result = new ArrayDeque<>();
       environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.availableFronts(),
-              environment.wrapInSink(result::add)
+              environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
       ), 2, 10);
 
       final List<Integer> source = new Random().ints(20000).boxed().collect(Collectors.toList());

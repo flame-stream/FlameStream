@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.ToIntFunction;
 
 public final class RemoteEnvironment implements Environment {
   private static final String SYSTEM_NAME = "remote-environment";
@@ -86,10 +87,10 @@ public final class RemoteEnvironment implements Environment {
   }
 
   @Override
-  public <T> AtomicGraph wrapInSink(Consumer<T> mySuperConsumer) {
+  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     final String suffix = UUID.randomUUID().toString();
     localSystem.actorOf(CollectingActor.props(mySuperConsumer), suffix);
-    return new RemoteActorSink(wrapperPath(suffix));
+    return new RemoteActorSink<>(hash, wrapperPath(suffix));
   }
 
   private ActorPath wrapperPath(String suffix) {

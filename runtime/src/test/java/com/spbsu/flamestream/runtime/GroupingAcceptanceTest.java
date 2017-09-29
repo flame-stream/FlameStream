@@ -4,8 +4,7 @@ import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
-import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
-import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
+import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
@@ -31,7 +30,7 @@ public final class GroupingAcceptanceTest {
       //noinspection unchecked
       environment.deploy(GroupingAcceptanceTest.groupGraph(
               environment.availableFronts(),
-              environment.wrapInSink(di -> result.add((List<Long>) di)),
+              environment.wrapInSink(HashFunction.OBJECT_HASH, di -> result.add((List<Long>) di)),
               window,
               groupHash,
               equalz,
@@ -75,12 +74,10 @@ public final class GroupingAcceptanceTest {
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
     final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window);
 
-    final PreBarrierMetaFilter<List<Long>> metaFilter = new PreBarrierMetaFilter<>(HashFunction.OBJECT_HASH);
-    final BarrierSink barrierSink = new BarrierSink(sink);
+    final BarrierSuite<Long> barrier = new BarrierSuite<Long>(sink);
 
     final Graph graph = filter.fuse(grouping, filter.outPort(), grouping.inPort())
-            .fuse(metaFilter, grouping.outPort(), metaFilter.inPort())
-            .fuse(barrierSink, metaFilter.outPort(), barrierSink.inPort());
+            .fuse(barrier, grouping.outPort(), barrier.inPort());
 
     final Map<Integer, InPort> frontBindings = fronts.stream()
             .collect(Collectors.toMap(Function.identity(), e -> filter.inPort()));

@@ -4,8 +4,7 @@ import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
-import com.spbsu.flamestream.core.graph.barrier.BarrierSink;
-import com.spbsu.flamestream.core.graph.barrier.PreBarrierMetaFilter;
+import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.*;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.TheGraph;
@@ -40,16 +39,14 @@ public final class SumTest {
     final StatelessMap<List<Numb>, Sum> reducer = new StatelessMap<>(new Reduce(), groupIdentity);
     final Broadcast<Sum> broadcast = new Broadcast<>(identity, 2);
 
-    final PreBarrierMetaFilter<Sum> metaFilter = new PreBarrierMetaFilter<>(identity);
-    final BarrierSink barrierSink = new BarrierSink(sink);
+    final BarrierSuite<Sum> barrier = new BarrierSuite<Sum>(sink);
 
     final Graph graph = merge.fuse(grouping, merge.outPort(), grouping.inPort())
             .fuse(enricher, grouping.outPort(), enricher.inPort())
             .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
             .fuse(reducer, junkFilter.outPort(), reducer.inPort())
             .fuse(broadcast, reducer.outPort(), broadcast.inPort())
-            .fuse(metaFilter, broadcast.outPorts().get(0), metaFilter.inPort())
-            .fuse(barrierSink, metaFilter.outPorts().get(0), barrierSink.inPort())
+            .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
             .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
 
     final Map<Integer, InPort> frontBindings = fronts.stream()
@@ -81,7 +78,7 @@ public final class SumTest {
 
       environment.deploy(SumTest.sumGraph(
               environment.availableFronts(),
-              environment.wrapInSink(k -> result.add((Sum) k))
+              environment.wrapInSink(HashFunction.constantHash(1), k -> result.add((Sum) k))
       ), tickLength, 1);
 
       final List<LongNumb> source = new Random().ints(inputSize).map(i -> i % 100).map(Math::abs).mapToObj(LongNumb::new).collect(Collectors.toList());

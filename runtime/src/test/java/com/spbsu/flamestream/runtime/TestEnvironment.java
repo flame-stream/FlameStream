@@ -1,12 +1,16 @@
 package com.spbsu.flamestream.runtime;
 
 import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
@@ -31,6 +35,12 @@ public class TestEnvironment implements Environment {
   public TestEnvironment(Environment inner, long window) {
     this.innerEnvironment = inner;
     this.window = window;
+  }
+
+  public TheGraph withFusedFronts(Graph graph) {
+    final Map<Integer, InPort> frontBindings = availableFronts().stream()
+            .collect(Collectors.toMap(Function.identity(), e -> graph.inPorts().get(0)));
+    return new TheGraph(graph, frontBindings);
   }
 
   public void deploy(TheGraph theGraph, int tickLengthSeconds, int ticksCount) {
@@ -124,8 +134,8 @@ public class TestEnvironment implements Environment {
   }
 
   @Override
-  public <T> AtomicGraph wrapInSink(Consumer<T> mySuperConsumer) {
-    return innerEnvironment.wrapInSink(mySuperConsumer);
+  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
+    return innerEnvironment.wrapInSink(hash, mySuperConsumer);
   }
 
   @Override

@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toMap;
@@ -160,8 +161,8 @@ public final class LocalClusterEnvironment implements Environment {
   }
 
   @Override
-  public <T> AtomicGraph wrapInSink(Consumer<T> mySuperConsumer) {
-    return remoteEnvironment.wrapInSink(mySuperConsumer);
+  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
+    return remoteEnvironment.wrapInSink(hash, mySuperConsumer);
   }
 
   @Override

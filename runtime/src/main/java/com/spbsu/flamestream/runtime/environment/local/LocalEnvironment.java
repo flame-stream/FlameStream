@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.ToIntFunction;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -71,8 +72,8 @@ public final class LocalEnvironment implements Environment {
   }
 
   @Override
-  public <T> AtomicGraph wrapInSink(Consumer<T> mySuperConsumer) {
-    return new LocalActorSink(localSystem.actorOf(CollectingActor.props(mySuperConsumer), "collector"));
+  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
+    return new LocalActorSink<>(hash, localSystem.actorOf(CollectingActor.props(mySuperConsumer), "collector"));
   }
 
   @Override
