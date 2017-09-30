@@ -64,7 +64,7 @@ public final class LocalClusterEnvironment implements Environment {
       );
 
       this.dns = freeSockets(workersCount);
-      TimeUnit.SECONDS.sleep(1);
+      TimeUnit.SECONDS.sleep(2);
 
       deployPartitioning();
       this.remoteEnvironment = new RemoteEnvironment(ZK_STRING);
