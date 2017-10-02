@@ -39,7 +39,7 @@ public final class LocalEnvironment implements Environment {
   private final ActorRef front;
 
   public LocalEnvironment() {
-    this.localSystem = ActorSystem.create(SYSTEM_NAME, ConfigFactory.load("remote"));
+    this.localSystem = ActorSystem.create(SYSTEM_NAME, ConfigFactory.load("local"));
     this.fakeWatcher = localSystem.actorOf(FakeTickWatcher.props(tickConcierges), "fake-watcher");
 
     final ActorPath myPath = RootActorPath.apply(Address.apply("akka", SYSTEM_NAME), "/").child("user");
