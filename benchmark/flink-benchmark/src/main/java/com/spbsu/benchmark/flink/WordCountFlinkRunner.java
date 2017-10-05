@@ -1,38 +1,11 @@
 package com.spbsu.benchmark.flink;
 
-import com.spbsu.flamestream.example.ClusterRunner;
-import com.spbsu.flamestream.example.wordcount.model.WordCounter;
-import com.spbsu.flamestream.example.measure.LatencyMeasurer;
-import com.spbsu.flamestream.core.Cluster;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.FoldFunction;
-import org.apache.flink.api.java.tuple.Tuple1;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.util.Collector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LongSummaryStatistics;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toMap;
-
 /**
  * User: Artem
  * Date: 08.09.2017
  */
-public class WordCountFlinkRunner implements ClusterRunner {
-  private final Logger LOG = LoggerFactory.getLogger(WordCountFlinkRunner.class);
+public class WordCountFlinkRunner {
+  /*private final Logger LOG = LoggerFactory.getLogger(WordCountFlinkRunner.class);
 
   private static Iterator<String> iterator;
   private static Consumer<Object> consumer;
@@ -123,5 +96,5 @@ public class WordCountFlinkRunner implements ClusterRunner {
     public WordCounter fold(WordCounter accumulator, Tuple1<String> value) throws Exception {
       return new WordCounter(value.f0, accumulator.count() + 1);
     }
-  }
+  }*/
 }
