@@ -1,17 +1,23 @@
 package com.spbsu.benchmark.flink;
 
+import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexRemove;
 import com.spbsu.flamestream.example.inverted_index.model.WordPagePositions;
 import com.spbsu.flamestream.example.inverted_index.ops.InvertedIndexState;
 import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
+import com.spbsu.flamestream.example.inverted_index.utils.WikipediaPageIterator;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.FoldFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 /**
@@ -20,19 +26,44 @@ import java.util.stream.Stream;
  */
 public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedIndexStream.Output> {
 
-  public static void main(String[] args) {
-    // TODO: 05.10.2017 parse arguments
+  public static void main(String[] args) throws Exception {
 
-    /*final StreamExecutionEnvironment environment = StreamExecutionEnvironment.getExecutionEnvironment();
-    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);*/
+    final String hostname;
+    final int port;
+    final String delimeter;
+    final int warmUpDelay;
+    final int measurePeriod;
+    try {
+      final ParameterTool params = ParameterTool.fromArgs(args);
+      hostname = params.has("hostname") ? params.get("hostname") : "localhost";
+      port = params.getInt("port");
+      delimeter = params.get("port");
+      warmUpDelay = params.has("warmUpDelay") ? params.getInt("warmUpDelay") : 0;
+      measurePeriod = params.has("measurePeriod") ? params.getInt("measurePeriod") : 0;
+    } catch (Exception e) {
+      System.out.println("Invalid parameters");
+      return;
+    }
 
-    // TODO: 05.10.2017 parse socket
-    final DataStream<WikipediaPage> source = null;// = environment.socketTextStream()
-    final FlinkStream<WikipediaPage, InvertedIndexStream.Output> flinkStream = new InvertedIndexStream();
-
-    flinkStream.stream(source).addSink(value -> {
-      // TODO: 05.10.2017 measure latency
+    final StreamExecutionEnvironment environment = StreamExecutionEnvironment.getExecutionEnvironment();
+    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(warmUpDelay, measurePeriod);
+    final DataStream<WikipediaPage> source = environment.socketTextStream(hostname, port, delimeter).map(value -> {
+      final WikipediaPageIterator pageIterator = new WikipediaPageIterator(
+              new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8.name()))
+      );
+      final WikipediaPage page = pageIterator.next();
+      latencyMeasurer.start(page.id());
+      return page;
     });
+
+    final FlinkStream<WikipediaPage, InvertedIndexStream.Output> flinkStream = new InvertedIndexStream();
+    flinkStream.stream(source).addSink(value -> {
+      final WordIndexAdd wordIndexAdd = value.wordIndexAdd();
+      final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
+      latencyMeasurer.finish(docId);
+    });
+
+    environment.execute();
   }
 
   @Override
