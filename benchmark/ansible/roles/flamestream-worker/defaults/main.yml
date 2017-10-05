@@ -1,0 +1,3 @@
+---
+flamestream_dir: /opt/fs
+client_port: 2181
