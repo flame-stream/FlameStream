@@ -1,2 +1,3 @@
 ---
 bench_dir: /opt/bench
+client_port: 2181

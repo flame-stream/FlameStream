@@ -4,9 +4,8 @@ zookeeper_url: http://www.apache.org/dist/zookeeper/zookeeper-{{zookeeper_versio
 
 tick_time: 3000
 
-zookeeper_data_dir: /var/lib/zookeeper
-
-zookeeper_dir: /opt/zookeeper-{{ zookeeper_version }}
 zookeeper_tarball_dir: /opt/src
+
+zookeeper_data_dir: "{{ zookeeper_dir }}/data"
 
 zookeeper_cli: "{{ zookeeper_dir }}/bin/zkCli.sh -server localhost:{{ client_port }}"
