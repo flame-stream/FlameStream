@@ -6,6 +6,7 @@ import org.testng.Assert;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,8 +35,9 @@ public enum WordCountCheckers implements ExampleChecker<String> {
         actual.computeIfPresent(wordContainer.word(), (uid, old) -> Math.max(wordContainer.count(), old));
       });
 
+      final Pattern pattern = Pattern.compile("\\s");
       final Map<String, Integer> expected = input.stream()
-              .map(text -> text.split("\\s"))
+              .map(pattern::split)
               .flatMap(Arrays::stream)
               .collect(toMap(Function.identity(), o -> 1, Integer::sum));
       Assert.assertEquals(actual, expected);
