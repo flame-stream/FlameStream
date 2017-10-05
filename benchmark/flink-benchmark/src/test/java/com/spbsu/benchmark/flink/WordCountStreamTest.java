@@ -1,10 +1,7 @@
-package com.spbsu.benchamrk.flink.streams;
+package com.spbsu.benchmark.flink;
 
-import com.spbsu.benchmark.flink.streams.inverted_index.InvertedIndexFold;
-import com.spbsu.benchmark.flink.streams.inverted_index.InvertedIndexStream;
 import com.spbsu.flamestream.example.ExampleChecker;
-import com.spbsu.flamestream.example.inverted_index.InvertedIndexCheckers;
-import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
+import com.spbsu.flamestream.example.wordcount.WordCountCheckers;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.testng.annotations.BeforeClass;
@@ -19,9 +16,9 @@ import java.util.Iterator;
  * User: Artem
  * Date: 05.10.2017
  */
-public class InvertedIndexStreamTest {
+public class WordCountStreamTest {
   //dirty code for avoiding serialization
-  private static Iterator<WikipediaPage> sourceIterator;
+  private static Iterator<String> sourceIterator;
 
   private static FlinkLocalExecutor executor;
 
@@ -33,31 +30,24 @@ public class InvertedIndexStreamTest {
   @DataProvider(name = "correctnessProvider")
   public static Object[][] primeNumbers() {
     return new Object[][]{
-            {InvertedIndexCheckers.CHECK_INDEX_WITH_SMALL_DUMP},
-            {InvertedIndexCheckers.CHECK_INDEX_AND_RANKING_STORAGE_WITH_SMALL_DUMP},
-            {InvertedIndexCheckers.CHECK_INDEX_WITH_RANKING}
+            {WordCountCheckers.CHECK_COUNT}
     };
   }
 
   @Test(dataProvider = "correctnessProvider")
-  public void testCorrectness(ExampleChecker<WikipediaPage> checker) {
+  public void testCorrectness(ExampleChecker<String> checker) {
     sourceIterator = checker.input().iterator();
 
     final Collection<Object> output = new ArrayList<>();
-    executor.execute(new InvertedIndexStream(), new Source(), o -> {
-      final InvertedIndexFold fold = (InvertedIndexFold) o;
-      output.add(fold.wordIndexAdd());
-      if (fold.wordIndexRemove() != null)
-        output.add(fold.wordIndexRemove());
-    });
+    executor.execute(new WordCountStream(), new Source(), output::add);
     checker.assertCorrect(output.stream());
   }
 
-  private static class Source implements SourceFunction<WikipediaPage> {
+  private static class Source implements SourceFunction<String> {
     private boolean running = true;
 
     @Override
-    public void run(SourceContext<WikipediaPage> ctx) throws Exception {
+    public void run(SourceContext<String> ctx) throws Exception {
       //noinspection Duplicates
       while (running) {
         if (sourceIterator.hasNext()) {
