@@ -13,26 +13,32 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class InvertedIndexBench {
   private final String managerHostname;
   private final int managerPort;
 
-  private final int sourcePort;
-
   private final String benchHostname;
-  private final int benchPort;
+
+  private final int sourcePort;
+  private final int sinkPort;
+
+  private final List<String> jars;
 
   public InvertedIndexBench(String managerHostname,
                             int managerPort,
-                            int sourcePort,
                             String benchHostname,
-                            int benchPort) {
+                            int sourcePort,
+                            int sinkPort,
+                            List<String> jars) {
     this.managerHostname = managerHostname;
+    this.benchHostname = benchHostname;
     this.managerPort = managerPort;
     this.sourcePort = sourcePort;
-    this.benchHostname = benchHostname;
-    this.benchPort = benchPort;
+    this.sinkPort = sinkPort;
+    this.jars = new ArrayList<>(jars);
   }
 
   public static void main(String[] args) throws Exception {
@@ -41,25 +47,27 @@ public final class InvertedIndexBench {
       final Path filename = Paths.get(args[0]);
       load = ConfigFactory.parseReader(Files.newBufferedReader(filename)).getConfig("benchmark");
     } else {
-      load = ConfigFactory.load("bench.conf").getConfig("benchmark");
+      load = ConfigFactory.load("flink-bench.conf").getConfig("benchmark");
     }
 
     new InvertedIndexBench(
             load.getString("manager-hostname"),
             load.getInt("manager-port"),
-            load.getInt("consumer-port"),
             load.getString("bench-hostname"),
-            load.getInt("bench-port")
+            load.getInt("source-port"),
+            load.getInt("sink-port"),
+            load.getStringList("jars")
     ).run();
   }
 
+
   public void run() throws Exception {
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
-            .createRemoteEnvironment(managerHostname, managerPort);
+            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);
 
-    final DataStream<WikipediaPage> source = environment.socketTextStream("localhost", sourcePort, "#$#")
+    final DataStream<WikipediaPage> source = environment.socketTextStream(benchHostname, sourcePort, "#$#")
             .map(value -> {
               final WikipediaPageIterator pageIterator = new WikipediaPageIterator(
                       new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8.name()))
@@ -68,9 +76,9 @@ public final class InvertedIndexBench {
               return page;
             });
 
-    final FlinkStream<WikipediaPage, InvertedIndexStream.Output> flinkStream = new InvertedIndexStream();
-    //flinkStream.stream(source).writeToSocket(benchHostname, benchPort,
+    final DataStream<InvertedIndexStream.Output> flinkStream = new InvertedIndexStream()
+            .stream(source);
 
-    environment.execute();
+    environment.execute("Joba");
   }
 }

@@ -15,6 +15,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.util.Collector;
 
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -37,7 +38,10 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
     public void flatMap(WikipediaPage value, Collector<Tuple2<String, long[]>> out) throws Exception {
       final com.spbsu.flamestream.example.inverted_index.ops.WikipediaPageToWordPositions filter = new com.spbsu.flamestream.example.inverted_index.ops.WikipediaPageToWordPositions();
       final Stream<WordPagePositions> result = filter.apply(value);
-      result.forEach(v -> out.collect(new Tuple2<>(v.word(), v.positions())));
+      result.forEach(new Consumer<WordPagePositions>() {
+        @Override
+        public void accept(WordPagePositions v) {out.collect(new Tuple2<>(v.word(), v.positions()));}
+      });
     }
   }
 
