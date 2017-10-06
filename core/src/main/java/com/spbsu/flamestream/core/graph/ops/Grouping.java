@@ -118,6 +118,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
     final DataItem<List<T>> result = new PayloadDataItem<>(meta, groupingResult);
     handle.push(outPort(), result);
+    handle.ack(result.ack(), result.meta().globalTime());
   }
 
   @Override

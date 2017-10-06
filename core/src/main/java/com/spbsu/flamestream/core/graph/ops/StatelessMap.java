@@ -34,6 +34,7 @@ public final class StatelessMap<T, R> extends AbstractAtomicGraph {
     final DataItem<R> result = new PayloadDataItem<>(item.meta().advanced(incrementLocalTimeAndGet()), res);
 
     handler.push(outPort(), result);
+    handler.ack(result.ack(), result.meta().globalTime());
   }
 
   public InPort inPort() {

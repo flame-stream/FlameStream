@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.range.atomic;
 
 import akka.actor.Props;
+import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.runtime.ack.Commit;
@@ -36,11 +37,11 @@ public final class AtomicActor extends LoggingActor {
     return receiveBuilder()
             .match(AddressedItem.class, this::onAtomicMessage)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
-            .match(Commit.class, this::onCommit)
+            .match(Commit.class, commit -> onCommit())
             .build();
   }
 
-  private void onCommit(Commit commit) {
+  private void onCommit() {
     atomic.onCommit(handle);
     context().parent().tell(new AtomicCommitDone(atomic), self());
     LOG().info("Commit done");
@@ -57,8 +58,9 @@ public final class AtomicActor extends LoggingActor {
   private void onAtomicMessage(AddressedItem message) {
     final long start = System.nanoTime();
 
-    atomic.onPush(message.port(), message.item(), handle);
-    handle.ack(message.item());
+    final DataItem<?> item = message.item();
+    atomic.onPush(message.port(), item, handle);
+    handle.ack(item.ack(), item.meta().globalTime());
 
     final long stop = System.nanoTime();
     stat.recordOnAtomicMessage(stop - start);

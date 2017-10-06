@@ -31,6 +31,7 @@ public final class Filter<T> extends AbstractAtomicGraph {
       final DataItem<?> result = new PayloadDataItem<>(item.meta().advanced(incrementLocalTimeAndGet()), item.payload());
 
       handler.push(outPort(), result);
+      handler.ack(result.ack(), result.meta().globalTime());
     } else {
       // TODO: 5/9/17 DELIVER NULL
     }

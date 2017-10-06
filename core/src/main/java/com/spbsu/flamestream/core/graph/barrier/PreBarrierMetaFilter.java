@@ -26,6 +26,7 @@ final class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
             item.meta().advanced(incrementLocalTimeAndGet()),
             new PreBarrierMetaElement<>(item.payload(), HashFunction.UNIFORM_OBJECT_HASH.hash(item.meta().globalTime().front())));
     handle.push(outPort(), newItem);
+    handle.ack(newItem.ack(), newItem.meta().globalTime());
   }
 
   OutPort outPort() {

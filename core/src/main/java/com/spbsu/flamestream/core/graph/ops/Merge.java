@@ -27,6 +27,7 @@ public final class Merge extends AbstractAtomicGraph {
             item.payload());
 
     handler.push(outPort(), newItem);
+    handler.ack(newItem.ack(), newItem.meta().globalTime());
   }
 
   @Override

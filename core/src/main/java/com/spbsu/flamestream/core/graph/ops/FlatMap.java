@@ -33,14 +33,17 @@ public final class FlatMap<T, R> extends AbstractAtomicGraph {
     final int newLocalTime = incrementLocalTimeAndGet();
 
     final int[] childId = {0};
+    final long[] xor = {0};
     res.forEach(t -> {
       final Meta newMeta = item.meta().advanced(newLocalTime, childId[0]);
       final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t);
 
       handler.push(outPort(), newDataItem);
+      xor[0] = xor[0] ^ newDataItem.ack();
 
       childId[0]++;
     });
+    handler.ack(xor[0], item.meta().globalTime());
   }
 
   public InPort inPort() {

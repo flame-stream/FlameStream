@@ -78,8 +78,8 @@ public final class ChaincallGraph implements AtomicGraph {
     }
 
     @Override
-    public void ack(DataItem<?> item) {
-      superHandle.ack(item);
+    public void ack(long xor, GlobalTime globalTime) {
+      //there is no need to ack from chain
     }
 
     @Override
