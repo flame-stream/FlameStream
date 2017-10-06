@@ -20,7 +20,7 @@ public class BenchmarkLauncher {
     final Config load;
     if (args.length == 1) {
       final Path filename = Paths.get(args[0]);
-      load = ConfigFactory.parseReader(Files.newBufferedReader(filename));
+      load = ConfigFactory.parseReader(Files.newBufferedReader(filename)).getConfig("benchmark");
     } else {
       load = ConfigFactory.load("bench.conf").getConfig("benchmark");
     }
