@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.core;
 
 import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.stat.Statistics;
@@ -20,7 +21,7 @@ public final class FakeAtomicHandle implements AtomicHandle {
   }
 
   @Override
-  public void ack(DataItem<?> item) {
+  public void ack(long xor, GlobalTime globalTime) {
   }
 
   @Override

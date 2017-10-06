@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
@@ -47,13 +48,11 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
     final ActorRef ref = hashMapping.valueFor(hash);
     ref.tell(message, context.self());
-
-    ack(result);
   }
 
   @Override
-  public void ack(DataItem<?> item) {
-    final Ack message = new Ack(item.ack(), item.meta().globalTime());
+  public void ack(long xor, GlobalTime globalTime) {
+    final Ack message = new Ack(xor, globalTime);
     tickRoutes.acker().tell(message, context.self());
   }
 

@@ -33,6 +33,7 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
 
       final DataItem<?> newItem = new PayloadDataItem<>(newMeta, item.payload());
       handle.push(outPorts.get(i), newItem);
+      handle.ack(newItem.ack(), newItem.meta().globalTime());
     }
   }
 
