@@ -23,6 +23,12 @@
     dest: "{{ bench_dir }}/bench.conf"
   tags: run
 
-- name: Start the fs worker
-  shell: java -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf > /bench.log
+- name: Start the flamestream bench
+  shell: java -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf > {{ bench_dir }}/flamestream_bench.log
+  tags: run
+
+- name: Fetch bench logs
+  fetch:
+    src: "{{ bench_dir }}/flamestream_bench.log"
+    dest: flamestream_bench.log
   tags: run
