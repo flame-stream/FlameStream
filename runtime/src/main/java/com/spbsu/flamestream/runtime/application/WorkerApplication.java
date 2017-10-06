@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.ActorSystem;
+import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.node.LifecycleWatcher;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -10,8 +11,6 @@ import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -20,7 +19,7 @@ import java.util.concurrent.TimeoutException;
 public final class WorkerApplication {
   public static final int PORT = 4387;
   private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
-  private final InetSocketAddress host;
+  private final DumbInetSocketAddress host;
   private final String zkConnectString;
   private final int id;
 
@@ -28,11 +27,11 @@ public final class WorkerApplication {
 
   public WorkerApplication(int id, String zkConnectString) throws UnknownHostException {
     this.id = id;
-    this.host = new InetSocketAddress(InetAddress.getLocalHost(), PORT);
+    this.host = new DumbInetSocketAddress("localhost", PORT);
     this.zkConnectString = zkConnectString;
   }
 
-  public WorkerApplication(int id, InetSocketAddress host, String zkConnectString) {
+  public WorkerApplication(int id, DumbInetSocketAddress host, String zkConnectString) {
     this.id = id;
     this.host = host;
     this.zkConnectString = zkConnectString;
@@ -48,15 +47,15 @@ public final class WorkerApplication {
     }
 
     final int port = config.getInt("port");
-    final InetAddress host = InetAddress.getByName(config.getString("host"));
-    final InetSocketAddress socketAddress = new InetSocketAddress(host, port);
+    final String host = config.getString("host");
+    final DumbInetSocketAddress socketAddress = new DumbInetSocketAddress(host, port);
 
     new WorkerApplication(config.getInt("id"), socketAddress, config.getString("zk_string")).run();
   }
 
   public void run() {
-    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + host.getPort())
-            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + host.getHostString()))
+    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + host.port())
+            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + host.host()))
             .withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);
 

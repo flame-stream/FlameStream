@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime.environment.local;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.application.WorkerApplication;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.environment.remote.RemoteEnvironment;
@@ -41,7 +42,7 @@ public final class LocalClusterEnvironment implements Environment {
   private final ObjectMapper mapper = new ObjectMapper();
 
   private final Collection<WorkerApplication> workerApplication = new HashSet<>();
-  private final Map<Integer, InetSocketAddress> dns;
+  private final Map<Integer, DumbInetSocketAddress> dns;
 
   private final ZooKeeper zooKeeper;
   private final ZooKeeperApplication zk;
@@ -93,10 +94,9 @@ public final class LocalClusterEnvironment implements Environment {
     }
   }
 
-  private Map<Integer, InetSocketAddress> freeSockets(int workersCount) {
+  private Map<Integer, DumbInetSocketAddress> freeSockets(int workersCount) {
     return IntStream.range(LocalClusterEnvironment.START_WORKER_PORT, LocalClusterEnvironment.START_WORKER_PORT + workersCount)
-            .boxed().collect(toMap(Function.identity(),
-                    Unchecked.function(port -> new InetSocketAddress(InetAddress.getLocalHost(), port))));
+            .boxed().collect(toMap(Function.identity(), port -> new DumbInetSocketAddress("localhost", port)));
   }
 
   private void deployPartitioning() {
@@ -118,9 +118,8 @@ public final class LocalClusterEnvironment implements Environment {
     );
   }
 
-  private void pushDNS(Map<Integer, InetSocketAddress> dns) throws KeeperException, InterruptedException, JsonProcessingException, ZKUtil.BadAclFormatException {
-    zooKeeper.create(
-            "/dns",
+  private void pushDNS(Map<Integer, DumbInetSocketAddress> dns) throws KeeperException, InterruptedException, JsonProcessingException, ZKUtil.BadAclFormatException {
+    zooKeeper.create( "/dns",
             mapper.writeValueAsBytes(dns),
             ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT

@@ -1,8 +1,13 @@
 package com.spbsu.flamestream.runtime.node;
 
-import akka.actor.*;
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.Address;
+import akka.actor.Props;
+import akka.actor.RootActorPath;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.front.FrontActor;
 import com.spbsu.flamestream.runtime.tick.TickCommitDone;
@@ -93,20 +98,20 @@ public final class NodeConcierge extends LoggingActor {
   private Map<Integer, ActorPath> fetchDNS() throws IOException, KeeperException, InterruptedException {
     final String path = "/dns";
     final byte[] data = zooKeeper.getData(path, false, new Stat());
-    final Map<Integer, InetSocketAddress> dns = NodeConcierge.MAPPER
+    final Map<Integer, DumbInetSocketAddress> dns = NodeConcierge.MAPPER
             .readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {
             });
 
     return dns.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> pathFor(e.getValue())));
   }
 
-  private ActorPath pathFor(InetSocketAddress socketAddress) {
+  private ActorPath pathFor(DumbInetSocketAddress socketAddress) {
     // TODO: 5/8/17 Properly resolve ActorRef
     final Address address = Address.apply(
             "akka.tcp",
             "worker",
-            socketAddress.getAddress().getHostName(),
-            socketAddress.getPort()
+            socketAddress.host(),
+            socketAddress.port()
     );
 
     return RootActorPath.apply(address, "/")
