@@ -60,7 +60,7 @@ public final class FilterAcceptanceTest {
     }
   }
 
-  @Test
+  @Test(enabled = false)
   public void multipleTicksLinearFilter() throws Exception {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4); TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
