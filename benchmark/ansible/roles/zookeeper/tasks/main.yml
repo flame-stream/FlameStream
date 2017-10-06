@@ -24,12 +24,6 @@
     creates: "{{ zookeeper_dir }}/bin"
   tags: deliver
 
-- name: Create the zookeeper data directory at {{ data_dir }}
-  file:
-    path: "{{ zookeeper_data_dir }}"
-    state: directory
-  tags: deliver
-
 - name: Configure the zookeeper
   template:
     src: zoo.cfg.j2
@@ -38,7 +32,23 @@
 
 - name: Stop zookeeper
   shell: "{{ zookeeper_dir }}/bin/zkServer.sh stop"
-  tags: destroy
+  tags:
+    - destroy
+    - bootstrap
+
+- name: Clear the zookeeper data directory at {{ zookeeper_data_dir }}
+  file:
+    path: "{{ zookeeper_data_dir }}"
+    state: absent
+  tags:
+    - bootstrap
+    - destroy
+
+- name: Create the zookeeper data directory at {{ zookeeper_data_dir }}
+  file:
+    path: "{{ zookeeper_data_dir }}"
+    state: directory
+  tags: bootstrap
 
 - name: Restart zookeeper
   shell: "{{ zookeeper_dir }}/bin/zkServer.sh restart"
@@ -55,14 +65,6 @@
     src: fronts.json.j2
     dest: "{{ zookeeper_dir }}/fronts.json"
   tags: bootstrap
-
-- name: Clean zookeeper {{ item }}
-  shell: "{{ zookeeper_cli }} deleteall {{ item }}"
-  tags: bootstrap
-  with_items:
-    - /ticks
-    - /dns
-    - /fronts
 
 - name: Create ticks dir
   shell: "{{ zookeeper_cli }} create /ticks \"\""

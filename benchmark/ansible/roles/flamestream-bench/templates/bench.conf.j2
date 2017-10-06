@@ -1,18 +1,10 @@
-cluster {
-  local = false
+benchmark {
+  remote-environment {
+    zk = "{{ groups['manager'][0] }}:{{ client_port }}"
+  }
 
-  real-cluster {
-    zk = "{{ hostvars[groups['zookeeper'][0]].inner_dn }}:{{ client_port }}"
-    nodes = [
-    {% for worker in groups['workers'] %}
-      {id = {{ hostvars[worker].ds_id }}, host = "{{ hostvars[worker].inner_dn }}", port = {{ worker_port }}}
-      {{ "," if not loop.last else "" }}
-    {% endfor %}
-    ],
-    fronts = [{{ hostvars[groups['bench'][0]].ds_id }}]
+  environment-runner {
+    runner = com.spbsu.flamestream.benchmark.runners.InvertedIndexRunner
   }
 }
 
-cluster-runner {
-  runner = com.spbsu.flamestream.benchmark.runners.WordCountRunner
-}
