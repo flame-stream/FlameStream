@@ -13,6 +13,13 @@ public final class DumbInetSocketAddress {
   private final int port;
 
   @JsonCreator
+  public DumbInetSocketAddress(String address) {
+    final String[] split = address.split(":");
+    this.host = split[0];
+    this.port = Integer.parseInt(split[1]);
+  }
+
+  @JsonCreator
   public DumbInetSocketAddress(@JsonProperty("host") String host, @JsonProperty("port") int port) {
     this.host = host;
     this.port = port;

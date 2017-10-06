@@ -1,9 +1,15 @@
 package com.spbsu.flamestream.runtime.environment.remote;
 
-import akka.actor.*;
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.ActorSystem;
+import akka.actor.Address;
+import akka.actor.RootActorPath;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.configuration.KryoInfoSerializer;
 import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
 import com.spbsu.flamestream.runtime.environment.CollectingActor;
@@ -25,7 +31,6 @@ import scala.concurrent.duration.Duration;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -108,7 +113,7 @@ public final class RemoteEnvironment implements Environment {
 
   @Override
   public Consumer<Object> frontConsumer(int frontId) {
-    final InetSocketAddress front = dns().get(frontId);
+    final DumbInetSocketAddress front = dns().get(frontId);
     if (front == null) {
       throw new IllegalArgumentException("There is no front with id " + frontId);
     }
@@ -118,12 +123,12 @@ public final class RemoteEnvironment implements Environment {
     return object -> frontSelection.tell(new SingleRawData<>(object), ActorRef.noSender());
   }
 
-  private ActorPath frontPath(InetSocketAddress frontAddress) {
+  private ActorPath frontPath(DumbInetSocketAddress frontAddress) {
     final Address address = new Address(
             "akka.tcp",
             "worker",
-            frontAddress.getAddress().getHostName(),
-            frontAddress.getPort()
+            frontAddress.host(),
+            frontAddress.port()
     );
 
     return RootActorPath.apply(address, "/")
@@ -133,10 +138,10 @@ public final class RemoteEnvironment implements Environment {
             .child("front");
   }
 
-  private Map<Integer, InetSocketAddress> dns() {
+  private Map<Integer, DumbInetSocketAddress> dns() {
     try {
       final byte[] data = zooKeeper.getData("/dns", false, new Stat());
-      return mapper.readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {
+      return mapper.readValue(data, new TypeReference<Map<Integer, DumbInetSocketAddress>>() {
       });
     } catch (IOException | InterruptedException | KeeperException e) {
       throw new RuntimeException(e);

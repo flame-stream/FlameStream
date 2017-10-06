@@ -99,7 +99,7 @@ public final class NodeConcierge extends LoggingActor {
     final String path = "/dns";
     final byte[] data = zooKeeper.getData(path, false, new Stat());
     final Map<Integer, DumbInetSocketAddress> dns = NodeConcierge.MAPPER
-            .readValue(data, new TypeReference<Map<Integer, InetSocketAddress>>() {
+            .readValue(data, new TypeReference<Map<Integer, DumbInetSocketAddress>>() {
             });
 
     return dns.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> pathFor(e.getValue())));
