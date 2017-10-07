@@ -10,6 +10,7 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.runtime.actor.PingActor;
 import com.spbsu.flamestream.runtime.raw.RawData;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import org.jetbrains.annotations.Nullable;
@@ -24,16 +25,25 @@ public final class FrontActor extends LoggingActor {
   private final int id;
   private final NavigableMap<Long, ActorRef> tickFronts = new TreeMap<>();
   private final Map<Long, TickInfo> tickInfos = new HashMap<>();
+  private final ActorRef pingActor;
 
   private long prevGlobalTs = -1;
+  private long minWindow = Long.MAX_VALUE;
 
   private FrontActor(Map<Integer, ActorPath> cluster, int id) {
     this.cluster = new HashMap<>(cluster);
     this.id = id;
+    this.pingActor = context().actorOf(PingActor.props(self(), FrontPing.PING).withDispatcher("front-ping-dispatcher"));
   }
 
   public static Props props(Map<Integer, ActorPath> cluster, int id) {
     return Props.create(FrontActor.class, cluster, id);
+  }
+
+  @Override
+  public void postStop() {
+    pingActor.tell(new PingActor.Stop(), self());
+    super.postStop();
   }
 
   @Override
@@ -44,13 +54,14 @@ public final class FrontActor extends LoggingActor {
             //.match(TickCommitDone.class, committed -> )
             .match(RawData.class, rawData -> rawData.forEach(this::redirectItem))
             .match(TickInfo.class, this::createTick)
-            .match(TsRequest.class, this::onTsRequest)
+            .match(FrontPing.class, frontPing -> onReportPing())
+            .match(TickFrontStopped.class, tickFrontStopped -> tickFronts.remove(tickFrontStopped.startTickTs()))
             .matchAny(this::unhandled)
             .build();
   }
 
-  private void onTsRequest(@SuppressWarnings("unused") TsRequest tsRequest) {
-    sender().tell(new TsResponse(System.nanoTime()), self());
+  private void onReportPing() {
+    tickFronts.values().forEach(actorRef -> actorRef.tell(new TickFrontPing(System.nanoTime()), self()));
   }
 
   private void createTick(TickInfo tickInfo) {
@@ -70,6 +81,15 @@ public final class FrontActor extends LoggingActor {
     tickFronts.put(tickInfo.startTs(), tickFront);
     tickInfos.put(tickInfo.startTs(), tickInfo);
     unstashAll();
+
+    // TODO: 07.10.2017 handle case when min window gets bigger after removing tick front
+    { //set up ping actor
+      if (tickInfo.window() < minWindow) {
+        minWindow = tickInfo.window();
+        pingActor.tell(new PingActor.Stop(), self());
+        pingActor.tell(new PingActor.Start(minWindow), self());
+      }
+    }
   }
 
   private void redirectItem(Object payload) {
@@ -106,5 +126,9 @@ public final class FrontActor extends LoggingActor {
     } else {
       return null;
     }
+  }
+
+  private enum FrontPing {
+    PING
   }
 }

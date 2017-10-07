@@ -2,7 +2,6 @@ package com.spbsu.flamestream.runtime.front;
 
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
-import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
@@ -15,15 +14,11 @@ import com.spbsu.flamestream.runtime.tick.HashMapping;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
 import com.spbsu.flamestream.runtime.tick.TickRoutesResolver;
-import scala.concurrent.duration.Duration;
-import scala.concurrent.duration.FiniteDuration;
 
 import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.ToIntFunction;
 
-import static java.lang.Math.max;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toMap;
 
 final class TickFrontActor extends LoggingActor {
@@ -34,11 +29,9 @@ final class TickFrontActor extends LoggingActor {
 
   @Nullable
   private TickRoutes routes;
-
   @Nullable
   private HashMapping<ActorRef> mapping;
 
-  private Cancellable pingMe;
   private long currentWindowHead;
   private long currentXor = 0;
 
@@ -74,9 +67,7 @@ final class TickFrontActor extends LoggingActor {
 
   @Override
   public void postStop() {
-    if (pingMe != null) {
-      pingMe.cancel();
-    }
+    context().parent().tell(new TickFrontStopped(tickInfo.startTs()), self());
     super.postStop();
   }
 
@@ -86,17 +77,6 @@ final class TickFrontActor extends LoggingActor {
             .match(TickRoutes.class, routes -> {
               this.routes = routes;
               mapping = HashMapping.hashMapping(routes.rangeConcierges());
-
-              final FiniteDuration start = Duration.create(max(tickInfo.startTs() - System.nanoTime(), 0), NANOSECONDS);
-              this.pingMe = context().system().scheduler().schedule(
-                      start,
-                      FiniteDuration.apply(tickInfo.window(), NANOSECONDS),
-                      self(),
-                      TsRequest.REQUEST,
-                      context().system().dispatcher(),
-                      self()
-              );
-
               getContext().become(receiving());
               unstashAll();
             })
@@ -107,14 +87,13 @@ final class TickFrontActor extends LoggingActor {
   private Receive receiving() {
     return ReceiveBuilder.create()
             .match(DataItem.class, this::dispatchItem)
-            .match(TsRequest.class, m -> context().parent().tell(m, self()))
-            .match(TsResponse.class, this::processTsResponse)
+            .match(TickFrontPing.class, this::processTsResponse)
             .matchAny(this::unhandled)
             .build();
   }
 
-  private void processTsResponse(TsResponse tsResponse) {
-    final long ts = tsResponse.ts();
+  private void processTsResponse(TickFrontPing tickFrontPing) {
+    final long ts = tickFrontPing.ts();
     if (ts >= tickInfo.stopTs()) {
       reportUpTo(tickInfo.stopTs());
       context().stop(self());
@@ -128,6 +107,7 @@ final class TickFrontActor extends LoggingActor {
     final ToIntFunction hashFunction = target.hashFunction();
     final int hash = hashFunction.applyAsInt(item.payload());
 
+    assert mapping != null;
     final ActorRef receiver = mapping.valueFor(hash);
     final AddressedItem message = new AddressedItem(item, target);
     receiver.tell(message, self());
@@ -154,6 +134,7 @@ final class TickFrontActor extends LoggingActor {
 
   private void closeWindow(long windowHead, long xor) {
     final AckerReport report = new AckerReport(new GlobalTime(windowHead, frontId), xor);
+    assert routes != null;
     routes.acker().tell(report, self());
   }
 }

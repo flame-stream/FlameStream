@@ -2,16 +2,16 @@ package com.spbsu.flamestream.runtime.front;
 
 /**
  * User: Artem
- * Date: 26.09.2017
+ * Date: 07.10.2017
  */
-public class TsResponse {
+class TickFrontPing {
   private final long ts;
 
-  TsResponse(long ts) {
+  TickFrontPing(long ts) {
     this.ts = ts;
   }
 
-  public long ts() {
+  long ts() {
     return ts;
   }
 }
