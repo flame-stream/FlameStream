@@ -1,5 +1,8 @@
 package com.spbsu.flamestream.example.inverted_index.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Arrays;
 
 /**
@@ -10,15 +13,19 @@ public class WordIndexAdd implements WordBase {
   private final String word;
   private final long[] positions;
 
-  public WordIndexAdd(String word, long[] positions) {
+  @JsonCreator
+  public WordIndexAdd(@JsonProperty("word") String word,
+                      @JsonProperty("positions") long[] positions) {
     this.word = word;
     this.positions = positions;
   }
 
+  @JsonProperty("word")
   public String word() {
     return word;
   }
 
+  @JsonProperty("positions")
   public long[] positions() {
     return positions;
   }

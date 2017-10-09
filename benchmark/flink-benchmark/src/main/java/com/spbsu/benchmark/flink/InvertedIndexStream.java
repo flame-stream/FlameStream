@@ -1,5 +1,7 @@
 package com.spbsu.benchmark.flink;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexRemove;
@@ -87,17 +89,29 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
     private final WordIndexAdd wordIndexAdd;
     private final WordIndexRemove wordIndexRemove;
 
-    Output(WordIndexAdd wordIndexAdd, WordIndexRemove wordIndexRemove) {
+    @JsonCreator
+    Output(@JsonProperty("word_index_add") WordIndexAdd wordIndexAdd,
+           @JsonProperty("word_index_remove") WordIndexRemove wordIndexRemove) {
       this.wordIndexAdd = wordIndexAdd;
       this.wordIndexRemove = wordIndexRemove;
     }
 
+    @JsonProperty("word_index_add")
     WordIndexAdd wordIndexAdd() {
       return wordIndexAdd;
     }
 
+    @JsonProperty("word_index_remove")
     WordIndexRemove wordIndexRemove() {
       return wordIndexRemove;
+    }
+
+    @Override
+    public String toString() {
+      return "Output{" +
+              "wordIndexAdd=" + wordIndexAdd +
+              ", wordIndexRemove=" + wordIndexRemove +
+              '}';
     }
   }
 }
