@@ -59,7 +59,7 @@ public class InvertedIndexStreamTest {
   @DataProvider(name = "measureProvider")
   public static Object[][] measureProvider() {
     return new Object[][]{
-            {InvertedIndexCheckers.CHECK_INDEX_WITH_RANKING, 100}
+            {InvertedIndexCheckers.CHECK_INDEX_WITH_RANKING, 10}
     };
   }
 

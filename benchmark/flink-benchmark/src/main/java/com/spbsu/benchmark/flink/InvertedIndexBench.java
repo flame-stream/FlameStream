@@ -31,9 +31,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.LongSummaryStatistics;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public final class InvertedIndexBench {
+  public static final String DELIMITER = "<delimiter />";
   private final String managerHostname;
   private final int managerPort;
 
@@ -84,32 +86,34 @@ public final class InvertedIndexBench {
             .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
     final DataStream<WikipediaPage> source = environment
-            .socketTextStream(
-                    benchHostname,
-                    sourcePort,
-                    "<delimiter />"
-            )
-            .map(new JacksonDeserial());
+            .socketTextStream(benchHostname, sourcePort, DELIMITER)
+            .map(new JacksonDeserializer());
 
     new InvertedIndexStream().stream(source)
             .addSink(new SocketClientSink<>(benchHostname, sinkPort, new JacksonSchema<>()));
-
 
     final Stream<WikipediaPage> wikipeadiaInput = WikipeadiaInput
             .dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
             .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
-    new Thread(new Source(wikipeadiaInput)).start();
-    new Thread(new Sink(latencyMeasurer)).start();
+    final Thread producer = new Thread(new Producer(wikipeadiaInput));
+    producer.isDaemon();
+    producer.start();
+
+    final Thread consumer = new Thread(new Consumer(latencyMeasurer));
+    consumer.isDaemon();
+    consumer.start();
 
     environment.execute("Joba");
+    TimeUnit.SECONDS.sleep(10);
 
     final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
     System.out.println(stat);
   }
 
   private static final class JacksonSchema<T> implements SerializationSchema<T> {
-    private static final long serialVersionUID = -9199833507306363333L;
+    private static final long serialVersionUID = 1L;
+
     private ObjectMapper mapper = null;
 
     @Override
@@ -126,14 +130,14 @@ public final class InvertedIndexBench {
     }
   }
 
-  private static final class JacksonDeserial extends RichMapFunction<String, WikipediaPage> {
-    private static final long serialVersionUID = -1909730945328813283L;
+  private static final class JacksonDeserializer extends RichMapFunction<String, WikipediaPage> {
+    private static final long serialVersionUID = 1L;
+
     private ObjectMapper mapper = null;
 
     @Override
-    public void open(Configuration parameters) throws Exception {
+    public void open(Configuration parameters) {
       mapper = new ObjectMapper();
-      super.open(parameters);
     }
 
     @Override
@@ -142,13 +146,13 @@ public final class InvertedIndexBench {
     }
   }
 
-  private final class Source implements Runnable {
+  private final class Producer implements Runnable {
     private final Stream<WikipediaPage> input;
 
     private final ObjectMapper mapper = new ObjectMapper()
             .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
 
-    private Source(Stream<WikipediaPage> input) {
+    private Producer(Stream<WikipediaPage> input) {
       this.input = input;
     }
 
@@ -157,9 +161,11 @@ public final class InvertedIndexBench {
       try (ServerSocket socket = new ServerSocket(sourcePort);
            Socket accept = socket.accept()) {
         final OutputStream outputStream = accept.getOutputStream();
+
         input.forEach(Unchecked.consumer(page -> {
           mapper.writeValue(outputStream, page);
-          outputStream.write("<delimiter />".getBytes());
+          outputStream.write(DELIMITER.getBytes());
+          Thread.sleep(100);
         }));
       } catch (IOException e) {
         throw new UncheckedIOException(e);
@@ -167,11 +173,11 @@ public final class InvertedIndexBench {
     }
   }
 
-  private final class Sink implements Runnable {
+  private final class Consumer implements Runnable {
     private final ObjectMapper mapper = new ObjectMapper();
     private final LatencyMeasurer<Integer> latencyMeasurer;
 
-    private Sink(LatencyMeasurer<Integer> latencyMeasurer) {
+    private Consumer(LatencyMeasurer<Integer> latencyMeasurer) {
       this.latencyMeasurer = latencyMeasurer;
     }
 
@@ -192,7 +198,6 @@ public final class InvertedIndexBench {
                 final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
                 latencyMeasurer.finish(docId);
               }
-
             } catch (IOException e) {
               throw new UncheckedIOException(e);
             }
