@@ -1,21 +1,32 @@
 package com.spbsu.benchmark.flink;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
-import com.spbsu.flamestream.example.inverted_index.utils.WikipediaPageIterator;
+import com.spbsu.flamestream.example.inverted_index.utils.WikipeadiaInput;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SocketClientSink;
+import org.apache.flink.streaming.util.serialization.SerializationSchema;
+import org.jooq.lambda.Unchecked;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public final class InvertedIndexBench {
   private final String managerHostname;
@@ -61,12 +72,9 @@ public final class InvertedIndexBench {
     ).run();
   }
 
-
   public void run() throws Exception {
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
             .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
-
-    //final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);
 
     final DataStream<WikipediaPage> source = environment
             .socketTextStream(
@@ -74,26 +82,107 @@ public final class InvertedIndexBench {
                     sourcePort,
                     "<delimiter />"
             )
-            .map(value -> {
-              final WikipediaPageIterator pageIterator = new WikipediaPageIterator(
-                      new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8.name()))
-              );
-              if (pageIterator.hasNext()) {
-                final WikipediaPage page = pageIterator.next();
-                if (page == null || page.text() == null) {
-                  throw new IllegalArgumentException("Fu");
-                }
-                return page;
-              } else {
-                throw new IllegalStateException("EOS");
-              }
-            });
+            .map(new JacksonDeserial());
 
-    final DataStreamSink<InvertedIndexStream.Output> flinkStream = new InvertedIndexStream()
-            .stream(source)
-            .addSink(new SocketClientSink<>(benchHostname, sinkPort, element -> element.toString().getBytes()));
+    new InvertedIndexStream().stream(source)
+            .addSink(new SocketClientSink<>(benchHostname, sinkPort, new JacksonSchema<>()));
+
+
+    final Stream<WikipediaPage> wikipeadiaInput = WikipeadiaInput
+            .dumpStreamFromResources("wikipedia/national_football_teams_dump.xml");
+
+    new Thread(new Source(wikipeadiaInput)).start();
+    new Thread(new Sink()).start();
 
     environment.execute("Joba");
-    Thread.sleep(1000000);
+  }
+
+  private static final class JacksonSchema<T> implements SerializationSchema<T> {
+    private static final long serialVersionUID = -9199833507306363333L;
+    private ObjectMapper mapper = null;
+
+    @Override
+    public byte[] serialize(T element) {
+      if (mapper == null) {
+        mapper = new ObjectMapper();
+      }
+
+      try {
+        return mapper.writeValueAsBytes(element);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private static final class JacksonDeserial extends RichMapFunction<String, WikipediaPage> {
+    private static final long serialVersionUID = -1909730945328813283L;
+    private ObjectMapper mapper = null;
+
+    @Override
+    public void open(Configuration parameters) throws Exception {
+      mapper = new ObjectMapper();
+      super.open(parameters);
+    }
+
+    @Override
+    public WikipediaPage map(String value) throws Exception {
+      return mapper.readValue(value, WikipediaPage.class);
+    }
+  }
+
+  private final class Source implements Runnable {
+    private final Stream<WikipediaPage> input;
+
+    private final ObjectMapper mapper = new ObjectMapper()
+            .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+
+    private Source(Stream<WikipediaPage> input) {
+      this.input = input;
+    }
+
+    @Override
+    public void run() {
+      try (ServerSocket socket = new ServerSocket(sourcePort);
+           Socket accept = socket.accept()) {
+        final OutputStream outputStream = accept.getOutputStream();
+        input.forEach(Unchecked.consumer(page -> {
+          mapper.writeValue(outputStream, page);
+          outputStream.write("<delimiter />".getBytes());
+        }));
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
+
+  }
+
+  private final class Sink implements Runnable {
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    @Override
+    public void run() {
+      try (ServerSocket socket = new ServerSocket(sinkPort)) {
+        while (true) {
+          final Socket accept = socket.accept();
+
+          new Thread(() -> {
+            try {
+              final MappingIterator<Object> iterator = mapper.reader()
+                      .forType(InvertedIndexStream.Output.class)
+                      .readValues(accept.getInputStream());
+
+              while (iterator.hasNext()) {
+              }
+            } catch (IOException e) {
+              throw new UncheckedIOException(e);
+            }
+          }).start();
+
+        }
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
   }
 }
