@@ -1,12 +1,13 @@
 package com.spbsu.benchmark.flink;
 
-import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import com.spbsu.flamestream.example.inverted_index.utils.WikipediaPageIterator;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SocketClientSink;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -65,20 +66,34 @@ public final class InvertedIndexBench {
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
             .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
-    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);
+    //final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);
 
-    final DataStream<WikipediaPage> source = environment.socketTextStream(benchHostname, sourcePort, "#$#")
+    final DataStream<WikipediaPage> source = environment
+            .socketTextStream(
+                    benchHostname,
+                    sourcePort,
+                    "<delimiter />"
+            )
             .map(value -> {
               final WikipediaPageIterator pageIterator = new WikipediaPageIterator(
                       new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8.name()))
               );
-              final WikipediaPage page = pageIterator.next();
-              return page;
+              if (pageIterator.hasNext()) {
+                final WikipediaPage page = pageIterator.next();
+                if (page == null || page.text() == null) {
+                  throw new IllegalArgumentException("Fu");
+                }
+                return page;
+              } else {
+                throw new IllegalStateException("EOS");
+              }
             });
 
-    final DataStream<InvertedIndexStream.Output> flinkStream = new InvertedIndexStream()
-            .stream(source);
+    final DataStreamSink<InvertedIndexStream.Output> flinkStream = new InvertedIndexStream()
+            .stream(source)
+            .addSink(new SocketClientSink<>(benchHostname, sinkPort, element -> element.toString().getBytes()));
 
     environment.execute("Joba");
+    Thread.sleep(1000000);
   }
 }
