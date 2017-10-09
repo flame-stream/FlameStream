@@ -27,7 +27,7 @@ public class LatencyMeasurer<T> {
     this.delay = warmUpDelay;
   }
 
-  public void start(T key) {
+  public synchronized void start(T key) {
     if (--delay > 0)
       return;
     delay = measurePeriod;
@@ -37,7 +37,7 @@ public class LatencyMeasurer<T> {
     latencies.put(key, new LongSummaryStatistics());
   }
 
-  public void finish(T key) {
+  public synchronized void finish(T key) {
     if (starts.containsKey(key)) {
       final long latency = System.nanoTime() - starts.get(key);
       latencies.computeIfPresent(key, (k, stat) -> {
