@@ -4,7 +4,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
+import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
+import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.inverted_index.utils.WikipeadiaInput;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -25,7 +28,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.LongSummaryStatistics;
 import java.util.stream.Stream;
 
 public final class InvertedIndexBench {
@@ -73,6 +78,8 @@ public final class InvertedIndexBench {
   }
 
   public void run() throws Exception {
+    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(10, 0);
+
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
             .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
@@ -89,12 +96,16 @@ public final class InvertedIndexBench {
 
 
     final Stream<WikipediaPage> wikipeadiaInput = WikipeadiaInput
-            .dumpStreamFromResources("wikipedia/national_football_teams_dump.xml");
+            .dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
+            .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
     new Thread(new Source(wikipeadiaInput)).start();
-    new Thread(new Sink()).start();
+    new Thread(new Sink(latencyMeasurer)).start();
 
     environment.execute("Joba");
+
+    final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
+    System.out.println(stat);
   }
 
   private static final class JacksonSchema<T> implements SerializationSchema<T> {
@@ -154,11 +165,15 @@ public final class InvertedIndexBench {
         throw new UncheckedIOException(e);
       }
     }
-
   }
 
   private final class Sink implements Runnable {
     private final ObjectMapper mapper = new ObjectMapper();
+    private final LatencyMeasurer<Integer> latencyMeasurer;
+
+    private Sink(LatencyMeasurer<Integer> latencyMeasurer) {
+      this.latencyMeasurer = latencyMeasurer;
+    }
 
     @Override
     public void run() {
@@ -168,17 +183,20 @@ public final class InvertedIndexBench {
 
           new Thread(() -> {
             try {
-              final MappingIterator<Object> iterator = mapper.reader()
+              final MappingIterator<InvertedIndexStream.Output> iterator = mapper.reader()
                       .forType(InvertedIndexStream.Output.class)
                       .readValues(accept.getInputStream());
 
               while (iterator.hasNext()) {
+                final WordIndexAdd wordIndexAdd = iterator.next().wordIndexAdd();
+                final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
+                latencyMeasurer.finish(docId);
               }
+
             } catch (IOException e) {
               throw new UncheckedIOException(e);
             }
           }).start();
-
         }
       } catch (IOException e) {
         throw new UncheckedIOException(e);
