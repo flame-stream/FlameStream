@@ -1,0 +1,16 @@
+---
+- hosts: all
+  roles:
+    - { role: common }
+
+- hosts: manager
+  roles:
+    - { role: zookeeper, worker_port: 4181 }
+
+- hosts: workers
+  roles:
+    - { role: flamestream-worker, worker_port: 4181 }
+
+- hosts: manager
+  roles:
+    - { role: flamestream-bench }
