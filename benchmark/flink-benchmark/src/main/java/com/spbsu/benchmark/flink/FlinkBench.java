@@ -37,6 +37,7 @@ public final class FlinkBench {
   private final int managerPort;
 
   private final String benchHostname;
+  private final String inputFilePath;
 
   private final int sourcePort;
   private final int sinkPort;
@@ -48,13 +49,15 @@ public final class FlinkBench {
                     String benchHostname,
                     int sourcePort,
                     int sinkPort,
-                    List<String> jars) {
+                    List<String> jars,
+                    String inputFilePath) {
     this.managerHostname = managerHostname;
     this.benchHostname = benchHostname;
     this.managerPort = managerPort;
     this.sourcePort = sourcePort;
     this.sinkPort = sinkPort;
     this.jars = new ArrayList<>(jars);
+    this.inputFilePath = inputFilePath;
   }
 
   public static void main(String[] args) throws Exception {
@@ -72,8 +75,8 @@ public final class FlinkBench {
             load.getString("bench-hostname"),
             load.getInt("source-port"),
             load.getInt("sink-port"),
-            load.getStringList("jars")
-    ).run();
+            load.getStringList("jars"),
+            load.hasPath("inputPath") ? load.getString("inputPath") : null).run();
   }
 
   public void run() throws Exception {
@@ -89,11 +92,13 @@ public final class FlinkBench {
     new InvertedIndexStream().stream(source)
             .addSink(new SocketClientSink<>(benchHostname, sinkPort, new JacksonSchema<>()));
 
-    final Stream<WikipediaPage> wikipeadiaInput = WikipeadiaInput
-            .dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
-            .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
+    final Stream<WikipediaPage> wikipediaInput = (
+            inputFilePath == null ?
+                    WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
+                    : WikipeadiaInput.dumpStreamFromFile(inputFilePath)
+    ).peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
-    final Thread producer = new Thread(new Producer(wikipeadiaInput));
+    final Thread producer = new Thread(new Producer(wikipediaInput));
     producer.setDaemon(true);
     producer.start();
 
