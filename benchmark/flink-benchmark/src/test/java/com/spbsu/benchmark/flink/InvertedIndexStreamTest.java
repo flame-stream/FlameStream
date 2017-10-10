@@ -47,7 +47,7 @@ public class InvertedIndexStreamTest {
 
     final Collection<Object> output = new ArrayList<>();
     executor.execute(new InvertedIndexStream(), new Source(), o -> {
-      final InvertedIndexStream.Output out = (InvertedIndexStream.Output) o;
+      final InvertedIndexStream.Result out = (InvertedIndexStream.Result) o;
       output.add(out.wordIndexAdd());
       if (out.wordIndexRemove() != null)
         output.add(out.wordIndexRemove());
@@ -69,7 +69,7 @@ public class InvertedIndexStreamTest {
     sourceIterator = checker.input().peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id())).iterator();
 
     executor.execute(new InvertedIndexStream(), new Source(), o -> {
-      final InvertedIndexStream.Output out = (InvertedIndexStream.Output) o;
+      final InvertedIndexStream.Result out = (InvertedIndexStream.Result) o;
       final WordIndexAdd wordIndexAdd = out.wordIndexAdd();
       final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
       latencyMeasurer.finish(docId);

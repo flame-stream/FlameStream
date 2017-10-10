@@ -1,6 +1,7 @@
 package com.spbsu.benchmark.flink;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,16 +12,14 @@ import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.inverted_index.utils.WikipeadiaInput;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.flink.api.common.functions.RichMapFunction;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SocketClientSink;
 import org.apache.flink.streaming.util.serialization.SerializationSchema;
 import org.jooq.lambda.Unchecked;
+import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -31,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.LongSummaryStatistics;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public final class InvertedIndexBench {
@@ -83,11 +81,11 @@ public final class InvertedIndexBench {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(10, 0);
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
+            //.createLocalEnvironment(1);
             .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
     final DataStream<WikipediaPage> source = environment
-            .socketTextStream(benchHostname, sourcePort, DELIMITER)
-            .map(new JacksonDeserializer());
+            .addSource(new MySocketSource(benchHostname, sourcePort));
 
     new InvertedIndexStream().stream(source)
             .addSink(new SocketClientSink<>(benchHostname, sinkPort, new JacksonSchema<>()));
@@ -97,15 +95,14 @@ public final class InvertedIndexBench {
             .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
     final Thread producer = new Thread(new Producer(wikipeadiaInput));
-    producer.isDaemon();
+    producer.setDaemon(true);
     producer.start();
 
     final Thread consumer = new Thread(new Consumer(latencyMeasurer));
-    consumer.isDaemon();
+    consumer.setDaemon(true);
     consumer.start();
 
     environment.execute("Joba");
-    TimeUnit.SECONDS.sleep(10);
 
     final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
     System.out.println(stat);
@@ -130,41 +127,28 @@ public final class InvertedIndexBench {
     }
   }
 
-  private static final class JacksonDeserializer extends RichMapFunction<String, WikipediaPage> {
-    private static final long serialVersionUID = 1L;
-
-    private ObjectMapper mapper = null;
-
-    @Override
-    public void open(Configuration parameters) {
-      mapper = new ObjectMapper();
-    }
-
-    @Override
-    public WikipediaPage map(String value) throws Exception {
-      return mapper.readValue(value, WikipediaPage.class);
-    }
-  }
-
   private final class Producer implements Runnable {
     private final Stream<WikipediaPage> input;
 
-    private final ObjectMapper mapper = new ObjectMapper()
-            .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+    private final Kryo kryo = new Kryo();
 
     private Producer(Stream<WikipediaPage> input) {
       this.input = input;
+      kryo.register(WikipediaPage.class);
+      ((Kryo.DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
     }
 
     @Override
     public void run() {
       try (ServerSocket socket = new ServerSocket(sourcePort);
            Socket accept = socket.accept()) {
-        final OutputStream outputStream = accept.getOutputStream();
+        accept.setTcpNoDelay(true);
+        accept.setKeepAlive(true);
 
         input.forEach(Unchecked.consumer(page -> {
-          mapper.writeValue(outputStream, page);
-          outputStream.write(DELIMITER.getBytes());
+          final Output output = new Output(accept.getOutputStream());
+          kryo.writeObject(output, page);
+          output.flush();
           Thread.sleep(100);
         }));
       } catch (IOException e) {
@@ -187,10 +171,10 @@ public final class InvertedIndexBench {
         while (true) {
           final Socket accept = socket.accept();
 
-          new Thread(() -> {
+          final Thread worker = new Thread(() -> {
             try {
-              final MappingIterator<InvertedIndexStream.Output> iterator = mapper.reader()
-                      .forType(InvertedIndexStream.Output.class)
+              final MappingIterator<InvertedIndexStream.Result> iterator = mapper.reader()
+                      .forType(InvertedIndexStream.Result.class)
                       .readValues(accept.getInputStream());
 
               while (iterator.hasNext()) {
@@ -201,7 +185,8 @@ public final class InvertedIndexBench {
             } catch (IOException e) {
               throw new UncheckedIOException(e);
             }
-          }).start();
+          });
+          worker.start();
         }
       } catch (IOException e) {
         throw new UncheckedIOException(e);

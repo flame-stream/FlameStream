@@ -24,10 +24,9 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 05.10.2017
  */
-public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedIndexStream.Output> {
-
+public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedIndexStream.Result> {
   @Override
-  public DataStream<Output> stream(DataStream<WikipediaPage> source) {
+  public DataStream<Result> stream(DataStream<WikipediaPage> source) {
     //noinspection deprecation
     return source
             .flatMap(new WikipediaPageToWordPositions())
@@ -47,7 +46,7 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
     }
   }
 
-  private static class RichIndexFunction extends RichMapFunction<Tuple2<String, long[]>, Output> {
+  private static class RichIndexFunction extends RichMapFunction<Tuple2<String, long[]>, Result> {
 
     private transient ValueState<InvertedIndexState> state;
 
@@ -62,7 +61,7 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
     }
 
     @Override
-    public Output map(Tuple2<String, long[]> value) throws Exception {
+    public Result map(Tuple2<String, long[]> value) throws Exception {
       final InvertedIndexState currentStat;
       if (state.value() == null) {
         currentStat = new InvertedIndexState();
@@ -81,16 +80,16 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
         );
       }
       state.update(currentStat);
-      return new Output(wordIndexAdd, wordIndexRemove);
+      return new Result(wordIndexAdd, wordIndexRemove);
     }
   }
 
-  public static class Output {
+  public static class Result {
     private final WordIndexAdd wordIndexAdd;
     private final WordIndexRemove wordIndexRemove;
 
     @JsonCreator
-    Output(@JsonProperty("word_index_add") WordIndexAdd wordIndexAdd,
+    Result(@JsonProperty("word_index_add") WordIndexAdd wordIndexAdd,
            @JsonProperty("word_index_remove") WordIndexRemove wordIndexRemove) {
       this.wordIndexAdd = wordIndexAdd;
       this.wordIndexRemove = wordIndexRemove;
@@ -108,7 +107,7 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
 
     @Override
     public String toString() {
-      return "Output{" +
+      return "Result{" +
               "wordIndexAdd=" + wordIndexAdd +
               ", wordIndexRemove=" + wordIndexRemove +
               '}';
