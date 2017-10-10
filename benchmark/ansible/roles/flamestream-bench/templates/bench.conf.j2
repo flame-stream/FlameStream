@@ -1,11 +1,14 @@
 benchmark {
   remote-environment {
     zk = "{{ groups['manager'][0] }}:{{ client_port }}"
-    input-path = "{{ bench_dir }}/wiki.xml"
   }
 
   environment-runner {
     runner = com.spbsu.flamestream.benchmark.runners.InvertedIndexRunner
   }
+
+  input-path = "{{ bench_dir }}/wiki.xml"
+
+  tick-length-sec = 40
 }
 
