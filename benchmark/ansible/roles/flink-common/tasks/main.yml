@@ -3,7 +3,9 @@
   file:
     path: "{{ flink_dir }}"
     state: absent
-  tags: deliver
+  tags:
+    - deliver
+    - clean
 
 - name: Ensure the flink dir exists at {{ flink_dir }}
   file:

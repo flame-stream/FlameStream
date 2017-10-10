@@ -32,8 +32,7 @@ import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.stream.Stream;
 
-public final class InvertedIndexBench {
-  public static final String DELIMITER = "<delimiter />";
+public final class FlinkBench {
   private final String managerHostname;
   private final int managerPort;
 
@@ -44,12 +43,12 @@ public final class InvertedIndexBench {
 
   private final List<String> jars;
 
-  public InvertedIndexBench(String managerHostname,
-                            int managerPort,
-                            String benchHostname,
-                            int sourcePort,
-                            int sinkPort,
-                            List<String> jars) {
+  public FlinkBench(String managerHostname,
+                    int managerPort,
+                    String benchHostname,
+                    int sourcePort,
+                    int sinkPort,
+                    List<String> jars) {
     this.managerHostname = managerHostname;
     this.benchHostname = benchHostname;
     this.managerPort = managerPort;
@@ -67,7 +66,7 @@ public final class InvertedIndexBench {
       load = ConfigFactory.load("flink-bench.conf").getConfig("benchmark");
     }
 
-    new InvertedIndexBench(
+    new FlinkBench(
             load.getString("manager-hostname"),
             load.getInt("manager-port"),
             load.getString("bench-hostname"),

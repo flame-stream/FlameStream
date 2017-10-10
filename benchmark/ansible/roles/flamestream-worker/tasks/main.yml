@@ -5,12 +5,15 @@
   tags:
     - destroy
     - bootstrap
+    - clean
 
 - name: Clean the fs directory
   file:
     path: "{{ flamestream_dir }}"
     state: absent
-  tags: deliver
+  tags:
+    - deliver
+    - clean
 
 - name: Create the fs dir
   file:
