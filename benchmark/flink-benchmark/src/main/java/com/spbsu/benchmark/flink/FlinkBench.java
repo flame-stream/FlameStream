@@ -87,7 +87,7 @@ public final class FlinkBench {
             .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
     final DataStream<WikipediaPage> source = environment
-            .addSource(new MySocketSource(benchHostname, sourcePort));
+            .addSource(new MySocketSource(benchHostname, sourcePort)).setParallelism(1);
 
     new InvertedIndexStream().stream(source)
             .addSink(new SocketClientSink<>(benchHostname, sinkPort, new JacksonSchema<>()));
