@@ -29,7 +29,7 @@ public class BenchmarkLauncher {
     final EnvironmentRunner runner = environmentRunnerCfg.runner().newInstance();
 
     try (final Environment environment = new EnvironmentFromTypesafeProvider(load).environment()) {
-      runner.run(environment);
+      runner.run(environment, load);
     }
   }
 }

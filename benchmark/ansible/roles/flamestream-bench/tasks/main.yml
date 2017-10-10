@@ -18,6 +18,12 @@
     dest: "{{ bench_dir }}/bench.jar"
   tags: deliver
 
+- name: Copy the wiki dump
+  copy:
+    src: wiki.xml
+    dest: "{{ bench_dir }}/wiki.xml"
+  tags: deliver
+
 - name: Copy the configuraion file
   template:
     src: bench.conf.j2

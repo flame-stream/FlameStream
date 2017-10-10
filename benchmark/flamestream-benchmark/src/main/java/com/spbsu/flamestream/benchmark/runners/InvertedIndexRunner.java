@@ -9,6 +9,7 @@ import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.inverted_index.utils.WikipeadiaInput;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.Environment;
+import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,12 +30,16 @@ public class InvertedIndexRunner implements EnvironmentRunner {
   private static final Logger LOG = LoggerFactory.getLogger(InvertedIndexRunner.class);
 
   @Override
-  public void run(Environment environment) {
+  public void run(Environment environment, Config config) {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);
-    final Stream<WikipediaPage> source = WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
-            .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
+    final String inputPath = config.hasPath("input-path") ? config.getString("input-path") : null;
+    final Stream<WikipediaPage> source = (inputPath == null ?
+            WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
+            : WikipeadiaInput.dumpStreamFromFile(inputPath)
+    ).peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
     try (TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
+      //noinspection RedundantCast,unchecked
       testEnvironment.deploy(testEnvironment.withFusedFronts(
               FlameStreamExample.INVERTED_INDEX.graph(
                       hash -> testEnvironment.wrapInSink(((ToIntFunction<? super WordIndexAdd>) hash), container -> {

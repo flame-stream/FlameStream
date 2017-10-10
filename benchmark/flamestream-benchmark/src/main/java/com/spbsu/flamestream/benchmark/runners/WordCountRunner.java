@@ -6,6 +6,7 @@ import com.spbsu.flamestream.example.FlameStreamExample;
 import com.spbsu.flamestream.example.wordcount.model.WordCounter;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.Environment;
+import com.typesafe.config.Config;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.slf4j.Logger;
@@ -29,7 +30,7 @@ public final class WordCountRunner implements EnvironmentRunner {
   private static final Logger LOG = LoggerFactory.getLogger(InvertedIndexRunner.class);
 
   @Override
-  public void run(Environment environment) {
+  public void run(Environment environment, Config config) {
     final LatencyMeasurer<WordCounter> latencyMeasurer = new LatencyMeasurer<>(1000 * 10, 1000 * 10);
     final TObjectIntMap<String> expected = new TObjectIntHashMap<>();
     final Stream<String> input = input().peek(
@@ -45,6 +46,7 @@ public final class WordCountRunner implements EnvironmentRunner {
     );
 
     try (TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
+      //noinspection RedundantCast,unchecked
       testEnvironment.deploy(testEnvironment.withFusedFronts(
               FlameStreamExample.WORD_COUNT.graph(
                       hash -> testEnvironment.wrapInSink((ToIntFunction<? super WordCounter>)hash, o -> latencyMeasurer.finish((WordCounter) o))

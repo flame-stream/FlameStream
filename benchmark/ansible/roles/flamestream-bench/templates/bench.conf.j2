@@ -1,6 +1,7 @@
 benchmark {
   remote-environment {
     zk = "{{ groups['manager'][0] }}:{{ client_port }}"
+    input-path = "{{ bench_dir }}/wiki.xml"
   }
 
   environment-runner {

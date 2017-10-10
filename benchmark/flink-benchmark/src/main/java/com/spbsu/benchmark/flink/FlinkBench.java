@@ -76,7 +76,7 @@ public final class FlinkBench {
             load.getInt("source-port"),
             load.getInt("sink-port"),
             load.getStringList("jars"),
-            load.hasPath("inputPath") ? load.getString("inputPath") : null).run();
+            load.hasPath("input-path") ? load.getString("input-path") : null).run();
   }
 
   public void run() throws Exception {
