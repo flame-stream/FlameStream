@@ -38,6 +38,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
             : WikipeadiaInput.dumpStreamFromFile(inputPath)
     ).peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
+    final int tickLengthInSec = config.getInt("tick-length-sec");
     try (TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
       //noinspection RedundantCast,unchecked
       testEnvironment.deploy(testEnvironment.withFusedFronts(
@@ -50,7 +51,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
                         }
                       })
               )
-      ), 40, 1);
+      ), tickLengthInSec, 1);
 
       final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1);
       source.forEach(wikipediaPage -> {
@@ -61,7 +62,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
           throw new RuntimeException();
         }
       });
-      testEnvironment.awaitTick(25);
+      testEnvironment.awaitTick(tickLengthInSec);
 
       final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
       LOG.info("Result: {}", stat);
