@@ -2,6 +2,7 @@ package com.spbsu.flamestream.example.inverted_index.utils;
 
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 
+import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -16,13 +17,13 @@ import java.util.stream.StreamSupport;
 public class WikipeadiaInput {
   public static Stream<WikipediaPage> dumpStreamFromResources(String dumpPath) {
     final ClassLoader classLoader = WikipeadiaInput.class.getClassLoader();
-    final InputStream inputStream = classLoader.getResourceAsStream(dumpPath);
+    final BufferedInputStream inputStream = new BufferedInputStream(classLoader.getResourceAsStream(dumpPath));
     return fromInputStream(inputStream);
   }
 
   public static Stream<WikipediaPage> dumpStreamFromFile(String filePath) {
     try {
-      final InputStream inputStream = new FileInputStream(filePath);
+      final BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(filePath));
       return fromInputStream(inputStream);
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
