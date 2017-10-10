@@ -3,3 +3,4 @@
   apt: 
     name: openjdk-8-jdk
     state: present
+  tags: deliver

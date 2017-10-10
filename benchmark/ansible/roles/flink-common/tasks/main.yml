@@ -3,9 +3,7 @@
   file:
     path: "{{ flink_dir }}"
     state: absent
-  tags:
-    - deliver
-    - clean
+  tags: clean
 
 - name: Ensure the flink dir exists at {{ flink_dir }}
   file:
@@ -36,10 +34,10 @@
   template:
     src: slaves.j2
     dest: "{{ flink_dir }}/conf/slaves"
-  tags: bootstrap
+  tags: deliver
 
 - name: Set up common config
   template:
     src: flink-conf.yaml.j2
     dest: "{{ flink_dir }}/conf/flink-conf.yaml"
-  tags: bootstrap
+  tags: deliver

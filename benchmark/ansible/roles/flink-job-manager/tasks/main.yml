@@ -1,9 +1,7 @@
 ---
 - name: Stopping flink jobmanager
   shell: nohup bash {{ flink_dir }}/bin/jobmanager.sh stop-all
-  tags:
-    - destroy
-    - clean
+  tags: destroy
 
 - name: Starting flink jobmanager
   shell: nohup bash {{ flink_dir }}/bin/jobmanager.sh start cluster

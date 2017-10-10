@@ -3,27 +3,31 @@
   file:
     path: "{{ bench_dir }}"
     state: absent
-  tags:
-    - clean
-    - run
+  tags: clean
 
 - name: Create the bench dir
   file:
     path: "{{ bench_dir }}"
     state: directory
-  tags: run
+  tags: deliver
+
+- name: Copy wiki
+  copy:
+    src: wiki.xml
+    dest: "{{ bench_dir }}/wiki.xml"
+  tags: deliver
 
 - name: Copy the bench application
   copy:
     src: flink-benchmark-1.0-SNAPSHOT-uber.jar
     dest: "{{ bench_dir }}/bench.jar"
-  tags: run
+  tags: deliver
 
 - name: Copy the configuraion file
   template:
     src: bench.conf.j2
     dest: "{{ bench_dir }}/bench.conf"
-  tags: run
+  tags: deliver
 
 - name: Start the flamestream bench
   shell: java -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf > {{ bench_dir }}/flink_bench.log 2>&1

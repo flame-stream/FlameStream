@@ -1,13 +1,8 @@
 ---
 - name: Stopping flink taskmanager
   shell: nohup bash {{ flink_dir }}/bin/taskmanager.sh stop-all
-  tags:
-    - destroy
-    - clean
+  tags: destroy
 
 - name: Starting flink taskmanager
   shell: nohup bash {{ flink_dir }}/bin/taskmanager.sh start
-  tags:
-    - destroy
-    - bootstrap
-    - clean
+  tags: bootstrap

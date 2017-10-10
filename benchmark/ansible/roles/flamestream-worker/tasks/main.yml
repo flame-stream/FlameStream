@@ -2,18 +2,13 @@
 - name: Stop the fs worker
   shell: pkill -f worker.jar
   ignore_errors: yes
-  tags:
-    - destroy
-    - bootstrap
-    - clean
+  tags: destroy
 
 - name: Clean the fs directory
   file:
     path: "{{ flamestream_dir }}"
     state: absent
-  tags:
-    - deliver
-    - clean
+  tags: clean
 
 - name: Create the fs dir
   file:

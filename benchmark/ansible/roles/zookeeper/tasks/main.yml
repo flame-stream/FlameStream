@@ -44,17 +44,13 @@
 
 - name: Stop zookeeper
   shell: "{{ zookeeper_dir }}/bin/zkServer.sh stop"
-  tags:
-    - destroy
-    - bootstrap
+  tags: destroy
 
 - name: Clear the zookeeper data directory at {{ zookeeper_data_dir }}
   file:
     path: "{{ zookeeper_data_dir }}"
     state: absent
-  tags:
-    - bootstrap
-    - destroy
+  tags: destroy
 
 - name: Create the zookeeper data directory at {{ zookeeper_data_dir }}
   file:
