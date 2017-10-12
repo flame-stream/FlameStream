@@ -7,22 +7,23 @@ import com.esotericsoftware.kryonet.Listener;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
+import org.jetbrains.annotations.Nullable;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MySocketSource extends RichSourceFunction<WikipediaPage> {
-
+public class KryoSocketSource extends RichSourceFunction<WikipediaPage> {
   private static final long serialVersionUID = 1L;
 
-  private static final Logger LOG = LoggerFactory.getLogger(MySocketSource.class);
+  private static final Logger LOG = LoggerFactory.getLogger(KryoSocketSource.class);
 
   private final String hostname;
   private final int port;
 
+  @Nullable
   private transient Client client;
 
-  public MySocketSource(String hostname, int port) {
+  public KryoSocketSource(String hostname, int port) {
     this.hostname = hostname;
     this.port = port;
   }

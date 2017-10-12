@@ -4,26 +4,19 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
+import com.spbsu.flamestream.example.inverted_index.model.WordIndexRemove;
 import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.inverted_index.utils.WikipeadiaInput;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SocketClientSink;
-import org.apache.flink.streaming.util.serialization.SerializationSchema;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -88,10 +81,10 @@ public final class FlinkBench {
     //.createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
     final DataStream<WikipediaPage> source = environment
-            .addSource(new MySocketSource(benchHostname, sourcePort)).setParallelism(1);
+            .addSource(new KryoSocketSource(benchHostname, sourcePort)).setParallelism(1);
 
     new InvertedIndexStream().stream(source)
-            .addSink(new SocketClientSink<>(benchHostname, sinkPort, new JacksonSchema<>()));
+            .addSink(new KryoSocketSink(benchHostname, sinkPort));
 
     final Stream<WikipediaPage> wikipediaInput = (
             inputFilePath == null ?
@@ -99,14 +92,28 @@ public final class FlinkBench {
                     : WikipeadiaInput.dumpStreamFromFile(inputFilePath)
     ).peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
-    final Server server = new Server(200000, 1000);
-    server.getKryo().register(WikipediaPage.class);
-    ((Kryo.DefaultInstantiatorStrategy) server.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
-    server.addListener(new Listener() {
+    final Server producer = producer(wikipediaInput);
+    final Server consumer = consumer(latencyMeasurer);
+
+    environment.execute("Joba");
+
+    final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
+    System.out.println(stat);
+
+    producer.stop();
+    consumer.stop();
+  }
+
+  private Server producer(Stream<WikipediaPage> input) throws IOException {
+    final Server producer = new Server(200000, 1000);
+    producer.getKryo().register(WikipediaPage.class);
+    ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+
+    producer.addListener(new Listener() {
       @Override
       public void connected(Connection connection) {
-        wikipediaInput.forEach(page -> {
+        input.forEach(page -> {
                   connection.sendTCP(page);
                   try {
                     Thread.sleep(100);
@@ -119,73 +126,33 @@ public final class FlinkBench {
       }
     });
 
-    server.start();
-    server.bind(sourcePort);
-
-    final Thread consumer = new Thread(new Consumer(latencyMeasurer));
-    consumer.setDaemon(true);
-    consumer.start();
-
-    environment.execute("Joba");
-
-    final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
-    System.out.println(stat);
-    server.stop();
+    producer.start();
+    producer.bind(sourcePort);
+    return producer;
   }
 
-  private static final class JacksonSchema<T> implements SerializationSchema<T> {
-    private static final long serialVersionUID = 1L;
+  private Server consumer(LatencyMeasurer<Integer> latencyMeasurer) throws IOException {
+    final Server consumer = new Server();
+    consumer.getKryo().register(InvertedIndexStream.Result.class);
+    consumer.getKryo().register(WordIndexAdd.class);
+    consumer.getKryo().register(WordIndexRemove.class);
+    consumer.getKryo().register(long[].class);
+    ((Kryo.DefaultInstantiatorStrategy) consumer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
-    private ObjectMapper mapper = null;
-
-    @Override
-    public byte[] serialize(T element) {
-      if (mapper == null) {
-        mapper = new ObjectMapper();
-      }
-
-      try {
-        return mapper.writeValueAsBytes(element);
-      } catch (JsonProcessingException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
-
-  private final class Consumer implements Runnable {
-    private final ObjectMapper mapper = new ObjectMapper();
-    private final LatencyMeasurer<Integer> latencyMeasurer;
-
-    private Consumer(LatencyMeasurer<Integer> latencyMeasurer) {
-      this.latencyMeasurer = latencyMeasurer;
-    }
-
-    @Override
-    public void run() {
-      try (ServerSocket socket = new ServerSocket(sinkPort)) {
-        while (true) {
-          final Socket accept = socket.accept();
-
-          final Thread worker = new Thread(() -> {
-            try {
-              final MappingIterator<InvertedIndexStream.Result> iterator = mapper.reader()
-                      .forType(InvertedIndexStream.Result.class)
-                      .readValues(accept.getInputStream());
-
-              while (iterator.hasNext()) {
-                final WordIndexAdd wordIndexAdd = iterator.next().wordIndexAdd();
-                final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
-                latencyMeasurer.finish(docId);
-              }
-            } catch (IOException e) {
-              throw new UncheckedIOException(e);
-            }
-          });
-          worker.start();
+    consumer.addListener(new Listener() {
+      @Override
+      public void received(Connection connection, Object o) {
+        if (o instanceof InvertedIndexStream.Result) {
+          final WordIndexAdd wordIndexAdd = ((InvertedIndexStream.Result) o).wordIndexAdd();
+          final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
+          latencyMeasurer.finish(docId);
         }
-      } catch (IOException e) {
-        throw new UncheckedIOException(e);
       }
-    }
+    });
+
+    consumer.start();
+    consumer.bind(sinkPort);
+
+    return consumer;
   }
 }
