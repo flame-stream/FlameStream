@@ -1,7 +1,6 @@
 package com.spbsu.benchmark.flink;
 
 import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
@@ -19,7 +18,6 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SocketClientSink;
 import org.apache.flink.streaming.util.serialization.SerializationSchema;
-import org.jooq.lambda.Unchecked;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.IOException;
@@ -101,11 +99,9 @@ public final class FlinkBench {
                     : WikipeadiaInput.dumpStreamFromFile(inputFilePath)
     ).peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
-    final Server server = new Server();
+    final Server server = new Server(200000, 1000);
     server.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) server.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
-    server.start();
-    server.bind(sourcePort);
 
     server.addListener(new Listener() {
       @Override
@@ -119,8 +115,12 @@ public final class FlinkBench {
                   }
                 }
         );
+        connection.close();
       }
     });
+
+    server.start();
+    server.bind(sourcePort);
 
     final Thread consumer = new Thread(new Consumer(latencyMeasurer));
     consumer.setDaemon(true);
@@ -130,6 +130,7 @@ public final class FlinkBench {
 
     final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
     System.out.println(stat);
+    server.stop();
   }
 
   private static final class JacksonSchema<T> implements SerializationSchema<T> {
