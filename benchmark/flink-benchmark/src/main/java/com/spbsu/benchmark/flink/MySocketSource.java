@@ -1,19 +1,17 @@
 package com.spbsu.benchmark.flink;
 
 import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryonet.Client;
+import com.esotericsoftware.kryonet.Connection;
+import com.esotericsoftware.kryonet.Listener;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
-import org.apache.flink.util.IOUtils;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
-import java.net.Socket;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
+import java.net.InetAddress;
 
 public class MySocketSource extends RichSourceFunction<WikipediaPage> {
 
@@ -24,10 +22,7 @@ public class MySocketSource extends RichSourceFunction<WikipediaPage> {
   private final String hostname;
   private final int port;
 
-  private transient Socket currentSocket;
-  private transient Kryo kryo = null;
-
-  private volatile boolean isRunning = true;
+  private transient Client currentSocket;
 
   public MySocketSource(String hostname, int port) {
     this.hostname = hostname;
@@ -36,32 +31,29 @@ public class MySocketSource extends RichSourceFunction<WikipediaPage> {
 
   @Override
   public void open(Configuration parameters) throws Exception {
-    kryo = new Kryo();
-    kryo.register(WikipediaPage.class);
-    ((Kryo.DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+    currentSocket = new Client();
+    currentSocket.connect(5000, InetAddress.getByName(hostname), port);
+
+    currentSocket.getKryo().register(WikipediaPage.class);
+    ((Kryo.DefaultInstantiatorStrategy) currentSocket.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
   }
 
   @Override
   public void run(SourceContext<WikipediaPage> ctx) throws Exception {
-    try (Socket socket = new Socket()) {
-      currentSocket = socket;
-
-      LOG.info("Connecting to server socket " + hostname + ':' + port);
-      socket.connect(new InetSocketAddress(hostname, port), (int) SECONDS.toMillis(5));
-      final Input input = new Input(socket.getInputStream());
-      while (!input.eof() && isRunning) {
-        final WikipediaPage wikipediaPage = kryo.readObject(input, WikipediaPage.class);
-        ctx.collect(wikipediaPage);
+    currentSocket.addListener(new Listener() {
+      public void received(Connection connection, Object object) {
+        if (object instanceof WikipediaPage) {
+          ctx.collect((WikipediaPage) object);
+        }
       }
-    }
+    });
   }
 
   @Override
   public void cancel() {
-    isRunning = false;
-    final Socket theSocket = currentSocket;
+    final Client theSocket = currentSocket;
     if (theSocket != null) {
-      IOUtils.closeSocket(theSocket);
+      theSocket.close();
     }
   }
 }

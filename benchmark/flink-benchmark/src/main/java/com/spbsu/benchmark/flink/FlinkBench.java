@@ -2,6 +2,9 @@ package com.spbsu.benchmark.flink;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryonet.Connection;
+import com.esotericsoftware.kryonet.Listener;
+import com.esotericsoftware.kryonet.Server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -83,11 +86,11 @@ public final class FlinkBench {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(10, 0);
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
-            //.createLocalEnvironment(1);
-            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
+            .createLocalEnvironment(1);
+    //.createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
     final DataStream<WikipediaPage> source = environment
-            .addSource(new MySocketSource(benchHostname, sourcePort));
+            .addSource(new MySocketSource(benchHostname, sourcePort)).setParallelism(1);
 
     new InvertedIndexStream().stream(source)
             .addSink(new SocketClientSink<>(benchHostname, sinkPort, new JacksonSchema<>()));
@@ -98,9 +101,26 @@ public final class FlinkBench {
                     : WikipeadiaInput.dumpStreamFromFile(inputFilePath)
     ).peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
-    final Thread producer = new Thread(new Producer(wikipediaInput));
-    producer.setDaemon(true);
-    producer.start();
+    final Server server = new Server();
+    server.getKryo().register(WikipediaPage.class);
+    ((Kryo.DefaultInstantiatorStrategy) server.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+    server.start();
+    server.bind(sourcePort);
+
+    server.addListener(new Listener() {
+      @Override
+      public void connected(Connection connection) {
+        wikipediaInput.forEach(page -> {
+                  connection.sendTCP(page);
+                  try {
+                    Thread.sleep(100);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                }
+        );
+      }
+    });
 
     final Thread consumer = new Thread(new Consumer(latencyMeasurer));
     consumer.setDaemon(true);
@@ -127,36 +147,6 @@ public final class FlinkBench {
         return mapper.writeValueAsBytes(element);
       } catch (JsonProcessingException e) {
         throw new RuntimeException(e);
-      }
-    }
-  }
-
-  private final class Producer implements Runnable {
-    private final Stream<WikipediaPage> input;
-
-    private final Kryo kryo = new Kryo();
-
-    private Producer(Stream<WikipediaPage> input) {
-      this.input = input;
-      kryo.register(WikipediaPage.class);
-      ((Kryo.DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
-    }
-
-    @Override
-    public void run() {
-      try (ServerSocket socket = new ServerSocket(sourcePort);
-           Socket accept = socket.accept()) {
-        accept.setTcpNoDelay(true);
-        accept.setKeepAlive(true);
-
-        input.forEach(Unchecked.consumer(page -> {
-          final Output output = new Output(accept.getOutputStream());
-          kryo.writeObject(output, page);
-          output.flush();
-          Thread.sleep(100);
-        }));
-      } catch (IOException e) {
-        throw new UncheckedIOException(e);
       }
     }
   }
