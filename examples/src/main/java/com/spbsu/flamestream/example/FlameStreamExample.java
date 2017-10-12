@@ -47,7 +47,7 @@ public enum FlameStreamExample {
     private final BiPredicate<WordBase, WordBase> WORD_EQUALZ = new BiPredicate<WordBase, WordBase>() {
       @Override
       public boolean test(WordBase wordBase, WordBase wordBase2) {
-        return wordBase.word().equals(wordBase.word());
+        return wordBase.word().equals(wordBase2.word());
       }
     };
 
