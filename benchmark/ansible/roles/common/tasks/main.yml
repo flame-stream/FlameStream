@@ -4,3 +4,15 @@
     name: openjdk-8-jdk
     state: present
   tags: deliver
+
+- name: Install vim
+  apt:
+    name: vim
+    state: present
+  tags: deliver
+
+- name: Install less
+  apt:
+    name: less
+    state: present
+  tags: deliver
