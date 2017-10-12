@@ -77,11 +77,13 @@ public final class FlinkBench {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(10, 0);
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
-            .createLocalEnvironment(1);
-    //.createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
+            //.createLocalEnvironment(1);
+            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]))
+            .setParallelism(5);
 
     final DataStream<WikipediaPage> source = environment
-            .addSource(new KryoSocketSource(benchHostname, sourcePort)).setParallelism(1);
+            .addSource(new KryoSocketSource(benchHostname, sourcePort))
+            .setParallelism(1);
 
     new InvertedIndexStream().stream(source)
             .addSink(new KryoSocketSink(benchHostname, sinkPort));
@@ -106,7 +108,7 @@ public final class FlinkBench {
   }
 
   private Server producer(Stream<WikipediaPage> input) throws IOException {
-    final Server producer = new Server(200000, 1000);
+    final Server producer = new Server(300000, 1000);
     producer.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
@@ -116,7 +118,7 @@ public final class FlinkBench {
         input.forEach(page -> {
                   connection.sendTCP(page);
                   try {
-                    Thread.sleep(100);
+                    Thread.sleep(400);
                   } catch (InterruptedException e) {
                     e.printStackTrace();
                   }

@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedIndexStream.Result> {
   @Override
   public DataStream<Result> stream(DataStream<WikipediaPage> source) {
-    //noinspection deprecation
     return source
             .flatMap(new WikipediaPageToWordPositions())
             .keyBy(0)
