@@ -31,7 +31,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
 
   @Override
   public void run(Environment environment, Config config) {
-    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(100, 0);
+    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(10, 0);
     final String inputPath = config.hasPath("input-path") ? config.getString("input-path") : null;
     final Stream<WikipediaPage> source = (inputPath == null ?
             WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")

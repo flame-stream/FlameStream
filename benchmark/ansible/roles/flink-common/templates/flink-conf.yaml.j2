@@ -60,7 +60,7 @@ taskmanager.memory.preallocate: false
 
 # The parallelism used for programs that did not specify and other parallelism.
 
-parallelism.default: 1
+parallelism.default: {{ groups['workers'] | length }}
 
 
 #==============================================================================

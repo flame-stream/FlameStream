@@ -5,5 +5,5 @@
 172.18.0.2  ansible_user=root  id=1
 172.18.0.3  ansible_user=root  id=2
 172.18.0.4  ansible_user=root  id=3
-172.18.0.5  ansible_user=root  id=4
-172.18.0.6  ansible_user=root  id=5
+172.18.0.5  ansible_user=root  id=5
+172.18.0.6  ansible_user=root  id=6
