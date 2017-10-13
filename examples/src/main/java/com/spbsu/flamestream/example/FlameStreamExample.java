@@ -33,7 +33,7 @@ public enum FlameStreamExample {
     private final HashFunction<WikipediaPage> WIKI_PAGE_HASH = new HashFunction<WikipediaPage>() {
       @Override
       public int hash(WikipediaPage value) {
-        return value.id();
+        return HashFunction.jenkinsHash(value.id());
       }
     };
 
