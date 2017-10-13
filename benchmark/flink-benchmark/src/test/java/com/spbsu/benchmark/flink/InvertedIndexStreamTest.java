@@ -21,7 +21,7 @@ import java.util.*;
  * Date: 05.10.2017
  */
 public class InvertedIndexStreamTest {
-  private final Logger LOG = LoggerFactory.getLogger(InvertedIndexStreamTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(InvertedIndexStreamTest.class);
   //dirty code for avoiding serialization
   private static Iterator<WikipediaPage> sourceIterator;
 
@@ -63,7 +63,7 @@ public class InvertedIndexStreamTest {
     };
   }
 
-  @Test(dataProvider = "measureProvider", enabled = false)
+  @Test(dataProvider = "measureProvider")
   public void measureLatency(ExampleChecker<WikipediaPage> checker, int warmUpDelay) {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(warmUpDelay, 0);
     sourceIterator = checker.input().peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id())).iterator();
