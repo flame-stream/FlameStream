@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.range.atomic;
 
 import akka.actor.Props;
+import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
@@ -34,7 +35,7 @@ public final class AtomicActor extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder()
+    return ReceiveBuilder.create()
             .match(AddressedItem.class, this::onAtomicMessage)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
             .match(Commit.class, commit -> onCommit())
