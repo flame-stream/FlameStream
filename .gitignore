@@ -10,3 +10,4 @@
 /zookeeper/
 examples/zookeeper/
 examples/leveldb/
+/benchmark/ansible/inventories/aws/hosts
