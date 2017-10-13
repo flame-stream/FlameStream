@@ -56,13 +56,14 @@ public class InvertedIndexRunner implements EnvironmentRunner {
       final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1);
       source.forEach(wikipediaPage -> {
         sink.accept(wikipediaPage);
+        LOG.warn("Page id: {}", wikipediaPage.id());
         try {
           Thread.sleep(100);
         } catch (InterruptedException e) {
           throw new RuntimeException();
         }
       });
-      testEnvironment.awaitTick(tickLengthInSec);
+      testEnvironment.awaitTick(5);
 
       final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
       LOG.info("Result: {}", stat);
