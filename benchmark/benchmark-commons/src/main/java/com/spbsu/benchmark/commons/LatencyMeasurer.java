@@ -61,7 +61,7 @@ public class LatencyMeasurer<T> {
         stringBuilder.append(", ");
       }
     }
-    LOG.info("Latencies dump: [{}]", stringBuilder.toString());
+    LOG.warn("Latencies dump: [{}]", stringBuilder.toString());
 
     return latenciesDump;
   }
