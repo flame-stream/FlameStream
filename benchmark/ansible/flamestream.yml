@@ -1,16 +1,20 @@
 ---
 - hosts: all
+  become: yes
   roles:
     - { role: common }
 
 - hosts: manager
+  become: yes
   roles:
     - { role: zookeeper, worker_port: 4181 }
 
 - hosts: workers
+  become: yes
   roles:
     - { role: flamestream-worker, worker_port: 4181 }
 
 - hosts: manager
+  become: yes
   roles:
     - { role: flamestream-bench }

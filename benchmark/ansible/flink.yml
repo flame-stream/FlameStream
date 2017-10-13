@@ -1,20 +1,25 @@
 ---
 - hosts: all
+  become: yes
   roles:
     - { role: common }
 
 - hosts: all
+  become: yes
   roles:
     - { role: flink-common }
 
 - hosts: manager
+  become: yes
   roles:
     - { role: flink-job-manager }
 
 - hosts: workers
+  become: yes
   roles:
     - { role: flink-task-manager }
 
 - hosts: manager
+  become: yes
   roles:
     - { role: flink-bench }
