@@ -63,7 +63,7 @@ public class InvertedIndexStreamTest {
     };
   }
 
-  @Test(dataProvider = "measureProvider")
+  @Test(dataProvider = "measureProvider", enabled = false)
   public void measureLatency(ExampleChecker<WikipediaPage> checker, int warmUpDelay) {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(warmUpDelay, 0);
     sourceIterator = checker.input().peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id())).iterator();
@@ -87,8 +87,11 @@ public class InvertedIndexStreamTest {
       //noinspection Duplicates
       while (running) {
         if (sourceIterator.hasNext()) {
-          ctx.collect(sourceIterator.next());
+          final WikipediaPage next = sourceIterator.next();
+          ctx.collect(next);
           ctx.emitWatermark(new Watermark(System.nanoTime()));
+          LOG.warn("Page id: {}", next.id());
+          Thread.sleep(100);
         } else {
           running = false;
           ctx.close();
