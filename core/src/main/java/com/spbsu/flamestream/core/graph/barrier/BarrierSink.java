@@ -79,6 +79,7 @@ final class BarrierSink implements AtomicGraph {
     private final InPort inPort;
     private final OutPort outPort;
 
+    private final BarrierStatistics barrierStatistics = new BarrierStatistics();
     private final BarrierCollector collector = new LinearCollector();
 
     Barrier() {
@@ -89,6 +90,7 @@ final class BarrierSink implements AtomicGraph {
     @Override
     public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
       collector.enqueue(item);
+      barrierStatistics.enqueue(item.meta().globalTime());
     }
 
     @Override
@@ -98,11 +100,13 @@ final class BarrierSink implements AtomicGraph {
         final PayloadDataItem<Object> dataItem = new PayloadDataItem<>(di.meta(), data);
         handle.push(outPort, dataItem);
         handle.ack(dataItem.ack(), dataItem.meta().globalTime());
+        barrierStatistics.release(di.meta().globalTime());
       });
     }
 
     @Override
     public void onCommit(AtomicHandle handle) {
+      handle.submitStatistics(barrierStatistics);
       if (!collector.isEmpty()) {
         throw new IllegalStateException("Barrier should be empty");
       }
