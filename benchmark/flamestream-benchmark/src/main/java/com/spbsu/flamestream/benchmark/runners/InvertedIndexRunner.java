@@ -53,17 +53,21 @@ public class InvertedIndexRunner implements EnvironmentRunner {
               )
       ), tickLengthInSec, 1);
 
+      final int[] pagesCount = {0};
+      final int sleepTimeInMs = 100;
+
       final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1);
       source.forEach(wikipediaPage -> {
         sink.accept(wikipediaPage);
+        pagesCount[0]++;
         LOG.warn("Page id: {}", wikipediaPage.id());
         try {
-          Thread.sleep(100);
+          Thread.sleep(sleepTimeInMs);
         } catch (InterruptedException e) {
           throw new RuntimeException();
         }
       });
-      testEnvironment.awaitTick(5);
+      testEnvironment.awaitTick(tickLengthInSec - pagesCount[0] * sleepTimeInMs / 1000 + 5);
 
       final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
       LOG.info("Result: {}", stat);
