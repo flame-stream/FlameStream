@@ -54,7 +54,7 @@ public class TestEnvironment implements Environment {
               startTs,
               startTs + tickNanos,
               theGraph,
-              workers.values().stream().findAny().orElseThrow(RuntimeException::new),
+              workers.values().stream().min(Integer::compareTo).get(),
               workers,
               window,
               i == 0 ? emptySet() : singleton(i - 1L)
