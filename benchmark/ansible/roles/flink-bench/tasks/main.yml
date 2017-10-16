@@ -30,7 +30,7 @@
   tags: deliver
 
 - name: Start the flamestream bench
-  shell: java -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf > {{ bench_dir }}/flink_bench.log 2>&1
+  shell: java -Xmx500m -XX:MaxDirectMemorySize=256m -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf > {{ bench_dir }}/flink_bench.log 2>&1
   tags: run
 
 - name: Fetch bench logs
