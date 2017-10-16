@@ -45,14 +45,14 @@ public class TestEnvironment implements Environment {
 
   public void deploy(TheGraph theGraph, int tickLengthSeconds, int ticksCount) {
     final Map<HashRange, Integer> workers = rangeMappingForTick();
-    final long tickNanos = SECONDS.toNanos(tickLengthSeconds);
+    final long tickMills = SECONDS.toMillis(tickLengthSeconds);
 
-    long startTs = System.nanoTime();
-    for (int i = 0; i < ticksCount; ++i, startTs += tickNanos) {
+    long startTs = System.currentTimeMillis();
+    for (int i = 0; i < ticksCount; ++i, startTs += tickMills) {
       final TickInfo tickInfo = new TickInfo(
               i,
               startTs,
-              startTs + tickNanos,
+              startTs + tickMills,
               theGraph,
               workers.values().stream().min(Integer::compareTo).get(),
               workers,

@@ -61,7 +61,7 @@ public final class FrontActor extends LoggingActor {
   }
 
   private void onReportPing() {
-    tickFronts.values().forEach(actorRef -> actorRef.tell(new TickFrontPing(System.nanoTime()), self()));
+    tickFronts.values().forEach(actorRef -> actorRef.tell(new TickFrontPing(System.currentTimeMillis()), self()));
   }
 
   private void createTick(TickInfo tickInfo) {
@@ -93,7 +93,7 @@ public final class FrontActor extends LoggingActor {
   }
 
   private void redirectItem(Object payload) {
-    long globalTs = System.nanoTime();
+    long globalTs = System.currentTimeMillis();
     if (globalTs <= prevGlobalTs) {
       globalTs = prevGlobalTs + 1;
     }
