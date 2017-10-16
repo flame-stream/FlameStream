@@ -23,7 +23,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Date: 28.09.2017
  */
 public class TestEnvironment implements Environment {
-  private static final long DEFAULT_TEST_WINDOW = MILLISECONDS.toNanos(10);
+  private static final long DEFAULT_TEST_WINDOW = MILLISECONDS.toMillis(10);
 
   private final Environment innerEnvironment;
   private final long window;
