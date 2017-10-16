@@ -48,13 +48,13 @@ public final class FilterAcceptanceTest {
       environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.availableFronts(),
               environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
-      ), 10, 1);
+      ), 15, 1);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
       final Consumer<Object> sink = environment.randomFrontConsumer(4);
       source.forEach(sink);
 
-      environment.awaitTick(10);
+      environment.awaitTick(15);
 
       Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
     }
