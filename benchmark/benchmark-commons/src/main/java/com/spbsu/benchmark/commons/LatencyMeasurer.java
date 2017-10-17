@@ -6,8 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: Artem
@@ -48,6 +50,8 @@ public class LatencyMeasurer<T> {
   }
 
   public long[] latencies() {
+    final List<Long> sizes = latencies.values().stream().map(stat -> stat.getCount()).collect(Collectors.toList());
+    System.out.println("SIZES: " + sizes);
     latencies.values().forEach(stat ->
             LOG.warn("Latencies distribution for article: {}", stat)
     );
