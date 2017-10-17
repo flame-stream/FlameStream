@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -23,18 +22,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Date: 28.09.2017
  */
 public class TestEnvironment implements Environment {
-  private static final long DEFAULT_TEST_WINDOW = MILLISECONDS.toMillis(10);
+  private static final long DEFAULT_TEST_WINDOW = 10;
 
   private final Environment innerEnvironment;
-  private final long window;
+  private final long windowInMillis;
 
   public TestEnvironment(Environment inner) {
     this(inner, DEFAULT_TEST_WINDOW);
   }
 
-  public TestEnvironment(Environment inner, long window) {
+  public TestEnvironment(Environment inner, long windowInMillis) {
     this.innerEnvironment = inner;
-    this.window = window;
+    this.windowInMillis = windowInMillis;
   }
 
   public TheGraph withFusedFronts(Graph graph) {
@@ -56,7 +55,7 @@ public class TestEnvironment implements Environment {
               theGraph,
               workers.values().stream().min(Integer::compareTo).get(),
               workers,
-              window,
+              windowInMillis,
               i == 0 ? emptySet() : singleton(i - 1L)
       );
       innerEnvironment.deploy(tickInfo);
