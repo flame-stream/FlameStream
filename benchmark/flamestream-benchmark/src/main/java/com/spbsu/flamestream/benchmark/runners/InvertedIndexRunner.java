@@ -4,6 +4,7 @@ import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.benchmark.EnvironmentRunner;
 import com.spbsu.flamestream.example.FlameStreamExample;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
+import com.spbsu.flamestream.example.inverted_index.model.WordBase;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.inverted_index.utils.WikipeadiaInput;
@@ -41,7 +42,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
       //noinspection RedundantCast,unchecked
       testEnvironment.deploy(testEnvironment.withFusedFronts(
               FlameStreamExample.INVERTED_INDEX.graph(
-                      hash -> testEnvironment.wrapInSink(((ToIntFunction<? super WordIndexAdd>) hash), container -> {
+                      hash -> testEnvironment.wrapInSink(((ToIntFunction<? super WordBase>) hash), container -> {
                         if (container instanceof WordIndexAdd) {
                           final WordIndexAdd indexAdd = (WordIndexAdd) container;
                           final int docId = IndexItemInLong.pageId(indexAdd.positions()[0]);
