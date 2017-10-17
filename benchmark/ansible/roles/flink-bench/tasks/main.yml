@@ -29,7 +29,7 @@
     dest: "{{ bench_dir }}/bench.conf"
   tags: deliver
 
-- name: Start the flamestream bench
+- name: Start the flink bench
   shell: java -Xmx500m -XX:MaxDirectMemorySize=256m -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf > {{ bench_dir }}/flink_bench.log 2>&1
   tags: run
 
