@@ -21,7 +21,6 @@ import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
@@ -45,11 +44,11 @@ public final class WordCountRunner implements EnvironmentRunner {
             }
     );
 
-    try (TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
+    try (TestEnvironment testEnvironment = new TestEnvironment(environment, 1)) {
       //noinspection RedundantCast,unchecked
       testEnvironment.deploy(testEnvironment.withFusedFronts(
               FlameStreamExample.WORD_COUNT.graph(
-                      hash -> testEnvironment.wrapInSink((ToIntFunction<? super WordCounter>)hash, o -> latencyMeasurer.finish((WordCounter) o))
+                      hash -> testEnvironment.wrapInSink((ToIntFunction<? super WordCounter>) hash, o -> latencyMeasurer.finish((WordCounter) o))
               )
       ), 60, 1);
 

@@ -19,8 +19,6 @@ import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 /**
  * User: Artem
  * Date: 18.08.2017
@@ -39,7 +37,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
     ).peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
     final int tickLengthInSec = config.getInt("tick-length-sec");
-    try (TestEnvironment testEnvironment = new TestEnvironment(environment, MILLISECONDS.toNanos(1))) {
+    try (TestEnvironment testEnvironment = new TestEnvironment(environment, 1)) {
       //noinspection RedundantCast,unchecked
       testEnvironment.deploy(testEnvironment.withFusedFronts(
               FlameStreamExample.INVERTED_INDEX.graph(
