@@ -74,12 +74,13 @@ public final class FlinkBench {
   }
 
   public void run() throws Exception {
-    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(10, 0);
+    final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(0, 0);
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
             //.createLocalEnvironment(1);
-            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]))
-            .setParallelism(5);
+            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
+
+    environment.setParallelism(1);
 
     final DataStream<WikipediaPage> source = environment
             .addSource(new KryoSocketSource(benchHostname, sourcePort))
@@ -134,7 +135,7 @@ public final class FlinkBench {
   }
 
   private Server consumer(LatencyMeasurer<Integer> latencyMeasurer) throws IOException {
-    final Server consumer = new Server();
+    final Server consumer = new Server(2000, 300000);
     consumer.getKryo().register(InvertedIndexStream.Result.class);
     consumer.getKryo().register(WordIndexAdd.class);
     consumer.getKryo().register(WordIndexRemove.class);
