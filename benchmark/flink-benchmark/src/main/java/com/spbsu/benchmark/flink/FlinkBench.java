@@ -144,6 +144,14 @@ public final class FlinkBench {
 
     consumer.addListener(new Listener() {
       @Override
+      public void disconnected(Connection connection) {
+        System.out.println("Consumer has been disconnected " + connection);
+        new RuntimeException().printStackTrace();
+      }
+    });
+
+    consumer.addListener(new Listener() {
+      @Override
       public void received(Connection connection, Object o) {
         if (o instanceof InvertedIndexStream.Result) {
           final WordIndexAdd wordIndexAdd = ((InvertedIndexStream.Result) o).wordIndexAdd();

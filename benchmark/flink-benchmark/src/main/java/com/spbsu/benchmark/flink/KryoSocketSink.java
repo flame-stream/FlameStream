@@ -2,7 +2,8 @@ package com.spbsu.benchmark.flink;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Client;
-import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
+import com.esotericsoftware.kryonet.Connection;
+import com.esotericsoftware.kryonet.Listener;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.inverted_index.model.WordIndexRemove;
 import org.apache.flink.configuration.Configuration;
@@ -37,6 +38,13 @@ public class KryoSocketSink extends RichSinkFunction<InvertedIndexStream.Result>
     client.getKryo().register(long[].class);
     ((Kryo.DefaultInstantiatorStrategy) client.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
+    client.addListener(new Listener() {
+      @Override
+      public void disconnected(Connection connection) {
+        System.out.println("Sink has been disconnected " + connection);
+      }
+    });
+
     LOG.info("Connecting to {}:{}", hostName, port);
     client.start();
     client.connect(5000, hostName, port);
@@ -45,14 +53,17 @@ public class KryoSocketSink extends RichSinkFunction<InvertedIndexStream.Result>
 
   @Override
   public void invoke(InvertedIndexStream.Result value) throws Exception {
-    if (client != null) {
+    if (client != null && client.isConnected()) {
       client.sendTCP(value);
+    } else {
+      LOG.warn("Writing to closed log");
     }
   }
 
   @Override
   public void close() throws Exception {
     if (client != null) {
+      LOG.info("Closing sink connection");
       client.close();
       client.stop();
     }
