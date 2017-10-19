@@ -5,11 +5,9 @@ import gnu.trove.map.hash.TObjectLongHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.TreeMap;
 
 /**
  * User: Artem
@@ -19,7 +17,7 @@ public class LatencyMeasurer<T> {
   private static final Logger LOG = LoggerFactory.getLogger(LatencyMeasurer.class);
 
   private final TObjectLongMap<T> starts = new TObjectLongHashMap<>();
-  private final Map<T, LongSummaryStatistics> latencies = new HashMap<>();
+  private final Map<T, LongSummaryStatistics> latencies = new TreeMap<>();
 
   private final long measurePeriod;
   private long delay;
@@ -50,14 +48,9 @@ public class LatencyMeasurer<T> {
   }
 
   public long[] latencies() {
-    final List<Long> sizes = latencies.values().stream().map(stat -> stat.getCount()).collect(Collectors.toList());
-    System.out.println("SIZES: " + sizes);
-    latencies.values().forEach(stat ->
-            LOG.warn("Latencies distribution for article: {}", stat)
-    );
-
     final long[] latenciesDump = latencies.values().stream().map(LongSummaryStatistics::getMax)
             .mapToLong(l -> l).toArray();
+
     final StringBuilder stringBuilder = new StringBuilder();
     for (int i = 0; i < latenciesDump.length; i++) {
       stringBuilder.append(latenciesDump[i]);
@@ -65,7 +58,8 @@ public class LatencyMeasurer<T> {
         stringBuilder.append(", ");
       }
     }
-    LOG.warn("Latencies dump: [{}]", stringBuilder.toString());
+
+    LOG.warn("Latencies dump: [{}]", stringBuilder);
 
     return latenciesDump;
   }

@@ -37,14 +37,17 @@ public final class FlinkBench {
   private final int sinkPort;
 
   private final List<String> jars;
+  private final int limit;
 
-  public FlinkBench(String managerHostname,
+  public FlinkBench(int limit,
+                    String managerHostname,
                     int managerPort,
                     String benchHostname,
                     int sourcePort,
                     int sinkPort,
                     List<String> jars,
                     String inputFilePath) {
+    this.limit = limit;
     this.managerHostname = managerHostname;
     this.benchHostname = benchHostname;
     this.managerPort = managerPort;
@@ -64,6 +67,7 @@ public final class FlinkBench {
     }
 
     new FlinkBench(
+            load.getInt("limit"),
             load.getString("manager-hostname"),
             load.getInt("manager-port"),
             load.getString("bench-hostname"),
@@ -89,11 +93,12 @@ public final class FlinkBench {
     new InvertedIndexStream().stream(source)
             .addSink(new KryoSocketSink(benchHostname, sinkPort));
 
-    final Stream<WikipediaPage> wikipediaInput = (
-            inputFilePath == null ?
-                    WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
-                    : WikipeadiaInput.dumpStreamFromFile(inputFilePath)
-    ).peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
+    final Stream<WikipediaPage> wikipediaInput = (inputFilePath == null ?
+            WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
+            : WikipeadiaInput.dumpStreamFromFile(inputFilePath)
+    )
+            .limit(limit)
+            .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
 
     final Server producer = producer(wikipediaInput);
