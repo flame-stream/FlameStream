@@ -12,6 +12,7 @@ import com.spbsu.flamestream.core.graph.ops.stat.GroupingStatistics;
 import com.spbsu.flamestream.core.graph.ops.state.GroupingState;
 import com.spbsu.flamestream.core.graph.ops.state.LazyGroupingState;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -101,24 +102,28 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private void replayAround(int position, List<DataItem<T>> group, AtomicHandle handle) {
     int replayCount = 0;
 
+    final List<DataItem<?>> items = new ArrayList<>();
     for (int right = position + 1; right <= Math.min(position + window, group.size()); ++right) {
       replayCount++;
       final int left = Math.max(right - window, 0);
-      pushSubGroup(group, left, right, handle);
+      items.add(subgroup(group, left, right, handle));
     }
 
     stat.recordReplaySize(replayCount);
+
+    for (DataItem<?> item : items) {
+      handle.push(outPort(), item);
+      handle.ack(item.ack(), item.meta().globalTime());
+    }
   }
 
-  private void pushSubGroup(List<DataItem<T>> group, int left, int right, AtomicHandle handle) {
+  private DataItem<List<T>> subgroup(List<DataItem<T>> group, int left, int right, AtomicHandle handle) {
     final List<DataItem<T>> outGroup = group.subList(left, right);
 
     final Meta meta = outGroup.get(outGroup.size() - 1).meta().advanced(incrementLocalTimeAndGet());
     final List<T> groupingResult = outGroup.stream().map(DataItem::payload).collect(Collectors.toList());
 
-    final DataItem<List<T>> result = new PayloadDataItem<>(meta, groupingResult);
-    handle.push(outPort(), result);
-    handle.ack(result.ack(), result.meta().globalTime());
+    return new PayloadDataItem<>(meta, groupingResult);
   }
 
   @Override
