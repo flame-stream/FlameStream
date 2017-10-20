@@ -27,7 +27,9 @@ public final class FrontActor extends LoggingActor {
   private final int id;
   private final NavigableMap<Long, ActorRef> tickFronts = new TreeMap<>();
   private final Map<Long, TickInfo> tickInfos = new HashMap<>();
+
   private final ActorRef pingActor;
+  private final FrontStatistics frontStatistics = new FrontStatistics();
 
   private long prevGlobalTs = -1;
   private long minWindow = Long.MAX_VALUE;
@@ -45,6 +47,7 @@ public final class FrontActor extends LoggingActor {
   @Override
   public void postStop() {
     pingActor.tell(new PingActor.Stop(), self());
+    LOG().info(frontStatistics.toString());
     super.postStop();
   }
 
@@ -63,6 +66,7 @@ public final class FrontActor extends LoggingActor {
   }
 
   private void onReportPing() {
+    frontStatistics.ping();
     tickFronts.values().forEach(actorRef -> actorRef.tell(new TickFrontPing(System.currentTimeMillis()), self()));
   }
 
