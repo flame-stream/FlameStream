@@ -16,3 +16,9 @@
     name: less
     state: present
   tags: deliver
+
+- name: Install htop
+  apt:
+    name: htop
+    state: present
+  tags: deliver
