@@ -142,10 +142,8 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     }
 
     final int position = left - window + 1;
-    if (position > 1) {
+    if (position > 0) {
       group.subList(0, position).clear();
-    } else if (position == 1) {
-      group.remove(0);
     }
   }
 
