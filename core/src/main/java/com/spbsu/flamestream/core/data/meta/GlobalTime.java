@@ -5,6 +5,7 @@ import java.util.Objects;
 
 public final class GlobalTime implements Comparable<GlobalTime> {
   public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, -1);
+  public static final GlobalTime MAX = new GlobalTime(Long.MAX_VALUE, -1);
   //Inner representation is a subject for a discussion and/or an optimization
 
   private static final Comparator<GlobalTime> NATURAL_ORDER = Comparator
