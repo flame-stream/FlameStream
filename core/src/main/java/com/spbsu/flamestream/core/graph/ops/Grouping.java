@@ -30,7 +30,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final int window;
 
   private GroupingState<T> buffers;
-  private GlobalTime currentMinTime = GlobalTime.MAX;
+  private GlobalTime currentMinTime = GlobalTime.MIN;
 
   public Grouping(ToIntFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, int window) {
     this.inPort = new InPort(hash);
