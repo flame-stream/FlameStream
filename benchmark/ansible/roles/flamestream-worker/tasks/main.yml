@@ -36,7 +36,8 @@
 
 - name: Start the fs worker
   shell: >
-    nohup java -Xms512m -Xmx512m -XX:+PrintGC -XX:+PrintGCDetails \
+    nohup java -Xms700m -Xmx700m \
+    -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps \
     -cp \
     "{{ flamestream_dir }}/worker.jar:{{ flamestream_dir }}/examples.jar" \
     com.spbsu.flamestream.runtime.application.WorkerApplication {{ flamestream_dir }}/fs.conf \

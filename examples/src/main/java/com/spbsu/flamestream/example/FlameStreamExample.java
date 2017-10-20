@@ -33,14 +33,14 @@ public enum FlameStreamExample {
     private final HashFunction<WikipediaPage> WIKI_PAGE_HASH = new HashFunction<WikipediaPage>() {
       @Override
       public int hash(WikipediaPage value) {
-        return HashFunction.jenkinsHash(value.id());
+        return HashFunction.UNIFORM_OBJECT_HASH.hash(value.id());
       }
     };
 
     private final HashFunction<WordBase> WORD_HASH = new HashFunction<WordBase>() {
       @Override
       public int hash(WordBase value) {
-        return value.word().hashCode();
+        return HashFunction.UNIFORM_OBJECT_HASH.hash(value.word());
       }
     };
 
@@ -89,7 +89,7 @@ public enum FlameStreamExample {
     private final HashFunction<WordContainer> WORD_HASH = new HashFunction<WordContainer>() {
       @Override
       public int hash(WordContainer value) {
-        return HashFunction.jenkinsHash(value.word().hashCode());
+        return HashFunction.UNIFORM_OBJECT_HASH.hash(value.word());
       }
     };
 

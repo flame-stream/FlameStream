@@ -1,1 +1,5 @@
-[{{ front_id }}]
+[
+{% for worker in groups['workers'] %}
+  {{ hostvars[worker].id }} {{ "," if not loop.last else "" }}
+{% endfor %}
+]
