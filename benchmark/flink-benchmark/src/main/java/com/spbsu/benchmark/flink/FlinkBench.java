@@ -22,8 +22,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.LongSummaryStatistics;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public final class FlinkBench {
@@ -96,12 +98,10 @@ public final class FlinkBench {
     final Stream<WikipediaPage> wikipediaInput = (inputFilePath == null ?
             WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
             : WikipeadiaInput.dumpStreamFromFile(inputFilePath)
-    )
-            .limit(limit)
-            .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
+    ).limit(limit);
 
 
-    final Server producer = producer(wikipediaInput);
+    final Server producer = producer(latencyMeasurer, wikipediaInput);
     final Server consumer = consumer(latencyMeasurer);
 
     environment.execute("Joba");
@@ -113,24 +113,33 @@ public final class FlinkBench {
     consumer.stop();
   }
 
-  private Server producer(Stream<WikipediaPage> input) throws IOException {
+  private Server producer(LatencyMeasurer<Integer> measurer, Stream<WikipediaPage> input) throws IOException {
     final Server producer = new Server(300000, 1000);
     producer.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
+    final List<Connection> connections = Collections.synchronizedList(new ArrayList<>());
+
+    new Thread(() -> {
+      input.forEach(page -> {
+                final Connection connection = connections
+                        .get(ThreadLocalRandom.current().nextInt(connections.size()));
+                connection.sendTCP(page);
+                try {
+                  Thread.sleep(100);
+                } catch (InterruptedException e) {
+                  e.printStackTrace();
+                }
+              }
+      );
+
+      connections.forEach(Connection::close);
+    }).start();
+
     producer.addListener(new Listener() {
       @Override
       public void connected(Connection connection) {
-        input.forEach(page -> {
-                  connection.sendTCP(page);
-                  try {
-                    Thread.sleep(400);
-                  } catch (InterruptedException e) {
-                    e.printStackTrace();
-                  }
-                }
-        );
-        connection.close();
+        connections.add(connection);
       }
     });
 
