@@ -41,7 +41,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
             .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
     final int tickLengthInSec = config.getInt("tick-length-sec");
-    try (TestEnvironment testEnvironment = new TestEnvironment(environment, 1)) {
+    try (TestEnvironment testEnvironment = new TestEnvironment(environment, 20)) {
       //noinspection RedundantCast,unchecked
       testEnvironment.deploy(testEnvironment.withFusedFronts(
               FlameStreamExample.INVERTED_INDEX.graph(
