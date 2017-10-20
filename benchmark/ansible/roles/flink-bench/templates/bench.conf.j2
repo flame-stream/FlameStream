@@ -5,6 +5,6 @@ benchmark {
   sink-port = 12346
   bench-hostname = {{ inventory_hostname }}
   jars = ["{{ bench_dir }}/bench.jar"]
-  inputPath = wiki.xml
-  limit = 250
+  input-path = {{ bench_dir }}/wiki.xml
+  limit = 1000
 }
