@@ -22,7 +22,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.concurrent.ThreadLocalRandom;
@@ -83,17 +82,16 @@ public final class FlinkBench {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(0, 0);
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
-            //.createLocalEnvironment(1);
-            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
-
-    environment.setParallelism(1);
+    .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]))
+            .setParallelism(10);
 
     final DataStream<WikipediaPage> source = environment
             .addSource(new KryoSocketSource(benchHostname, sourcePort))
-            .setParallelism(1);
+            .setParallelism(10)
+            .shuffle();
 
     new InvertedIndexStream().stream(source)
-            .addSink(new KryoSocketSink(benchHostname, sinkPort));
+            .addSink(new KryoSocketSink(benchHostname, sinkPort)).setParallelism(10);
 
     final Stream<WikipediaPage> wikipediaInput = (inputFilePath == null ?
             WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
@@ -114,21 +112,32 @@ public final class FlinkBench {
   }
 
   private Server producer(LatencyMeasurer<Integer> measurer, Stream<WikipediaPage> input) throws IOException {
-    final Server producer = new Server(300000, 1000);
+    final Server producer = new Server(5000000, 1000);
     producer.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
-    final List<Connection> connections = Collections.synchronizedList(new ArrayList<>());
+    final List<Connection> connections = new ArrayList<>();
 
     new Thread(() -> {
+      synchronized (connections) {
+        try {
+          connections.wait();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+
       input.forEach(page -> {
-                final Connection connection = connections
-                        .get(ThreadLocalRandom.current().nextInt(connections.size()));
-                connection.sendTCP(page);
-                try {
-                  Thread.sleep(100);
-                } catch (InterruptedException e) {
-                  e.printStackTrace();
+                synchronized (connections) {
+                  try {
+                    final Connection connection = connections
+                            .get(ThreadLocalRandom.current().nextInt(connections.size()));
+                    measurer.start(page.id());
+                    connection.sendTCP(page);
+                    Thread.sleep(100);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
                 }
               }
       );
@@ -139,7 +148,10 @@ public final class FlinkBench {
     producer.addListener(new Listener() {
       @Override
       public void connected(Connection connection) {
-        connections.add(connection);
+        synchronized (connections) {
+          connections.add(connection);
+          connections.notify();
+        }
       }
     });
 

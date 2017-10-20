@@ -29,8 +29,9 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
   public DataStream<Result> stream(DataStream<WikipediaPage> source) {
     return source
             .flatMap(new WikipediaPageToWordPositions())
+            .setParallelism(10)
             .keyBy(0)
-            .map(new RichIndexFunction());
+            .map(new RichIndexFunction()).setParallelism(10);
   }
 
   private static class WikipediaPageToWordPositions implements FlatMapFunction<WikipediaPage, Tuple2<String, long[]>> {

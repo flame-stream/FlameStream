@@ -6,13 +6,13 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.jetbrains.annotations.Nullable;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KryoSocketSource extends RichSourceFunction<WikipediaPage> {
+public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> {
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOG = LoggerFactory.getLogger(KryoSocketSource.class);
@@ -29,8 +29,8 @@ public class KryoSocketSource extends RichSourceFunction<WikipediaPage> {
   }
 
   @Override
-  public void open(Configuration parameters) throws Exception {
-    client = new Client(1000, 200000);
+  public void open(Configuration parameters) {
+    client = new Client(1000, 5000000);
     client.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) client.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
   }
@@ -39,7 +39,11 @@ public class KryoSocketSource extends RichSourceFunction<WikipediaPage> {
   public void run(SourceContext<WikipediaPage> ctx) throws Exception {
     client.addListener(new Listener() {
       public void received(Connection connection, Object object) {
-        ctx.collect((WikipediaPage) object);
+        if (object instanceof WikipediaPage) {
+          ctx.collect((WikipediaPage) object);
+        } else {
+          LOG.warn("WTF: {}", object);
+        }
       }
     });
 
