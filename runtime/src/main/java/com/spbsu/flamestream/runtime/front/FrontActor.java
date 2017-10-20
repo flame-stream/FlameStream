@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 public final class FrontActor extends LoggingActor {
   private final Map<Integer, ActorPath> cluster;
   private final int id;
@@ -87,7 +89,7 @@ public final class FrontActor extends LoggingActor {
       if (tickInfo.window() < minWindow) {
         minWindow = tickInfo.window();
         pingActor.tell(new PingActor.Stop(), self());
-        pingActor.tell(new PingActor.Start(minWindow), self());
+        pingActor.tell(new PingActor.Start(MILLISECONDS.toNanos(minWindow)), self());
       }
     }
   }
