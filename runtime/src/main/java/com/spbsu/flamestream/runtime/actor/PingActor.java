@@ -6,7 +6,6 @@ import akka.actor.Props;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.LongSummaryStatistics;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -24,8 +23,6 @@ public class PingActor extends LoggingActor {
   private boolean started = false;
   private Cancellable scheduler;
 
-  private final LongSummaryStatistics actualParkNanosTime = new LongSummaryStatistics();
-
   private PingActor(ActorRef actorToPing, Object objectForPing) {
     this.actorToPing = actorToPing;
     this.objectForPing = objectForPing;
@@ -38,7 +35,6 @@ public class PingActor extends LoggingActor {
   @Override
   public void postStop() {
     stop();
-    LOG().warning("Actual park nanos time: " + actualParkNanosTime);
     super.postStop();
   }
 
@@ -87,11 +83,7 @@ public class PingActor extends LoggingActor {
 
   private void handleInnerPing() throws IllegalAccessException, InstantiationException {
     actorToPing.tell(objectForPing, context().parent());
-
-    final long start = System.nanoTime();
     LockSupport.parkNanos(delayInNanos);
-    actualParkNanosTime.accept(System.nanoTime() - start);
-
     self().tell(InnerPing.PING, self());
   }
 
