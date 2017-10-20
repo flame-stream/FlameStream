@@ -22,8 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -58,14 +56,14 @@ public final class LocalClusterEnvironment implements Environment {
       this.zk = new ZooKeeperApplication();
       this.zkThread = new Thread(Unchecked.runnable(zk::run));
       zkThread.start();
+      TimeUnit.SECONDS.sleep(1);
+
       this.zooKeeper = new ZooKeeper(
               ZK_STRING,
               5000,
               e -> LOG.info("Init zookeeperString ZKEvent: {}", e)
       );
-
       this.dns = freeSockets(workersCount);
-      TimeUnit.SECONDS.sleep(3);
 
       deployPartitioning();
       this.remoteEnvironment = new RemoteEnvironment(ZK_STRING);
