@@ -1,5 +1,7 @@
 package com.spbsu.flamestream.core;
 
+import com.google.common.hash.Hashing;
+
 import java.util.function.ToIntFunction;
 
 @FunctionalInterface
@@ -15,21 +17,9 @@ public interface HashFunction<T> extends ToIntFunction<T> {
   HashFunction<Object> UNIFORM_OBJECT_HASH = new HashFunction<Object>() {
     @Override
     public int hash(Object value) {
-      return jenkinsHash(value.hashCode());
-    }
-
-    private int jenkinsHash(int value) {
-      int a = value;
-      a = (a + 0x7ed55d16) + (a << 12);
-      a = (a ^ 0xc761c23c) ^ (a >> 19);
-      a = (a + 0x165667b1) + (a << 5);
-      a = (a + 0xd3a2646c) ^ (a << 9);
-      a = (a + 0xfd7046c5) + (a << 3);
-      a = (a ^ 0xb55a4f09) ^ (a >> 16);
-      return a;
+      return Hashing.murmur3_32().hashInt(value.hashCode()).asInt();
     }
   };
-
 
   static <T> HashFunction<T> uniformLimitedHash(int buckets) {
     return new HashFunction<T>() {
