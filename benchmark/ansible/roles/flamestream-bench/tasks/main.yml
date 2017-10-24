@@ -32,7 +32,7 @@
 
 - name: Start the flamestream bench
   shell: >
-    java -Xms512m -Xmx512m -XX:+PrintGC -XX:+PrintGCDetails \
+    java -Xms713m -Xmx713m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError \
     -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf \
     > {{ bench_dir }}/flamestream_bench.log 2>&1
   tags: run
