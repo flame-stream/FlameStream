@@ -30,7 +30,7 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
 
   @Override
   public void open(Configuration parameters) {
-    client = new Client(1000, 5000000);
+    client = new Client(1000, 20_000_000);
     client.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) client.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
   }

@@ -13,6 +13,7 @@ import com.spbsu.flamestream.example.inverted_index.utils.WikipeadiaInput;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -39,6 +40,9 @@ public final class FlinkBench {
 
   private final List<String> jars;
   private final int limit;
+  private final int parallelism;
+
+  private final long rate;
 
   public FlinkBench(int limit,
                     String managerHostname,
@@ -47,6 +51,8 @@ public final class FlinkBench {
                     int sourcePort,
                     int sinkPort,
                     List<String> jars,
+                    int parallelism,
+                    long rate,
                     String inputFilePath) {
     this.limit = limit;
     this.managerHostname = managerHostname;
@@ -56,6 +62,8 @@ public final class FlinkBench {
     this.sinkPort = sinkPort;
     this.jars = new ArrayList<>(jars);
     this.inputFilePath = inputFilePath;
+    this.parallelism = parallelism;
+    this.rate = rate;
   }
 
   public static void main(String[] args) throws Exception {
@@ -75,6 +83,8 @@ public final class FlinkBench {
             load.getInt("source-port"),
             load.getInt("sink-port"),
             load.getStringList("jars"),
+            load.getInt("parallelism"),
+            load.getInt("rate"),
             load.hasPath("input-path") ? load.getString("input-path") : null).run();
   }
 
@@ -82,16 +92,19 @@ public final class FlinkBench {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(0, 0);
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
-    .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]))
-            .setParallelism(10);
+            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
+
+    environment.setParallelism(parallelism);
+    environment.setMaxParallelism(parallelism);
 
     final DataStream<WikipediaPage> source = environment
             .addSource(new KryoSocketSource(benchHostname, sourcePort))
-            .setParallelism(10)
+            .setParallelism(parallelism)
             .shuffle();
 
-    new InvertedIndexStream().stream(source)
-            .addSink(new KryoSocketSink(benchHostname, sinkPort)).setParallelism(10);
+    final DataStreamSink<InvertedIndexStream.Result> sink = new InvertedIndexStream().stream(source, parallelism)
+            .addSink(new KryoSocketSink(benchHostname, sinkPort))
+            .setParallelism(parallelism);
 
     final Stream<WikipediaPage> wikipediaInput = (inputFilePath == null ?
             WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
@@ -112,7 +125,7 @@ public final class FlinkBench {
   }
 
   private Server producer(LatencyMeasurer<Integer> measurer, Stream<WikipediaPage> input) throws IOException {
-    final Server producer = new Server(5000000, 1000);
+    final Server producer = new Server(20_000_000, 1000);
     producer.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
@@ -134,7 +147,7 @@ public final class FlinkBench {
                             .get(ThreadLocalRandom.current().nextInt(connections.size()));
                     measurer.start(page.id());
                     connection.sendTCP(page);
-                    Thread.sleep(100);
+                    Thread.sleep(rate);
                   } catch (InterruptedException e) {
                     e.printStackTrace();
                   }
@@ -161,7 +174,7 @@ public final class FlinkBench {
   }
 
   private Server consumer(LatencyMeasurer<Integer> latencyMeasurer) throws IOException {
-    final Server consumer = new Server(2000, 300000);
+    final Server consumer = new Server(2000, 20_000_000);
     consumer.getKryo().register(InvertedIndexStream.Result.class);
     consumer.getKryo().register(WordIndexAdd.class);
     consumer.getKryo().register(WordIndexRemove.class);

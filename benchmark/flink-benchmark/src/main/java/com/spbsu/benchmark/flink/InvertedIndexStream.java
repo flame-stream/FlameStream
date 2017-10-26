@@ -25,13 +25,21 @@ import java.util.stream.Stream;
  * Date: 05.10.2017
  */
 public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedIndexStream.Result> {
+  public DataStream<Result> stream(DataStream<WikipediaPage> source, int parallelism) {
+    return source
+            .flatMap(new WikipediaPageToWordPositions())
+            .setParallelism(parallelism)
+            .keyBy(0)
+            .map(new RichIndexFunction())
+            .setParallelism(parallelism);
+  }
+
   @Override
   public DataStream<Result> stream(DataStream<WikipediaPage> source) {
     return source
             .flatMap(new WikipediaPageToWordPositions())
-            .setParallelism(10)
             .keyBy(0)
-            .map(new RichIndexFunction()).setParallelism(10);
+            .map(new RichIndexFunction());
   }
 
   private static class WikipediaPageToWordPositions implements FlatMapFunction<WikipediaPage, Tuple2<String, long[]>> {

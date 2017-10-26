@@ -6,5 +6,7 @@ benchmark {
   bench-hostname = {{ inventory_hostname }}
   jars = ["{{ bench_dir }}/bench.jar"]
   input-path = {{ bench_dir }}/wiki.xml
-  limit = 10000
+  limit = 10000,
+  parallelism = 10,
+  rate = 20
 }
