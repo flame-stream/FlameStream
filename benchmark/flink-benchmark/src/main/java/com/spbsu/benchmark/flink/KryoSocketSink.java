@@ -31,7 +31,7 @@ public class KryoSocketSink extends RichSinkFunction<InvertedIndexStream.Result>
 
   @Override
   public void open(Configuration parameters) throws Exception {
-    client = new Client(20_000_000, 1234);
+    client = new Client(1_000_000, 1234);
     client.getKryo().register(InvertedIndexStream.Result.class);
     client.getKryo().register(WordIndexAdd.class);
     client.getKryo().register(WordIndexRemove.class);
