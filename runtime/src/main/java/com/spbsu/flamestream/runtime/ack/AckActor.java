@@ -37,15 +37,12 @@ public final class AckActor extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return ReceiveBuilder.create()
-            .match(StartTick.class, start -> {
-              LOG().info("Received start tick");
-              tickRoutes = start.tickRoutingInfo();
-              unstashAll();
-              getContext().become(acking());
-            })
-            .matchAny(m -> stash())
-            .build();
+    return ReceiveBuilder.create().match(StartTick.class, start -> {
+      log().info("Received start tick");
+      tickRoutes = start.tickRoutingInfo();
+      unstashAll();
+      getContext().become(acking());
+    }).matchAny(m -> stash()).build();
   }
 
   private Receive acking() {
@@ -58,13 +55,13 @@ public final class AckActor extends LoggingActor {
   @Override
   public void postStop() {
     super.postStop();
-    LOG().info("Acker statistics: {}", stat);
+    log().info("Acker statistics: {}", stat);
 
-    LOG().debug("Acker ledger: {}", ledger);
+    log().debug("Acker ledger: {}", ledger);
   }
 
   private void handleReport(AckerReport report) {
-    LOG().debug("Front report received: {}", report);
+    log().debug("Front report received: {}", report);
     ledger.report(report.globalTime(), report.xor());
     checkLedgerTime();
   }
@@ -90,11 +87,7 @@ public final class AckActor extends LoggingActor {
 
     if (ledgerMin.time() == tickInfo.stopTs()) {
       sendCommit();
-      getContext().become(
-              ReceiveBuilder.create()
-                      .match(RangeCommitDone.class, this::handleDone)
-                      .build()
-      );
+      getContext().become(ReceiveBuilder.create().match(RangeCommitDone.class, this::handleDone).build());
     } else if (ledgerMin.time() > tickInfo.stopTs()) {
       throw new IllegalStateException("Ledger min must be less or equal to tick stop ts");
     }
@@ -107,26 +100,24 @@ public final class AckActor extends LoggingActor {
   }
 
   private void handleDone(RangeCommitDone rangeCommitDone) {
-    LOG().debug("Received: {}", rangeCommitDone);
+    log().debug("Received: {}", rangeCommitDone);
 
     final HashRange committer = rangeCommitDone.committer();
     committers.add(committer);
     if (committers.equals(tickInfo.hashMapping().keySet())) {
-      LOG().info("Tick commit done");
+      log().info("Tick commit done");
       tickWatcher.tell(new CommitTick(tickInfo.id()), self());
       context().stop(self());
     }
   }
 
   private void sendCommit() {
-    LOG().info("Committing");
-    tickRoutes.rangeConcierges().values()
-            .forEach(r -> r.tell(new Commit(), self()));
+    log().info("Committing");
+    tickRoutes.rangeConcierges().values().forEach(r -> r.tell(new Commit(), self()));
   }
 
   private void sendMinUpdates(GlobalTime min) {
-    LOG().debug("New min time: {}", min);
-    tickRoutes.rangeConcierges().values()
-            .forEach(r -> r.tell(new MinTimeUpdate(min), self()));
+    log().debug("New min time: {}", min);
+    tickRoutes.rangeConcierges().values().forEach(r -> r.tell(new MinTimeUpdate(min), self()));
   }
 }

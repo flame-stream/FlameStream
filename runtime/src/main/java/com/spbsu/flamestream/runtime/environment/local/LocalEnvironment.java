@@ -1,6 +1,11 @@
 package com.spbsu.flamestream.runtime.environment.local;
 
-import akka.actor.*;
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Address;
+import akka.actor.Props;
+import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.ack.CommitTick;
@@ -97,7 +102,7 @@ public final class LocalEnvironment implements Environment {
     }
   }
 
-  private final static class FakeTickWatcher extends LoggingActor {
+  private static final class FakeTickWatcher extends LoggingActor {
     private final ConcurrentMap<Long, ActorRef> concierges;
 
     private FakeTickWatcher(ConcurrentMap<Long, ActorRef> concierges) {
@@ -110,10 +115,7 @@ public final class LocalEnvironment implements Environment {
 
     @Override
     public Receive createReceive() {
-      return ReceiveBuilder.create()
-              .match(CommitTick.class, this::commitTick)
-              .matchAny(this::unhandled)
-              .build();
+      return ReceiveBuilder.create().match(CommitTick.class, this::commitTick).matchAny(this::unhandled).build();
     }
 
     private void commitTick(CommitTick commit) {

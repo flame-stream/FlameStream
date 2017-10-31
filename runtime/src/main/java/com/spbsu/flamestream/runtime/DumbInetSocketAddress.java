@@ -41,19 +41,19 @@ public final class DumbInetSocketAddress {
 
   @Override
   public String toString() {
-    return "DumbInetSocketAddress{" +
-            "host='" + host + '\'' +
-            ", port=" + port +
-            '}';
+    return "DumbInetSocketAddress{" + "host='" + host + '\'' + ", port=" + port + '}';
   }
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final DumbInetSocketAddress that = (DumbInetSocketAddress) o;
-    return port == that.port &&
-            Objects.equals(host, that.host);
+    return port == that.port && Objects.equals(host, that.host);
   }
 
   @Override

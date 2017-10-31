@@ -52,22 +52,18 @@ public final class RangeConcierge extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return ReceiveBuilder.create()
-            .match(StartTick.class, startTick -> {
-              tickRoutes = startTick.tickRoutingInfo();
-              initializedGraph = initializedAtomics(tickInfo.graph().graph().subGraphs(), tickRoutes);
-              routingTable = RangeConcierge.withFlattenedKey(initializedGraph);
+    return ReceiveBuilder.create().match(StartTick.class, startTick -> {
+      tickRoutes = startTick.tickRoutingInfo();
+      initializedGraph = initializedAtomics(tickInfo.graph().graph().subGraphs(), tickRoutes);
+      routingTable = RangeConcierge.withFlattenedKey(initializedGraph);
 
-              unstashAll();
-              getContext().become(ranging());
-            })
-            .matchAny(m -> stash())
-            .build();
+      unstashAll();
+      getContext().become(ranging());
+    }).matchAny(m -> stash()).build();
   }
 
   public Receive ranging() {
-    return receiveBuilder()
-            .match(AddressedItem.class, this::routeToPort)
+    return receiveBuilder().match(AddressedItem.class, this::routeToPort)
             .match(MinTimeUpdate.class, this::broadcast)
             .match(Commit.class, this::handleCommit)
             .build();
@@ -86,11 +82,9 @@ public final class RangeConcierge extends LoggingActor {
   private void handleCommit(Commit commit) {
     initializedGraph.values().forEach(atom -> atom.tell(commit, sender()));
 
-    getContext().become(
-            ReceiveBuilder.create()
-                    .match(AtomicCommitDone.class, cd -> processCommitDone(cd.graph()))
-                    .build()
-    );
+    getContext().become(ReceiveBuilder.create()
+            .match(AtomicCommitDone.class, cd -> processCommitDone(cd.graph()))
+            .build());
   }
 
   private void processCommitDone(AtomicGraph atomicGraph) {
@@ -98,20 +92,19 @@ public final class RangeConcierge extends LoggingActor {
 
     if (initializedGraph.isEmpty()) {
       tickRoutes.acker().tell(new RangeCommitDone(range), self());
-      LOG().info("Range commit done");
+      log().info("Range commit done");
       context().stop(self());
     }
   }
 
   private Map<AtomicGraph, ActorRef> initializedAtomics(Collection<? extends AtomicGraph> atomicGraphs,
                                                         TickRoutes tickRoutes) {
-    return atomicGraphs.stream()
-            .collect(toMap(Function.identity(), atomic -> actorForAtomic(atomic, tickRoutes)));
+    return atomicGraphs.stream().collect(toMap(Function.identity(), atomic -> actorForAtomic(atomic, tickRoutes)));
   }
 
   private ActorRef actorForAtomic(AtomicGraph atomic, TickRoutes tickRoutes) {
     final String id = UUID.randomUUID().toString();
-    LOG().debug("Creating actor for atomic: id= {}, class={}", id, atomic.getClass());
+    log().debug("Creating actor for atomic: id= {}, class={}", id, atomic.getClass());
     return context().actorOf(AtomicActor.props(atomic, tickInfo, tickRoutes), id);
   }
 }

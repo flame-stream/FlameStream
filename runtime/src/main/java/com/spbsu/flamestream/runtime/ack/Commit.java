@@ -1,4 +1,3 @@
 package com.spbsu.flamestream.runtime.ack;
 
-public final class Commit {
-}
+public final class Commit {}

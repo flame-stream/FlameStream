@@ -28,7 +28,10 @@ public final class Filter<T> extends AbstractAtomicGraph {
     @SuppressWarnings("unchecked") final boolean ok = predicate.test((T) item.payload());
 
     if (ok) {
-      final DataItem<?> result = new PayloadDataItem<>(item.meta().advanced(incrementLocalTimeAndGet()), item.payload());
+      final DataItem<?> result = new PayloadDataItem<>(
+              item.meta().advanced(incrementLocalTimeAndGet()),
+              item.payload()
+      );
 
       handler.push(outPort(), result);
       handler.ack(result.ack(), result.meta().globalTime());

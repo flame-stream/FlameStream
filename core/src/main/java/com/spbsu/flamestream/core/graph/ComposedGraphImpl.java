@@ -1,6 +1,12 @@
 package com.spbsu.flamestream.core.graph;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T> {
@@ -15,31 +21,31 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
     this(graphs, Collections.emptyMap());
   }
 
-  ComposedGraphImpl(T graph,
-                    OutPort from,
-                    InPort to) {
+  ComposedGraphImpl(T graph, OutPort from, InPort to) {
     this(Collections.singleton(graph), Collections.singletonMap(from, to));
   }
 
-  private ComposedGraphImpl(Set<T> graphs,
-                            Map<OutPort, InPort> wires) {
+  private ComposedGraphImpl(Set<T> graphs, Map<OutPort, InPort> wires) {
     ComposedGraphImpl.assertCorrectWires(graphs, wires);
 
     this.subGraphs = new HashSet<>(graphs);
 
     this.downstreams = new HashMap<>(wires);
 
-    this.inPorts = graphs.stream().map(Graph::inPorts)
-            .flatMap(Collection::stream).filter(port -> !downstreams.containsValue(port))
+    this.inPorts = graphs.stream()
+            .map(Graph::inPorts)
+            .flatMap(Collection::stream)
+            .filter(port -> !downstreams.containsValue(port))
             .collect(Collectors.toList());
 
-    this.outPorts = graphs.stream().map(Graph::outPorts)
-            .flatMap(List::stream).filter(port -> !downstreams.containsKey(port))
+    this.outPorts = graphs.stream()
+            .map(Graph::outPorts)
+            .flatMap(List::stream)
+            .filter(port -> !downstreams.containsKey(port))
             .collect(Collectors.toList());
   }
 
-  private static void assertCorrectWires(Collection<? extends Graph> graphs,
-                                         Map<OutPort, InPort> wires) {
+  private static void assertCorrectWires(Collection<? extends Graph> graphs, Map<OutPort, InPort> wires) {
     wires.forEach((from, to) -> ComposedGraphImpl.assertCorrectWire(graphs, from, to));
   }
 
@@ -71,12 +77,18 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
   @Override
   public ComposedGraph<AtomicGraph> flattened() {
     final Set<ComposedGraph<AtomicGraph>> flatteneds = subGraphs().stream()
-            .map(Graph::flattened).collect(Collectors.toSet());
-    final Set<AtomicGraph> atomics = flatteneds.stream().map(ComposedGraph::subGraphs)
-            .flatMap(Set::stream).collect(Collectors.toSet());
+            .map(Graph::flattened)
+            .collect(Collectors.toSet());
+    final Set<AtomicGraph> atomics = flatteneds.stream()
+            .map(ComposedGraph::subGraphs)
+            .flatMap(Set::stream)
+            .collect(Collectors.toSet());
 
-    final Map<OutPort, InPort> flatDownStreams = flatteneds.stream().map(ComposedGraph::downstreams)
-            .map(Map::entrySet).flatMap(Set::stream).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    final Map<OutPort, InPort> flatDownStreams = flatteneds.stream()
+            .map(ComposedGraph::downstreams)
+            .map(Map::entrySet)
+            .flatMap(Set::stream)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
     flatDownStreams.putAll(downstreams());
 

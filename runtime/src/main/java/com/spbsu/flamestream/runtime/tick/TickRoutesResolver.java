@@ -1,6 +1,11 @@
 package com.spbsu.flamestream.runtime.tick;
 
-import akka.actor.*;
+import akka.actor.ActorIdentity;
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.Identify;
+import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.HashRange;
@@ -29,7 +34,7 @@ public final class TickRoutesResolver extends LoggingActor {
 
   @Override
   public void preStart() throws Exception {
-    LOG().info("Identifying {}", cluster);
+    log().info("Identifying {}", cluster);
     final Map<HashRange, Integer> map = tickInfo.hashMapping();
     map.forEach((range, id) -> {
       final ActorPath path = cluster.get(id).child(range.toString());
@@ -46,41 +51,38 @@ public final class TickRoutesResolver extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return ReceiveBuilder.create()
-            .match(ActorIdentity.class, id -> id.getActorRef().isPresent(), id -> {
-              LOG().info("Got identity {}", id);
-              if (id.correlationId() instanceof HashRange) {
-                refs.put((HashRange) id.correlationId(), id.getActorRef().get());
-              } else if (id.correlationId() instanceof String) {
-                acker = id.getActorRef().get();
-              } else {
-                unhandled(id);
-              }
+    return ReceiveBuilder.create().match(ActorIdentity.class, id -> id.getActorRef().isPresent(), id -> {
+      log().info("Got identity {}", id);
+      if (id.correlationId() instanceof HashRange) {
+        refs.put((HashRange) id.correlationId(), id.getActorRef().get());
+      } else if (id.correlationId() instanceof String) {
+        acker = id.getActorRef().get();
+      } else {
+        unhandled(id);
+      }
 
-              if (refs.size() == cluster.size() && acker != null) {
-                LOG().info("Collected all refs!");
-                getContext().getParent().tell(new TickRoutes(refs, acker), self());
-                context().stop(self());
-              }
-            })
-            .match(ActorIdentity.class, id -> !id.getActorRef().isPresent(), id -> {
-              LOG().info("Got empty identity {}", id);
-              if (id.correlationId() instanceof HashRange) {
-                context().system().scheduler().scheduleOnce(
-                        Duration.create(10, TimeUnit.MILLISECONDS),
-                        () -> tmpRanges.get(id.correlationId()).tell(new Identify(id.correlationId()), self()),
-                        context().dispatcher()
-                );
-              } else if (id.correlationId() instanceof String) {
-                context().system().scheduler().scheduleOnce(
-                        Duration.create(10, TimeUnit.MILLISECONDS),
-                        () -> tmpAcker.tell(new Identify("Hey tmpAcker"), self()),
-                        context().dispatcher()
-                );
-              } else {
-                unhandled(id);
-              }
-            })
-            .build();
+      if (refs.size() == cluster.size() && acker != null) {
+        log().info("Collected all refs!");
+        getContext().getParent().tell(new TickRoutes(refs, acker), self());
+        context().stop(self());
+      }
+    }).match(ActorIdentity.class, id -> !id.getActorRef().isPresent(), id -> {
+      log().info("Got empty identity {}", id);
+      if (id.correlationId() instanceof HashRange) {
+        context().system().scheduler().scheduleOnce(
+                Duration.create(10, TimeUnit.MILLISECONDS),
+                () -> tmpRanges.get(id.correlationId()).tell(new Identify(id.correlationId()), self()),
+                context().dispatcher()
+        );
+      } else if (id.correlationId() instanceof String) {
+        context().system().scheduler().scheduleOnce(
+                Duration.create(10, TimeUnit.MILLISECONDS),
+                () -> tmpAcker.tell(new Identify("Hey tmpAcker"), self()),
+                context().dispatcher()
+        );
+      } else {
+        unhandled(id);
+      }
+    }).build();
   }
 }

@@ -19,8 +19,7 @@ public class SingleRawData<T> implements RawData<T> {
 
   @Override
   public String toString() {
-    return "RawData{" + "payload=" + payload +
-            '}';
+    return "RawData{" + "payload=" + payload + '}';
   }
 
   @Override

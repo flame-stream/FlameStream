@@ -14,7 +14,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LongSummaryStatistics;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -25,15 +29,15 @@ import static java.util.stream.Collectors.toMap;
  * Date: 05.10.2017
  */
 public class WordCountStreamTest {
-  private final Logger LOG = LoggerFactory.getLogger(InvertedIndexStreamTest.class);
+  private final Logger log = LoggerFactory.getLogger(InvertedIndexStreamTest.class);
   //dirty code for avoiding serialization
-  private static Iterator<String> sourceIterator;
+  private static Iterator<String> SOURCE_ITERATOR;
 
-  private static FlinkLocalExecutor executor;
+  private static FlinkLocalExecutor EXECUTOR;
 
   @BeforeClass
   public void setUpClass() {
-    executor = new FlinkLocalExecutor(0);
+    EXECUTOR = new FlinkLocalExecutor(0);
   }
 
   @DataProvider(name = "correctnessProvider")
@@ -45,10 +49,10 @@ public class WordCountStreamTest {
 
   @Test(dataProvider = "correctnessProvider")
   public void testCorrectnessAndMeasureLatency(ExampleChecker<String> checker) {
-    sourceIterator = checker.input().iterator();
+    SOURCE_ITERATOR = checker.input().iterator();
 
     final Collection<Object> output = new ArrayList<>();
-    executor.execute(new WordCountStream(), new Source(), output::add);
+    EXECUTOR.execute(new WordCountStream(), new Source(), output::add);
 
     checker.assertCorrect(output.stream());
   }
@@ -66,18 +70,18 @@ public class WordCountStreamTest {
     final LatencyMeasurer<WordCounter> latencyMeasurer = new LatencyMeasurer<>(warmUpDelay, 0);
     final Pattern pattern = Pattern.compile("\\s");
 
-    sourceIterator = checker.input().peek(
-            text -> Arrays.stream(pattern.split(text))
+    SOURCE_ITERATOR = checker.input()
+            .peek(text -> Arrays.stream(pattern.split(text))
                     .collect(toMap(Function.identity(), o -> 1, Integer::sum))
                     .forEach((k, v) -> {
                       expected.adjustOrPutValue(k, v, v);
                       latencyMeasurer.start(new WordCounter(k, expected.get(k)));
-                    })
-    ).iterator();
-    executor.execute(new WordCountStream(), new Source(), o -> latencyMeasurer.finish((WordCounter) o));
+                    }))
+            .iterator();
+    EXECUTOR.execute(new WordCountStream(), new Source(), o -> latencyMeasurer.finish((WordCounter) o));
 
     final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
-    LOG.warn("Latencies stat: {}", stat);
+    log.warn("Latencies stat: {}", stat);
   }
 
   private static class Source implements SourceFunction<String> {
@@ -87,8 +91,8 @@ public class WordCountStreamTest {
     public void run(SourceContext<String> ctx) throws Exception {
       //noinspection Duplicates
       while (running) {
-        if (sourceIterator.hasNext()) {
-          ctx.collect(sourceIterator.next());
+        if (SOURCE_ITERATOR.hasNext()) {
+          ctx.collect(SOURCE_ITERATOR.next());
           ctx.emitWatermark(new Watermark(System.nanoTime()));
         } else {
           running = false;

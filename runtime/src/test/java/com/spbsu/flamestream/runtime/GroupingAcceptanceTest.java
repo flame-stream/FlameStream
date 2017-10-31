@@ -13,7 +13,12 @@ import org.jooq.lambda.Seq;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -22,8 +27,9 @@ import java.util.stream.Collectors;
 public final class GroupingAcceptanceTest {
   private static void doIt(HashFunction<? super Long> groupHash,
                            HashFunction<? super Long> filterHash,
-                           BiPredicate<? super Long, ? super Long> equalz) throws Exception {
-    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(5); TestEnvironment environment = new TestEnvironment(lce)) {
+                           BiPredicate<? super Long, ? super Long> equalz) {
+    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(5);
+         TestEnvironment environment = new TestEnvironment(lce)) {
       final Set<List<Long>> result = new HashSet<>();
       final int window = 7;
 
@@ -49,17 +55,14 @@ public final class GroupingAcceptanceTest {
   private static Set<List<Long>> expected(List<Long> in, HashFunction<? super Long> hash, int window) {
     final Set<List<Long>> mustHave = new HashSet<>();
 
-    final Map<Integer, List<Long>> buckets =
-            in.stream().collect(Collectors.groupingBy(hash::hash));
+    final Map<Integer, List<Long>> buckets = in.stream().collect(Collectors.groupingBy(hash::hash));
 
     for (List<Long> bucket : buckets.values()) {
       for (int i = 0; i < Math.min(bucket.size(), window - 1); ++i) {
         mustHave.add(bucket.subList(0, i + 1));
       }
 
-      Seq.seq(bucket).sliding(window)
-              .map(Collectable::toList)
-              .forEach(mustHave::add);
+      Seq.seq(bucket).sliding(window).map(Collectable::toList).forEach(mustHave::add);
     }
 
     return mustHave;
@@ -86,52 +89,60 @@ public final class GroupingAcceptanceTest {
 
   @SuppressWarnings("Convert2Lambda")
   @Test
-  public void noReorderingSingleHash() throws Exception {
+  public void noReorderingSingleHash() {
     //noinspection Convert2Lambda
-    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.constantHash(100), new BiPredicate<Long, Long>() {
-      @Override
-      public boolean test(Long aLong, Long aLong2) {
-        return true;
-      }
-    });
+    GroupingAcceptanceTest.doIt(
+            HashFunction.constantHash(100),
+            HashFunction.constantHash(100),
+            new BiPredicate<Long, Long>() {
+              @Override
+              public boolean test(Long a, Long b) {
+                return true;
+              }
+            }
+    );
   }
 
   @Test
-  public void noReorderingMultipleHash() throws Exception {
+  public void noReorderingMultipleHash() {
     final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
     GroupingAcceptanceTest.doIt(hash, HashFunction.constantHash(100), new BiPredicate<Long, Long>() {
 
       final HashFunction<Long> hashFunction = hash;
 
       @Override
-      public boolean test(Long aLong, Long aLong2) {
-        return hashFunction.hash(aLong) == hashFunction.hash(aLong2);
+      public boolean test(Long a, Long b) {
+        return hashFunction.hash(a) == hashFunction.hash(b);
       }
     });
   }
 
   @SuppressWarnings("Convert2Lambda")
   @Test
-  public void reorderingSingleHash() throws Exception {
+  public void reorderingSingleHash() {
     //noinspection Convert2Lambda
-    GroupingAcceptanceTest.doIt(HashFunction.constantHash(100), HashFunction.uniformLimitedHash(100), new BiPredicate<Long, Long>() {
-      @Override
-      public boolean test(Long aLong, Long aLong2) {
-        return true;
-      }
-    });
+    GroupingAcceptanceTest.doIt(
+            HashFunction.constantHash(100),
+            HashFunction.uniformLimitedHash(100),
+            new BiPredicate<Long, Long>() {
+              @Override
+              public boolean test(Long a, Long b) {
+                return true;
+              }
+            }
+    );
   }
 
   @Test
-  public void reorderingMultipleHash() throws Exception {
+  public void reorderingMultipleHash() {
     final HashFunction<Long> hash = HashFunction.uniformLimitedHash(100);
 
     GroupingAcceptanceTest.doIt(hash, HashFunction.uniformLimitedHash(100), new BiPredicate<Long, Long>() {
       private final HashFunction<Long> hashFunction = hash;
 
       @Override
-      public boolean test(Long aLong, Long aLong2) {
-        return hashFunction.hash(aLong) == hashFunction.hash(aLong2);
+      public boolean test(Long a, Long b) {
+        return hashFunction.hash(a) == hashFunction.hash(b);
       }
     });
   }

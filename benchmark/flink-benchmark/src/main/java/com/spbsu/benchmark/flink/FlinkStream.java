@@ -10,8 +10,8 @@ import java.util.function.Function;
  */
 public interface FlinkStream<T, R> extends Function<DataStream<T>, DataStream<R>> {
   @Override
-  default DataStream<R> apply(DataStream<T> tDataStream) {
-    return stream(tDataStream);
+  default DataStream<R> apply(DataStream<T> dataStream) {
+    return stream(dataStream);
   }
 
   DataStream<R> stream(DataStream<T> source);

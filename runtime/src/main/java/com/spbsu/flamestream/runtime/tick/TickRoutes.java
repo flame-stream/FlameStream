@@ -27,9 +27,6 @@ public final class TickRoutes {
 
   @Override
   public String toString() {
-    return "TickRoutes{" +
-            "rangeConcierges=" + rangeConcierges +
-            ", acker=" + acker +
-            '}';
+    return "TickRoutes{" + "rangeConcierges=" + rangeConcierges + ", acker=" + acker + '}';
   }
 }

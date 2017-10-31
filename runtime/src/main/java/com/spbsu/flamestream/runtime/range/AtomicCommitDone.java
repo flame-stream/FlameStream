@@ -15,7 +15,6 @@ public final class AtomicCommitDone {
 
   @Override
   public String toString() {
-    return "AtomicCommitDone{" + "atomicGraph=" + atomicGraph +
-            '}';
+    return "AtomicCommitDone{" + "atomicGraph=" + atomicGraph + '}';
   }
 }

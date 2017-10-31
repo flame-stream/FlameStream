@@ -13,8 +13,6 @@ public final class StartTick {
 
   @Override
   public String toString() {
-    return "StartTick{" +
-            "tickRoutes=" + tickRoutes +
-            '}';
+    return "StartTick{" + "tickRoutes=" + tickRoutes + '}';
   }
 }

@@ -17,7 +17,9 @@ public final class BarrierSuite<T> implements Graph {
 
   public BarrierSuite(AtomicGraph sink) {
     this.barrierSink = new BarrierSink(sink);
-    this.preBarrierMetaFilter = new PreBarrierMetaFilter<>((ToIntFunction<? super T>)sink.inPorts().get(0).hashFunction());
+    this.preBarrierMetaFilter = new PreBarrierMetaFilter<>((ToIntFunction<? super T>) sink.inPorts()
+            .get(0)
+            .hashFunction());
   }
 
   public InPort inPort() {
@@ -36,8 +38,6 @@ public final class BarrierSuite<T> implements Graph {
 
   @Override
   public ComposedGraph<AtomicGraph> flattened() {
-    return preBarrierMetaFilter
-            .fuse(barrierSink, preBarrierMetaFilter.outPort(), barrierSink.inPort())
-            .flattened();
+    return preBarrierMetaFilter.fuse(barrierSink, preBarrierMetaFilter.outPort(), barrierSink.inPort()).flattened();
   }
 }

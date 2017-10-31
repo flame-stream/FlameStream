@@ -5,7 +5,11 @@ import com.spbsu.flamestream.core.graph.ComposedGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public final class TheGraph {
   private final ComposedGraph<AtomicGraph> composedGraph;
@@ -19,8 +23,7 @@ public final class TheGraph {
     this.frontBindings = new HashMap<>(frontBindings);
   }
 
-  private static void assertFrontMapping(Graph tail,
-                                         Map<Integer, InPort> frontDownstreams) {
+  private static void assertFrontMapping(Graph tail, Map<Integer, InPort> frontDownstreams) {
     final Set<InPort> bindPorts = new HashSet<>(frontDownstreams.values());
     final Set<InPort> freePorts = new HashSet<>(tail.inPorts());
 

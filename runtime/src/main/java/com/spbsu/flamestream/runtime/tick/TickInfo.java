@@ -80,15 +80,8 @@ public final class TickInfo {
 
   @Override
   public String toString() {
-    return "TickInfo{" +
-            "id=" + id +
-            ", graph=" + graph +
-            ", hashMapping=" + hashMapping +
-            ", tickDependencies=" + tickDependencies +
-            ", startTs=" + startTs +
-            ", stopTs=" + stopTs +
-            ", window=" + window +
-            ", ackerLocation=" + ackerLocation +
-            '}';
+    return "TickInfo{" + "id=" + id + ", graph=" + graph + ", hashMapping=" + hashMapping + ", tickDependencies="
+            + tickDependencies + ", startTs=" + startTs + ", stopTs=" + stopTs + ", window=" + window
+            + ", ackerLocation=" + ackerLocation + '}';
   }
 }

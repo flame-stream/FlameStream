@@ -8,8 +8,7 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public final class MetaImpl implements Meta {
-  private static final Comparator<Meta> NATURAL_ORDER = Comparator
-          .comparing(Meta::globalTime)
+  private static final Comparator<Meta> NATURAL_ORDER = Comparator.comparing(Meta::globalTime)
           .thenComparing(Meta::trace);
   private final GlobalTime globalTime;
   private final Trace trace;
@@ -36,8 +35,7 @@ public final class MetaImpl implements Meta {
 
   @Override
   public boolean isInvalidatedBy(Meta that) {
-    return globalTime.equals(that.globalTime())
-            && trace.isInvalidatedBy(that.trace());
+    return globalTime.equals(that.globalTime()) && trace.isInvalidatedBy(that.trace());
   }
 
   @Override
@@ -57,11 +55,14 @@ public final class MetaImpl implements Meta {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final MetaImpl meta = (MetaImpl) o;
-    return Objects.equals(globalTime, meta.globalTime) &&
-            Objects.equals(trace, meta.trace);
+    return Objects.equals(globalTime, meta.globalTime) && Objects.equals(trace, meta.trace);
   }
 
   @Override

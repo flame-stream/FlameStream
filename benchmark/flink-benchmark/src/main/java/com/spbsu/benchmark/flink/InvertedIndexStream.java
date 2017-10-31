@@ -2,12 +2,12 @@ package com.spbsu.benchmark.flink;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndexRemove;
-import com.spbsu.flamestream.example.inverted_index.model.WordPagePositions;
-import com.spbsu.flamestream.example.inverted_index.ops.InvertedIndexState;
-import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
+import com.spbsu.flamestream.example.index.model.WikipediaPage;
+import com.spbsu.flamestream.example.index.model.WordIndexAdd;
+import com.spbsu.flamestream.example.index.model.WordIndexRemove;
+import com.spbsu.flamestream.example.index.model.WordPagePositions;
+import com.spbsu.flamestream.example.index.ops.InvertedIndexState;
+import com.spbsu.flamestream.example.index.utils.IndexItemInLong;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ValueState;
@@ -26,8 +26,7 @@ import java.util.stream.Stream;
  */
 public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedIndexStream.Result> {
   public DataStream<Result> stream(DataStream<WikipediaPage> source, int parallelism) {
-    return source
-            .flatMap(new WikipediaPageToWordPositions())
+    return source.flatMap(new WikipediaPageToWordPositions())
             .setParallelism(parallelism)
             .keyBy(0)
             .map(new RichIndexFunction())
@@ -36,20 +35,20 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
 
   @Override
   public DataStream<Result> stream(DataStream<WikipediaPage> source) {
-    return source
-            .flatMap(new WikipediaPageToWordPositions())
-            .keyBy(0)
-            .map(new RichIndexFunction());
+    return source.flatMap(new WikipediaPageToWordPositions()).keyBy(0).map(new RichIndexFunction());
   }
 
   private static class WikipediaPageToWordPositions implements FlatMapFunction<WikipediaPage, Tuple2<String, long[]>> {
     @Override
-    public void flatMap(WikipediaPage value, Collector<Tuple2<String, long[]>> out) throws Exception {
-      final com.spbsu.flamestream.example.inverted_index.ops.WikipediaPageToWordPositions filter = new com.spbsu.flamestream.example.inverted_index.ops.WikipediaPageToWordPositions();
+    public void flatMap(WikipediaPage value, Collector<Tuple2<String, long[]>> out) {
+      final com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions filter =
+              new com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions();
       final Stream<WordPagePositions> result = filter.apply(value);
       result.forEach(new Consumer<WordPagePositions>() {
         @Override
-        public void accept(WordPagePositions v) {out.collect(new Tuple2<>(v.word(), v.positions()));}
+        public void accept(WordPagePositions v) {
+          out.collect(new Tuple2<>(v.word(), v.positions()));
+        }
       });
     }
   }
@@ -115,10 +114,7 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
 
     @Override
     public String toString() {
-      return "Result{" +
-              "wordIndexAdd=" + wordIndexAdd +
-              ", wordIndexRemove=" + wordIndexRemove +
-              '}';
+      return "Result{" + "wordIndexAdd=" + wordIndexAdd + ", wordIndexRemove=" + wordIndexRemove + '}';
     }
   }
 }

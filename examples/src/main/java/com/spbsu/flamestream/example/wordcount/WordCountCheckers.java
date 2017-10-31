@@ -4,7 +4,11 @@ import com.spbsu.flamestream.example.ExampleChecker;
 import com.spbsu.flamestream.example.wordcount.model.WordCounter;
 import org.testng.Assert;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -46,8 +50,6 @@ public enum WordCountCheckers implements ExampleChecker<String> {
 
   private static String text(@SuppressWarnings("SameParameterValue") int size) {
     final String[] words = {"repka", "dedka", "babka", "zhuchka", "vnuchka"};
-    return new Random().ints(size, 0, words.length)
-            .mapToObj(i -> words[i])
-            .collect(joining(" "));
+    return new Random().ints(size, 0, words.length).mapToObj(i -> words[i]).collect(joining(" "));
   }
 }

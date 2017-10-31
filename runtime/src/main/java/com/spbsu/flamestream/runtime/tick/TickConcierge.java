@@ -25,10 +25,7 @@ public final class TickConcierge extends LoggingActor {
   @Nullable
   private TickRoutes routes;
 
-  private TickConcierge(TickInfo tickInfo,
-                        int localId,
-                        Map<Integer, ActorPath> cluster,
-                        ActorRef tickWatcher) {
+  private TickConcierge(TickInfo tickInfo, int localId, Map<Integer, ActorPath> cluster, ActorRef tickWatcher) {
     this.tickInfo = tickInfo;
     this.localId = localId;
     this.awaitedTicks = new HashSet<>(tickInfo.tickDependencies());
@@ -41,30 +38,23 @@ public final class TickConcierge extends LoggingActor {
     context().actorOf(TickRoutesResolver.props(cluster, tickInfo), "resolver");
   }
 
-  public static Props props(TickInfo tickInfo,
-                            int localId,
-                            Map<Integer, ActorPath> cluster,
-                            ActorRef tickWatcher) {
+  public static Props props(TickInfo tickInfo, int localId, Map<Integer, ActorPath> cluster, ActorRef tickWatcher) {
     return Props.create(TickConcierge.class, tickInfo, localId, cluster, tickWatcher);
   }
 
   @Override
   public Receive createReceive() {
-    return ReceiveBuilder.create()
-            .match(TickCommitDone.class, committed -> {
-              awaitedTicks.remove(committed.tickId());
-              if (awaitedTicks.isEmpty() && routes != null) {
-                run();
-              }
-            })
-            .match(TickRoutes.class, routes -> {
-              this.routes = routes;
-              if (awaitedTicks.isEmpty() && routes != null) {
-                run();
-              }
-            })
-            .matchAny(m -> stash())
-            .build();
+    return ReceiveBuilder.create().match(TickCommitDone.class, committed -> {
+      awaitedTicks.remove(committed.tickId());
+      if (awaitedTicks.isEmpty() && routes != null) {
+        run();
+      }
+    }).match(TickRoutes.class, routes -> {
+      this.routes = routes;
+      if (awaitedTicks.isEmpty() && routes != null) {
+        run();
+      }
+    }).matchAny(m -> stash()).build();
   }
 
   private void run() {
@@ -74,16 +64,14 @@ public final class TickConcierge extends LoggingActor {
   }
 
   private Receive tickRunning() {
-    return ReceiveBuilder.create()
-            .match(TickCommitDone.class, committed -> {
-              if (committed.tickId() == tickInfo.id()) {
-                LOG().info("My job is done here");
-                context().stop(self());
-              } else {
-                unhandled(committed);
-              }
-            })
-            .build();
+    return ReceiveBuilder.create().match(TickCommitDone.class, committed -> {
+      if (committed.tickId() == tickInfo.id()) {
+        log().info("My job is done here");
+        context().stop(self());
+      } else {
+        unhandled(committed);
+      }
+    }).build();
   }
 
   private ActorRef rangeConcierge(HashRange range) {
@@ -91,8 +79,10 @@ public final class TickConcierge extends LoggingActor {
   }
 
   private Iterable<HashRange> myRanges(Map<HashRange, Integer> mappings) {
-    return mappings.entrySet().stream()
+    return mappings.entrySet()
+            .stream()
             .filter(e -> e.getValue().equals(localId))
-            .map(Map.Entry::getKey).collect(toSet());
+            .map(Map.Entry::getKey)
+            .collect(toSet());
   }
 }

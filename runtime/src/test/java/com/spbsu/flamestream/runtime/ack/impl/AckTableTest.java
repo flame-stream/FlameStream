@@ -35,7 +35,8 @@ public class AckTableTest {
 
   @Test(dataProvider = "logicTestProvider")
   public void logicTest(AckTable ackTable, long window, long windowsCount, long items) {
-    final List<Pair<Long, Long>> xors = Stream.generate(() -> ThreadLocalRandom.current().nextLong(1, window * windowsCount))
+    final List<Pair<Long, Long>> xors = Stream.generate(() -> ThreadLocalRandom.current()
+            .nextLong(1, window * windowsCount))
             .distinct()
             .limit(items)
             .map(ts -> new Pair<>(ts, ThreadLocalRandom.current().nextLong()))
@@ -70,8 +71,10 @@ public class AckTableTest {
                     Stream.generate(() -> ThreadLocalRandom.current().nextLong(1, window * windowsCount))
                             .distinct()
                             .limit(items)
-                            .map(ts -> new Pair<>(ts, ThreadLocalRandom.current().nextLong()))
-                            .collect(Collectors.toList())
+                            .map(ts -> new Pair<>(
+                                    ts,
+                                    ThreadLocalRandom.current().nextLong()
+                            )).collect(Collectors.toList())
             }
     };
   }

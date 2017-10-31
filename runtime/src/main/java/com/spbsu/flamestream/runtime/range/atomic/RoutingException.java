@@ -18,8 +18,7 @@ public class RoutingException extends RuntimeException {
     super(cause);
   }
 
-  protected RoutingException(String message, Throwable cause, boolean enableSuppression,
-                             boolean writableStackTrace) {
+  protected RoutingException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
   }
 }

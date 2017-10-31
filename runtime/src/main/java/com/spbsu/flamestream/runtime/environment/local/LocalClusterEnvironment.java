@@ -22,7 +22,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -58,11 +62,7 @@ public final class LocalClusterEnvironment implements Environment {
       zkThread.start();
       TimeUnit.SECONDS.sleep(1);
 
-      this.zooKeeper = new ZooKeeper(
-              ZK_STRING,
-              5000,
-              e -> LOG.info("Init zookeeperString ZKEvent: {}", e)
-      );
+      this.zooKeeper = new ZooKeeper(ZK_STRING, 5000, e -> LOG.info("Init zookeeperString ZKEvent: {}", e));
       this.dns = freeSockets(workersCount);
 
       deployPartitioning();
@@ -93,14 +93,18 @@ public final class LocalClusterEnvironment implements Environment {
   }
 
   private Map<Integer, DumbInetSocketAddress> freeSockets(int workersCount) {
-    return IntStream.range(LocalClusterEnvironment.START_WORKER_PORT, LocalClusterEnvironment.START_WORKER_PORT + workersCount)
-            .boxed().collect(toMap(Function.identity(), port -> new DumbInetSocketAddress("localhost", port)));
+    return IntStream.range(
+            LocalClusterEnvironment.START_WORKER_PORT,
+            LocalClusterEnvironment.START_WORKER_PORT + workersCount
+    )
+            .boxed()
+            .collect(toMap(Function.identity(), port -> new DumbInetSocketAddress("localhost", port)));
   }
 
   private void deployPartitioning() {
     try {
       createDirs();
-      pushDNS(dns);
+      pushDns(dns);
       pushFronts(dns.keySet());
     } catch (JsonProcessingException | InterruptedException | KeeperException e) {
       throw new RuntimeException(e);
@@ -108,23 +112,22 @@ public final class LocalClusterEnvironment implements Environment {
   }
 
   private void createDirs() throws KeeperException, InterruptedException {
-    zooKeeper.create(
-            "/ticks",
-            new byte[0],
-            ZKUtil.parseACLs("world:anyone:crdwa"),
-            CreateMode.PERSISTENT
-    );
+    zooKeeper.create("/ticks", new byte[0], ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
   }
 
-  private void pushDNS(Map<Integer, DumbInetSocketAddress> dns) throws KeeperException, InterruptedException, JsonProcessingException, ZKUtil.BadAclFormatException {
-    zooKeeper.create( "/dns",
+  private void pushDns(Map<Integer, DumbInetSocketAddress> dns) throws
+                                                                KeeperException,
+                                                                InterruptedException,
+                                                                JsonProcessingException {
+    zooKeeper.create(
+            "/dns",
             mapper.writeValueAsBytes(dns),
             ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT
     );
   }
 
-  private void pushFronts(Set<Integer> fronts) throws KeeperException, InterruptedException, JsonProcessingException, ZKUtil.BadAclFormatException {
+  private void pushFronts(Set<Integer> fronts) throws KeeperException, InterruptedException, JsonProcessingException {
     zooKeeper.create(
             "/fronts",
             mapper.writeValueAsBytes(fronts),
@@ -134,7 +137,8 @@ public final class LocalClusterEnvironment implements Environment {
   }
 
   private Collection<WorkerApplication> startWorkers() {
-    final Set<WorkerApplication> apps = dns.entrySet().stream()
+    final Set<WorkerApplication> apps = dns.entrySet()
+            .stream()
             .map(f -> new WorkerApplication(f.getKey(), f.getValue(), ZK_STRING))
             .collect(toSet());
 
