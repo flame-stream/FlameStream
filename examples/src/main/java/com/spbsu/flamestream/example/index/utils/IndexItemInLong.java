@@ -16,8 +16,8 @@ public class IndexItemInLong {
 
   public static long createPagePosition(int pageId, int position, int pageVersion, int range) {
     return (((long) pageId) << (Long.SIZE - pageIdBitLength)) | ((position & 0xffffffffL) << (Long.SIZE
-      - pageIdBitLength - positionBitLength)) | ((pageVersion & 0xffffffffL) << (Long.SIZE - pageIdBitLength
-      - positionBitLength - versionBitLength)) | ((range & 0xffffffffL));
+            - pageIdBitLength - positionBitLength)) | ((pageVersion & 0xffffffffL) << (Long.SIZE - pageIdBitLength
+            - positionBitLength - versionBitLength)) | ((range & 0xffffffffL));
   }
 
   public static long setRange(long l, int range) {
@@ -37,11 +37,11 @@ public class IndexItemInLong {
 
   public static int version(long l) {
     return (int) ((l << (pageIdBitLength + positionBitLength)) >>> (pageIdBitLength + positionBitLength
-      + rangeBitLength));
+            + rangeBitLength));
   }
 
   public static int range(long l) {
     return (int) ((l << (pageIdBitLength + positionBitLength + versionBitLength)) >>> (pageIdBitLength
-      + positionBitLength + versionBitLength));
+            + positionBitLength + versionBitLength));
   }
 }

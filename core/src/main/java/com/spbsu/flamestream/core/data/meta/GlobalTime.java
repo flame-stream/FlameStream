@@ -8,7 +8,7 @@ public final class GlobalTime implements Comparable<GlobalTime> {
   //Inner representation is a subject for a discussion and/or an optimization
 
   private static final Comparator<GlobalTime> NATURAL_ORDER = Comparator.comparingLong(GlobalTime::time)
-    .thenComparingInt(GlobalTime::front);
+          .thenComparingInt(GlobalTime::front);
 
   private final long time;
 

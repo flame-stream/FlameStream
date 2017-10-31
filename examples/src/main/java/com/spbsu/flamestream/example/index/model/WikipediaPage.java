@@ -15,9 +15,9 @@ public class WikipediaPage {
 
   @JsonCreator
   public WikipediaPage(@JsonProperty("id") int id,
-                       @JsonProperty("version") int version,
-                       @JsonProperty("title") String title,
-                       @JsonProperty("text") String text) {
+          @JsonProperty("version") int version,
+          @JsonProperty("title") String title,
+          @JsonProperty("text") String text) {
     this.id = id;
     this.version = version;
     this.title = title;

@@ -28,19 +28,19 @@ public class AckTableTest {
     final long windowsCount = 40 * 1000;
     final long items = 100 * 1000;
     return new Object[][]{
-      {new ArrayAckTable(startTs, window * windowsCount, window), window, windowsCount, items},
-      {new TreeAckTable(startTs, window), window, windowsCount, items}
+            {new ArrayAckTable(startTs, window * windowsCount, window), window, windowsCount, items},
+            {new TreeAckTable(startTs, window), window, windowsCount, items}
     };
   }
 
   @Test(dataProvider = "logicTestProvider")
   public void logicTest(AckTable ackTable, long window, long windowsCount, long items) {
     final List<Pair<Long, Long>> xors = Stream.generate(() -> ThreadLocalRandom.current()
-      .nextLong(1, window * windowsCount))
-      .distinct()
-      .limit(items)
-      .map(ts -> new Pair<>(ts, ThreadLocalRandom.current().nextLong()))
-      .collect(Collectors.toList());
+            .nextLong(1, window * windowsCount))
+            .distinct()
+            .limit(items)
+            .map(ts -> new Pair<>(ts, ThreadLocalRandom.current().nextLong()))
+            .collect(Collectors.toList());
 
     LongStream.range(0, windowsCount).forEach(value -> ackTable.report(window * value, 0));
     final SortedSet<Long> sortedSet = new TreeSet<>();
@@ -64,18 +64,18 @@ public class AckTableTest {
     final long windowsCount = 4 * 1000;
     final long items = 10 * 1000;
     return new Object[][]{
-      {
-        startTs,
-        window,
-        windowsCount,
-        Stream.generate(() -> ThreadLocalRandom.current().nextLong(1, window * windowsCount))
-          .distinct()
-          .limit(items)
-          .map(ts -> new Pair<>(
-            ts,
-            ThreadLocalRandom.current().nextLong()
-          )).collect(Collectors.toList())
-      }
+            {
+                    startTs,
+                    window,
+                    windowsCount,
+                    Stream.generate(() -> ThreadLocalRandom.current().nextLong(1, window * windowsCount))
+                            .distinct()
+                            .limit(items)
+                            .map(ts -> new Pair<>(
+                                    ts,
+                                    ThreadLocalRandom.current().nextLong()
+                            )).collect(Collectors.toList())
+            }
     };
   }
 

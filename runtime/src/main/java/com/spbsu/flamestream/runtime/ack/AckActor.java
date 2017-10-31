@@ -47,9 +47,9 @@ public final class AckActor extends LoggingActor {
 
   private Receive acking() {
     return ReceiveBuilder.create()
-      .match(AckerReport.class, this::handleReport)
-      .match(Ack.class, this::handleAck)
-      .build();
+            .match(AckerReport.class, this::handleReport)
+            .match(Ack.class, this::handleAck)
+            .build();
   }
 
   @Override

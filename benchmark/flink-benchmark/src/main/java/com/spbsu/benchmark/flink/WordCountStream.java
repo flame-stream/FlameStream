@@ -19,8 +19,8 @@ public class WordCountStream implements FlinkStream<String, WordCounter> {
   public DataStream<WordCounter> stream(DataStream<String> source) {
     //noinspection deprecation
     return source.flatMap(new Splitter()).keyBy(0)
-      //fold is deprecated but there is no alternative in the current version
-      .fold(new WordCounter(null, 0), new WordCounterFold());
+            //fold is deprecated but there is no alternative in the current version
+            .fold(new WordCounter(null, 0), new WordCounterFold());
   }
 
   private static class Splitter implements FlatMapFunction<String, Tuple1<String>> {

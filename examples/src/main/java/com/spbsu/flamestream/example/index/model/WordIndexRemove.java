@@ -14,8 +14,8 @@ public class WordIndexRemove implements WordBase {
 
   @JsonCreator
   public WordIndexRemove(@JsonProperty("word") String word,
-                         @JsonProperty("start") long start,
-                         @JsonProperty("range") int range) {
+          @JsonProperty("start") long start,
+          @JsonProperty("range") int range) {
     this.word = word;
     this.start = start;
     this.range = range;

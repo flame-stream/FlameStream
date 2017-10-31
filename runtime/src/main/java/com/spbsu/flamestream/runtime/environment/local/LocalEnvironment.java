@@ -54,13 +54,13 @@ public final class LocalEnvironment implements Environment {
   @Override
   public void deploy(TickInfo tickInfo) {
     final ActorRef concierge = localSystem.actorOf(
-      TickConcierge.props(
-        tickInfo,
-        1,
-        singletonMap(1, localSystem.child(String.valueOf(tickInfo.id()))),
-        fakeWatcher
-      ),
-      String.valueOf(tickInfo.id())
+            TickConcierge.props(
+                    tickInfo,
+                    1,
+                    singletonMap(1, localSystem.child(String.valueOf(tickInfo.id()))),
+                    fakeWatcher
+            ),
+            String.valueOf(tickInfo.id())
     );
 
     front.tell(tickInfo, ActorRef.noSender());

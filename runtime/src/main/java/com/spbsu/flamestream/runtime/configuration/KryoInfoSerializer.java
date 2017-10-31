@@ -12,7 +12,7 @@ public final class KryoInfoSerializer implements TickInfoSerializer {
   public KryoInfoSerializer() {
     this.kryo = new Kryo();
     ((Kryo.DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy())
-      .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+            .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
   }
 
   @Override

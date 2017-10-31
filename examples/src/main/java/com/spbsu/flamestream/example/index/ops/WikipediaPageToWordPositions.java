@@ -31,9 +31,9 @@ public class WikipediaPageToWordPositions implements Function<WikipediaPage, Str
     while (tokenizer.hasNext()) {
       final String word = tokenizer.next().toString().toLowerCase();
       final long pagePosition = IndexItemInLong.createPagePosition(
-        wikipediaPage.id(),
-        position,
-        wikipediaPage.version()
+              wikipediaPage.id(),
+              position,
+              wikipediaPage.version()
       );
       if (!wordPositions.containsKey(word)) {
         final TLongList positions = new TLongArrayList();

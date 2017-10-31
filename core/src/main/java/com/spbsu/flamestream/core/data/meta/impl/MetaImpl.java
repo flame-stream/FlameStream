@@ -9,7 +9,7 @@ import java.util.Objects;
 
 public final class MetaImpl implements Meta {
   private static final Comparator<Meta> NATURAL_ORDER = Comparator.comparing(Meta::globalTime)
-    .thenComparing(Meta::trace);
+          .thenComparing(Meta::trace);
   private final GlobalTime globalTime;
   private final Trace trace;
 

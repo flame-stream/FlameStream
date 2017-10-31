@@ -45,10 +45,10 @@ public final class TickWatcher extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-      .match(WatchedEvent.class, this::onEvent)
-      .match(CommitTick.class, this::commitTick)
-      .matchAny(this::unhandled)
-      .build();
+            .match(WatchedEvent.class, this::onEvent)
+            .match(CommitTick.class, this::commitTick)
+            .matchAny(this::unhandled)
+            .build();
   }
 
   private void onEvent(WatchedEvent event) throws KeeperException, InterruptedException {
@@ -64,10 +64,10 @@ public final class TickWatcher extends LoggingActor {
 
   private void commitTick(CommitTick commit) throws KeeperException, InterruptedException {
     zooKeeper.create(
-      "/ticks/" + commit.tickId() + "/committed",
-      new byte[0],
-      ZKUtil.parseACLs("world:anyone:crdwa"),
-      CreateMode.PERSISTENT
+            "/ticks/" + commit.tickId() + "/committed",
+            new byte[0],
+            ZKUtil.parseACLs("world:anyone:crdwa"),
+            CreateMode.PERSISTENT
     );
   }
 

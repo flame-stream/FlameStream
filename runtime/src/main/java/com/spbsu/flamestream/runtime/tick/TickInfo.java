@@ -29,13 +29,13 @@ public final class TickInfo {
   private final int ackerLocation;
 
   public TickInfo(long id,
-                  long startTs,
-                  long stopTs,
-                  TheGraph graph,
-                  int ackerLocation,
-                  Map<HashRange, Integer> hashMapping,
-                  long window,
-                  Set<Long> tickDependencies) {
+          long startTs,
+          long stopTs,
+          TheGraph graph,
+          int ackerLocation,
+          Map<HashRange, Integer> hashMapping,
+          long window,
+          Set<Long> tickDependencies) {
     this.id = id;
     this.ackerLocation = ackerLocation;
     this.hashMapping = new HashMap<>(hashMapping);
@@ -81,7 +81,7 @@ public final class TickInfo {
   @Override
   public String toString() {
     return "TickInfo{" + "id=" + id + ", graph=" + graph + ", hashMapping=" + hashMapping + ", tickDependencies="
-      + tickDependencies + ", startTs=" + startTs + ", stopTs=" + stopTs + ", window=" + window
-      + ", ackerLocation=" + ackerLocation + '}';
+            + tickDependencies + ", startTs=" + startTs + ", stopTs=" + stopTs + ", window=" + window
+            + ", ackerLocation=" + ackerLocation + '}';
   }
 }

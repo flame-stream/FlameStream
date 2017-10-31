@@ -70,15 +70,15 @@ public final class TickRoutesResolver extends LoggingActor {
       log().info("Got empty identity {}", id);
       if (id.correlationId() instanceof HashRange) {
         context().system().scheduler().scheduleOnce(
-          Duration.create(10, TimeUnit.MILLISECONDS),
-          () -> tmpRanges.get(id.correlationId()).tell(new Identify(id.correlationId()), self()),
-          context().dispatcher()
+                Duration.create(10, TimeUnit.MILLISECONDS),
+                () -> tmpRanges.get(id.correlationId()).tell(new Identify(id.correlationId()), self()),
+                context().dispatcher()
         );
       } else if (id.correlationId() instanceof String) {
         context().system().scheduler().scheduleOnce(
-          Duration.create(10, TimeUnit.MILLISECONDS),
-          () -> tmpAcker.tell(new Identify("Hey tmpAcker"), self()),
-          context().dispatcher()
+                Duration.create(10, TimeUnit.MILLISECONDS),
+                () -> tmpAcker.tell(new Identify("Hey tmpAcker"), self()),
+                context().dispatcher()
         );
       } else {
         unhandled(id);

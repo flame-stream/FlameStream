@@ -44,10 +44,10 @@ public class InvertedIndexStateTest {
       //Assert
       Assert.assertEquals(value, tree.tryToFindAndUpdate(value, newPosition, newRange));
       expectedValues.add(IndexItemInLong.createPagePosition(
-        IndexItemInLong.pageId(value),
-        newPosition,
-        IndexItemInLong.version(value),
-        newRange
+              IndexItemInLong.pageId(value),
+              newPosition,
+              IndexItemInLong.version(value),
+              newRange
       ));
     }
 

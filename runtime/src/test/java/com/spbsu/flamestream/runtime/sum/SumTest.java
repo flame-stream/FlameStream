@@ -53,15 +53,15 @@ public final class SumTest {
     final BarrierSuite<Sum> barrier = new BarrierSuite<Sum>(sink);
 
     final Graph graph = merge.fuse(grouping, merge.outPort(), grouping.inPort())
-      .fuse(enricher, grouping.outPort(), enricher.inPort())
-      .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
-      .fuse(reducer, junkFilter.outPort(), reducer.inPort())
-      .fuse(broadcast, reducer.outPort(), broadcast.inPort())
-      .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
-      .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
+            .fuse(enricher, grouping.outPort(), enricher.inPort())
+            .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
+            .fuse(reducer, junkFilter.outPort(), reducer.inPort())
+            .fuse(broadcast, reducer.outPort(), broadcast.inPort())
+            .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
+            .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
 
     final Map<Integer, InPort> frontBindings = fronts.stream()
-      .collect(Collectors.toMap(Function.identity(), e -> merge.inPorts().get(0)));
+            .collect(Collectors.toMap(Function.identity(), e -> merge.inPorts().get(0)));
     return new TheGraph(graph, frontBindings);
   }
 
@@ -84,20 +84,20 @@ public final class SumTest {
 
   private void test(int tickLength, int inputSize, int fronts) throws Exception {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
-         TestEnvironment environment = new TestEnvironment(lce)) {
+            TestEnvironment environment = new TestEnvironment(lce)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
       environment.deploy(SumTest.sumGraph(
-        environment.availableFronts(),
-        environment.wrapInSink(HashFunction.constantHash(1), k -> result.add((Sum) k))
+              environment.availableFronts(),
+              environment.wrapInSink(HashFunction.constantHash(1), k -> result.add((Sum) k))
       ), tickLength, 1);
 
       final List<LongNumb> source = new Random().ints(inputSize)
-        .map(i -> i % 100)
-        .map(Math::abs)
-        .mapToObj(LongNumb::new)
-        .collect(Collectors.toList());
+              .map(i -> i % 100)
+              .map(Math::abs)
+              .mapToObj(LongNumb::new)
+              .collect(Collectors.toList());
       final Consumer<Object> sink = environment.randomFrontConsumer(fronts);
       source.forEach(longNumb -> {
         sink.accept(longNumb);
@@ -111,8 +111,8 @@ public final class SumTest {
       environment.awaitTick(tickLength + 5);
 
       final long expected = source.stream()
-        .reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value()))
-        .value();
+              .reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value()))
+              .value();
       final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
 
       Assert.assertEquals(actual, expected);

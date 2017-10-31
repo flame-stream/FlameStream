@@ -23,11 +23,11 @@ final class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     final DataItem<?> newItem = new PayloadDataItem<>(
-      item.meta().advanced(incrementLocalTimeAndGet()),
-      new PreBarrierMetaElement<>(
-        item.payload(),
-        HashFunction.UNIFORM_OBJECT_HASH.hash(item.meta().globalTime().front())
-      )
+            item.meta().advanced(incrementLocalTimeAndGet()),
+            new PreBarrierMetaElement<>(
+                    item.payload(),
+                    HashFunction.UNIFORM_OBJECT_HASH.hash(item.meta().globalTime().front())
+            )
     );
     handle.push(outPort(), newItem);
     handle.ack(newItem.ack(), newItem.meta().globalTime());

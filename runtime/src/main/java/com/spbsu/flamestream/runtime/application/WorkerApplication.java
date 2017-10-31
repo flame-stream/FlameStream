@@ -41,7 +41,7 @@ public final class WorkerApplication {
     final Config config;
     if (args.length == 1) {
       config = ConfigFactory.parseReader(Files.newBufferedReader(Paths.get(args[0])))
-        .withFallback(ConfigFactory.load("fs"));
+              .withFallback(ConfigFactory.load("fs"));
     } else {
       config = ConfigFactory.load("fs");
     }
@@ -55,8 +55,8 @@ public final class WorkerApplication {
 
   public void run() {
     final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + host.port())
-      .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + host.host()))
-      .withFallback(ConfigFactory.load("remote"));
+            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + host.host()))
+            .withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);
 
     system.actorOf(LifecycleWatcher.props(zkConnectString, id), "watcher");

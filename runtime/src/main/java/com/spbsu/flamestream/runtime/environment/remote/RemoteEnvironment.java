@@ -54,9 +54,9 @@ public final class RemoteEnvironment implements Environment {
     try {
       this.environmentAddress = InetAddress.getLocalHost();
       final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + SYSTEM_PORT)
-        .withFallback(ConfigFactory.parseString(
-          "akka.remote.netty.tcp.hostname=" + environmentAddress.getHostName()))
-        .withFallback(ConfigFactory.load("remote"));
+              .withFallback(ConfigFactory.parseString(
+                      "akka.remote.netty.tcp.hostname=" + environmentAddress.getHostName()))
+              .withFallback(ConfigFactory.load("remote"));
 
       localSystem = ActorSystem.create(SYSTEM_NAME, config);
 
@@ -70,10 +70,10 @@ public final class RemoteEnvironment implements Environment {
   public void deploy(TickInfo tickInfo) {
     try {
       zooKeeper.create(
-        "/ticks/" + tickInfo.id(),
-        serializer.serialize(tickInfo),
-        ZKUtil.parseACLs("world:anyone:crdwa"),
-        CreateMode.PERSISTENT
+              "/ticks/" + tickInfo.id(),
+              serializer.serialize(tickInfo),
+              ZKUtil.parseACLs("world:anyone:crdwa"),
+              CreateMode.PERSISTENT
       );
     } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);

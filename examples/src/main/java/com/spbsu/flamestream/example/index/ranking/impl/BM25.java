@@ -53,7 +53,7 @@ public class BM25 implements RankingFunction {
         }
         final double freq = (double) rankingStorage.termCountInDoc(term, document) / (double) docLength;
         final double bm25TermScore =
-          idf * ((freq * (k1 + 1.0)) / (freq + k1 * (1.0 - b + b * ((double) docLength / avgDocsLength))));
+                idf * ((freq * (k1 + 1.0)) / (freq + k1 * (1.0 - b + b * ((double) docLength / avgDocsLength))));
         bm25TotalScore += bm25TermScore;
       }
       return new Rank(document, bm25TotalScore);

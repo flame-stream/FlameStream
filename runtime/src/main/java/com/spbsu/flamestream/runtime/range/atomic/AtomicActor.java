@@ -36,10 +36,10 @@ public final class AtomicActor extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-      .match(AddressedItem.class, this::onAtomicMessage)
-      .match(MinTimeUpdate.class, this::onMinTimeUpdate)
-      .match(Commit.class, commit -> onCommit())
-      .build();
+            .match(AddressedItem.class, this::onAtomicMessage)
+            .match(MinTimeUpdate.class, this::onMinTimeUpdate)
+            .match(Commit.class, commit -> onCommit())
+            .build();
   }
 
   private void onCommit() {

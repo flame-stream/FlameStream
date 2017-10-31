@@ -88,8 +88,8 @@ public final class LazyGroupingState<T> implements GroupingState<T> {
 
   private List<DataItem<T>> searchBucket(DataItem<T> item, List<List<DataItem<T>>> container) {
     return container.stream()
-      .filter(bucket -> equalz.test(bucket.get(0).payload(), item.payload()))
-      .findAny()
-      .orElse(new ArrayList<>());
+            .filter(bucket -> equalz.test(bucket.get(0).payload(), item.payload()))
+            .findAny()
+            .orElse(new ArrayList<>());
   }
 }

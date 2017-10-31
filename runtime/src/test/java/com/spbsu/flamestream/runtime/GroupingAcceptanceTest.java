@@ -26,21 +26,21 @@ import java.util.stream.Collectors;
 
 public final class GroupingAcceptanceTest {
   private static void doIt(HashFunction<? super Long> groupHash,
-                           HashFunction<? super Long> filterHash,
-                           BiPredicate<? super Long, ? super Long> equalz) {
+          HashFunction<? super Long> filterHash,
+          BiPredicate<? super Long, ? super Long> equalz) {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(5);
-         TestEnvironment environment = new TestEnvironment(lce)) {
+            TestEnvironment environment = new TestEnvironment(lce)) {
       final Set<List<Long>> result = new HashSet<>();
       final int window = 7;
 
       //noinspection unchecked
       environment.deploy(GroupingAcceptanceTest.groupGraph(
-        environment.availableFronts(),
-        environment.wrapInSink(HashFunction.OBJECT_HASH, di -> result.add((List<Long>) di)),
-        window,
-        groupHash,
-        equalz,
-        filterHash
+              environment.availableFronts(),
+              environment.wrapInSink(HashFunction.OBJECT_HASH, di -> result.add((List<Long>) di)),
+              window,
+              groupHash,
+              equalz,
+              filterHash
       ), 10, 1);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
@@ -69,21 +69,21 @@ public final class GroupingAcceptanceTest {
   }
 
   private static TheGraph groupGraph(Collection<Integer> fronts,
-                                     AtomicGraph sink,
-                                     int window,
-                                     HashFunction<? super Long> groupHash,
-                                     BiPredicate<? super Long, ? super Long> equalz,
-                                     HashFunction<? super Long> filterHash) {
+          AtomicGraph sink,
+          int window,
+          HashFunction<? super Long> groupHash,
+          BiPredicate<? super Long, ? super Long> equalz,
+          HashFunction<? super Long> filterHash) {
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
     final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window);
 
     final BarrierSuite<Long> barrier = new BarrierSuite<Long>(sink);
 
     final Graph graph = filter.fuse(grouping, filter.outPort(), grouping.inPort())
-      .fuse(barrier, grouping.outPort(), barrier.inPort());
+            .fuse(barrier, grouping.outPort(), barrier.inPort());
 
     final Map<Integer, InPort> frontBindings = fronts.stream()
-      .collect(Collectors.toMap(Function.identity(), e -> filter.inPort()));
+            .collect(Collectors.toMap(Function.identity(), e -> filter.inPort()));
     return new TheGraph(graph, frontBindings);
   }
 
@@ -92,14 +92,14 @@ public final class GroupingAcceptanceTest {
   public void noReorderingSingleHash() {
     //noinspection Convert2Lambda
     GroupingAcceptanceTest.doIt(
-      HashFunction.constantHash(100),
-      HashFunction.constantHash(100),
-      new BiPredicate<Long, Long>() {
-        @Override
-        public boolean test(Long a, Long b) {
-          return true;
-        }
-      }
+            HashFunction.constantHash(100),
+            HashFunction.constantHash(100),
+            new BiPredicate<Long, Long>() {
+              @Override
+              public boolean test(Long a, Long b) {
+                return true;
+              }
+            }
     );
   }
 
@@ -122,14 +122,14 @@ public final class GroupingAcceptanceTest {
   public void reorderingSingleHash() {
     //noinspection Convert2Lambda
     GroupingAcceptanceTest.doIt(
-      HashFunction.constantHash(100),
-      HashFunction.uniformLimitedHash(100),
-      new BiPredicate<Long, Long>() {
-        @Override
-        public boolean test(Long a, Long b) {
-          return true;
-        }
-      }
+            HashFunction.constantHash(100),
+            HashFunction.uniformLimitedHash(100),
+            new BiPredicate<Long, Long>() {
+              @Override
+              public boolean test(Long a, Long b) {
+                return true;
+              }
+            }
     );
   }
 
