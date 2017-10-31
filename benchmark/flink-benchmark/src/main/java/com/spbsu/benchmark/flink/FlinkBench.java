@@ -148,6 +148,7 @@ public final class FlinkBench {
                             .get(ThreadLocalRandom.current().nextInt(connections.size()));
                     measurer.start(page.id());
                     connection.sendTCP(page);
+                    System.out.println("Sending: " + page.id() + " at " + System.nanoTime());
                     Thread.sleep(rate);
                   } catch (InterruptedException e) {
                     e.printStackTrace();
