@@ -69,19 +69,19 @@ public final class NodeConcierge extends LoggingActor {
   @Override
   public Receive createReceive() {
     return receiveBuilder().match(TickInfo.class, this::onNewTick)
-            .match(TickCommitDone.class, this::onTickCommitted)
-            .build();
+      .match(TickCommitDone.class, this::onTickCommitted)
+      .build();
   }
 
   private void onNewTick(TickInfo tickInfo) {
     final String suffix = String.valueOf(tickInfo.id());
     final Map<Integer, ActorPath> rangeConcierges = nodeConierges.entrySet()
-            .stream()
-            .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(suffix)));
+      .stream()
+      .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(suffix)));
 
     final ActorRef tickConcierge = context().actorOf(
-            TickConcierge.props(tickInfo, id, rangeConcierges, tickWatcher),
-            suffix
+      TickConcierge.props(tickInfo, id, rangeConcierges, tickWatcher),
+      suffix
     );
 
     //FIXME: in long term future we need to store every single tick.
@@ -101,8 +101,8 @@ public final class NodeConcierge extends LoggingActor {
     final String path = "/dns";
     final byte[] data = zooKeeper.getData(path, false, new Stat());
     final Map<Integer, DumbInetSocketAddress> dns = NodeConcierge.MAPPER.readValue(
-            data,
-            new TypeReference<Map<Integer, DumbInetSocketAddress>>() {}
+      data,
+      new TypeReference<Map<Integer, DumbInetSocketAddress>>() {}
     );
 
     return dns.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> pathFor(e.getValue())));

@@ -66,7 +66,7 @@ public final class TraceImpl implements Trace {
   @Override
   public String toString() {
     return Arrays.stream(trace)
-            .mapToObj(event -> localTimeOf(event) + ":" + childIdOf(event))
-            .collect(Collectors.joining(", ", "[", "]"));
+      .mapToObj(event -> localTimeOf(event) + ":" + childIdOf(event))
+      .collect(Collectors.joining(", ", "[", "]"));
   }
 }

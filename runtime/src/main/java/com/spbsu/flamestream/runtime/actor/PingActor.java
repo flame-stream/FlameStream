@@ -61,12 +61,12 @@ public class PingActor extends LoggingActor {
     this.delayInNanos = delayInNanos;
     if (delayInNanos >= TimeUnit.MILLISECONDS.toNanos(100)) {
       scheduler = context().system().scheduler().schedule(
-              Duration.create(0, NANOSECONDS),
-              FiniteDuration.apply(delayInNanos, NANOSECONDS),
-              actorToPing,
-              objectForPing,
-              context().system().dispatcher(),
-              context().parent()
+        Duration.create(0, NANOSECONDS),
+        FiniteDuration.apply(delayInNanos, NANOSECONDS),
+        actorToPing,
+        objectForPing,
+        context().system().dispatcher(),
+        context().parent()
       );
     } else {
       self().tell(InnerPing.PING, self());

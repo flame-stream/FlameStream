@@ -12,9 +12,9 @@ public final class AckLedgerImpl implements AckLedger {
 
   public AckLedgerImpl(TickInfo tickInfo) {
     tickInfo.graph()
-            .frontBindings()
-            .keySet()
-            .forEach(i -> tables.put(i, new ArrayAckTable(tickInfo.startTs(), tickInfo.stopTs(), tickInfo.window())));
+      .frontBindings()
+      .keySet()
+      .forEach(i -> tables.put(i, new ArrayAckTable(tickInfo.startTs(), tickInfo.stopTs(), tickInfo.window())));
   }
 
   @Override

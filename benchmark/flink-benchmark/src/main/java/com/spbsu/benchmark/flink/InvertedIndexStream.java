@@ -27,10 +27,10 @@ import java.util.stream.Stream;
 public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedIndexStream.Result> {
   public DataStream<Result> stream(DataStream<WikipediaPage> source, int parallelism) {
     return source.flatMap(new WikipediaPageToWordPositions())
-            .setParallelism(parallelism)
-            .keyBy(0)
-            .map(new RichIndexFunction())
-            .setParallelism(parallelism);
+      .setParallelism(parallelism)
+      .keyBy(0)
+      .map(new RichIndexFunction())
+      .setParallelism(parallelism);
   }
 
   @Override
@@ -42,7 +42,7 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
     @Override
     public void flatMap(WikipediaPage value, Collector<Tuple2<String, long[]>> out) {
       final com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions filter =
-              new com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions();
+        new com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions();
       final Stream<WordPagePositions> result = filter.apply(value);
       result.forEach(new Consumer<WordPagePositions>() {
         @Override
@@ -60,8 +60,8 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
     @Override
     public void open(Configuration parameters) throws Exception {
       final ValueStateDescriptor<InvertedIndexState> descriptor = new ValueStateDescriptor<>(
-              "index",
-              InvertedIndexState.class
+        "index",
+        InvertedIndexState.class
       );
 
       state = getRuntimeContext().getState(descriptor);
@@ -81,9 +81,9 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
       WordIndexRemove wordIndexRemove = null;
       if (prevValue != InvertedIndexState.PREV_VALUE_NOT_FOUND) {
         wordIndexRemove = new WordIndexRemove(
-                value.f0,
-                IndexItemInLong.setRange(prevValue, 0),
-                IndexItemInLong.range(prevValue)
+          value.f0,
+          IndexItemInLong.setRange(prevValue, 0),
+          IndexItemInLong.range(prevValue)
         );
       }
       state.update(currentStat);

@@ -41,8 +41,8 @@ final class TickFrontActor extends LoggingActor {
     this.tickInfo = info;
 
     this.tickConcierges = cluster.entrySet()
-            .stream()
-            .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(String.valueOf(tickInfo.id()))));
+      .stream()
+      .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(String.valueOf(tickInfo.id()))));
 
     this.currentWindowHead = tickInfo.startTs();
   }
@@ -75,10 +75,10 @@ final class TickFrontActor extends LoggingActor {
 
   private Receive receiving() {
     return ReceiveBuilder.create()
-            .match(DataItem.class, this::dispatchItem)
-            .match(TickFrontPing.class, this::processTsResponse)
-            .matchAny(this::unhandled)
-            .build();
+      .match(DataItem.class, this::dispatchItem)
+      .match(TickFrontPing.class, this::processTsResponse)
+      .matchAny(this::unhandled)
+      .build();
   }
 
   private void processTsResponse(TickFrontPing tickFrontPing) {

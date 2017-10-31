@@ -26,9 +26,9 @@ final class BarrierSink implements AtomicGraph {
   BarrierSink(AtomicGraph sink) {
     if (!(sink.inPorts().size() == 1 && sink.outPorts().isEmpty())) {
       throw new IllegalArgumentException(format(
-              "sink should have one input and no outputs, found %d inputs, %d outputs",
-              sink.inPorts().size(),
-              sink.outPorts().size()
+        "sink should have one input and no outputs, found %d inputs, %d outputs",
+        sink.inPorts().size(),
+        sink.outPorts().size()
       ));
     }
 

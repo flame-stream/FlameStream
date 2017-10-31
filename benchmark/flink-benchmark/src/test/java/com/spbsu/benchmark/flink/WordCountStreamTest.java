@@ -43,7 +43,7 @@ public class WordCountStreamTest {
   @DataProvider(name = "correctnessProvider")
   public static Object[][] correctnessProvider() {
     return new Object[][]{
-            {WordCountCheckers.CHECK_COUNT}
+      {WordCountCheckers.CHECK_COUNT}
     };
   }
 
@@ -60,7 +60,7 @@ public class WordCountStreamTest {
   @DataProvider(name = "measureProvider")
   public static Object[][] measureProvider() {
     return new Object[][]{
-            {WordCountCheckers.CHECK_COUNT, 0}
+      {WordCountCheckers.CHECK_COUNT, 0}
     };
   }
 
@@ -71,13 +71,13 @@ public class WordCountStreamTest {
     final Pattern pattern = Pattern.compile("\\s");
 
     SOURCE_ITERATOR = checker.input()
-            .peek(text -> Arrays.stream(pattern.split(text))
-                    .collect(toMap(Function.identity(), o -> 1, Integer::sum))
-                    .forEach((k, v) -> {
-                      expected.adjustOrPutValue(k, v, v);
-                      latencyMeasurer.start(new WordCounter(k, expected.get(k)));
-                    }))
-            .iterator();
+      .peek(text -> Arrays.stream(pattern.split(text))
+        .collect(toMap(Function.identity(), o -> 1, Integer::sum))
+        .forEach((k, v) -> {
+          expected.adjustOrPutValue(k, v, v);
+          latencyMeasurer.start(new WordCounter(k, expected.get(k)));
+        }))
+      .iterator();
     EXECUTOR.execute(new WordCountStream(), new Source(), o -> latencyMeasurer.finish((WordCounter) o));
 
     final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();

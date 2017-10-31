@@ -94,11 +94,11 @@ public final class LocalClusterEnvironment implements Environment {
 
   private Map<Integer, DumbInetSocketAddress> freeSockets(int workersCount) {
     return IntStream.range(
-            LocalClusterEnvironment.START_WORKER_PORT,
-            LocalClusterEnvironment.START_WORKER_PORT + workersCount
+      LocalClusterEnvironment.START_WORKER_PORT,
+      LocalClusterEnvironment.START_WORKER_PORT + workersCount
     )
-            .boxed()
-            .collect(toMap(Function.identity(), port -> new DumbInetSocketAddress("localhost", port)));
+      .boxed()
+      .collect(toMap(Function.identity(), port -> new DumbInetSocketAddress("localhost", port)));
   }
 
   private void deployPartitioning() {
@@ -120,27 +120,27 @@ public final class LocalClusterEnvironment implements Environment {
                                                                 InterruptedException,
                                                                 JsonProcessingException {
     zooKeeper.create(
-            "/dns",
-            mapper.writeValueAsBytes(dns),
-            ZKUtil.parseACLs("world:anyone:crdwa"),
-            CreateMode.PERSISTENT
+      "/dns",
+      mapper.writeValueAsBytes(dns),
+      ZKUtil.parseACLs("world:anyone:crdwa"),
+      CreateMode.PERSISTENT
     );
   }
 
   private void pushFronts(Set<Integer> fronts) throws KeeperException, InterruptedException, JsonProcessingException {
     zooKeeper.create(
-            "/fronts",
-            mapper.writeValueAsBytes(fronts),
-            ZKUtil.parseACLs("world:anyone:crdwa"),
-            CreateMode.PERSISTENT
+      "/fronts",
+      mapper.writeValueAsBytes(fronts),
+      ZKUtil.parseACLs("world:anyone:crdwa"),
+      CreateMode.PERSISTENT
     );
   }
 
   private Collection<WorkerApplication> startWorkers() {
     final Set<WorkerApplication> apps = dns.entrySet()
-            .stream()
-            .map(f -> new WorkerApplication(f.getKey(), f.getValue(), ZK_STRING))
-            .collect(toSet());
+      .stream()
+      .map(f -> new WorkerApplication(f.getKey(), f.getValue(), ZK_STRING))
+      .collect(toSet());
 
     apps.forEach(WorkerApplication::run);
     return apps;

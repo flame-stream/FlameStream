@@ -55,14 +55,14 @@ public final class FrontActor extends LoggingActor {
   public Receive createReceive() {
     //noinspection unchecked
     return ReceiveBuilder.create()
-            // TODO: We will use this information to clear mini-kafka buffers
-            //.match(TickCommitDone.class, committed -> )
-            .match(RawData.class, rawData -> rawData.forEach(this::redirectItem))
-            .match(TickInfo.class, this::createTick)
-            .match(FrontPing.class, frontPing -> onReportPing())
-            .match(TickFrontStopped.class, tickFrontStopped -> tickFronts.remove(tickFrontStopped.startTickTs()))
-            .matchAny(this::unhandled)
-            .build();
+      // TODO: We will use this information to clear mini-kafka buffers
+      //.match(TickCommitDone.class, committed -> )
+      .match(RawData.class, rawData -> rawData.forEach(this::redirectItem))
+      .match(TickInfo.class, this::createTick)
+      .match(FrontPing.class, frontPing -> onReportPing())
+      .match(TickFrontStopped.class, tickFrontStopped -> tickFronts.remove(tickFrontStopped.startTickTs()))
+      .matchAny(this::unhandled)
+      .build();
   }
 
   private void onReportPing() {
@@ -76,8 +76,8 @@ public final class FrontActor extends LoggingActor {
     final InPort target = tickInfo.graph().frontBindings().get(id);
 
     final ActorRef tickFront = context().actorOf(
-            TickFrontActor.props(cluster, target, id, tickInfo),
-            Long.toString(tickInfo.id())
+      TickFrontActor.props(cluster, target, id, tickInfo),
+      Long.toString(tickInfo.id())
     );
 
     tickFronts.put(tickInfo.startTs(), tickFront);

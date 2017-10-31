@@ -14,7 +14,7 @@ public class WordCountTest extends AbstractExampleTest {
   @DataProvider
   public Object[][] testWordCountProvider() {
     return new Object[][]{
-            {1, 4}, {4, 4}, {4, 1}, {1, 1}
+      {1, 4}, {4, 4}, {4, 1}, {1, 1}
     };
   }
 

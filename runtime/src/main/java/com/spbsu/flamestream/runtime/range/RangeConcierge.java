@@ -64,9 +64,9 @@ public final class RangeConcierge extends LoggingActor {
 
   public Receive ranging() {
     return receiveBuilder().match(AddressedItem.class, this::routeToPort)
-            .match(MinTimeUpdate.class, this::broadcast)
-            .match(Commit.class, this::handleCommit)
-            .build();
+      .match(MinTimeUpdate.class, this::broadcast)
+      .match(Commit.class, this::handleCommit)
+      .build();
 
   }
 
@@ -83,8 +83,8 @@ public final class RangeConcierge extends LoggingActor {
     initializedGraph.values().forEach(atom -> atom.tell(commit, sender()));
 
     getContext().become(ReceiveBuilder.create()
-            .match(AtomicCommitDone.class, cd -> processCommitDone(cd.graph()))
-            .build());
+      .match(AtomicCommitDone.class, cd -> processCommitDone(cd.graph()))
+      .build());
   }
 
   private void processCommitDone(AtomicGraph atomicGraph) {

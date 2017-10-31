@@ -37,7 +37,7 @@ public class KryoSocketSink extends RichSinkFunction<InvertedIndexStream.Result>
     client.getKryo().register(WordIndexRemove.class);
     client.getKryo().register(long[].class);
     ((Kryo.DefaultInstantiatorStrategy) client.getKryo()
-            .getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+      .getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
     client.addListener(new Listener() {
       @Override

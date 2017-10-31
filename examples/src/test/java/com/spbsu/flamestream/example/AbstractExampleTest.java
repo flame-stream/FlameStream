@@ -21,8 +21,8 @@ public abstract class AbstractExampleTest {
       final List<Object> result = new ArrayList<>();
       //noinspection RedundantCast,unchecked
       environment.deploy(environment.withFusedFronts(example().graph(h -> environment.wrapInSink(
-              (ToIntFunction<? super T>) h,
-              result::add
+        (ToIntFunction<? super T>) h,
+        result::add
       ))), tickLengthInSec, 1);
 
       final Consumer<Object> sink = environment.randomFrontConsumer(fronts);

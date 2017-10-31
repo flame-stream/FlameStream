@@ -39,9 +39,9 @@ public class InvertedIndexStreamTest {
   @DataProvider(name = "correctnessProvider")
   public static Object[][] correctnessProvider() {
     return new Object[][]{
-            {InvertedIndexCheckers.CHECK_INDEX_WITH_SMALL_DUMP},
-            {InvertedIndexCheckers.CHECK_INDEX_AND_RANKING_STORAGE_WITH_SMALL_DUMP},
-            {InvertedIndexCheckers.CHECK_INDEX_WITH_RANKING}
+      {InvertedIndexCheckers.CHECK_INDEX_WITH_SMALL_DUMP},
+      {InvertedIndexCheckers.CHECK_INDEX_AND_RANKING_STORAGE_WITH_SMALL_DUMP},
+      {InvertedIndexCheckers.CHECK_INDEX_WITH_RANKING}
     };
   }
 
@@ -64,7 +64,7 @@ public class InvertedIndexStreamTest {
   @DataProvider(name = "measureProvider")
   public static Object[][] measureProvider() {
     return new Object[][]{
-            {InvertedIndexCheckers.CHECK_INDEX_WITH_RANKING, 10}
+      {InvertedIndexCheckers.CHECK_INDEX_WITH_RANKING, 10}
     };
   }
 

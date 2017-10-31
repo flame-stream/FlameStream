@@ -76,16 +76,16 @@ public final class FlinkBench {
     }
 
     new FlinkBench(
-            load.getInt("limit"),
-            load.getString("manager-hostname"),
-            load.getInt("manager-port"),
-            load.getString("bench-hostname"),
-            load.getInt("source-port"),
-            load.getInt("sink-port"),
-            load.getStringList("jars"),
-            load.getInt("parallelism"),
-            load.getInt("rate"),
-            load.hasPath("input-path") ? load.getString("input-path") : null
+      load.getInt("limit"),
+      load.getString("manager-hostname"),
+      load.getInt("manager-port"),
+      load.getString("bench-hostname"),
+      load.getInt("source-port"),
+      load.getInt("sink-port"),
+      load.getStringList("jars"),
+      load.getInt("parallelism"),
+      load.getInt("rate"),
+      load.hasPath("input-path") ? load.getString("input-path") : null
     ).run();
   }
 
@@ -93,23 +93,23 @@ public final class FlinkBench {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(0, 0);
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
-            //.createLocalEnvironment(1);
-            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
+      //.createLocalEnvironment(1);
+      .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
     environment.setParallelism(parallelism);
     environment.setMaxParallelism(parallelism);
 
     final DataStream<WikipediaPage> source = environment.addSource(new KryoSocketSource(benchHostname, sourcePort))
-            .setParallelism(parallelism)
-            .shuffle();
+      .setParallelism(parallelism)
+      .shuffle();
 
     final DataStreamSink<InvertedIndexStream.Result> sink = new InvertedIndexStream().stream(source, parallelism)
-            .addSink(new KryoSocketSink(benchHostname, sinkPort))
-            .setParallelism(parallelism);
+      .addSink(new KryoSocketSink(benchHostname, sinkPort))
+      .setParallelism(parallelism);
 
     final Stream<WikipediaPage> wikipediaInput = (inputFilePath == null ? WikipeadiaInput.dumpStreamFromResources(
-            "wikipedia/national_football_teams_dump.xml") : WikipeadiaInput.dumpStreamFromFile(inputFilePath)).limit(
-            limit);
+      "wikipedia/national_football_teams_dump.xml") : WikipeadiaInput.dumpStreamFromFile(inputFilePath)).limit(
+      limit);
 
 
     final Server producer = producer(latencyMeasurer, wikipediaInput);
@@ -128,7 +128,7 @@ public final class FlinkBench {
     final Server producer = new Server(1_000_000, 1000);
     producer.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(
-            new StdInstantiatorStrategy());
+      new StdInstantiatorStrategy());
 
     final List<Connection> connections = new ArrayList<>();
 
@@ -180,7 +180,7 @@ public final class FlinkBench {
     consumer.getKryo().register(WordIndexRemove.class);
     consumer.getKryo().register(long[].class);
     ((Kryo.DefaultInstantiatorStrategy) consumer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(
-            new StdInstantiatorStrategy());
+      new StdInstantiatorStrategy());
 
     consumer.addListener(new Listener() {
       @Override

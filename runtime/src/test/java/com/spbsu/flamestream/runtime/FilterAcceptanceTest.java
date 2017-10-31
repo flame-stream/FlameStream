@@ -32,12 +32,12 @@ public final class FilterAcceptanceTest {
     final BarrierSuite<Integer> barrier = new BarrierSuite<Integer>(sink);
 
     final Graph graph = filter1.fuse(filter2, filter1.outPort(), filter2.inPort())
-            .fuse(filter3, filter2.outPort(), filter3.inPort())
-            .fuse(filter4, filter3.outPort(), filter4.inPort())
-            .fuse(barrier, filter4.outPort(), barrier.inPort());
+      .fuse(filter3, filter2.outPort(), filter3.inPort())
+      .fuse(filter4, filter3.outPort(), filter4.inPort())
+      .fuse(barrier, filter4.outPort(), barrier.inPort());
 
     final Map<Integer, InPort> frontBindings = fronts.stream()
-            .collect(Collectors.toMap(Function.identity(), e -> filter1.inPort()));
+      .collect(Collectors.toMap(Function.identity(), e -> filter1.inPort()));
     return new TheGraph(graph, frontBindings);
   }
 
@@ -47,8 +47,8 @@ public final class FilterAcceptanceTest {
          TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
       environment.deploy(FilterAcceptanceTest.multiGraph(
-              environment.availableFronts(),
-              environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
+        environment.availableFronts(),
+        environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
       ), 15, 1);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
@@ -58,8 +58,8 @@ public final class FilterAcceptanceTest {
       environment.awaitTick(15);
 
       Assert.assertEquals(
-              new HashSet<>(result),
-              source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
+        new HashSet<>(result),
+        source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
       );
     }
   }
@@ -70,8 +70,8 @@ public final class FilterAcceptanceTest {
          TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
       environment.deploy(FilterAcceptanceTest.multiGraph(
-              environment.availableFronts(),
-              environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
+        environment.availableFronts(),
+        environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
       ), 2, 10);
 
       final List<Integer> source = new Random().ints(20000).boxed().collect(Collectors.toList());
@@ -80,8 +80,8 @@ public final class FilterAcceptanceTest {
       environment.awaitTick(40);
 
       Assert.assertEquals(
-              new HashSet<>(result),
-              source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
+        new HashSet<>(result),
+        source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
       );
     }
   }

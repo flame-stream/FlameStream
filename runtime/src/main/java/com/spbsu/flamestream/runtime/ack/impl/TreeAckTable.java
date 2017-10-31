@@ -51,6 +51,6 @@ final class TreeAckTable implements AckTable {
   @Override
   public String toString() {
     return "TreeAckTable{" + "table=" + table + ", startTs=" + startTs + ", window=" + window + ", toBeReported="
-            + toBeReported + '}';
+      + toBeReported + '}';
   }
 }

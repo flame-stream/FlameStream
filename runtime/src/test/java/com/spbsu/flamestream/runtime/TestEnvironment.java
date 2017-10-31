@@ -42,7 +42,7 @@ public class TestEnvironment implements Environment {
 
   public TheGraph withFusedFronts(Graph graph) {
     final Map<Integer, InPort> frontBindings = availableFronts().stream()
-            .collect(Collectors.toMap(Function.identity(), e -> graph.inPorts().get(0)));
+      .collect(Collectors.toMap(Function.identity(), e -> graph.inPorts().get(0)));
     return new TheGraph(graph, frontBindings);
   }
 
@@ -53,14 +53,14 @@ public class TestEnvironment implements Environment {
     long startTs = System.currentTimeMillis();
     for (int i = 0; i < ticksCount; ++i, startTs += tickMills) {
       final TickInfo tickInfo = new TickInfo(
-              i,
-              startTs,
-              startTs + tickMills,
-              theGraph,
-              workers.values().stream().min(Integer::compareTo).get(),
-              workers,
-              windowInMillis,
-              i == 0 ? emptySet() : singleton(i - 1L)
+        i,
+        startTs,
+        startTs + tickMills,
+        theGraph,
+        workers.values().stream().min(Integer::compareTo).get(),
+        workers,
+        windowInMillis,
+        i == 0 ? emptySet() : singleton(i - 1L)
       );
       innerEnvironment.deploy(tickInfo);
     }
@@ -78,9 +78,9 @@ public class TestEnvironment implements Environment {
   public Consumer<Object> randomFrontConsumer(int maxFrontsCount) {
     final Set<Integer> fronts = innerEnvironment.availableFronts();
     final List<Consumer<Object>> collectors = fronts.stream()
-            .map(innerEnvironment::frontConsumer)
-            .limit(maxFrontsCount)
-            .collect(Collectors.toList());
+      .map(innerEnvironment::frontConsumer)
+      .limit(maxFrontsCount)
+      .collect(Collectors.toList());
 
     final Random rd = new Random();
     return obj -> collectors.get(rd.nextInt(collectors.size())).accept(obj);

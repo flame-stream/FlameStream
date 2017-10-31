@@ -38,9 +38,9 @@ public class WordIndexToDiffOutput implements Function<List<WordBase>, Stream<Wo
     final long prevValue = wordIndex.state().updateOrInsert(wordPagePosition.positions());
     if (prevValue != InvertedIndexState.PREV_VALUE_NOT_FOUND) {
       wordRemoveOutput = new WordIndexRemove(
-              wordIndex.word(),
-              IndexItemInLong.setRange(prevValue, 0),
-              IndexItemInLong.range(prevValue)
+        wordIndex.word(),
+        IndexItemInLong.setRange(prevValue, 0),
+        IndexItemInLong.range(prevValue)
       );
     }
 

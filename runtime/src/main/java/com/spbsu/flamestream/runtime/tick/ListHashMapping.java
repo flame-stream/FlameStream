@@ -13,9 +13,9 @@ final class ListHashMapping<T> implements HashMapping<T> {
 
   ListHashMapping(Map<HashRange, T> nodeMapping) {
     this.mapping = nodeMapping.entrySet()
-            .stream()
-            .map(e -> new RangeEntry<>(e.getKey(), e.getValue()))
-            .collect(toList());
+      .stream()
+      .map(e -> new RangeEntry<>(e.getKey(), e.getValue()))
+      .collect(toList());
   }
 
   @Override

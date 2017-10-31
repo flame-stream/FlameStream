@@ -41,9 +41,9 @@ public enum WordCountCheckers implements ExampleChecker<String> {
 
       final Pattern pattern = Pattern.compile("\\s");
       final Map<String, Integer> expected = input.stream()
-              .map(pattern::split)
-              .flatMap(Arrays::stream)
-              .collect(toMap(Function.identity(), o -> 1, Integer::sum));
+        .map(pattern::split)
+        .flatMap(Arrays::stream)
+        .collect(toMap(Function.identity(), o -> 1, Integer::sum));
       Assert.assertEquals(actual, expected);
     }
   };

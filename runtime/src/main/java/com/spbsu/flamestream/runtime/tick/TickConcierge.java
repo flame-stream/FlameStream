@@ -80,9 +80,9 @@ public final class TickConcierge extends LoggingActor {
 
   private Iterable<HashRange> myRanges(Map<HashRange, Integer> mappings) {
     return mappings.entrySet()
-            .stream()
-            .filter(e -> e.getValue().equals(localId))
-            .map(Map.Entry::getKey)
-            .collect(toSet());
+      .stream()
+      .filter(e -> e.getValue().equals(localId))
+      .map(Map.Entry::getKey)
+      .collect(toSet());
   }
 }

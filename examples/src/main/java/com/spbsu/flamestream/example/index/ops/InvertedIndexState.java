@@ -57,12 +57,12 @@ public class InvertedIndexState {
 
     final long searchValue;
     if (searchIndex < window.size()
-            && IndexItemInLong.pageId(searchValue = window.get(searchIndex)) == IndexItemInLong.pageId(value)) {
+      && IndexItemInLong.pageId(searchValue = window.get(searchIndex)) == IndexItemInLong.pageId(value)) {
       final long newValue = IndexItemInLong.createPagePosition(
-              IndexItemInLong.pageId(value),
-              newPosition,
-              IndexItemInLong.version(value),
-              newRange
+        IndexItemInLong.pageId(value),
+        newPosition,
+        IndexItemInLong.version(value),
+        newRange
       );
       window.set(searchIndex, newValue);
       return searchValue;
@@ -93,11 +93,11 @@ public class InvertedIndexState {
       final TLongArrayList[] newStorage = new TLongArrayList[storage.length + 1];
       System.arraycopy(storage, 0, newStorage, 0, windowIndex);
       System.arraycopy(
-              storage,
-              windowIndex + 2 - 1,
-              newStorage,
-              windowIndex + 2,
-              newStorage.length - (windowIndex + 2)
+        storage,
+        windowIndex + 2 - 1,
+        newStorage,
+        windowIndex + 2,
+        newStorage.length - (windowIndex + 2)
       );
       newStorage[windowIndex] = firstWindow;
       newStorage[windowIndex + 1] = secondWindow;

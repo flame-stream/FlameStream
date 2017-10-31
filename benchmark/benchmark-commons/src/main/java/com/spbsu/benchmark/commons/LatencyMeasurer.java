@@ -50,10 +50,10 @@ public class LatencyMeasurer<T> {
 
   public long[] latencies() {
     final long[] latenciesDump = latencies.values()
-            .stream()
-            .map(LongSummaryStatistics::getMax)
-            .mapToLong(l -> l)
-            .toArray();
+      .stream()
+      .map(LongSummaryStatistics::getMax)
+      .mapToLong(l -> l)
+      .toArray();
 
     final StringBuilder stringBuilder = new StringBuilder();
     for (int i = 0; i < latenciesDump.length; i++) {

@@ -33,16 +33,16 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
     this.downstreams = new HashMap<>(wires);
 
     this.inPorts = graphs.stream()
-            .map(Graph::inPorts)
-            .flatMap(Collection::stream)
-            .filter(port -> !downstreams.containsValue(port))
-            .collect(Collectors.toList());
+      .map(Graph::inPorts)
+      .flatMap(Collection::stream)
+      .filter(port -> !downstreams.containsValue(port))
+      .collect(Collectors.toList());
 
     this.outPorts = graphs.stream()
-            .map(Graph::outPorts)
-            .flatMap(List::stream)
-            .filter(port -> !downstreams.containsKey(port))
-            .collect(Collectors.toList());
+      .map(Graph::outPorts)
+      .flatMap(List::stream)
+      .filter(port -> !downstreams.containsKey(port))
+      .collect(Collectors.toList());
   }
 
   private static void assertCorrectWires(Collection<? extends Graph> graphs, Map<OutPort, InPort> wires) {
@@ -77,18 +77,18 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
   @Override
   public ComposedGraph<AtomicGraph> flattened() {
     final Set<ComposedGraph<AtomicGraph>> flatteneds = subGraphs().stream()
-            .map(Graph::flattened)
-            .collect(Collectors.toSet());
+      .map(Graph::flattened)
+      .collect(Collectors.toSet());
     final Set<AtomicGraph> atomics = flatteneds.stream()
-            .map(ComposedGraph::subGraphs)
-            .flatMap(Set::stream)
-            .collect(Collectors.toSet());
+      .map(ComposedGraph::subGraphs)
+      .flatMap(Set::stream)
+      .collect(Collectors.toSet());
 
     final Map<OutPort, InPort> flatDownStreams = flatteneds.stream()
-            .map(ComposedGraph::downstreams)
-            .map(Map::entrySet)
-            .flatMap(Set::stream)
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+      .map(ComposedGraph::downstreams)
+      .map(Map::entrySet)
+      .flatMap(Set::stream)
+      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
     flatDownStreams.putAll(downstreams());
 
