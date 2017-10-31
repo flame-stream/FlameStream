@@ -25,9 +25,7 @@ public class FrontStatistics implements Statistics {
 
   @Override
   public Map<String, Double> metrics() {
-    final Map<String, Double> result = new HashMap<>();
-    result.putAll(asMap("Nanos between pings", nanosBetweenPings));
-    return result;
+    return asMap("Nanos between pings", nanosBetweenPings);
   }
 
   @Override

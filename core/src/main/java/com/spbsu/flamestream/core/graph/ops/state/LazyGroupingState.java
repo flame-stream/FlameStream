@@ -15,7 +15,6 @@ import java.util.function.ToIntFunction;
  * Date: 22.02.2017
  * Time: 22:29
  */
-@SuppressWarnings({"TypeMayBeWeakened"})
 public final class LazyGroupingState<T> implements GroupingState<T> {
   private final ToIntFunction<? super T> hash;
   private final BiPredicate<? super T, ? super T> equalz;

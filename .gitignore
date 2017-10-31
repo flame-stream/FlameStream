@@ -9,16 +9,8 @@
 /zookeeper/
 examples/zookeeper/
 examples/leveldb/
-benchmark/ansible/flamestream.retry
-benchmark/ansible/inventories/aws/
-benchmark/ansible/roles/flamestream-bench/files/flamestream-benchmark-1.0-SNAPSHOT-uber.jar
 benchmark/ansible/roles/flamestream-worker/files/flamestream-examples-1.0-SNAPSHOT.jar
 benchmark/ansible/roles/flamestream-worker/files/flamestream-runtime-1.0-SNAPSHOT-uber.jar
-benchmark/ansible/roles/flink-bench/files/flink-benchmark-1.0-SNAPSHOT-uber.jar
-benchmark/ansible/flink.retry
-benchmark/ansible/inventories/aws-bench/
-/benchmark/ansible/roles/flamestream-bench/files/wiki.xml
-/benchmark/ansible/roles/flink-bench/files/wiki.xml
 /.idea/dictionaries/
 /.idea/inspectionProfiles/
 /.idea/libraries/

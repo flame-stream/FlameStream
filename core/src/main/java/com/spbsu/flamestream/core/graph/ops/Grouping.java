@@ -19,7 +19,6 @@ import java.util.function.BiPredicate;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
-@SuppressWarnings({"ConditionalExpression"})
 public final class Grouping<T> extends AbstractAtomicGraph {
   private final GroupingStatistics stat = new GroupingStatistics();
   private final InPort inPort;
@@ -29,7 +28,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final BiPredicate<? super T, ? super T> equalz;
   private final int window;
 
-  private GroupingState<T> buffers;
+  private GroupingState<T> buffers = null;
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
   public Grouping(ToIntFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, int window) {

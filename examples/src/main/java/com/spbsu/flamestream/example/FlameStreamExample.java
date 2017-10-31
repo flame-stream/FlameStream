@@ -37,7 +37,7 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 27.09.2017
  */
-@SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef", "NonSerializableFieldInSerializableClass"})
+@SuppressWarnings({"Convert2Lambda", "NonSerializableFieldInSerializableClass"})
 public enum FlameStreamExample {
   INVERTED_INDEX {
     private final HashFunction<WikipediaPage> wikiPageHash = new HashFunction<WikipediaPage>() {

@@ -39,7 +39,7 @@ public class BM25 implements RankingFunction {
     return rankingStorage.allDocs().map(document -> {
       final int docLength = rankingStorage.docLength(document);
       double bm25TotalScore = 0.0;
-      for (final CharSequence term : queryTerms) {
+      for (CharSequence term : queryTerms) {
         final double idf;
         if (idfCache.containsKey(term)) {
           idf = idfCache.get(term);

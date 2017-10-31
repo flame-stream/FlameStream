@@ -44,6 +44,7 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
       final com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions filter =
               new com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions();
       final Stream<WordPagePositions> result = filter.apply(value);
+      //noinspection Convert2Lambda
       result.forEach(new Consumer<WordPagePositions>() {
         @Override
         public void accept(WordPagePositions v) {
@@ -55,10 +56,10 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
 
   private static class RichIndexFunction extends RichMapFunction<Tuple2<String, long[]>, Result> {
 
-    private transient ValueState<InvertedIndexState> state;
+    private transient ValueState<InvertedIndexState> state = null;
 
     @Override
-    public void open(Configuration parameters) throws Exception {
+    public void open(Configuration parameters) {
       final ValueStateDescriptor<InvertedIndexState> descriptor = new ValueStateDescriptor<>(
               "index",
               InvertedIndexState.class

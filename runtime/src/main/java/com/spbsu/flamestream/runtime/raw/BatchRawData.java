@@ -9,7 +9,7 @@ import java.util.List;
  * User: Artem
  * Date: 19.09.2017
  */
-public class BatchRawData<T> implements RawData<T> {
+class BatchRawData<T> implements RawData<T> {
   private final List<T> batch;
 
   public BatchRawData(Collection<T> origin) {

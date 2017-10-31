@@ -14,14 +14,14 @@ import java.util.Iterator;
  * User: Artem
  * Date: 10.07.2017
  */
-public class WikipediaPageIterator implements Iterator<WikipediaPage> {
+class WikipediaPageIterator implements Iterator<WikipediaPage> {
   private final TIntIntMap versions = new TIntIntHashMap();
   private final XMLStreamReader reader;
-  private WikipediaPage next;
+  private WikipediaPage next = null;
 
   public WikipediaPageIterator(InputStream inputStream) {
     try {
-      XMLInputFactory xmlInFact = XMLInputFactory.newInstance();
+      final XMLInputFactory xmlInFact = XMLInputFactory.newInstance();
       reader = xmlInFact.createXMLStreamReader(inputStream);
     } catch (XMLStreamException e) {
       throw new RuntimeException(e);

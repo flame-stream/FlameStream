@@ -29,7 +29,7 @@ public final class FilterAcceptanceTest {
     final StatelessMap<Integer, Integer> filter3 = new StatelessMap<>(new HumbleFiler(-3), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter4 = new StatelessMap<>(new HumbleFiler(-4), HashFunction.OBJECT_HASH);
 
-    final BarrierSuite<Integer> barrier = new BarrierSuite<Integer>(sink);
+    final BarrierSuite<Integer> barrier = new BarrierSuite<>(sink);
 
     final Graph graph = filter1.fuse(filter2, filter1.outPort(), filter2.inPort())
             .fuse(filter3, filter2.outPort(), filter3.inPort())
@@ -42,7 +42,7 @@ public final class FilterAcceptanceTest {
   }
 
   @Test
-  public void linearFilter() throws Exception {
+  public void linearFilter() {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
             TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
@@ -65,7 +65,7 @@ public final class FilterAcceptanceTest {
   }
 
   @Test(enabled = false)
-  public void multipleTicksLinearFilter() throws Exception {
+  public void multipleTicksLinearFilter() {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
             TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
@@ -86,7 +86,7 @@ public final class FilterAcceptanceTest {
     }
   }
 
-  public static final class HumbleFiler implements Function<Integer, Integer> {
+  static final class HumbleFiler implements Function<Integer, Integer> {
     private final int factor;
 
     HumbleFiler(int factor) {

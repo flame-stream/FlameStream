@@ -7,11 +7,13 @@ package com.spbsu.flamestream.core.data.meta.impl;
 @SuppressWarnings("UtilityClass")
 final class LocalEvent {
 
+  public static final long LOW_QUADWORD = 0xffffffffL;
+
   private LocalEvent() {
   }
 
   static int childIdOf(long localEvent) {
-    return (int) (localEvent & 0xffffffffL);
+    return (int) (localEvent & LOW_QUADWORD);
   }
 
   static int localTimeOf(long localEvent) {

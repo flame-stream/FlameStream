@@ -26,9 +26,9 @@ public final class RangeConcierge extends LoggingActor {
   private final TickInfo tickInfo;
   private final HashRange range;
 
-  private Map<InPort, ActorRef> routingTable;
-  private Map<AtomicGraph, ActorRef> initializedGraph;
-  private TickRoutes tickRoutes;
+  private Map<InPort, ActorRef> routingTable = null;
+  private Map<AtomicGraph, ActorRef> initializedGraph = null;
+  private TickRoutes tickRoutes = null;
 
   private RangeConcierge(TickInfo tickInfo, HashRange range) {
     this.tickInfo = tickInfo;
@@ -62,7 +62,7 @@ public final class RangeConcierge extends LoggingActor {
     }).matchAny(m -> stash()).build();
   }
 
-  public Receive ranging() {
+  private Receive ranging() {
     return receiveBuilder().match(AddressedItem.class, this::routeToPort)
             .match(MinTimeUpdate.class, this::broadcast)
             .match(Commit.class, this::handleCommit)

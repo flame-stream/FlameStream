@@ -20,8 +20,8 @@ public final class TickRoutesResolver extends LoggingActor {
   private final TickInfo tickInfo;
   private final Map<HashRange, ActorSelection> tmpRanges = new HashMap<>();
   private final Map<HashRange, ActorRef> refs = new HashMap<>();
-  private ActorSelection tmpAcker;
-  private ActorRef acker;
+  private ActorSelection tmpAcker = null;
+  private ActorRef acker = null;
 
   private TickRoutesResolver(Map<Integer, ActorPath> cluster, TickInfo tickInfo) {
     this.cluster = new HashMap<>(cluster);

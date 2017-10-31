@@ -15,13 +15,13 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * User: Artem
  * Date: 26.09.2017
  */
-public class PingActor extends LoggingActor {
+public final class PingActor extends LoggingActor {
   private final ActorRef actorToPing;
   private final Object objectForPing;
 
-  private long delayInNanos;
+  private long delayInNanos = 0L;
   private boolean started = false;
-  private Cancellable scheduler;
+  private Cancellable scheduler = null;
 
   private PingActor(ActorRef actorToPing, Object objectForPing) {
     this.actorToPing = actorToPing;
@@ -57,7 +57,7 @@ public class PingActor extends LoggingActor {
     }).build();
   }
 
-  private void start(long delayInNanos) throws IllegalAccessException, InstantiationException {
+  private void start(long delayInNanos) {
     this.delayInNanos = delayInNanos;
     if (delayInNanos >= TimeUnit.MILLISECONDS.toNanos(100)) {
       scheduler = context().system().scheduler().schedule(
@@ -79,7 +79,7 @@ public class PingActor extends LoggingActor {
     }
   }
 
-  private void handleInnerPing() throws IllegalAccessException, InstantiationException {
+  private void handleInnerPing() {
     actorToPing.tell(objectForPing, context().parent());
     LockSupport.parkNanos(delayInNanos);
     self().tell(InnerPing.PING, self());

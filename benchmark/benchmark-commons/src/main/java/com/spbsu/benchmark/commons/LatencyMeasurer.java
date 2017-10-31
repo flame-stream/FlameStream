@@ -13,7 +13,7 @@ import java.util.TreeMap;
  * User: Artem
  * Date: 17.08.2017
  */
-public class LatencyMeasurer<T> {
+public final class LatencyMeasurer<T> {
   private static final Logger LOG = LoggerFactory.getLogger(LatencyMeasurer.class);
 
   private final TObjectLongMap<T> starts = new TObjectLongHashMap<>();
@@ -27,24 +27,29 @@ public class LatencyMeasurer<T> {
     this.delay = warmUpDelay;
   }
 
-  public synchronized void start(T key) {
-    if (--delay > 0) {
-      return;
-    }
-    delay = measurePeriod;
+  public void start(T key) {
+    synchronized (this) {
+      --delay;
+      if (delay > 0) {
+        return;
+      }
+      delay = measurePeriod;
 
-    final long startTs = System.nanoTime();
-    starts.put(key, startTs);
-    latencies.put(key, new LongSummaryStatistics());
+      final long startTs = System.nanoTime();
+      starts.put(key, startTs);
+      latencies.put(key, new LongSummaryStatistics());
+    }
   }
 
-  public synchronized void finish(T key) {
-    if (starts.containsKey(key)) {
-      final long latency = System.nanoTime() - starts.get(key);
-      latencies.computeIfPresent(key, (k, stat) -> {
-        stat.accept(latency);
-        return stat;
-      });
+  public void finish(T key) {
+    synchronized (this) {
+      if (starts.containsKey(key)) {
+        final long latency = System.nanoTime() - starts.get(key);
+        latencies.computeIfPresent(key, (k, stat) -> {
+          stat.accept(latency);
+          return stat;
+        });
+      }
     }
   }
 
@@ -58,7 +63,7 @@ public class LatencyMeasurer<T> {
     final StringBuilder stringBuilder = new StringBuilder();
     for (int i = 0; i < latenciesDump.length; i++) {
       stringBuilder.append(latenciesDump[i]);
-      if (i != (latenciesDump.length - 1)) {
+      if (i != latenciesDump.length - 1) {
         stringBuilder.append(", ");
       }
     }

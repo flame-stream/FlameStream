@@ -35,8 +35,8 @@ final class ListHashMapping<T> implements HashMapping<T> {
   }
 
   private static final class RangeEntry<T> {
-    public final HashRange range;
-    public final T node;
+    final HashRange range;
+    final T node;
 
     private RangeEntry(HashRange range, T node) {
       this.range = range;

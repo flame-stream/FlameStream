@@ -1,5 +1,5 @@
 package com.spbsu.flamestream.runtime.sum;
 
-public interface Numb {
+interface Numb {
   long value();
 }

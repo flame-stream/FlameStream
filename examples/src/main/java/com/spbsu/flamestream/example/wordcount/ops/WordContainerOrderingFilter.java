@@ -16,8 +16,9 @@ public class WordContainerOrderingFilter implements Predicate<List<WordContainer
   public boolean test(List<WordContainer> wordContainers) {
     if (wordContainers.size() > 2) {
       throw new IllegalStateException("Group size should be <= 2");
-    } else if (
-            wordContainers.size() == 1 && !(wordContainers.get(0) instanceof WordEntry)) {
+    }
+
+    if (wordContainers.size() == 1 && !(wordContainers.get(0) instanceof WordEntry)) {
       throw new IllegalStateException("The only element in group should be WordEntry");
     }
 

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-public final class IdentityEnricher implements Function<List<Numb>, List<Numb>> {
+final class IdentityEnricher implements Function<List<Numb>, List<Numb>> {
   @Override
   public List<Numb> apply(List<Numb> numberGroupingResult) {
     if (numberGroupingResult.size() == 1) {

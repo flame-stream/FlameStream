@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 public final class SumTest {
 
-  @SuppressWarnings("Convert2Lambda")
   private static TheGraph sumGraph(Collection<Integer> fronts, AtomicGraph sink) {
     final HashFunction<Numb> identity = HashFunction.constantHash(1);
     final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
@@ -50,7 +49,7 @@ public final class SumTest {
     final StatelessMap<List<Numb>, Sum> reducer = new StatelessMap<>(new Reduce(), groupIdentity);
     final Broadcast<Sum> broadcast = new Broadcast<>(identity, 2);
 
-    final BarrierSuite<Sum> barrier = new BarrierSuite<Sum>(sink);
+    final BarrierSuite<Sum> barrier = new BarrierSuite<>(sink);
 
     final Graph graph = merge.fuse(grouping, merge.outPort(), grouping.inPort())
             .fuse(enricher, grouping.outPort(), enricher.inPort())
@@ -82,7 +81,7 @@ public final class SumTest {
     }
   }
 
-  private void test(int tickLength, int inputSize, int fronts) throws Exception {
+  private void test(int tickLength, int inputSize, int fronts) {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
             TestEnvironment environment = new TestEnvironment(lce)) {
 

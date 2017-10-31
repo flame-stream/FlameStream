@@ -25,8 +25,8 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
-    final List<OutPort> outPorts = this.outPorts();
-    final int newLocalTime = this.incrementLocalTimeAndGet();
+    final List<OutPort> outPorts = outPorts();
+    final int newLocalTime = incrementLocalTimeAndGet();
     for (int i = 0; i < outPorts.size(); ++i) {
       final Meta newMeta = item.meta().advanced(newLocalTime, i);
 
@@ -38,16 +38,16 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
 
   @Override
   public List<InPort> inPorts() {
-    return Collections.singletonList(this.inPort);
+    return Collections.singletonList(inPort);
   }
 
   public InPort inPort() {
-    return this.inPort;
+    return inPort;
   }
 
   @Override
   public List<OutPort> outPorts() {
-    return Collections.unmodifiableList(this.broadcastPorts);
+    return Collections.unmodifiableList(broadcastPorts);
   }
 
   @Override

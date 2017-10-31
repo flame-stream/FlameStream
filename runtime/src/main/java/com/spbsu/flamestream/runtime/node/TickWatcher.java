@@ -78,12 +78,12 @@ public final class TickWatcher extends LoggingActor {
       if (!seenTicks.containsKey(Long.parseLong(tick))) {
         final byte[] data = zooKeeper.getData("/ticks/" + tick, false, null);
         final boolean committed = zooKeeper.exists("/ticks/" + tick + "/committed", selfWatcher()) != null;
-        if (!committed) {
+        if (committed) {
+          subscriber.tell(new TickCommitDone(Long.parseLong(tick)), self());
+        } else {
           final TickInfo tickInfo = serializer.deserialize(data);
           seenTicks.put(Long.parseLong(tick), tickInfo);
           subscriber.tell(tickInfo, sender());
-        } else {
-          subscriber.tell(new TickCommitDone(Long.parseLong(tick)), self());
         }
       }
     }

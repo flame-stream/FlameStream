@@ -77,7 +77,7 @@ public final class GroupingAcceptanceTest {
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
     final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window);
 
-    final BarrierSuite<Long> barrier = new BarrierSuite<Long>(sink);
+    final BarrierSuite<Long> barrier = new BarrierSuite<>(sink);
 
     final Graph graph = filter.fuse(grouping, filter.outPort(), grouping.inPort())
             .fuse(barrier, grouping.outPort(), barrier.inPort());

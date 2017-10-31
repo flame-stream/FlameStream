@@ -23,7 +23,7 @@ import static java.util.stream.Collectors.toMap;
  */
 public enum WordCountCheckers implements ExampleChecker<String> {
   CHECK_COUNT {
-    private List<String> input = Stream.generate(() -> text(100)).limit(10).collect(Collectors.toList());
+    private final List<String> input = Stream.generate(() -> text(100)).limit(10).collect(Collectors.toList());
 
     @Override
     public Stream<String> input() {

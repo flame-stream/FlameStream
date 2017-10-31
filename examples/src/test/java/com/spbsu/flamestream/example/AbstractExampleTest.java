@@ -36,7 +36,6 @@ public abstract class AbstractExampleTest {
       });
 
       environment.awaitTick(waitTickInSec);
-      //noinspection unchecked
       checker.assertCorrect(result.stream());
     }
   }

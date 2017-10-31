@@ -17,15 +17,15 @@ import java.nio.file.Paths;
 import java.util.concurrent.TimeoutException;
 
 public final class WorkerApplication {
-  public static final int PORT = 4387;
+  private static final int PORT = 4387;
   private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
   private final DumbInetSocketAddress host;
   private final String zkConnectString;
   private final int id;
 
-  private ActorSystem system;
+  private ActorSystem system = null;
 
-  public WorkerApplication(int id, String zkConnectString) throws UnknownHostException {
+  private WorkerApplication(int id, String zkConnectString) {
     this.id = id;
     this.host = new DumbInetSocketAddress("localhost", PORT);
     this.zkConnectString = zkConnectString;

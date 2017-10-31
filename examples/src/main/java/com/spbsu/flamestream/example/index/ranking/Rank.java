@@ -35,16 +35,14 @@ public class Rank implements Comparable<Rank> {
       return false;
     }
 
-    Rank rank = (Rank) o;
+    final Rank rank = (Rank) o;
     return Math.abs(rank.score() - score) < MathTools.EPSILON && document.equals(rank.document);
   }
 
   @Override
   public int hashCode() {
-    int result;
-    long temp;
-    result = document.hashCode();
-    temp = Double.doubleToLongBits(score);
+    int result = document.hashCode();
+    final long temp = Double.doubleToLongBits(score);
     result = 31 * result + (int) (temp ^ (temp >>> 32));
     return result;
   }

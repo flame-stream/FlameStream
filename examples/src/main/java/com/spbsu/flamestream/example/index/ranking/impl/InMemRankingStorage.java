@@ -40,11 +40,9 @@ public class InMemRankingStorage implements RankingStorage {
       docsVersion.put(document.id(), document.version());
     } else if (!prevVersionExists || document.version() == prevDocVersion) {
       termCountInDoc.compute(term, (w, map) -> {
-        if (map == null) {
-          map = new TIntIntHashMap();
-        }
-        map.adjustOrPutValue(document.id(), count, count);
-        return map;
+        final TIntIntMap realMap = map == null ? new TIntIntHashMap() : map;
+        realMap.adjustOrPutValue(document.id(), count, count);
+        return realMap;
       });
       if (!prevVersionExists) {
         docsVersion.put(document.id(), document.version());
@@ -59,7 +57,9 @@ public class InMemRankingStorage implements RankingStorage {
   public int termCountInDoc(CharSequence term, Document document) {
     if (!docsVersion.containsKey(document.id())) {
       throw new IllegalArgumentException("Storage does not contain requested doc");
-    } else if (docsVersion.get(document.id()) != document.version()) {
+    }
+
+    if (docsVersion.get(document.id()) != document.version()) {
       throw new IllegalArgumentException("Storage does not contain doc with requested version");
     }
     final TIntIntMap map = termCountInDoc.get(term);
@@ -76,7 +76,9 @@ public class InMemRankingStorage implements RankingStorage {
   public int docLength(Document document) {
     if (!docsVersion.containsKey(document.id())) {
       throw new IllegalArgumentException("Storage does not contain requested doc");
-    } else if (docsVersion.get(document.id()) != document.version()) {
+    }
+
+    if (docsVersion.get(document.id()) != document.version()) {
       throw new IllegalArgumentException("Storage does not contain doc with requested version");
     }
     return docsLength.get(document.id());

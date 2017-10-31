@@ -17,8 +17,8 @@ public class WrongOrderingFilter implements Predicate<List<WordBase>> {
   public boolean test(List<WordBase> wordBases) {
     if (wordBases.size() > 2) {
       throw new IllegalStateException("Group size should be <= 2");
-    } else if (
-            wordBases.size() == 1 && !(wordBases.get(0) instanceof WordPagePositions)) {
+    }
+    if (wordBases.size() == 1 && !(wordBases.get(0) instanceof WordPagePositions)) {
       throw new IllegalStateException("The only element in group should be WordPagePosition");
     }
 

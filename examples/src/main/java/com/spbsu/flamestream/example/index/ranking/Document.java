@@ -30,7 +30,7 @@ public class Document {
       return false;
     }
 
-    Document document = (Document) o;
+    final Document document = (Document) o;
     return id == document.id && version == document.version;
   }
 

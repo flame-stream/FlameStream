@@ -39,7 +39,7 @@ public final class FlatMap<T, R> extends AbstractAtomicGraph {
       final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t);
 
       handler.push(outPort(), newDataItem);
-      xor[0] = xor[0] ^ newDataItem.ack();
+      xor[0] ^= newDataItem.ack();
 
       childId[0]++;
     });

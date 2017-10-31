@@ -23,7 +23,7 @@ public final class TickConcierge extends LoggingActor {
   private final Set<Long> awaitedTicks;
 
   @Nullable
-  private TickRoutes routes;
+  private TickRoutes routes = null;
 
   private TickConcierge(TickInfo tickInfo, int localId, Map<Integer, ActorPath> cluster, ActorRef tickWatcher) {
     this.tickInfo = tickInfo;

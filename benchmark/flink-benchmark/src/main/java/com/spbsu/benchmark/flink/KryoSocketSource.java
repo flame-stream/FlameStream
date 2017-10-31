@@ -12,16 +12,18 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> {
+class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> {
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOG = LoggerFactory.getLogger(KryoSocketSource.class);
+  public static final int INPUT_BUFFER_SIZE = 20_000_000;
+  public static final int CONNECTION_AWAIT_TIMEOUT = 5000;
 
   private final String hostname;
   private final int port;
 
   @Nullable
-  private transient Client client;
+  private transient Client client = null;
 
   public KryoSocketSource(String hostname, int port) {
     this.hostname = hostname;
@@ -30,7 +32,7 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
 
   @Override
   public void open(Configuration parameters) {
-    client = new Client(1000, 20_000_000);
+    client = new Client(1000, INPUT_BUFFER_SIZE);
     client.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) client.getKryo()
             .getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
@@ -39,6 +41,7 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
   @Override
   public void run(SourceContext<WikipediaPage> ctx) throws Exception {
     client.addListener(new Listener() {
+      @Override
       public void received(Connection connection, Object object) {
         if (object instanceof WikipediaPage) {
           ctx.collect((WikipediaPage) object);
@@ -58,7 +61,7 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
 
     LOG.info("Connecting to {}:{}", hostname, port);
     client.start();
-    client.connect(5000, hostname, port);
+    client.connect(CONNECTION_AWAIT_TIMEOUT, hostname, port);
     LOG.info("CONNECTED");
     client.run();
   }

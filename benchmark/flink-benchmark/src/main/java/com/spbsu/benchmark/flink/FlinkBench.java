@@ -13,9 +13,10 @@ import com.spbsu.flamestream.example.index.utils.WikipeadiaInput;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.objenesis.strategy.StdInstantiatorStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,7 +29,9 @@ import java.util.LongSummaryStatistics;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
-public final class FlinkBench {
+final class FlinkBench {
+  private static final int TIMEOUT = 10000;
+  private static final Logger LOG = LoggerFactory.getLogger(FlinkBench.class);
   private final String managerHostname;
   private final int managerPort;
 
@@ -44,7 +47,7 @@ public final class FlinkBench {
 
   private final long rate;
 
-  public FlinkBench(int limit,
+  private FlinkBench(int limit,
           String managerHostname,
           int managerPort,
           String benchHostname,
@@ -89,7 +92,7 @@ public final class FlinkBench {
     ).run();
   }
 
-  public void run() throws Exception {
+  private void run() throws Exception {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(0, 0);
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
@@ -103,7 +106,7 @@ public final class FlinkBench {
             .setParallelism(parallelism)
             .shuffle();
 
-    final DataStreamSink<InvertedIndexStream.Result> sink = new InvertedIndexStream().stream(source, parallelism)
+    new InvertedIndexStream().stream(source, parallelism)
             .addSink(new KryoSocketSink(benchHostname, sinkPort))
             .setParallelism(parallelism);
 
@@ -118,7 +121,7 @@ public final class FlinkBench {
     environment.execute("Joba");
 
     final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
-    System.out.println(stat);
+    LOG.info("Benchmark statistics: {}", stat);
 
     producer.stop();
     consumer.stop();
@@ -135,9 +138,10 @@ public final class FlinkBench {
     new Thread(() -> {
       synchronized (connections) {
         try {
-          connections.wait();
-        } catch (InterruptedException e) {
-          e.printStackTrace();
+          while (connections.isEmpty()) {
+            connections.wait(TIMEOUT);
+          }
+        } catch (InterruptedException ignored) {
         }
       }
 
@@ -147,10 +151,11 @@ public final class FlinkBench {
             final Connection connection = connections.get(ThreadLocalRandom.current().nextInt(connections.size()));
             measurer.start(page.id());
             connection.sendTCP(page);
-            System.out.println("Sending: " + page.id() + " at " + System.nanoTime());
+            //noinspection CallToNativeMethodWhileLocked
+            LOG.info("Sending: {}, at {}", page.id(), System.nanoTime());
+            //noinspection SleepWhileHoldingLock,CallToNativeMethodWhileLocked
             Thread.sleep(rate);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
+          } catch (InterruptedException ignored) {
           }
         }
       });
@@ -163,7 +168,7 @@ public final class FlinkBench {
       public void connected(Connection connection) {
         synchronized (connections) {
           connections.add(connection);
-          connections.notify();
+          connections.notifyAll();
         }
       }
     });
@@ -185,8 +190,7 @@ public final class FlinkBench {
     consumer.addListener(new Listener() {
       @Override
       public void disconnected(Connection connection) {
-        System.out.println("Consumer has been disconnected " + connection);
-        new RuntimeException().printStackTrace();
+        LOG.warn("Consumer has been disconnected {}", connection);
       }
     });
 

@@ -25,7 +25,7 @@ public class WordCountStream implements FlinkStream<String, WordCounter> {
 
   private static class Splitter implements FlatMapFunction<String, Tuple1<String>> {
     @Override
-    public void flatMap(String value, Collector<Tuple1<String>> out) throws Exception {
+    public void flatMap(String value, Collector<Tuple1<String>> out) {
       Arrays.stream(value.split("\\s")).forEach(s -> out.collect(new Tuple1<>(s)));
     }
   }
@@ -33,7 +33,7 @@ public class WordCountStream implements FlinkStream<String, WordCounter> {
   @SuppressWarnings("deprecation")
   private static class WordCounterFold implements FoldFunction<Tuple1<String>, WordCounter> {
     @Override
-    public WordCounter fold(WordCounter accumulator, Tuple1<String> value) throws Exception {
+    public WordCounter fold(WordCounter accumulator, Tuple1<String> value) {
       return new WordCounter(value.f0, accumulator.count() + 1);
     }
   }

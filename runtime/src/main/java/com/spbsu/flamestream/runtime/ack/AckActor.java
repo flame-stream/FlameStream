@@ -23,7 +23,7 @@ public final class AckActor extends LoggingActor {
   private final Collection<HashRange> committers = new HashSet<>();
   private GlobalTime currentMin = GlobalTime.MIN;
   @Nullable
-  private TickRoutes tickRoutes;
+  private TickRoutes tickRoutes = null;
 
   private AckActor(TickInfo tickInfo, ActorRef tickWatcher) {
     this.ledger = new AckLedgerImpl(tickInfo);

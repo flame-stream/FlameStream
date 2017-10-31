@@ -2,6 +2,8 @@ package com.spbsu.flamestream.runtime.ack.impl;
 
 import com.spbsu.commons.util.Pair;
 import com.spbsu.flamestream.runtime.ack.AckTable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -20,6 +22,7 @@ import java.util.stream.Stream;
  * Date: 30.08.2017
  */
 public class AckTableTest {
+  private static final Logger LOG = LoggerFactory.getLogger(AckTableTest.class);
 
   @DataProvider
   public Object[][] logicTestProvider() {
@@ -97,6 +100,6 @@ public class AckTableTest {
     xors.forEach(pair -> ackTable.ack(pair.first, pair.second));
     Collections.shuffle(xors);
     xors.forEach(pair -> ackTable.ack(pair.first, pair.second));
-    System.out.println(System.nanoTime() - start);
+    LOG.info("Delay: {}", System.nanoTime() - start);
   }
 }

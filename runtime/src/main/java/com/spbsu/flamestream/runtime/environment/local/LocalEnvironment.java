@@ -109,7 +109,7 @@ public final class LocalEnvironment implements Environment {
       this.concierges = concierges;
     }
 
-    public static Props props(ConcurrentMap<Long, ActorRef> concierges) {
+    static Props props(ConcurrentMap<Long, ActorRef> concierges) {
       return Props.create(FakeTickWatcher.class, concierges);
     }
 

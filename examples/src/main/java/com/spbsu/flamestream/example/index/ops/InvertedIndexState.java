@@ -73,7 +73,7 @@ public class InvertedIndexState {
 
   @VisibleForTesting
   void insert(long value) {
-    int windowIndex = findWindow(value);
+    final int windowIndex = findWindow(value);
     final TLongArrayList window = storage[windowIndex];
     final int insertIndex = -window.binarySearch(value) - 1;
     if (insertIndex < 0) {

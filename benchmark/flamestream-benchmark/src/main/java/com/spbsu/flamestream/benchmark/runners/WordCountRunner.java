@@ -24,9 +24,8 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
-@SuppressWarnings("Convert2Lambda")
 public final class WordCountRunner implements EnvironmentRunner {
-  private static final Logger LOG = LoggerFactory.getLogger(InvertedIndexRunner.class);
+  private static final Logger LOG = LoggerFactory.getLogger(WordCountRunner.class);
 
   @Override
   public void run(Environment environment, Config config) {
@@ -57,7 +56,7 @@ public final class WordCountRunner implements EnvironmentRunner {
         try {
           Thread.sleep(50);
         } catch (InterruptedException e) {
-          throw new RuntimeException();
+          throw new RuntimeException(e);
         }
       });
       testEnvironment.awaitTick(20);

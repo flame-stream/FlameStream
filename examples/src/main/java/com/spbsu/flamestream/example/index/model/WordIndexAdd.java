@@ -19,6 +19,7 @@ public class WordIndexAdd implements WordBase {
     this.positions = positions;
   }
 
+  @Override
   @JsonProperty("word")
   public String word() {
     return word;
