@@ -92,7 +92,8 @@ public final class FlinkBench {
     final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(0, 0);
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
-            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
+            //.createLocalEnvironment(1);
+    .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
     environment.setParallelism(parallelism);
     environment.setMaxParallelism(parallelism);
@@ -125,7 +126,7 @@ public final class FlinkBench {
   }
 
   private Server producer(LatencyMeasurer<Integer> measurer, Stream<WikipediaPage> input) throws IOException {
-    final Server producer = new Server(20_000_000, 1000);
+    final Server producer = new Server(1_000_000, 1000);
     producer.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
@@ -147,6 +148,7 @@ public final class FlinkBench {
                             .get(ThreadLocalRandom.current().nextInt(connections.size()));
                     measurer.start(page.id());
                     connection.sendTCP(page);
+                    System.out.println("Sending: " + page.id() + " at " + System.nanoTime());
                     Thread.sleep(rate);
                   } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -174,7 +176,7 @@ public final class FlinkBench {
   }
 
   private Server consumer(LatencyMeasurer<Integer> latencyMeasurer) throws IOException {
-    final Server consumer = new Server(2000, 20_000_000);
+    final Server consumer = new Server(2000, 1_000_000);
     consumer.getKryo().register(InvertedIndexStream.Result.class);
     consumer.getKryo().register(WordIndexAdd.class);
     consumer.getKryo().register(WordIndexRemove.class);

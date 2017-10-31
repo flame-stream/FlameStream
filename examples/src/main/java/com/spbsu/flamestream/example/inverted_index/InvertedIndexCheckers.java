@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.inverted_index;
 
-import com.spbsu.commons.text.stem.Stemmer;
+import com.expleague.commons.text.stem.Stemmer;
 import com.spbsu.flamestream.example.ExampleChecker;
 import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
 import com.spbsu.flamestream.example.inverted_index.model.WordBase;
