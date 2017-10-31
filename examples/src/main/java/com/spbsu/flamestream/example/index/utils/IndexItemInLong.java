@@ -4,20 +4,25 @@ package com.spbsu.flamestream.example.index.utils;
  * User: Artem
  * Date: 10.07.2017
  */
-public class IndexItemInLong {
-  private static final int pageIdBitLength = 24;
-  private static final int positionBitLength = 20;
-  private static final int versionBitLength = 8;
-  private static final int rangeBitLength = 12;
+public final class IndexItemInLong {
+  private static final int PAGE_ID_BIT_LENGTH = 24;
+  private static final int POSITION_BIT_LENGTH = 20;
+  private static final int VERSION_BIT_LENGTH = 8;
+  private static final int RANGE_BIT_LENGTH = 12;
+  public static final long LOW_QUADWORD_MASK = 0xffffffffL;
+
+  private IndexItemInLong() {}
 
   public static long createPagePosition(int pageId, int position, int pageVersion) {
     return createPagePosition(pageId, position, pageVersion, 0);
   }
 
   public static long createPagePosition(int pageId, int position, int pageVersion, int range) {
-    return (((long) pageId) << (Long.SIZE - pageIdBitLength)) | ((position & 0xffffffffL) << (Long.SIZE
-            - pageIdBitLength - positionBitLength)) | ((pageVersion & 0xffffffffL) << (Long.SIZE - pageIdBitLength
-            - positionBitLength - versionBitLength)) | ((range & 0xffffffffL));
+    //noinspection OverlyComplexBooleanExpression,UnnecessaryParentheses
+    return (((long) pageId) << (Long.SIZE - PAGE_ID_BIT_LENGTH)) | ((position & LOW_QUADWORD_MASK) << (Long.SIZE
+            - PAGE_ID_BIT_LENGTH
+            - POSITION_BIT_LENGTH)) | ((pageVersion & LOW_QUADWORD_MASK) << (Long.SIZE - PAGE_ID_BIT_LENGTH
+            - POSITION_BIT_LENGTH - VERSION_BIT_LENGTH)) | ((range & LOW_QUADWORD_MASK));
   }
 
   public static long setRange(long l, int range) {
@@ -28,20 +33,24 @@ public class IndexItemInLong {
   }
 
   public static int pageId(long l) {
-    return (int) (l >>> (positionBitLength + versionBitLength + rangeBitLength));
+    //noinspection UnnecessaryParentheses,NumericCastThatLosesPrecision
+    return (int) (l >>> (POSITION_BIT_LENGTH + VERSION_BIT_LENGTH + RANGE_BIT_LENGTH));
   }
 
   public static int position(long l) {
-    return (int) ((l << pageIdBitLength) >>> (pageIdBitLength + versionBitLength + rangeBitLength));
+    //noinspection NumericCastThatLosesPrecision,UnnecessaryParentheses
+    return (int) ((l << PAGE_ID_BIT_LENGTH) >>> (PAGE_ID_BIT_LENGTH + VERSION_BIT_LENGTH + RANGE_BIT_LENGTH));
   }
 
   public static int version(long l) {
-    return (int) ((l << (pageIdBitLength + positionBitLength)) >>> (pageIdBitLength + positionBitLength
-            + rangeBitLength));
+    //noinspection UnnecessaryParentheses,NumericCastThatLosesPrecision
+    return (int) ((l << (PAGE_ID_BIT_LENGTH + POSITION_BIT_LENGTH)) >>> (PAGE_ID_BIT_LENGTH + POSITION_BIT_LENGTH
+            + RANGE_BIT_LENGTH));
   }
 
   public static int range(long l) {
-    return (int) ((l << (pageIdBitLength + positionBitLength + versionBitLength)) >>> (pageIdBitLength
-            + positionBitLength + versionBitLength));
+    //noinspection NumericCastThatLosesPrecision,UnnecessaryParentheses
+    return (int) ((l << (PAGE_ID_BIT_LENGTH + POSITION_BIT_LENGTH + VERSION_BIT_LENGTH)) >>> (PAGE_ID_BIT_LENGTH
+            + POSITION_BIT_LENGTH + VERSION_BIT_LENGTH));
   }
 }

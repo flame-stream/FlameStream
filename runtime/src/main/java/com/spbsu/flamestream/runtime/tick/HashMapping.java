@@ -6,7 +6,7 @@ import java.util.Map;
 
 public interface HashMapping<T> {
   static <T> HashMapping<T> hashMapping(Map<HashRange, T> nodeMapping) {
-    return new ListHashMapping<T>(nodeMapping);
+    return new ListHashMapping<>(nodeMapping);
   }
 
   Map<HashRange, T> asMap();

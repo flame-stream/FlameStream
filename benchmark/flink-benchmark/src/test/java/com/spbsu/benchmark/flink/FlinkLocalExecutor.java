@@ -11,7 +11,7 @@ import java.util.function.Consumer;
  */
 class FlinkLocalExecutor {
   //dirty code for avoiding serialization
-  private static Consumer<Object> consumer;
+  private static Consumer<Object> consumer = null;
 
   private final StreamExecutionEnvironment executionEnvironment;
 
@@ -20,7 +20,7 @@ class FlinkLocalExecutor {
     executionEnvironment.setBufferTimeout(bufferTimeout);
   }
 
-  <T> void execute(FlinkStream flinkStream, SourceFunction<T> source, Consumer<Object> output) {
+  <T> void execute(FlinkStream<T, ?> flinkStream, SourceFunction<T> source, Consumer<Object> output) {
     consumer = output;
     //noinspection unchecked
     flinkStream.stream(executionEnvironment.addSource(source)).addSink(value -> consumer.accept(value));

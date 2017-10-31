@@ -26,7 +26,6 @@ public class WikipediaPageToWordPositions implements Function<WikipediaPage, Str
     //noinspection deprecation
     final Tokenizer tokenizer = new StemsTokenizer(Stemmer.getInstance(), wikipediaPage.text());
     final Map<String, TLongList> wordPositions = new HashMap<>();
-    final List<WordPagePositions> wordPagePositions = new ArrayList<>();
     int position = 0;
     while (tokenizer.hasNext()) {
       final String word = tokenizer.next().toString().toLowerCase();
@@ -44,6 +43,7 @@ public class WikipediaPageToWordPositions implements Function<WikipediaPage, Str
       }
       position++;
     }
+    final List<WordPagePositions> wordPagePositions = new ArrayList<>();
     wordPositions.forEach((word, list) -> wordPagePositions.add(new WordPagePositions(word, list.toArray())));
     return wordPagePositions.stream();
   }

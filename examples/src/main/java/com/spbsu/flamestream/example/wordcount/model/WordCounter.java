@@ -31,7 +31,7 @@ public class WordCounter implements WordContainer {
       return false;
     }
 
-    WordCounter that = (WordCounter) o;
+    final WordCounter that = (WordCounter) o;
     return count == that.count && word.equals(that.word);
   }
 

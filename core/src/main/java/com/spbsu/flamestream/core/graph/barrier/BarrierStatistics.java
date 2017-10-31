@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 
+import static com.spbsu.flamestream.core.stat.Statistics.*;
+
 /**
  * User: Artem
  * Date: 13.10.2017
@@ -32,9 +34,7 @@ public class BarrierStatistics implements Statistics {
 
   @Override
   public Map<String, Double> metrics() {
-    final Map<String, Double> result = new HashMap<>();
-    result.putAll(Statistics.asMap("Barrier releasing duration", duration));
-    return result;
+    return asMap("Barrier releasing duration", duration);
   }
 
   @Override

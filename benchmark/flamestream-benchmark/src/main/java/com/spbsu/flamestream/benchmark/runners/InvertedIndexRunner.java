@@ -24,7 +24,6 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 18.08.2017
  */
-@SuppressWarnings("Convert2Lambda")
 public class InvertedIndexRunner implements EnvironmentRunner {
   private static final Logger LOG = LoggerFactory.getLogger(InvertedIndexRunner.class);
 
@@ -62,7 +61,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
         try {
           Thread.sleep(sleepTimeInMs);
         } catch (InterruptedException e) {
-          throw new RuntimeException();
+          throw new RuntimeException(e);
         }
       });
       testEnvironment.awaitTick(tickLengthInSec - pagesCount[0] * sleepTimeInMs / 1000 + 5);

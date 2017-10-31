@@ -8,12 +8,13 @@ import org.apache.zookeeper.ZooKeeper;
 import static org.apache.zookeeper.Watcher.Event;
 
 public final class LifecycleWatcher extends LoggingActor {
+  public static final int SESSION_TIMEOUT = 5000;
   private final String zkConnectString;
   private final int id;
 
-  private ZooKeeper zk;
+  private ZooKeeper zk = null;
 
-  public LifecycleWatcher(String zkConnectString, int id) {
+  private LifecycleWatcher(String zkConnectString, int id) {
     this.zkConnectString = zkConnectString;
     this.id = id;
   }
@@ -26,7 +27,7 @@ public final class LifecycleWatcher extends LoggingActor {
   public void preStart() throws Exception {
     super.preStart();
 
-    this.zk = new ZooKeeper(zkConnectString, 5000, event -> self().tell(event, self()));
+    this.zk = new ZooKeeper(zkConnectString, SESSION_TIMEOUT, event -> self().tell(event, self()));
   }
 
   @Override

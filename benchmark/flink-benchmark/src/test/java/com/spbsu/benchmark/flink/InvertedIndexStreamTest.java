@@ -27,9 +27,9 @@ import java.util.LongSummaryStatistics;
 public class InvertedIndexStreamTest {
   private static final Logger LOG = LoggerFactory.getLogger(InvertedIndexStreamTest.class);
   //dirty code for avoiding serialization
-  private static Iterator<WikipediaPage> sourceIterator;
+  private static Iterator<WikipediaPage> sourceIterator = null;
 
-  private static FlinkLocalExecutor executor;
+  private static FlinkLocalExecutor executor = null;
 
   @BeforeClass
   public void setUpClass() {
@@ -89,7 +89,6 @@ public class InvertedIndexStreamTest {
 
     @Override
     public void run(SourceContext<WikipediaPage> ctx) throws Exception {
-      //noinspection Duplicates
       while (running) {
         if (sourceIterator.hasNext()) {
           final WikipediaPage next = sourceIterator.next();

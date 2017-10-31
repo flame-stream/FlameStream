@@ -29,11 +29,11 @@ import static java.util.stream.Collectors.toMap;
  * Date: 05.10.2017
  */
 public class WordCountStreamTest {
-  private final Logger log = LoggerFactory.getLogger(InvertedIndexStreamTest.class);
+  private final Logger log = LoggerFactory.getLogger(WordCountStreamTest.class);
   //dirty code for avoiding serialization
-  private static Iterator<String> SOURCE_ITERATOR;
+  private static Iterator<String> SOURCE_ITERATOR = null;
 
-  private static FlinkLocalExecutor EXECUTOR;
+  private static FlinkLocalExecutor EXECUTOR = null;
 
   @BeforeClass
   public void setUpClass() {
@@ -88,8 +88,7 @@ public class WordCountStreamTest {
     private boolean running = true;
 
     @Override
-    public void run(SourceContext<String> ctx) throws Exception {
-      //noinspection Duplicates
+    public void run(SourceContext<String> ctx) {
       while (running) {
         if (SOURCE_ITERATOR.hasNext()) {
           ctx.collect(SOURCE_ITERATOR.next());

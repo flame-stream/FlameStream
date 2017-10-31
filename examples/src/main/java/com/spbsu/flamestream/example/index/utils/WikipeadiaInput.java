@@ -14,7 +14,9 @@ import java.util.stream.StreamSupport;
  * User: Artem
  * Date: 21.08.2017
  */
-public class WikipeadiaInput {
+public final class WikipeadiaInput {
+  private WikipeadiaInput() {}
+
   public static Stream<WikipediaPage> dumpStreamFromResources(String dumpPath) {
     final ClassLoader classLoader = WikipeadiaInput.class.getClassLoader();
     final BufferedInputStream inputStream = new BufferedInputStream(classLoader.getResourceAsStream(dumpPath));
@@ -31,8 +33,8 @@ public class WikipeadiaInput {
   }
 
   private static Stream<WikipediaPage> fromInputStream(InputStream inputStream) {
-    final Iterator<WikipediaPage> wikipediaPageIterator = new WikipediaPageIterator(inputStream);
-    final Iterable<WikipediaPage> iterable = () -> wikipediaPageIterator;
+    final Iterator<WikipediaPage> pageIterator = new WikipediaPageIterator(inputStream);
+    final Iterable<WikipediaPage> iterable = () -> pageIterator;
     return StreamSupport.stream(iterable.spliterator(), false);
   }
 }

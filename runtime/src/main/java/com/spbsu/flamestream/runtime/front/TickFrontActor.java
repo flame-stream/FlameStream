@@ -28,9 +28,9 @@ final class TickFrontActor extends LoggingActor {
   private final TickInfo tickInfo;
 
   @Nullable
-  private TickRoutes routes;
+  private TickRoutes routes = null;
   @Nullable
-  private HashMapping<ActorRef> mapping;
+  private HashMapping<ActorRef> mapping = null;
 
   private long currentWindowHead;
   private long currentXor = 0;

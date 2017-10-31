@@ -101,8 +101,8 @@ final class BarrierSink implements AtomicGraph {
     @Override
     public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
       collector.releaseFrom(globalTime, di -> {
-        final Object data = ((PreBarrierMetaElement) di.payload()).payload();
-        final PayloadDataItem<Object> dataItem = new PayloadDataItem<>(di.meta(), data);
+        final Object data = ((PreBarrierMetaElement<?>) di.payload()).payload();
+        final DataItem<Object> dataItem = new PayloadDataItem<>(di.meta(), data);
         handle.push(outPort, dataItem);
         handle.ack(dataItem.ack(), dataItem.meta().globalTime());
         barrierStatistics.release(di.meta().globalTime());

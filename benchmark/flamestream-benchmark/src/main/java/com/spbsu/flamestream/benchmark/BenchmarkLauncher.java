@@ -15,7 +15,9 @@ import java.nio.file.Paths;
  * User: Artem
  * Date: 18.08.2017
  */
-public class BenchmarkLauncher {
+final class BenchmarkLauncher {
+  private BenchmarkLauncher() {}
+
   public static void main(String[] args) throws Exception {
     final Config load;
     if (args.length == 1) {
@@ -26,7 +28,7 @@ public class BenchmarkLauncher {
     }
 
     final EnvironmentRunnerCfg environmentRunnerCfg = new TypesafeEnvironmentRunnerCfg(load);
-    final EnvironmentRunner runner = environmentRunnerCfg.runner().newInstance();
+    final EnvironmentRunner runner = environmentRunnerCfg.runner().getConstructor().newInstance();
 
     try (final Environment environment = new EnvironmentFromTypesafeProvider(load).environment()) {
       runner.run(environment, load);
