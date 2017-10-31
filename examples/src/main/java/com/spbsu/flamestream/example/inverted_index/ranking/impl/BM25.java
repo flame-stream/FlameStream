@@ -1,9 +1,9 @@
 package com.spbsu.flamestream.example.inverted_index.ranking.impl;
 
 import com.google.common.collect.Lists;
-import com.spbsu.commons.text.lexical.StemsTokenizer;
-import com.spbsu.commons.text.lexical.Tokenizer;
-import com.spbsu.commons.text.stem.Stemmer;
+import com.expleague.commons.text.lexical.StemsTokenizer;
+import com.expleague.commons.text.lexical.Tokenizer;
+import com.expleague.commons.text.stem.Stemmer;
 import com.spbsu.flamestream.example.inverted_index.ranking.Rank;
 import com.spbsu.flamestream.example.inverted_index.ranking.RankingFunction;
 import com.spbsu.flamestream.example.inverted_index.ranking.RankingStorage;

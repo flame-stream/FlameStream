@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.inverted_index.ranking;
 
-import com.spbsu.commons.math.MathTools;
+import com.expleague.commons.math.MathTools;
 import org.jetbrains.annotations.NotNull;
 
 /**
