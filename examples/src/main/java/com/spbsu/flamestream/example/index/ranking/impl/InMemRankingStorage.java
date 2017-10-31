@@ -40,8 +40,9 @@ public class InMemRankingStorage implements RankingStorage {
       docsVersion.put(document.id(), document.version());
     } else if (!prevVersionExists || document.version() == prevDocVersion) {
       termCountInDoc.compute(term, (w, map) -> {
-        (map != null ? map : new TIntIntHashMap()).adjustOrPutValue(document.id(), count, count);
-        return map;
+        final TIntIntMap realMap = map == null ? new TIntIntHashMap() : map;
+        realMap.adjustOrPutValue(document.id(), count, count);
+        return realMap;
       });
       if (!prevVersionExists) {
         docsVersion.put(document.id(), document.version());

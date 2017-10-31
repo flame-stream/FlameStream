@@ -27,8 +27,9 @@ public final class LinearCollector implements BarrierCollector {
     //noinspection unchecked
     final DataItem<Object> dataItem = (DataItem<Object>) item;
     invalidationPool.compute(item.meta().globalTime(), (globalTime, dataItems) -> {
-      Grouping.insert(dataItems != null ? dataItems : new ArrayList<>(), dataItem);
-      return dataItems;
+      final List<DataItem<Object>> items = dataItems == null ? new ArrayList<>() : dataItems;
+      Grouping.insert(items, dataItem);
+      return items;
     });
   }
 
