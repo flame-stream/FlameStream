@@ -35,27 +35,19 @@ final class TickFrontActor extends LoggingActor {
   private long currentWindowHead;
   private long currentXor = 0;
 
-  private TickFrontActor(Map<Integer, ActorPath> cluster,
-                         InPort target,
-                         int frontId,
-                         TickInfo info) {
+  private TickFrontActor(Map<Integer, ActorPath> cluster, InPort target, int frontId, TickInfo info) {
     this.target = target;
     this.frontId = frontId;
     this.tickInfo = info;
 
-    this.tickConcierges = cluster.entrySet().stream()
-            .collect(toMap(
-                    Map.Entry::getKey,
-                    e -> e.getValue().child(String.valueOf(tickInfo.id()))
-            ));
+    this.tickConcierges = cluster.entrySet()
+            .stream()
+            .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(String.valueOf(tickInfo.id()))));
 
     this.currentWindowHead = tickInfo.startTs();
   }
 
-  public static Props props(Map<Integer, ActorPath> cluster,
-                            InPort target,
-                            int frontId,
-                            TickInfo info) {
+  public static Props props(Map<Integer, ActorPath> cluster, InPort target, int frontId, TickInfo info) {
     return Props.create(TickFrontActor.class, cluster, target, frontId, info);
   }
 
@@ -73,15 +65,12 @@ final class TickFrontActor extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return ReceiveBuilder.create()
-            .match(TickRoutes.class, routes -> {
-              this.routes = routes;
-              mapping = HashMapping.hashMapping(routes.rangeConcierges());
-              getContext().become(receiving());
-              unstashAll();
-            })
-            .matchAny(m -> stash())
-            .build();
+    return ReceiveBuilder.create().match(TickRoutes.class, routes -> {
+      this.routes = routes;
+      mapping = HashMapping.hashMapping(routes.rangeConcierges());
+      getContext().become(receiving());
+      unstashAll();
+    }).matchAny(m -> stash()).build();
   }
 
   private Receive receiving() {

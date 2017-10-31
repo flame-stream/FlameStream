@@ -7,8 +7,7 @@ public final class GlobalTime implements Comparable<GlobalTime> {
   public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, -1);
   //Inner representation is a subject for a discussion and/or an optimization
 
-  private static final Comparator<GlobalTime> NATURAL_ORDER = Comparator
-          .comparingLong(GlobalTime::time)
+  private static final Comparator<GlobalTime> NATURAL_ORDER = Comparator.comparingLong(GlobalTime::time)
           .thenComparingInt(GlobalTime::front);
 
   private final long time;
@@ -35,11 +34,14 @@ public final class GlobalTime implements Comparable<GlobalTime> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final GlobalTime that = (GlobalTime) o;
-    return time == that.time &&
-            Objects.equals(front, that.front);
+    return time == that.time && Objects.equals(front, that.front);
   }
 
   @Override

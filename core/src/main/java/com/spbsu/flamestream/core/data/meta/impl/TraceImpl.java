@@ -5,7 +5,9 @@ import com.spbsu.flamestream.core.data.meta.Trace;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.*;
+import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.childIdOf;
+import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.localEvent;
+import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.localTimeOf;
 
 public final class TraceImpl implements Trace {
   @SuppressWarnings("PackageVisibleField")
@@ -46,8 +48,12 @@ public final class TraceImpl implements Trace {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final TraceImpl trace1 = (TraceImpl) o;
     return Arrays.equals(trace, trace1.trace);
   }
@@ -59,7 +65,8 @@ public final class TraceImpl implements Trace {
 
   @Override
   public String toString() {
-    return Arrays.stream(trace).mapToObj(event -> localTimeOf(event) + ":" + childIdOf(event))
+    return Arrays.stream(trace)
+            .mapToObj(event -> localTimeOf(event) + ":" + childIdOf(event))
             .collect(Collectors.joining(", ", "[", "]"));
   }
 }

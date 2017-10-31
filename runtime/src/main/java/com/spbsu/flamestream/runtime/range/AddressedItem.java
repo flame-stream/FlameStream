@@ -22,9 +22,6 @@ public final class AddressedItem {
 
   @Override
   public String toString() {
-    return "AddressedItem{" +
-            "item=" + item +
-            ", port=" + port +
-            '}';
+    return "AddressedItem{" + "item=" + item + ", port=" + port + '}';
   }
 }

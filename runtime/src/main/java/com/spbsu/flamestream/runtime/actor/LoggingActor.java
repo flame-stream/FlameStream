@@ -10,7 +10,7 @@ import scala.runtime.BoxedUnit;
 import java.util.Optional;
 
 public abstract class LoggingActor extends AbstractActorWithStash {
-  private final LoggingAdapter LOG = Logging.getLogger(context().system(), self());
+  private final LoggingAdapter log = Logging.getLogger(context().system(), self());
 
   @Override
   public void aroundReceive(PartialFunction<Object, BoxedUnit> receive, Object msg) {
@@ -19,25 +19,25 @@ public abstract class LoggingActor extends AbstractActorWithStash {
 
   @Override
   public void preStart() throws Exception {
-    LOG().info("Starting...");
+    log().info("Starting...");
     super.preStart();
   }
 
   @Override
   public void postStop() {
-    LOG().info("Stopped");
+    log().info("Stopped");
     super.postStop();
   }
 
   @Override
   public void preRestart(Throwable reason, Optional<Object> message) throws Exception {
-    LOG().error("Restarting, reason: {}, payload: {}", reason, message);
+    log().error("Restarting, reason: {}, payload: {}", reason, message);
     super.preRestart(reason, message);
   }
 
   @Override
   public void unhandled(Object message) {
-    LOG().error("Can't handle payload: {}", message);
+    log().error("Can't handle payload: {}", message);
     super.unhandled(message);
   }
 
@@ -47,7 +47,7 @@ public abstract class LoggingActor extends AbstractActorWithStash {
     return SupervisorStrategy.stoppingStrategy();
   }
 
-  protected final LoggingAdapter LOG() {
-    return LOG;
+  protected final LoggingAdapter log() {
+    return log;
   }
 }

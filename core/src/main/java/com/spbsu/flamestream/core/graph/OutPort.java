@@ -20,8 +20,7 @@ public final class OutPort {
 
   @Override
   public String toString() {
-    return "OutPort{" + "id=" + id +
-            '}';
+    return "OutPort{" + "id=" + id + '}';
   }
 
   @Override

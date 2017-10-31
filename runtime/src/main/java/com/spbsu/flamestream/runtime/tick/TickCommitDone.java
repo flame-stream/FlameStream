@@ -13,8 +13,6 @@ public final class TickCommitDone {
 
   @Override
   public String toString() {
-    return "TickCommitDone{" +
-            "tickId=" + tickId +
-            '}';
+    return "TickCommitDone{" + "tickId=" + tickId + '}';
   }
 }

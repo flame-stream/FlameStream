@@ -70,10 +70,11 @@ public final class Grouping<T> extends AbstractAtomicGraph {
           group.set(position + 1, insertee);
           final int itemsForRemove = endPosition - position - 1;
           //subList.clear is faster if the number of items for removing >= 2
-          if (itemsForRemove >= 2)
+          if (itemsForRemove >= 2) {
             group.subList(position + 2, endPosition + 1).clear();
-          else if (itemsForRemove > 0)
+          } else if (itemsForRemove > 0) {
             group.remove(endPosition);
+          }
         } else {
           group.add(position + 1, insertee);
         }

@@ -16,14 +16,17 @@ public final class LongNumb implements Numb {
 
   @Override
   public String toString() {
-    return "LongNumb{" + "value=" + value +
-            '}';
+    return "LongNumb{" + "value=" + value + '}';
   }
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final LongNumb longNumb = (LongNumb) o;
     return value == longNumb.value;
   }

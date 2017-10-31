@@ -15,7 +15,6 @@ public final class MinTimeUpdate {
 
   @Override
   public String toString() {
-    return "MinTimeUpdate{" + "minTime=" + minTime +
-            '}';
+    return "MinTimeUpdate{" + "minTime=" + minTime + '}';
   }
 }

@@ -40,24 +40,21 @@ public class PingActor extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder()
-            .match(Start.class, start -> {
-              if (!started) {
-                start(start.delayInNanos());
-                started = true;
-              }
-            })
-            .match(Stop.class, stop -> {
-              if (started) {
-                stop();
-                started = false;
-              }
-            })
-            .match(InnerPing.class, innerPing -> {
-              if (started)
-                handleInnerPing();
-            })
-            .build();
+    return receiveBuilder().match(Start.class, start -> {
+      if (!started) {
+        start(start.delayInNanos());
+        started = true;
+      }
+    }).match(Stop.class, stop -> {
+      if (started) {
+        stop();
+        started = false;
+      }
+    }).match(InnerPing.class, innerPing -> {
+      if (started) {
+        handleInnerPing();
+      }
+    }).build();
   }
 
   private void start(long delayInNanos) throws IllegalAccessException, InstantiationException {
@@ -77,8 +74,9 @@ public class PingActor extends LoggingActor {
   }
 
   private void stop() {
-    if (scheduler != null)
+    if (scheduler != null) {
       scheduler.cancel();
+    }
   }
 
   private void handleInnerPing() throws IllegalAccessException, InstantiationException {
@@ -99,8 +97,7 @@ public class PingActor extends LoggingActor {
     }
   }
 
-  public static class Stop {
-  }
+  public static class Stop {}
 
   private enum InnerPing {
     PING

@@ -27,9 +27,7 @@ public final class InPort {
 
   @Override
   public String toString() {
-    return "InPort{" + "id=" + id +
-            ", hashFunction=" + hashFunction +
-            '}';
+    return "InPort{" + "id=" + id + ", hashFunction=" + hashFunction + '}';
   }
 
   @Override

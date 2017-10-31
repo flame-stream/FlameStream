@@ -28,8 +28,9 @@ public class LatencyMeasurer<T> {
   }
 
   public synchronized void start(T key) {
-    if (--delay > 0)
+    if (--delay > 0) {
       return;
+    }
     delay = measurePeriod;
 
     final long startTs = System.nanoTime();
@@ -48,8 +49,11 @@ public class LatencyMeasurer<T> {
   }
 
   public long[] latencies() {
-    final long[] latenciesDump = latencies.values().stream().map(LongSummaryStatistics::getMax)
-            .mapToLong(l -> l).toArray();
+    final long[] latenciesDump = latencies.values()
+            .stream()
+            .map(LongSummaryStatistics::getMax)
+            .mapToLong(l -> l)
+            .toArray();
 
     final StringBuilder stringBuilder = new StringBuilder();
     for (int i = 0; i < latenciesDump.length; i++) {

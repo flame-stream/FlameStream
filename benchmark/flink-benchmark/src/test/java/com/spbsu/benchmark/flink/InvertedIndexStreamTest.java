@@ -2,10 +2,10 @@ package com.spbsu.benchmark.flink;
 
 import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.example.ExampleChecker;
-import com.spbsu.flamestream.example.inverted_index.InvertedIndexCheckers;
-import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
-import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
+import com.spbsu.flamestream.example.index.InvertedIndexCheckers;
+import com.spbsu.flamestream.example.index.model.WikipediaPage;
+import com.spbsu.flamestream.example.index.model.WordIndexAdd;
+import com.spbsu.flamestream.example.index.utils.IndexItemInLong;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.slf4j.Logger;
@@ -14,7 +14,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LongSummaryStatistics;
 
 /**
  * User: Artem
@@ -49,8 +53,9 @@ public class InvertedIndexStreamTest {
     executor.execute(new InvertedIndexStream(), new Source(), o -> {
       final InvertedIndexStream.Result out = (InvertedIndexStream.Result) o;
       output.add(out.wordIndexAdd());
-      if (out.wordIndexRemove() != null)
+      if (out.wordIndexRemove() != null) {
         output.add(out.wordIndexRemove());
+      }
     });
 
     checker.assertCorrect(output.stream());

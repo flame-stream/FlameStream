@@ -27,9 +27,7 @@ public final class AckerReport {
 
   @Override
   public String toString() {
-    return "AckerReport{" + "globalTime=" + globalTime +
-            ", xor=" + xor +
-            '}';
+    return "AckerReport{" + "globalTime=" + globalTime + ", xor=" + xor + '}';
   }
 }
 

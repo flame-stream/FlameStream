@@ -18,8 +18,7 @@ public class WordCountStream implements FlinkStream<String, WordCounter> {
   @Override
   public DataStream<WordCounter> stream(DataStream<String> source) {
     //noinspection deprecation
-    return source.flatMap(new Splitter())
-            .keyBy(0)
+    return source.flatMap(new Splitter()).keyBy(0)
             //fold is deprecated but there is no alternative in the current version
             .fold(new WordCounter(null, 0), new WordCounterFold());
   }

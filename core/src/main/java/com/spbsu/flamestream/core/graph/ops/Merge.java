@@ -23,8 +23,7 @@ public final class Merge extends AbstractAtomicGraph {
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
-    final DataItem<?> newItem = new PayloadDataItem<>(item.meta().advanced(incrementLocalTimeAndGet()),
-            item.payload());
+    final DataItem<?> newItem = new PayloadDataItem<>(item.meta().advanced(incrementLocalTimeAndGet()), item.payload());
 
     handler.push(outPort(), newItem);
     handler.ack(newItem.ack(), newItem.meta().globalTime());

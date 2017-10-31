@@ -41,7 +41,7 @@ import java.util.function.ToIntFunction;
 public final class RemoteEnvironment implements Environment {
   private static final String SYSTEM_NAME = "remote-environment";
   private static final int SYSTEM_PORT = 12345;
-  private final Logger LOG = LoggerFactory.getLogger(RemoteEnvironment.class);
+  private final Logger log = LoggerFactory.getLogger(RemoteEnvironment.class);
   private final InetAddress environmentAddress;
 
   private final ObjectMapper mapper = new ObjectMapper();
@@ -54,12 +54,13 @@ public final class RemoteEnvironment implements Environment {
     try {
       this.environmentAddress = InetAddress.getLocalHost();
       final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + SYSTEM_PORT)
-              .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + environmentAddress.getHostName()))
+              .withFallback(ConfigFactory.parseString(
+                      "akka.remote.netty.tcp.hostname=" + environmentAddress.getHostName()))
               .withFallback(ConfigFactory.load("remote"));
 
       localSystem = ActorSystem.create(SYSTEM_NAME, config);
 
-      this.zooKeeper = new ZooKeeper(zookeeperString, 5000, e -> LOG.info("Init zookeeperString ZKEvent: {}", e));
+      this.zooKeeper = new ZooKeeper(zookeeperString, 5000, e -> log.info("Init zookeeperString ZKEvent: {}", e));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -68,8 +69,12 @@ public final class RemoteEnvironment implements Environment {
   @Override
   public void deploy(TickInfo tickInfo) {
     try {
-      zooKeeper.create("/ticks/" + tickInfo.id(), serializer.serialize(tickInfo),
-              ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
+      zooKeeper.create(
+              "/ticks/" + tickInfo.id(),
+              serializer.serialize(tickInfo),
+              ZKUtil.parseACLs("world:anyone:crdwa"),
+              CreateMode.PERSISTENT
+      );
     } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -79,8 +84,7 @@ public final class RemoteEnvironment implements Environment {
   public Set<Integer> availableFronts() {
     try {
       final byte[] data = zooKeeper.getData("/fronts", false, new Stat());
-      return mapper.readValue(data, new TypeReference<Set<Integer>>() {
-      });
+      return mapper.readValue(data, new TypeReference<Set<Integer>>() {});
     } catch (IOException | KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -99,16 +103,9 @@ public final class RemoteEnvironment implements Environment {
   }
 
   private ActorPath wrapperPath(String suffix) {
-    final Address address = new Address(
-            "akka.tcp",
-            SYSTEM_NAME,
-            environmentAddress.getHostName(),
-            SYSTEM_PORT
-    );
+    final Address address = new Address("akka.tcp", SYSTEM_NAME, environmentAddress.getHostName(), SYSTEM_PORT);
 
-    return RootActorPath.apply(address, "/")
-            .child("user")
-            .child(suffix);
+    return RootActorPath.apply(address, "/").child("user").child(suffix);
   }
 
   @Override
@@ -124,25 +121,15 @@ public final class RemoteEnvironment implements Environment {
   }
 
   private ActorPath frontPath(DumbInetSocketAddress frontAddress) {
-    final Address address = new Address(
-            "akka.tcp",
-            "worker",
-            frontAddress.host(),
-            frontAddress.port()
-    );
+    final Address address = new Address("akka.tcp", "worker", frontAddress.host(), frontAddress.port());
 
-    return RootActorPath.apply(address, "/")
-            .child("user")
-            .child("watcher")
-            .child("concierge")
-            .child("front");
+    return RootActorPath.apply(address, "/").child("user").child("watcher").child("concierge").child("front");
   }
 
   private Map<Integer, DumbInetSocketAddress> dns() {
     try {
       final byte[] data = zooKeeper.getData("/dns", false, new Stat());
-      return mapper.readValue(data, new TypeReference<Map<Integer, DumbInetSocketAddress>>() {
-      });
+      return mapper.readValue(data, new TypeReference<Map<Integer, DumbInetSocketAddress>>() {});
     } catch (IOException | InterruptedException | KeeperException e) {
       throw new RuntimeException(e);
     }
@@ -154,10 +141,10 @@ public final class RemoteEnvironment implements Environment {
       zooKeeper.close();
       Await.ready(localSystem.terminate(), Duration.Inf());
     } catch (InterruptedException e) {
-      LOG.error("Smth bad happens during closing ZookeeperClient", e);
+      log.error("Smth bad happens during closing ZookeeperClient", e);
       throw new RuntimeException(e);
     } catch (TimeoutException e) {
-      LOG.error("Can't terminate environment system", e);
+      log.error("Can't terminate environment system", e);
     }
   }
 }

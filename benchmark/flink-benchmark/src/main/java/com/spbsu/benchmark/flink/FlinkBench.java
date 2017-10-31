@@ -5,11 +5,11 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 import com.spbsu.benchmark.commons.LatencyMeasurer;
-import com.spbsu.flamestream.example.inverted_index.model.WikipediaPage;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndexRemove;
-import com.spbsu.flamestream.example.inverted_index.utils.IndexItemInLong;
-import com.spbsu.flamestream.example.inverted_index.utils.WikipeadiaInput;
+import com.spbsu.flamestream.example.index.model.WikipediaPage;
+import com.spbsu.flamestream.example.index.model.WordIndexAdd;
+import com.spbsu.flamestream.example.index.model.WordIndexRemove;
+import com.spbsu.flamestream.example.index.utils.IndexItemInLong;
+import com.spbsu.flamestream.example.index.utils.WikipeadiaInput;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -45,15 +45,15 @@ public final class FlinkBench {
   private final long rate;
 
   public FlinkBench(int limit,
-                    String managerHostname,
-                    int managerPort,
-                    String benchHostname,
-                    int sourcePort,
-                    int sinkPort,
-                    List<String> jars,
-                    int parallelism,
-                    long rate,
-                    String inputFilePath) {
+          String managerHostname,
+          int managerPort,
+          String benchHostname,
+          int sourcePort,
+          int sinkPort,
+          List<String> jars,
+          int parallelism,
+          long rate,
+          String inputFilePath) {
     this.limit = limit;
     this.managerHostname = managerHostname;
     this.benchHostname = benchHostname;
@@ -85,7 +85,8 @@ public final class FlinkBench {
             load.getStringList("jars"),
             load.getInt("parallelism"),
             load.getInt("rate"),
-            load.hasPath("input-path") ? load.getString("input-path") : null).run();
+            load.hasPath("input-path") ? load.getString("input-path") : null
+    ).run();
   }
 
   public void run() throws Exception {
@@ -93,13 +94,12 @@ public final class FlinkBench {
 
     final StreamExecutionEnvironment environment = StreamExecutionEnvironment
             //.createLocalEnvironment(1);
-    .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
+            .createRemoteEnvironment(managerHostname, managerPort, jars.toArray(new String[jars.size()]));
 
     environment.setParallelism(parallelism);
     environment.setMaxParallelism(parallelism);
 
-    final DataStream<WikipediaPage> source = environment
-            .addSource(new KryoSocketSource(benchHostname, sourcePort))
+    final DataStream<WikipediaPage> source = environment.addSource(new KryoSocketSource(benchHostname, sourcePort))
             .setParallelism(parallelism)
             .shuffle();
 
@@ -107,10 +107,9 @@ public final class FlinkBench {
             .addSink(new KryoSocketSink(benchHostname, sinkPort))
             .setParallelism(parallelism);
 
-    final Stream<WikipediaPage> wikipediaInput = (inputFilePath == null ?
-            WikipeadiaInput.dumpStreamFromResources("wikipedia/national_football_teams_dump.xml")
-            : WikipeadiaInput.dumpStreamFromFile(inputFilePath)
-    ).limit(limit);
+    final Stream<WikipediaPage> wikipediaInput = (inputFilePath == null ? WikipeadiaInput.dumpStreamFromResources(
+            "wikipedia/national_football_teams_dump.xml") : WikipeadiaInput.dumpStreamFromFile(inputFilePath)).limit(
+            limit);
 
 
     final Server producer = producer(latencyMeasurer, wikipediaInput);
@@ -128,7 +127,8 @@ public final class FlinkBench {
   private Server producer(LatencyMeasurer<Integer> measurer, Stream<WikipediaPage> input) throws IOException {
     final Server producer = new Server(1_000_000, 1000);
     producer.getKryo().register(WikipediaPage.class);
-    ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+    ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(
+            new StdInstantiatorStrategy());
 
     final List<Connection> connections = new ArrayList<>();
 
@@ -142,20 +142,18 @@ public final class FlinkBench {
       }
 
       input.forEach(page -> {
-                synchronized (connections) {
-                  try {
-                    final Connection connection = connections
-                            .get(ThreadLocalRandom.current().nextInt(connections.size()));
-                    measurer.start(page.id());
-                    connection.sendTCP(page);
-                    System.out.println("Sending: " + page.id() + " at " + System.nanoTime());
-                    Thread.sleep(rate);
-                  } catch (InterruptedException e) {
-                    e.printStackTrace();
-                  }
-                }
-              }
-      );
+        synchronized (connections) {
+          try {
+            final Connection connection = connections.get(ThreadLocalRandom.current().nextInt(connections.size()));
+            measurer.start(page.id());
+            connection.sendTCP(page);
+            System.out.println("Sending: " + page.id() + " at " + System.nanoTime());
+            Thread.sleep(rate);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }
+      });
 
       connections.forEach(Connection::close);
     }).start();
@@ -181,7 +179,8 @@ public final class FlinkBench {
     consumer.getKryo().register(WordIndexAdd.class);
     consumer.getKryo().register(WordIndexRemove.class);
     consumer.getKryo().register(long[].class);
-    ((Kryo.DefaultInstantiatorStrategy) consumer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+    ((Kryo.DefaultInstantiatorStrategy) consumer.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(
+            new StdInstantiatorStrategy());
 
     consumer.addListener(new Listener() {
       @Override

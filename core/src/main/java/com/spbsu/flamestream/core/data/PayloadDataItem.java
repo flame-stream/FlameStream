@@ -35,19 +35,19 @@ public final class PayloadDataItem<T> implements DataItem<T> {
 
   @Override
   public String toString() {
-    return '{' + "meta=" + meta +
-            ", payload=" + payload +
-            '}';
+    return '{' + "meta=" + meta + ", payload=" + payload + '}';
   }
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final PayloadDataItem<?> that = (PayloadDataItem<?>) o;
-    return ackHashCode == that.ackHashCode &&
-            Objects.equals(meta, that.meta) &&
-            Objects.equals(payload, that.payload);
+    return ackHashCode == that.ackHashCode && Objects.equals(meta, that.meta) && Objects.equals(payload, that.payload);
   }
 
   @Override

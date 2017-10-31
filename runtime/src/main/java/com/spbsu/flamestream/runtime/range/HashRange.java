@@ -32,8 +32,7 @@ public final class HashRange {
       return false;
     }
     final HashRange hashRange = (HashRange) o;
-    return from == hashRange.from &&
-            to == hashRange.to;
+    return from == hashRange.from && to == hashRange.to;
   }
 
   @Override

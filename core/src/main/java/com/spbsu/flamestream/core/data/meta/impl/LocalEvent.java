@@ -2,7 +2,6 @@ package com.spbsu.flamestream.core.data.meta.impl;
 
 /**
  * Wrapper class for localEvents
- * <p>
  * Local events are represented as longs, all actions with localEvents should be done with this interfaces
  */
 @SuppressWarnings("UtilityClass")

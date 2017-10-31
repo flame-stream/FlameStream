@@ -15,7 +15,6 @@ public final class RangeCommitDone {
 
   @Override
   public String toString() {
-    return "RangeCommitDone{" + "participant=" + participant +
-            '}';
+    return "RangeCommitDone{" + "participant=" + participant + '}';
   }
 }

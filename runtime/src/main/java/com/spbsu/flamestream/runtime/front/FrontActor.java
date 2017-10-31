@@ -47,7 +47,7 @@ public final class FrontActor extends LoggingActor {
   @Override
   public void postStop() {
     pingActor.tell(new PingActor.Stop(), self());
-    LOG().info(frontStatistics.toString());
+    log().info(frontStatistics.toString());
     super.postStop();
   }
 
@@ -71,18 +71,14 @@ public final class FrontActor extends LoggingActor {
   }
 
   private void createTick(TickInfo tickInfo) {
-    LOG().info("Creating tickFront for startTs: {}", tickInfo);
+    log().info("Creating tickFront for startTs: {}", tickInfo);
 
     final InPort target = tickInfo.graph().frontBindings().get(id);
 
     final ActorRef tickFront = context().actorOf(
-            TickFrontActor.props(
-                    cluster,
-                    target,
-                    id,
-                    tickInfo
-            ),
-            Long.toString(tickInfo.id()));
+            TickFrontActor.props(cluster, target, id, tickInfo),
+            Long.toString(tickInfo.id())
+    );
 
     tickFronts.put(tickInfo.startTs(), tickFront);
     tickInfos.put(tickInfo.startTs(), tickInfo);
@@ -114,7 +110,7 @@ public final class FrontActor extends LoggingActor {
       tickFront.tell(dataItem, self());
     } else {
       stash();
-      LOG().warning("There is no tick fronts for {}, stashing", globalTs);
+      log().warning("There is no tick fronts for {}, stashing", globalTs);
     }
   }
 
@@ -124,10 +120,7 @@ public final class FrontActor extends LoggingActor {
     final TickInfo info = tickInfos.get(tick);
 
     //noinspection OverlyComplexBooleanExpression
-    if (tick != null
-            && info != null
-            && ts < info.stopTs()
-            && ts >= info.startTs()) {
+    if (tick != null && info != null && ts < info.stopTs() && ts >= info.startTs()) {
       return tickFronts.get(tick);
     } else {
       return null;

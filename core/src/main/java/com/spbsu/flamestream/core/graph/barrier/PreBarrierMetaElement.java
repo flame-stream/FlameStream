@@ -30,8 +30,6 @@ final class PreBarrierMetaElement<T> {
 
   @Override
   public String toString() {
-    return "PreBarrierMetaElement{" + "payload=" + payload +
-            ", metaHash=" + metaHash +
-            '}';
+    return "PreBarrierMetaElement{" + "payload=" + payload + ", metaHash=" + metaHash + '}';
   }
 }

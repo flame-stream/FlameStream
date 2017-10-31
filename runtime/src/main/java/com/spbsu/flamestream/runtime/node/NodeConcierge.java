@@ -19,7 +19,6 @@ import org.apache.zookeeper.data.Stat;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -53,11 +52,11 @@ public final class NodeConcierge extends LoggingActor {
 
   @Override
   public void preStart() throws Exception {
-    nodeConierges = fetchDNS();
-    LOG().info("DNS fetched: {}", nodeConierges);
+    nodeConierges = fetchDns();
+    log().info("DNS fetched: {}", nodeConierges);
 
     final Set<Integer> fronts = fetchFronts();
-    LOG().info("Fronts fetched: {}", fronts);
+    log().info("Fronts fetched: {}", fronts);
 
     if (fronts.contains(id)) {
       this.front = context().actorOf(FrontActor.props(nodeConierges, id), "front");
@@ -69,18 +68,21 @@ public final class NodeConcierge extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder()
-            .match(TickInfo.class, this::onNewTick)
+    return receiveBuilder().match(TickInfo.class, this::onNewTick)
             .match(TickCommitDone.class, this::onTickCommitted)
             .build();
   }
 
   private void onNewTick(TickInfo tickInfo) {
     final String suffix = String.valueOf(tickInfo.id());
-    final Map<Integer, ActorPath> rangeConcierges = nodeConierges.entrySet().stream()
+    final Map<Integer, ActorPath> rangeConcierges = nodeConierges.entrySet()
+            .stream()
             .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(suffix)));
 
-    final ActorRef tickConcierge = context().actorOf(TickConcierge.props(tickInfo, id, rangeConcierges, tickWatcher), suffix);
+    final ActorRef tickConcierge = context().actorOf(
+            TickConcierge.props(tickInfo, id, rangeConcierges, tickWatcher),
+            suffix
+    );
 
     //FIXME: in long term future we need to store every single tick.
     committedTicks.forEach(t -> tickConcierge.tell(new TickCommitDone(t), self()));
@@ -95,35 +97,27 @@ public final class NodeConcierge extends LoggingActor {
     getContext().getChildren().forEach(c -> c.tell(committed, sender()));
   }
 
-  private Map<Integer, ActorPath> fetchDNS() throws IOException, KeeperException, InterruptedException {
+  private Map<Integer, ActorPath> fetchDns() throws IOException, KeeperException, InterruptedException {
     final String path = "/dns";
     final byte[] data = zooKeeper.getData(path, false, new Stat());
-    final Map<Integer, DumbInetSocketAddress> dns = NodeConcierge.MAPPER
-            .readValue(data, new TypeReference<Map<Integer, DumbInetSocketAddress>>() {
-            });
+    final Map<Integer, DumbInetSocketAddress> dns = NodeConcierge.MAPPER.readValue(
+            data,
+            new TypeReference<Map<Integer, DumbInetSocketAddress>>() {}
+    );
 
     return dns.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> pathFor(e.getValue())));
   }
 
   private ActorPath pathFor(DumbInetSocketAddress socketAddress) {
     // TODO: 5/8/17 Properly resolve ActorRef
-    final Address address = Address.apply(
-            "akka.tcp",
-            "worker",
-            socketAddress.host(),
-            socketAddress.port()
-    );
+    final Address address = Address.apply("akka.tcp", "worker", socketAddress.host(), socketAddress.port());
 
-    return RootActorPath.apply(address, "/")
-            .child("user")
-            .child("watcher")
-            .child("concierge");
+    return RootActorPath.apply(address, "/").child("user").child("watcher").child("concierge");
   }
 
   private Set<Integer> fetchFronts() throws KeeperException, InterruptedException, IOException {
     final String path = "/fronts";
     final byte[] data = zooKeeper.getData(path, false, new Stat());
-    return NodeConcierge.MAPPER.readValue(data, new TypeReference<Set<Integer>>() {
-    });
+    return NodeConcierge.MAPPER.readValue(data, new TypeReference<Set<Integer>>() {});
   }
 }

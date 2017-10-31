@@ -37,8 +37,9 @@ final class ArrayAckTable implements AckTable {
     xorStorage[position] = updatedXor;
 
     if (updatedXor == 0 && xor != 0 && position == minPosition) {
-      while (minPosition < xorStorage.length && xorStorage[minPosition] == 0)
+      while (minPosition < xorStorage.length && xorStorage[minPosition] == 0) {
         this.minPosition++;
+      }
       return true;
     } else if (updatedXor != 0 && position < minPosition) {
       this.minPosition = position;
@@ -55,10 +56,6 @@ final class ArrayAckTable implements AckTable {
 
   @Override
   public String toString() {
-    return "ArrayAckTable{" +
-            ", startTs=" + startTs +
-            ", window=" + window +
-            ", toBeReported=" + toBeReported +
-            '}';
+    return "ArrayAckTable{" + ", startTs=" + startTs + ", window=" + window + ", toBeReported=" + toBeReported + '}';
   }
 }

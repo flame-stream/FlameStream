@@ -17,11 +17,13 @@ public abstract class AbstractExampleTest {
 
   protected <T> void test(ExampleChecker<T> checker, int fronts, int workers, int tickLengthInSec, int waitTickInSec) {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(workers);
-         TestEnvironment environment = new TestEnvironment(lce)) {
+            TestEnvironment environment = new TestEnvironment(lce)) {
       final List<Object> result = new ArrayList<>();
-      environment.deploy(environment.withFusedFronts(
-              example().graph(h -> environment.wrapInSink((ToIntFunction<? super T>) h, result::add))
-      ), tickLengthInSec, 1);
+      //noinspection RedundantCast,unchecked
+      environment.deploy(environment.withFusedFronts(example().graph(h -> environment.wrapInSink(
+              (ToIntFunction<? super T>) h,
+              result::add
+      ))), tickLengthInSec, 1);
 
       final Consumer<Object> sink = environment.randomFrontConsumer(fronts);
       checker.input().forEach(wikipediaPage -> {
@@ -29,7 +31,7 @@ public abstract class AbstractExampleTest {
         try {
           Thread.sleep(100);
         } catch (InterruptedException e) {
-          throw new RuntimeException();
+          throw new RuntimeException(e);
         }
       });
 

@@ -45,14 +45,14 @@ public final class AtomicActor extends LoggingActor {
   private void onCommit() {
     atomic.onCommit(handle);
     context().parent().tell(new AtomicCommitDone(atomic), self());
-    LOG().info("Commit done");
+    log().info("Commit done");
 
     context().stop(self());
   }
 
   @Override
   public void postStop() {
-    LOG().info("Atomic {} statistics: {}", atomic, stat);
+    log().info("Atomic {} statistics: {}", atomic, stat);
     super.postStop();
   }
 

@@ -10,7 +10,11 @@ import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
 import com.spbsu.flamestream.runtime.tick.TickCommitDone;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import org.apache.hadoop.util.ZKUtil;
-import org.apache.zookeeper.*;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,19 +54,19 @@ public final class TickWatcher extends LoggingActor {
   private void onEvent(WatchedEvent event) throws KeeperException, InterruptedException {
     if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
       fetchTicks();
-    } else if (event.getType() == Watcher.Event.EventType.NodeCreated
-            && event.getPath().endsWith("committed")) {
+    } else if (event.getType() == Watcher.Event.EventType.NodeCreated && event.getPath().endsWith("committed")) {
       final long tickId = Long.parseLong(event.getPath().split("/")[2]);
       subscriber.tell(new TickCommitDone(tickId), self());
     } else {
-      LOG().info("Unexpected event {}", event);
+      log().info("Unexpected event {}", event);
     }
   }
 
   private void commitTick(CommitTick commit) throws KeeperException, InterruptedException {
     zooKeeper.create(
             "/ticks/" + commit.tickId() + "/committed",
-            new byte[0], ZKUtil.parseACLs("world:anyone:crdwa"),
+            new byte[0],
+            ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT
     );
   }

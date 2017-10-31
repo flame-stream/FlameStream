@@ -3,7 +3,14 @@ package com.spbsu.flamestream.core.graph.barrier;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.graph.*;
+import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.ChaincallGraph;
+import com.spbsu.flamestream.core.graph.ComposedGraph;
+import com.spbsu.flamestream.core.graph.ComposedGraphImpl;
+import com.spbsu.flamestream.core.graph.InPort;
+import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.graph.barrier.collector.BarrierCollector;
 import com.spbsu.flamestream.core.graph.barrier.collector.LinearCollector;
 
@@ -70,9 +77,7 @@ final class BarrierSink implements AtomicGraph {
 
   @Override
   public String toString() {
-    return "BarrierSink{" +
-            "innerGraph=" + innerGraph +
-            '}';
+    return "BarrierSink{" + "innerGraph=" + innerGraph + '}';
   }
 
   private static final class Barrier extends AbstractAtomicGraph {

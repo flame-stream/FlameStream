@@ -20,8 +20,6 @@ public final class CollectingActor<T> extends LoggingActor {
   @SuppressWarnings("unchecked")
   @Override
   public Receive createReceive() {
-    return receiveBuilder()
-            .match(RawData.class, m -> m.forEach(o -> consumer.accept((T) o)))
-            .build();
+    return receiveBuilder().match(RawData.class, m -> m.forEach(o -> consumer.accept((T) o))).build();
   }
 }

@@ -32,25 +32,24 @@ public final class WordCountRunner implements EnvironmentRunner {
   public void run(Environment environment, Config config) {
     final LatencyMeasurer<WordCounter> latencyMeasurer = new LatencyMeasurer<>(1000 * 10, 1000 * 10);
     final TObjectIntMap<String> expected = new TObjectIntHashMap<>();
-    final Stream<String> input = input().peek(
-            text -> {
-              final Pattern pattern = Pattern.compile("\\s");
-              Arrays.stream(pattern.split(text))
-                      .collect(toMap(Function.identity(), o -> 1, Integer::sum))
-                      .forEach((k, v) -> {
-                        expected.adjustOrPutValue(k, v, v);
-                        latencyMeasurer.start(new WordCounter(k, expected.get(k)));
-                      });
-            }
-    );
+    final Stream<String> input = input().peek(text -> {
+      final Pattern pattern = Pattern.compile("\\s");
+      Arrays.stream(pattern.split(text)).collect(toMap(Function.identity(), o -> 1, Integer::sum)).forEach((k, v) -> {
+        expected.adjustOrPutValue(k, v, v);
+        latencyMeasurer.start(new WordCounter(k, expected.get(k)));
+      });
+    });
 
     try (TestEnvironment testEnvironment = new TestEnvironment(environment, 1)) {
       //noinspection RedundantCast,unchecked
-      testEnvironment.deploy(testEnvironment.withFusedFronts(
-              FlameStreamExample.WORD_COUNT.graph(
-                      hash -> testEnvironment.wrapInSink((ToIntFunction<? super WordCounter>) hash, o -> latencyMeasurer.finish((WordCounter) o))
-              )
-      ), 60, 1);
+      testEnvironment.deploy(
+              testEnvironment.withFusedFronts(FlameStreamExample.WORD_COUNT.graph(hash -> testEnvironment.wrapInSink(
+                      (ToIntFunction<? super WordCounter>) hash,
+                      o -> latencyMeasurer.finish((WordCounter) o)
+              ))),
+              60,
+              1
+      );
 
       final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1);
       input.forEach(s -> {
@@ -69,8 +68,7 @@ public final class WordCountRunner implements EnvironmentRunner {
   }
 
   private static Stream<String> input() {
-    return Stream.generate(() -> new Random().ints(1000, 0, 1000)
-            .mapToObj(num -> "word" + num).collect(joining(" ")))
+    return Stream.generate(() -> new Random().ints(1000, 0, 1000).mapToObj(num -> "word" + num).collect(joining(" ")))
             .limit(500);
   }
 }

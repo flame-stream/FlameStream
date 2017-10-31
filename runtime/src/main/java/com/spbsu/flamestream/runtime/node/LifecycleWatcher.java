@@ -26,8 +26,7 @@ public final class LifecycleWatcher extends LoggingActor {
   public void preStart() throws Exception {
     super.preStart();
 
-    this.zk = new ZooKeeper(zkConnectString, 5000,
-            event -> self().tell(event, self()));
+    this.zk = new ZooKeeper(zkConnectString, 5000, event -> self().tell(event, self()));
   }
 
   @Override
@@ -52,11 +51,11 @@ public final class LifecycleWatcher extends LoggingActor {
 
       switch (state) {
         case SyncConnected:
-          LOG().info("Connected to ZK");
+          log().info("Connected to ZK");
           initConcierge();
           break;
         case Expired:
-          LOG().info("Session expired");
+          log().info("Session expired");
           context().stop(self());
           break;
         default:

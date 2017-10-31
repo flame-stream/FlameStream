@@ -21,7 +21,7 @@ import java.util.function.ToIntFunction;
 public final class AtomicHandleImpl implements AtomicHandle {
   private final TickInfo tickInfo;
   private final ActorContext context;
-  private final LoggingAdapter LOG;
+  private final LoggingAdapter log;
   private final TickRoutes tickRoutes;
 
   private final HashMapping<ActorRef> hashMapping;
@@ -30,14 +30,16 @@ public final class AtomicHandleImpl implements AtomicHandle {
     this.tickInfo = tickInfo;
     this.tickRoutes = tickRoutes;
     this.context = context;
-    LOG = Logging.getLogger(context.system(), context.self());
+    log = Logging.getLogger(context.system(), context.self());
     this.hashMapping = HashMapping.hashMapping(tickRoutes.rangeConcierges());
   }
 
   @Override
   public void push(OutPort out, DataItem<?> result) {
     final InPort destination = tickInfo.graph().graph().downstreams().get(out);
-    if (destination == null) throw new RoutingException("Unable to find port for " + out);
+    if (destination == null) {
+      throw new RoutingException("Unable to find port for " + out);
+    }
 
     //noinspection rawtypes
     final ToIntFunction hashFunction = destination.hashFunction();
@@ -58,12 +60,12 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void submitStatistics(Statistics stat) {
-    LOG.info("Inner statistics: {}", stat);
+    log.info("Inner statistics: {}", stat);
   }
 
   @Override
   public void error(String format, Object... args) {
-    LOG.warning(format, args);
+    log.warning(format, args);
   }
 
   public ActorContext backdoor() {

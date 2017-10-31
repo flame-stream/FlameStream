@@ -43,7 +43,8 @@ public final class FilterAcceptanceTest {
 
   @Test
   public void linearFilter() throws Exception {
-    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4); TestEnvironment environment = new TestEnvironment(lce)) {
+    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
+            TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
       environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.availableFronts(),
@@ -56,13 +57,17 @@ public final class FilterAcceptanceTest {
 
       environment.awaitTick(15);
 
-      Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
+      Assert.assertEquals(
+              new HashSet<>(result),
+              source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
+      );
     }
   }
 
   @Test(enabled = false)
   public void multipleTicksLinearFilter() throws Exception {
-    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4); TestEnvironment environment = new TestEnvironment(lce)) {
+    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
+            TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
       environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.availableFronts(),
@@ -74,7 +79,10 @@ public final class FilterAcceptanceTest {
       source.forEach(sink);
       environment.awaitTick(40);
 
-      Assert.assertEquals(new HashSet<>(result), source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet()));
+      Assert.assertEquals(
+              new HashSet<>(result),
+              source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
+      );
     }
   }
 

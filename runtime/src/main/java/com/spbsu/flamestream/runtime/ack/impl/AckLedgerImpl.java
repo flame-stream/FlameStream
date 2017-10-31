@@ -45,7 +45,6 @@ public final class AckLedgerImpl implements AckLedger {
 
   @Override
   public String toString() {
-    return "AckLedgerImpl{" + "tables=" + tables +
-            '}';
+    return "AckLedgerImpl{" + "tables=" + tables + '}';
   }
 }

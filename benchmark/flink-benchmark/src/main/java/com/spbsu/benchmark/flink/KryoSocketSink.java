@@ -4,8 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndexAdd;
-import com.spbsu.flamestream.example.inverted_index.model.WordIndexRemove;
+import com.spbsu.flamestream.example.index.model.WordIndexAdd;
+import com.spbsu.flamestream.example.index.model.WordIndexRemove;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +36,8 @@ public class KryoSocketSink extends RichSinkFunction<InvertedIndexStream.Result>
     client.getKryo().register(WordIndexAdd.class);
     client.getKryo().register(WordIndexRemove.class);
     client.getKryo().register(long[].class);
-    ((Kryo.DefaultInstantiatorStrategy) client.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+    ((Kryo.DefaultInstantiatorStrategy) client.getKryo()
+            .getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
     client.addListener(new Listener() {
       @Override
