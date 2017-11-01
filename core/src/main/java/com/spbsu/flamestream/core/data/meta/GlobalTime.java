@@ -41,7 +41,7 @@ public final class GlobalTime implements Comparable<GlobalTime> {
       return false;
     }
     final GlobalTime that = (GlobalTime) o;
-    return time == that.time && Objects.equals(front, that.front);
+    return (time == that.time) && (front == that.front);
   }
 
   @Override
