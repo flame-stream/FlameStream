@@ -8,9 +8,11 @@ import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
+import com.spbsu.flamestream.core.graph.invalidation.InvalidatingList;
+import com.spbsu.flamestream.core.graph.invalidation.impl.ArrayInvalidatingList;
 import com.spbsu.flamestream.core.graph.ops.stat.GroupingStatistics;
-import com.spbsu.flamestream.core.graph.ops.state.GroupingState;
-import com.spbsu.flamestream.core.graph.ops.state.LazyGroupingState;
+import gnu.trove.map.TLongObjectMap;
+import gnu.trove.map.hash.TLongObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +30,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final BiPredicate<? super T, ? super T> equalz;
   private final int window;
 
-  private GroupingState<T> buffers = null;
+  private TLongObjectMap<Object> buffers = null;
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
   public Grouping(ToIntFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, int window) {
@@ -38,62 +40,47 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     this.equalz = equalz;
   }
 
-  public static <T> int insert(List<DataItem<T>> group, DataItem<T> insertee) {
-    int position = group.size() - 1;
-    int endPosition = -1;
-    { //find position
-      while (position >= 0) {
-        final DataItem<T> currentItem = group.get(position);
-        final int compareTo = currentItem.meta().compareTo(insertee.meta());
+  @Override
+  public void onCommit(AtomicHandle handle) {
+    //handle.saveState(this.inPort, this.buffers);
+    handle.submitStatistics(stat);
+  }
 
-        if (compareTo > 0) {
-          if (insertee.meta().isInvalidatedBy(currentItem.meta())) {
-            return -1;
-          }
-          position--;
-        } else {
-          if (currentItem.meta().isInvalidatedBy(insertee.meta())) {
-            endPosition = endPosition == -1 ? position : endPosition;
-            position--;
-          } else {
-            break;
-          }
-        }
-      }
-    }
-    { //invalidation/adding
-      if (position == (group.size() - 1)) {
-        group.add(insertee);
-      } else {
-        if (endPosition != -1) {
-          group.set(position + 1, insertee);
-          final int itemsForRemove = endPosition - position - 1;
-          //subList.clear is faster if the number of items for removing >= 2
-          if (itemsForRemove >= 2) {
-            group.subList(position + 2, endPosition + 1).clear();
-          } else if (itemsForRemove > 0) {
-            group.remove(endPosition);
-          }
-        } else {
-          group.add(position + 1, insertee);
-        }
-      }
-    }
-    return position + 1;
+  @Override
+  public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
+    currentMinTime = globalTime;
+  }
+
+  public InPort inPort() {
+    return inPort;
+  }
+
+  @Override
+  public List<InPort> inPorts() {
+    return Collections.singletonList(inPort);
+  }
+
+  public OutPort outPort() {
+    return outPort;
+  }
+
+  @Override
+  public List<OutPort> outPorts() {
+    return Collections.singletonList(outPort);
   }
 
   @Override
   public void onStart(AtomicHandle handle) {
     // TODO: 5/18/17 Load state
-    this.buffers = new LazyGroupingState<>(hash, equalz);
+    this.buffers = new TLongObjectHashMap<>();
   }
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     //noinspection unchecked
     final DataItem<T> dataItem = (DataItem<T>) item;
-    final List<DataItem<T>> group = buffers.getGroupFor(dataItem);
-    final int position = insert(group, dataItem);
+    final InvalidatingList<T> group = getGroupFor(dataItem);
+    final int position = group.insert(dataItem);
     stat.recordBucketSize(group.size());
 
     replayAround(position, group, handle);
@@ -147,32 +134,53 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     }
   }
 
-  @Override
-  public void onCommit(AtomicHandle handle) {
-    //handle.saveState(this.inPort, this.buffers);
-    handle.submitStatistics(stat);
+  @SuppressWarnings("unchecked")
+  private InvalidatingList<T> getGroupFor(DataItem<T> item) {
+    final long hashValue = hash.applyAsInt(item.payload());
+    final Object obj = buffers.get(hashValue);
+    if (obj == null) {
+      final InvalidatingList<T> newBucket = new ArrayInvalidatingList<>();
+      buffers.put(hashValue, newBucket);
+      return newBucket;
+    } else {
+      final List<?> list = (List<?>) obj;
+      if (list.get(0) instanceof List) {
+        final List<InvalidatingList<T>> container = (List<InvalidatingList<T>>) list;
+        return getFromContainer(item, container);
+      } else {
+        final InvalidatingList<T> bucket = (InvalidatingList<T>) list;
+        return getFromBucket(item, bucket);
+      }
+    }
   }
 
-  @Override
-  public void onMinGTimeUpdate(GlobalTime globalTime, AtomicHandle handle) {
-    currentMinTime = globalTime;
+  private InvalidatingList<T> getFromContainer(DataItem<T> item, List<InvalidatingList<T>> container) {
+    final InvalidatingList<T> result = searchBucket(item, container);
+    if (result.isEmpty()) {
+      container.add(result);
+      return result;
+    } else {
+      return result;
+    }
   }
 
-  public InPort inPort() {
-    return inPort;
+  private InvalidatingList<T> getFromBucket(DataItem<T> item, InvalidatingList<T> bucket) {
+    if (equalz.test(bucket.get(0).payload(), item.payload())) {
+      return bucket;
+    } else {
+      final List<InvalidatingList<T>> container = new ArrayList<>();
+      container.add(bucket);
+      final InvalidatingList<T> newList = new ArrayInvalidatingList<>();
+      container.add(newList);
+      buffers.put(hash.applyAsInt(item.payload()), container);
+      return newList;
+    }
   }
 
-  @Override
-  public List<InPort> inPorts() {
-    return Collections.singletonList(inPort);
-  }
-
-  public OutPort outPort() {
-    return outPort;
-  }
-
-  @Override
-  public List<OutPort> outPorts() {
-    return Collections.singletonList(outPort);
+  private InvalidatingList<T> searchBucket(DataItem<T> item, List<InvalidatingList<T>> container) {
+    return container.stream()
+            .filter(bucket -> equalz.test(bucket.get(0).payload(), item.payload()))
+            .findAny()
+            .orElse(new ArrayInvalidatingList<>());
   }
 }

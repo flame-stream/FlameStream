@@ -5,9 +5,7 @@ import com.spbsu.flamestream.core.data.meta.Trace;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.childIdOf;
-import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.localEvent;
-import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.localTimeOf;
+import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.*;
 
 public final class TraceImpl implements Trace {
   @SuppressWarnings("PackageVisibleField")
