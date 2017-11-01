@@ -6,11 +6,10 @@ import gnu.trove.impl.Constants;
 import gnu.trove.map.TObjectLongMap;
 import gnu.trove.map.hash.TObjectLongHashMap;
 
-import java.util.HashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 
-import static com.spbsu.flamestream.core.stat.Statistics.*;
+import static com.spbsu.flamestream.core.stat.Statistics.asMap;
 
 /**
  * User: Artem
