@@ -12,11 +12,11 @@ public final class AckerStatistics implements Statistics {
   private final LongSummaryStatistics normalAck = new LongSummaryStatistics();
   private final LongSummaryStatistics releasingAck = new LongSummaryStatistics();
 
-  public void recordNormalAck(long ts) {
+  void recordNormalAck(long ts) {
     normalAck.accept(ts);
   }
 
-  public void recordReleasingAck(long ts) {
+  void recordReleasingAck(long ts) {
     releasingAck.accept(ts);
   }
 

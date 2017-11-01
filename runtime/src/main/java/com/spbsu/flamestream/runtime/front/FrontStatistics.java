@@ -2,7 +2,6 @@ package com.spbsu.flamestream.runtime.front;
 
 import com.spbsu.flamestream.core.stat.Statistics;
 
-import java.util.HashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 
