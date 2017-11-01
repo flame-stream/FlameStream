@@ -1,0 +1,57 @@
+package com.spbsu.flamestream.core.graph.invalidation;
+
+import com.spbsu.flamestream.core.data.DataItem;
+
+import java.util.stream.Stream;
+
+/**
+ * User: Artem
+ * Date: 01.11.2017
+ */
+public interface InvalidatingBucket<E> {
+
+  /**
+   * Inserts data item in list according to its meta
+   *
+   * @return position of inserted item within list
+   */
+  int insert(DataItem<E> dataItem);
+
+  /**
+   * @param index within bucket
+   * @return DataItem that located on the index position
+   * @throws IndexOutOfBoundsException if the index is out of range
+   */
+  DataItem<E> get(int index);
+
+  /**
+   * @return stream consists of elements in this bucket
+   */
+  Stream<DataItem<E>> stream();
+
+  /**
+   * @param fromIndex low endpoint (inclusive) of the range
+   * @param toIndex   high endpoint (exclusive) of the range
+   * @return a stream of the specified range within this bucket
+   * @throws IndexOutOfBoundsException if at least one index is out of range
+   */
+  Stream<DataItem<E>> rangeStream(int fromIndex, int toIndex);
+
+  /**
+   * Removes the elements of bucket between fromIndex and toIndex
+   *
+   * @param fromIndex low endpoint (inclusive) of the range
+   * @param toIndex   high endpoint (exclusive) of the range
+   */
+  void clearRange(int fromIndex, int toIndex);
+
+  /**
+   * @return the size of this bucket
+   */
+  int size();
+
+  /**
+   * @return true if bucket is empty, otherwise return false
+   */
+  boolean isEmpty();
+}

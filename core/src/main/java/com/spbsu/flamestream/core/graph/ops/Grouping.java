@@ -8,8 +8,8 @@ import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.core.graph.invalidation.InvalidatingList;
-import com.spbsu.flamestream.core.graph.invalidation.impl.ArrayInvalidatingList;
+import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
+import com.spbsu.flamestream.core.graph.invalidation.impl.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.graph.ops.stat.GroupingStatistics;
 import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
@@ -79,22 +79,22 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     //noinspection unchecked
     final DataItem<T> dataItem = (DataItem<T>) item;
-    final InvalidatingList<T> group = getGroupFor(dataItem);
-    final int position = group.insert(dataItem);
-    stat.recordBucketSize(group.size());
+    final InvalidatingBucket<T> bucket = getBucketFor(dataItem);
+    final int position = bucket.insert(dataItem);
+    stat.recordBucketSize(bucket.size());
 
-    replayAround(position, group, handle);
-    clearOutdated(group);
+    replayAround(position, bucket, handle);
+    clearOutdated(bucket);
   }
 
-  private void replayAround(int position, List<DataItem<T>> group, AtomicHandle handle) {
+  private void replayAround(int position, InvalidatingBucket<T> bucket, AtomicHandle handle) {
     int replayCount = 0;
 
     final List<DataItem<?>> items = new ArrayList<>();
-    for (int right = position + 1; right <= Math.min(position + window, group.size()); ++right) {
+    for (int right = position + 1; right <= Math.min(position + window, bucket.size()); ++right) {
       replayCount++;
       final int left = Math.max(right - window, 0);
-      items.add(subgroup(group, left, right));
+      items.add(subgroup(bucket, left, right));
     }
 
     stat.recordReplaySize(replayCount);
@@ -105,22 +105,19 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     }
   }
 
-  private DataItem<List<T>> subgroup(List<DataItem<T>> group, int left, int right) {
-    final List<DataItem<T>> outGroup = group.subList(left, right);
-
-    final Meta meta = outGroup.get(outGroup.size() - 1).meta().advanced(incrementLocalTimeAndGet());
-    final List<T> groupingResult = outGroup.stream().map(DataItem::payload).collect(Collectors.toList());
-
+  private DataItem<List<T>> subgroup(InvalidatingBucket<T> bucket, int left, int right) {
+    final Meta meta = bucket.get(right - 1).meta().advanced(incrementLocalTimeAndGet());
+    final List<T> groupingResult = bucket.rangeStream(left, right).map(DataItem::payload).collect(Collectors.toList());
     return new PayloadDataItem<>(meta, groupingResult);
   }
 
-  private void clearOutdated(List<DataItem<T>> group) {
+  private void clearOutdated(InvalidatingBucket<T> bucket) {
     int left = 0;
-    int right = group.size();
+    int right = bucket.size();
     { //upper-bound binary search
       while (right - left > 1) {
         final int middle = left + (right - left) / 2;
-        if (group.get(middle).meta().globalTime().compareTo(currentMinTime) <= 0) {
+        if (bucket.get(middle).meta().globalTime().compareTo(currentMinTime) <= 0) {
           left = middle;
         } else {
           right = middle;
@@ -130,32 +127,31 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
     final int position = left - window + 1;
     if (position > 0) {
-      group.subList(0, position).clear();
+      bucket.clearRange(0, position);
     }
   }
 
   @SuppressWarnings("unchecked")
-  private InvalidatingList<T> getGroupFor(DataItem<T> item) {
+  private InvalidatingBucket<T> getBucketFor(DataItem<T> item) {
     final long hashValue = hash.applyAsInt(item.payload());
     final Object obj = buffers.get(hashValue);
     if (obj == null) {
-      final InvalidatingList<T> newBucket = new ArrayInvalidatingList<>();
+      final InvalidatingBucket<T> newBucket = new ArrayInvalidatingBucket<>();
       buffers.put(hashValue, newBucket);
       return newBucket;
     } else {
-      final List<?> list = (List<?>) obj;
-      if (list.get(0) instanceof List) {
-        final List<InvalidatingList<T>> container = (List<InvalidatingList<T>>) list;
+      if (obj instanceof List) {
+        final List<InvalidatingBucket<T>> container = (List<InvalidatingBucket<T>>) obj;
         return getFromContainer(item, container);
       } else {
-        final InvalidatingList<T> bucket = (InvalidatingList<T>) list;
+        final InvalidatingBucket<T> bucket = (InvalidatingBucket<T>) obj;
         return getFromBucket(item, bucket);
       }
     }
   }
 
-  private InvalidatingList<T> getFromContainer(DataItem<T> item, List<InvalidatingList<T>> container) {
-    final InvalidatingList<T> result = searchBucket(item, container);
+  private InvalidatingBucket<T> getFromContainer(DataItem<T> item, List<InvalidatingBucket<T>> container) {
+    final InvalidatingBucket<T> result = searchBucket(item, container);
     if (result.isEmpty()) {
       container.add(result);
       return result;
@@ -164,23 +160,23 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     }
   }
 
-  private InvalidatingList<T> getFromBucket(DataItem<T> item, InvalidatingList<T> bucket) {
+  private InvalidatingBucket<T> getFromBucket(DataItem<T> item, InvalidatingBucket<T> bucket) {
     if (equalz.test(bucket.get(0).payload(), item.payload())) {
       return bucket;
     } else {
-      final List<InvalidatingList<T>> container = new ArrayList<>();
+      final List<InvalidatingBucket<T>> container = new ArrayList<>();
       container.add(bucket);
-      final InvalidatingList<T> newList = new ArrayInvalidatingList<>();
+      final InvalidatingBucket<T> newList = new ArrayInvalidatingBucket<>();
       container.add(newList);
       buffers.put(hash.applyAsInt(item.payload()), container);
       return newList;
     }
   }
 
-  private InvalidatingList<T> searchBucket(DataItem<T> item, List<InvalidatingList<T>> container) {
+  private InvalidatingBucket<T> searchBucket(DataItem<T> item, List<InvalidatingBucket<T>> container) {
     return container.stream()
             .filter(bucket -> equalz.test(bucket.get(0).payload(), item.payload()))
             .findAny()
-            .orElse(new ArrayInvalidatingList<>());
+            .orElse(new ArrayInvalidatingBucket<>());
   }
 }

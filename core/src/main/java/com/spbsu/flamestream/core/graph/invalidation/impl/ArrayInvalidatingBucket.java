@@ -1,16 +1,17 @@
 package com.spbsu.flamestream.core.graph.invalidation.impl;
 
 import com.spbsu.flamestream.core.data.DataItem;
-import com.spbsu.flamestream.core.graph.invalidation.InvalidatingList;
-import org.jetbrains.annotations.NotNull;
+import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * User: Artem
  * Date: 01.11.2017
  */
-public class ArrayInvalidatingList<E> extends InvalidatingList<E> {
+public class ArrayInvalidatingBucket<E> implements InvalidatingBucket<E> {
   private final List<DataItem<E>> innerList = new ArrayList<>();
 
   @Override
@@ -59,6 +60,26 @@ public class ArrayInvalidatingList<E> extends InvalidatingList<E> {
   }
 
   @Override
+  public DataItem<E> get(int index) {
+    return innerList.get(index);
+  }
+
+  @Override
+  public Stream<DataItem<E>> stream() {
+    return innerList.stream();
+  }
+
+  @Override
+  public Stream<DataItem<E>> rangeStream(int fromIndex, int toIndex) {
+    return innerList.subList(fromIndex, toIndex).stream();
+  }
+
+  @Override
+  public void clearRange(int fromIndex, int toIndex) {
+    innerList.subList(fromIndex, toIndex).clear();
+  }
+
+  @Override
   public int size() {
     return innerList.size();
   }
@@ -66,72 +87,5 @@ public class ArrayInvalidatingList<E> extends InvalidatingList<E> {
   @Override
   public boolean isEmpty() {
     return innerList.isEmpty();
-  }
-
-  @Override
-  public boolean contains(Object o) {
-    return innerList.contains(o);
-  }
-
-  @NotNull
-  @Override
-  public Iterator<DataItem<E>> iterator() {
-    return innerList.iterator();
-  }
-
-  @NotNull
-  @Override
-  public Object[] toArray() {
-    return innerList.toArray();
-  }
-
-  @NotNull
-  @Override
-  public <T> T[] toArray(@NotNull T[] a) {
-    //noinspection SuspiciousToArrayCall
-    return innerList.toArray(a);
-  }
-
-  @Override
-  public boolean containsAll(@NotNull Collection<?> c) {
-    return innerList.containsAll(c);
-  }
-
-  @Override
-  public void clear() {
-
-  }
-
-  @Override
-  public DataItem<E> get(int index) {
-    return innerList.get(index);
-  }
-
-  @Override
-  public int indexOf(Object o) {
-    return innerList.indexOf(o);
-  }
-
-  @Override
-  public int lastIndexOf(Object o) {
-    return innerList.lastIndexOf(o);
-  }
-
-  @NotNull
-  @Override
-  public ListIterator<DataItem<E>> listIterator() {
-    return innerList.listIterator();
-  }
-
-  @NotNull
-  @Override
-  public ListIterator<DataItem<E>> listIterator(int index) {
-    return innerList.listIterator(index);
-  }
-
-  @NotNull
-  @Override
-  public List<DataItem<E>> subList(int fromIndex, int toIndex) {
-    return innerList.subList(fromIndex, toIndex);
   }
 }
