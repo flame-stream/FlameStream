@@ -1,7 +1,7 @@
-package com.spbsu.flamestream.core.graph.invalidation.impl;
+package com.spbsu.flamestream.core.graph.invalidation;
 
 import com.spbsu.flamestream.core.data.DataItem;
-import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
+import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,5 +87,22 @@ public class ArrayInvalidatingBucket<E> implements InvalidatingBucket<E> {
   @Override
   public boolean isEmpty() {
     return innerList.isEmpty();
+  }
+
+  @Override
+  public int floor(Meta meta) {
+    int left = 0;
+    int right = innerList.size();
+
+    while (right - left > 1) {
+      final int middle = left + (right - left) / 2;
+      if (meta.compareTo(innerList.get(middle).meta()) < 0) {
+        right = middle;
+      } else {
+        left = middle;
+      }
+    }
+
+    return left;
   }
 }

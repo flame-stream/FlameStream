@@ -8,8 +8,8 @@ import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
+import com.spbsu.flamestream.core.graph.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
-import com.spbsu.flamestream.core.graph.invalidation.impl.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.graph.ops.stat.GroupingStatistics;
 import gnu.trove.map.TLongObjectMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
@@ -112,23 +112,8 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   private void clearOutdated(InvalidatingBucket<T> bucket) {
-    int left = 0;
-    int right = bucket.size();
-    { //upper-bound binary search
-      while (right - left > 1) {
-        final int middle = left + (right - left) / 2;
-        if (bucket.get(middle).meta().globalTime().compareTo(currentMinTime) <= 0) {
-          left = middle;
-        } else {
-          right = middle;
-        }
-      }
-    }
-
-    final int position = left - window + 1;
-    if (position > 0) {
-      bucket.clearRange(0, position);
-    }
+    final int position = Math.max(bucket.floor(Meta.meta(currentMinTime)) - window, 0);
+    bucket.clearRange(0, position);
   }
 
   @SuppressWarnings("unchecked")

@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.core.graph.invalidation;
 
 import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.stream.Stream;
 
@@ -54,4 +55,14 @@ public interface InvalidatingBucket<E> {
    * @return true if bucket is empty, otherwise return false
    */
   boolean isEmpty();
+
+  /**
+   * Returns the index of the greatest element in this bucket less than or equal to
+   * the given element
+   *
+   * @param meta the meta to match
+   * @return the index of the greatest element less than or equal to {@code meta},
+   * @throws NullPointerException if the specified meta is null
+   */
+  int floor(Meta meta);
 }
