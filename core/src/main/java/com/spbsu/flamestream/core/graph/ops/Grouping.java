@@ -8,9 +8,11 @@ import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
+import com.spbsu.flamestream.core.graph.invalidation.ArrayInvalidatingBucket;
+import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.graph.ops.stat.GroupingStatistics;
-import com.spbsu.flamestream.core.graph.ops.state.GroupingState;
-import com.spbsu.flamestream.core.graph.ops.state.LazyGroupingState;
+import gnu.trove.map.TLongObjectMap;
+import gnu.trove.map.hash.TLongObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +30,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final BiPredicate<? super T, ? super T> equalz;
   private final int window;
 
-  private GroupingState<T> buffers = null;
+  private TLongObjectMap<Object> buffers = null;
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
   public Grouping(ToIntFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, int window) {
@@ -36,115 +38,6 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     this.window = window;
     this.hash = hash;
     this.equalz = equalz;
-  }
-
-  public static <T> int insert(List<DataItem<T>> group, DataItem<T> insertee) {
-    int position = group.size() - 1;
-    int endPosition = -1;
-    { //find position
-      while (position >= 0) {
-        final DataItem<T> currentItem = group.get(position);
-        final int compareTo = currentItem.meta().compareTo(insertee.meta());
-
-        if (compareTo > 0) {
-          if (insertee.meta().isInvalidatedBy(currentItem.meta())) {
-            return -1;
-          }
-          position--;
-        } else {
-          if (currentItem.meta().isInvalidatedBy(insertee.meta())) {
-            endPosition = endPosition == -1 ? position : endPosition;
-            position--;
-          } else {
-            break;
-          }
-        }
-      }
-    }
-    { //invalidation/adding
-      if (position == (group.size() - 1)) {
-        group.add(insertee);
-      } else {
-        if (endPosition != -1) {
-          group.set(position + 1, insertee);
-          final int itemsForRemove = endPosition - position - 1;
-          //subList.clear is faster if the number of items for removing >= 2
-          if (itemsForRemove >= 2) {
-            group.subList(position + 2, endPosition + 1).clear();
-          } else if (itemsForRemove > 0) {
-            group.remove(endPosition);
-          }
-        } else {
-          group.add(position + 1, insertee);
-        }
-      }
-    }
-    return position + 1;
-  }
-
-  @Override
-  public void onStart(AtomicHandle handle) {
-    // TODO: 5/18/17 Load state
-    this.buffers = new LazyGroupingState<>(hash, equalz);
-  }
-
-  @Override
-  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
-    //noinspection unchecked
-    final DataItem<T> dataItem = (DataItem<T>) item;
-    final List<DataItem<T>> group = buffers.getGroupFor(dataItem);
-    final int position = insert(group, dataItem);
-    stat.recordBucketSize(group.size());
-
-    replayAround(position, group, handle);
-    clearOutdated(group);
-  }
-
-  private void replayAround(int position, List<DataItem<T>> group, AtomicHandle handle) {
-    int replayCount = 0;
-
-    final List<DataItem<?>> items = new ArrayList<>();
-    for (int right = position + 1; right <= Math.min(position + window, group.size()); ++right) {
-      replayCount++;
-      final int left = Math.max(right - window, 0);
-      items.add(subgroup(group, left, right));
-    }
-
-    stat.recordReplaySize(replayCount);
-
-    for (DataItem<?> item : items) {
-      handle.push(outPort(), item);
-      handle.ack(item.ack(), item.meta().globalTime());
-    }
-  }
-
-  private DataItem<List<T>> subgroup(List<DataItem<T>> group, int left, int right) {
-    final List<DataItem<T>> outGroup = group.subList(left, right);
-
-    final Meta meta = outGroup.get(outGroup.size() - 1).meta().advanced(incrementLocalTimeAndGet());
-    final List<T> groupingResult = outGroup.stream().map(DataItem::payload).collect(Collectors.toList());
-
-    return new PayloadDataItem<>(meta, groupingResult);
-  }
-
-  private void clearOutdated(List<DataItem<T>> group) {
-    int left = 0;
-    int right = group.size();
-    { //upper-bound binary search
-      while (right - left > 1) {
-        final int middle = left + (right - left) / 2;
-        if (group.get(middle).meta().globalTime().compareTo(currentMinTime) <= 0) {
-          left = middle;
-        } else {
-          right = middle;
-        }
-      }
-    }
-
-    final int position = left - window + 1;
-    if (position > 0) {
-      group.subList(0, position).clear();
-    }
   }
 
   @Override
@@ -174,5 +67,101 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   @Override
   public List<OutPort> outPorts() {
     return Collections.singletonList(outPort);
+  }
+
+  @Override
+  public void onStart(AtomicHandle handle) {
+    // TODO: 5/18/17 Load state
+    this.buffers = new TLongObjectHashMap<>();
+  }
+
+  @Override
+  public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
+    //noinspection unchecked
+    final DataItem<T> dataItem = (DataItem<T>) item;
+    final InvalidatingBucket<T> bucket = getBucketFor(dataItem);
+    final int position = bucket.insert(dataItem);
+    stat.recordBucketSize(bucket.size());
+
+    replayAround(position, bucket, handle);
+    clearOutdated(bucket);
+  }
+
+  private void replayAround(int position, InvalidatingBucket<T> bucket, AtomicHandle handle) {
+    int replayCount = 0;
+
+    final List<DataItem<?>> items = new ArrayList<>();
+    for (int right = position + 1; right <= Math.min(position + window, bucket.size()); ++right) {
+      replayCount++;
+      final int left = Math.max(right - window, 0);
+      items.add(subgroup(bucket, left, right));
+    }
+
+    stat.recordReplaySize(replayCount);
+
+    for (DataItem<?> item : items) {
+      handle.push(outPort(), item);
+      handle.ack(item.ack(), item.meta().globalTime());
+    }
+  }
+
+  private DataItem<List<T>> subgroup(InvalidatingBucket<T> bucket, int left, int right) {
+    final Meta meta = bucket.get(right - 1).meta().advanced(incrementLocalTimeAndGet());
+    final List<T> groupingResult = bucket.rangeStream(left, right).map(DataItem::payload).collect(Collectors.toList());
+    return new PayloadDataItem<>(meta, groupingResult);
+  }
+
+  private void clearOutdated(InvalidatingBucket<T> bucket) {
+    final int position = Math.max(bucket.floor(Meta.meta(currentMinTime)) - window, 0);
+    bucket.clearRange(0, position);
+  }
+
+  @SuppressWarnings("unchecked")
+  private InvalidatingBucket<T> getBucketFor(DataItem<T> item) {
+    final long hashValue = hash.applyAsInt(item.payload());
+    final Object obj = buffers.get(hashValue);
+    if (obj == null) {
+      final InvalidatingBucket<T> newBucket = new ArrayInvalidatingBucket<>();
+      buffers.put(hashValue, newBucket);
+      return newBucket;
+    } else {
+      if (obj instanceof List) {
+        final List<InvalidatingBucket<T>> container = (List<InvalidatingBucket<T>>) obj;
+        return getFromContainer(item, container);
+      } else {
+        final InvalidatingBucket<T> bucket = (InvalidatingBucket<T>) obj;
+        return getFromBucket(item, bucket);
+      }
+    }
+  }
+
+  private InvalidatingBucket<T> getFromContainer(DataItem<T> item, List<InvalidatingBucket<T>> container) {
+    final InvalidatingBucket<T> result = searchBucket(item, container);
+    if (result.isEmpty()) {
+      container.add(result);
+      return result;
+    } else {
+      return result;
+    }
+  }
+
+  private InvalidatingBucket<T> getFromBucket(DataItem<T> item, InvalidatingBucket<T> bucket) {
+    if (equalz.test(bucket.get(0).payload(), item.payload())) {
+      return bucket;
+    } else {
+      final List<InvalidatingBucket<T>> container = new ArrayList<>();
+      container.add(bucket);
+      final InvalidatingBucket<T> newList = new ArrayInvalidatingBucket<>();
+      container.add(newList);
+      buffers.put(hash.applyAsInt(item.payload()), container);
+      return newList;
+    }
+  }
+
+  private InvalidatingBucket<T> searchBucket(DataItem<T> item, List<InvalidatingBucket<T>> container) {
+    return container.stream()
+            .filter(bucket -> equalz.test(bucket.get(0).payload(), item.payload()))
+            .findAny()
+            .orElse(new ArrayInvalidatingBucket<>());
   }
 }
