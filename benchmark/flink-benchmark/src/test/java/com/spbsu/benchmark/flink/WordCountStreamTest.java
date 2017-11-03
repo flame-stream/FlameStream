@@ -64,7 +64,7 @@ public class WordCountStreamTest {
     };
   }
 
-  @Test(dataProvider = "measureProvider")
+  @Test(dataProvider = "measureProvider", enabled = false)
   public void measureLatency(ExampleChecker<String> checker, int warmUpDelay) {
     final TObjectIntMap<String> expected = new TObjectIntHashMap<>();
     final LatencyMeasurer<WordCounter> latencyMeasurer = new LatencyMeasurer<>(warmUpDelay, 0);
