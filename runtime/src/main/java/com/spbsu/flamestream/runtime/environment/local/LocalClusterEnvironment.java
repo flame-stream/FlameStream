@@ -60,7 +60,7 @@ public final class LocalClusterEnvironment implements Environment {
       this.zk = new ZooKeeperApplication();
       this.zkThread = new Thread(Unchecked.runnable(zk::run));
       zkThread.start();
-      TimeUnit.SECONDS.sleep(1);
+      TimeUnit.SECONDS.sleep(3);
 
       this.zooKeeper = new ZooKeeper(ZK_STRING, 5000, e -> LOG.info("Init zookeeperString ZKEvent: {}", e));
       this.dns = freeSockets(workersCount);
@@ -79,11 +79,14 @@ public final class LocalClusterEnvironment implements Environment {
     try {
       remoteEnvironment.close();
 
+      LOG.info("Shutting down worker applications");
       workerApplication.forEach(WorkerApplication::shutdown);
       workerApplication.clear();
 
+      LOG.info("Shutting down Zookeeper");
       zk.shutdown();
       zkThread.join();
+      LOG.info("Zookeeper thread joined");
 
       FileUtils.deleteDirectory(new File("zookeeper"));
       FileUtils.deleteDirectory(new File("leveldb"));
