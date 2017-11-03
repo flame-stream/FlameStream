@@ -364,6 +364,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=oom.hprof</argLine>
+                    <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
         </plugins>
