@@ -16,12 +16,13 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
-import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -58,7 +59,22 @@ public final class LocalClusterEnvironment implements Environment {
       FileUtils.deleteDirectory(new File("leveldb"));
 
       this.zk = new ZooKeeperApplication();
-      this.zkThread = new Thread(Unchecked.runnable(zk::run));
+      this.zkThread = new Thread(() -> {
+        try {
+          zk.run();
+        } catch (IOException e) {
+          try {
+            new BufferedReader(
+                    new InputStreamReader(
+                            Runtime.getRuntime().exec("lsof -i").getInputStream()
+                    )
+            ).lines().forEach(System.out::println);
+          } catch (IOException e1) {
+            e1.printStackTrace();
+          }
+          e.printStackTrace();
+        }
+      });
       zkThread.start();
       TimeUnit.SECONDS.sleep(3);
 

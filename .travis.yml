@@ -25,6 +25,7 @@ install: true
 script:
   - lsof -i
   - mvn clean -fae --errors --batch-mode -q package
+  - lsof -i
 
 after_failure:
   - export SSHPASS=$FLAME_PASS
