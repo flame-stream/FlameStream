@@ -5,6 +5,7 @@ sudo: required
 addons:
   apt:
     packages:
+      - lsof
       - sshpass
       - oracle-java8-installer
 jdk:
@@ -22,6 +23,7 @@ env:
 install: true
 
 script:
+  - lsof -i
   - mvn clean -fae --errors --batch-mode -q package
 
 after_failure:
