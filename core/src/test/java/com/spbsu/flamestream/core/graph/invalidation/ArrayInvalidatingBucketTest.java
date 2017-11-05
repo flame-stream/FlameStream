@@ -1,8 +1,9 @@
 package com.spbsu.flamestream.core.graph.invalidation;
 
+import com.spbsu.flamestream.FlameStreamSuite;
 import org.testng.annotations.Test;
 
-public class ArrayInvalidatingBucketTest {
+public class ArrayInvalidatingBucketTest extends FlameStreamSuite {
 
   @Test
   public void testInsert() {

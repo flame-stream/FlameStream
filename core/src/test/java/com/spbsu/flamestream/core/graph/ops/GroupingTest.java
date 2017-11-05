@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.core.graph.ops;
 
+import com.spbsu.flamestream.FlameStreamSuite;
 import com.spbsu.flamestream.core.FakeAtomicHandle;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.DataItem;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @SuppressWarnings("unchecked")
-public final class GroupingTest {
+public final class GroupingTest extends FlameStreamSuite {
 
   private static <T> List<List<T>> groupMe(Iterable<DataItem<T>> input, int window) {
     final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window);

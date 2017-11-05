@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.example.index.ops;
 
+import com.spbsu.flamestream.FlameStreamSuite;
 import com.spbsu.flamestream.example.index.utils.IndexItemInLong;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
@@ -14,7 +15,7 @@ import java.util.stream.IntStream;
  * User: Artem
  * Date: 10.07.2017
  */
-public class InvertedIndexStateTest {
+public class InvertedIndexStateTest extends FlameStreamSuite {
   private static void shuffleArray(int[] ar) {
     final Random rnd = ThreadLocalRandom.current();
     for (int i = ar.length - 1; i > 0; i--) {
