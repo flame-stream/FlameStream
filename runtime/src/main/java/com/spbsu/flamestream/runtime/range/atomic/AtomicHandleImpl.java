@@ -10,7 +10,7 @@ import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.stat.Statistics;
-import com.spbsu.flamestream.runtime.ack.Ack;
+import com.spbsu.flamestream.runtime.ack.messages.Ack;
 import com.spbsu.flamestream.runtime.range.AddressedItem;
 import com.spbsu.flamestream.runtime.tick.HashMapping;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
@@ -54,7 +54,7 @@ public final class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void ack(long xor, GlobalTime globalTime) {
-    final Ack message = new Ack(xor, globalTime);
+    final Ack message = new Ack(globalTime, xor, false);
     tickRoutes.acker().tell(message, context.self());
   }
 

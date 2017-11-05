@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.ack;
+package com.spbsu.flamestream.runtime.ack.messages;
 
 import com.spbsu.flamestream.runtime.range.HashRange;
 
