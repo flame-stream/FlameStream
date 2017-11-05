@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.core.data.meta.impl;
 
+import com.spbsu.flamestream.FlameStreamSuite;
 import com.spbsu.flamestream.core.FakeAtomicHandle;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.DataItem;
@@ -22,7 +23,7 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 01.07.2017
  */
-public class MetaFlatMapTest {
+public class MetaFlatMapTest extends FlameStreamSuite {
   @Test
   public void testFlatFilterLogic() {
     final int flatNumber = 10;

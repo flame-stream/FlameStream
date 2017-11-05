@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.example;
 
+import com.spbsu.flamestream.FlameStreamSuite;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 
@@ -12,7 +13,7 @@ import java.util.function.ToIntFunction;
  * User: Artem
  * Date: 28.09.2017
  */
-public abstract class AbstractExampleTest {
+public abstract class AbstractExampleTest extends FlameStreamSuite {
   protected abstract FlameStreamExample example();
 
   protected <T> void test(ExampleChecker<T> checker, int fronts, int workers, int tickLengthInSec, int waitTickInSec) {

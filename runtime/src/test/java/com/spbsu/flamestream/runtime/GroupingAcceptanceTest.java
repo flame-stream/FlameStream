@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime;
 
+import com.spbsu.flamestream.FlameStreamSuite;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
@@ -24,7 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public final class GroupingAcceptanceTest {
+public final class GroupingAcceptanceTest extends FlameStreamSuite {
   private static void doIt(HashFunction<? super Long> groupHash,
           HashFunction<? super Long> filterHash,
           BiPredicate<? super Long, ? super Long> equalz) {
