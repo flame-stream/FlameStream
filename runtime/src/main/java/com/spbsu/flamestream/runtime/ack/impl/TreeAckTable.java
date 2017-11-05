@@ -1,38 +1,25 @@
 package com.spbsu.flamestream.runtime.ack.impl;
 
-import com.spbsu.flamestream.runtime.ack.AckTable;
-
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-final class TreeAckTable implements AckTable {
+final class TreeAckTable extends WindowedAckTable {
   // FIXME: 7/6/17 DO NOT BOX
   private final SortedMap<Long, Long> table;
-  private final long startTs;
-  private final long window;
-
-  private long toBeReported;
 
   TreeAckTable(long startTs, long window) {
-    this.startTs = startTs;
-    this.window = window;
+    super(startTs, window);
     this.table = new TreeMap<>();
-    this.toBeReported = startTs;
   }
 
   @Override
-  public void report(long windowHead, long xor) {
-    if (windowHead == toBeReported) {
-      ack(windowHead, xor);
-      this.toBeReported += window;
-    } else {
-      throw new IllegalArgumentException("Not monotonic reports. Expected: " + toBeReported + ", got: " + windowHead);
-    }
+  protected long tableMin() {
+    return table.isEmpty() ? Long.MAX_VALUE : table.firstKey();
   }
 
   @Override
-  public boolean ack(long ts, long xor) {
-    final long lowerBound = startTs + window * ((ts - startTs) / window);
+  public boolean ack(long timestamp, long xor) {
+    final long lowerBound = startTs + window * ((timestamp - startTs) / window);
     final long updatedXor = xor ^ table.getOrDefault(lowerBound, 0L);
     if (updatedXor == 0) {
       table.remove(lowerBound);
@@ -41,16 +28,5 @@ final class TreeAckTable implements AckTable {
       table.put(lowerBound, updatedXor);
       return false;
     }
-  }
-
-  @Override
-  public long min() {
-    return table.isEmpty() ? toBeReported : Math.min(toBeReported, table.firstKey());
-  }
-
-  @Override
-  public String toString() {
-    return "TreeAckTable{" + "table=" + table + ", startTs=" + startTs + ", window=" + window + ", toBeReported="
-            + toBeReported + '}';
   }
 }
