@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.ack.impl;
 
 import com.spbsu.commons.util.Pair;
+import com.spbsu.flamestream.FlameStreamSuite;
 import com.spbsu.flamestream.runtime.ack.AckTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +22,7 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 30.08.2017
  */
-public class AckTableTest {
+public class AckTableTest extends FlameStreamSuite {
   private static final Logger LOG = LoggerFactory.getLogger(AckTableTest.class);
 
   @DataProvider

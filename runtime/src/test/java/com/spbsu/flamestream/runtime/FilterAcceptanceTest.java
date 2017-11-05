@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime;
 
+import com.spbsu.flamestream.FlameStreamSuite;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
@@ -21,7 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public final class FilterAcceptanceTest {
+public final class FilterAcceptanceTest extends FlameStreamSuite {
 
   private static TheGraph multiGraph(Collection<Integer> fronts, AtomicGraph sink) {
     final StatelessMap<Integer, Integer> filter1 = new StatelessMap<>(new HumbleFiler(-1), HashFunction.OBJECT_HASH);
