@@ -3,6 +3,7 @@ package com.spbsu.flamestream.core.graph.barrier;
 import com.spbsu.flamestream.core.graph.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.ToIntFunction;
 
 import static java.util.Collections.emptyList;
@@ -36,5 +37,23 @@ public final class BarrierSuite<T> implements Graph {
   @Override
   public ComposedGraph<AtomicGraph> flattened() {
     return preBarrierMetaFilter.fuse(barrierSink, preBarrierMetaFilter.outPort(), barrierSink.inPort()).flattened();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final BarrierSuite<?> that = (BarrierSuite<?>) o;
+    return Objects.equals(preBarrierMetaFilter, that.preBarrierMetaFilter) &&
+            Objects.equals(barrierSink, that.barrierSink);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(preBarrierMetaFilter, barrierSink);
   }
 }
