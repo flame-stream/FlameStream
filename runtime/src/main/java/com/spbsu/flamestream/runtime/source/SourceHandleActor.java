@@ -7,19 +7,21 @@ import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.OutPort;
+import com.spbsu.flamestream.core.graph.source.SourceHandle;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.runtime.source.messages.Start;
 
-final class SourceConsumer extends LoggingActor {
-  private final AtomicHandle handle;
-  private final OutPort outPort;
+public final class SourceHandleActor extends LoggingActor {
+  private final SourceHandle handle;
   private ActorRef front;
-  private int capacity = 100;
 
-  private SourceConsumer(AtomicHandle handle, OutPort outPort) {
+  private SourceHandleActor(SourceHandle handle) {
     this.handle = handle;
-    this.outPort = outPort;
-
     resolveFront();
+  }
+
+  public static Props props(SourceHandle sourceHandle) {
+    return Props.create(SourceHandleActor.class, sourceHandle);
   }
 
   @Override
@@ -32,24 +34,15 @@ final class SourceConsumer extends LoggingActor {
   }
 
   public static Props props(AtomicHandle handle, OutPort outPort) {
-    return Props.create(SourceConsumer.class, handle, outPort);
+    return Props.create(SourceHandleActor.class, handle, outPort);
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(DataItem.class, i -> {
-              handle.push(outPort, i);
-              capacity--;
-              if (capacity < 0) {
-                front.tell(new PullBased(), self());
-              }
-            })
-            .match(Exception.class, e -> handle.error("Smth went wrong {}", e))
-            .match(GlobalTime.class, e -> {
-              capacity++;
-              front.tell(new RequestMore(1), self());
-            })
+            .match(DataItem.class, i -> handle.onInput(i))
+            .match(Exception.class, e -> handle.onError(e))
+            .match(GlobalTime.class, w -> handle.onWatermark(w))
             .build();
   }
 }

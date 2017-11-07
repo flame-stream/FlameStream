@@ -3,6 +3,7 @@ package com.spbsu.flamestream.core.front;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
+import com.spbsu.flamestream.core.graph.source.SourceHandle;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
@@ -18,7 +19,7 @@ public final class StreamFront<T> implements Front<T> {
   public void subscribe(SourceHandle<T> sourceHandle, GlobalTime from, GlobalTime to) {
     final CompletableFuture<Void> task = CompletableFuture.runAsync(() ->
             stream.forEach(e ->
-                    sourceHandle.accept(
+                    sourceHandle.onInput(
                             new PayloadDataItem<T>(Meta.meta(new GlobalTime(System.currentTimeMillis(), 1)), e)
                     )
             )

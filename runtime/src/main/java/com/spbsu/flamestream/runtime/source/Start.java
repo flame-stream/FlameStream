@@ -1,4 +1,0 @@
-package com.spbsu.flamestream.runtime.source;
-
-public final class Start {
-}

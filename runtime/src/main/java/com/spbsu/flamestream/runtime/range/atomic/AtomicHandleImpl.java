@@ -9,9 +9,11 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
+import com.spbsu.flamestream.core.graph.source.SourceHandle;
 import com.spbsu.flamestream.core.stat.Statistics;
 import com.spbsu.flamestream.runtime.ack.messages.Ack;
 import com.spbsu.flamestream.runtime.range.AddressedItem;
+import com.spbsu.flamestream.runtime.source.SourceHandleActor;
 import com.spbsu.flamestream.runtime.tick.HashMapping;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
@@ -66,6 +68,11 @@ public final class AtomicHandleImpl implements AtomicHandle {
   @Override
   public void error(String format, Object... args) {
     log.warning(format, args);
+  }
+
+  @Override
+  public void registerSource(SourceHandle sourceHandle) {
+    context.actorOf(SourceHandleActor.props(sourceHandle)); //and so on...
   }
 
   public ActorContext backdoor() {
