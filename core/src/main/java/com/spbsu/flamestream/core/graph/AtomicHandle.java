@@ -2,6 +2,7 @@ package com.spbsu.flamestream.core.graph;
 
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.graph.source.SourceHandle;
 import com.spbsu.flamestream.core.stat.Statistics;
 
 public interface AtomicHandle {
@@ -12,5 +13,7 @@ public interface AtomicHandle {
   void submitStatistics(Statistics stat);
 
   void error(String format, Object... args);
+
+  void registerSource(SourceHandle sourceHandle);
 }
 
