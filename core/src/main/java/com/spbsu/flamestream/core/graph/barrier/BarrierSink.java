@@ -13,7 +13,7 @@ import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
-final class BarrierSink implements AtomicGraph {
+final class BarrierSink extends AbstractAtomicGraph {
   private final ChaincallGraph innerGraph;
 
   BarrierSink(AtomicGraph sink) {
@@ -41,11 +41,6 @@ final class BarrierSink implements AtomicGraph {
   @Override
   public List<OutPort> outPorts() {
     return innerGraph.outPorts();
-  }
-
-  @Override
-  public ComposedGraph<AtomicGraph> flattened() {
-    return new ComposedGraphImpl<>(singleton(this));
   }
 
   @Override

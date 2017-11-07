@@ -93,4 +93,24 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
   public Map<OutPort, InPort> downstreams() {
     return Collections.unmodifiableMap(downstreams);
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ComposedGraphImpl<?> that = (ComposedGraphImpl<?>) o;
+    return Objects.equals(downstreams, that.downstreams) &&
+            Objects.equals(inPorts, that.inPorts) &&
+            Objects.equals(outPorts, that.outPorts) &&
+            Objects.equals(subGraphs, that.subGraphs);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(downstreams, inPorts, outPorts, subGraphs);
+  }
 }
