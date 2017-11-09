@@ -5,6 +5,7 @@ sudo: required
 addons:
   apt:
     packages:
+      - sshpass
       - oracle-java8-installer
 jdk:
   - oraclejdk8
@@ -20,13 +21,9 @@ env:
 
 install: true
 
-# The build process is so strange because we want to skip spbsu-commons tests :)
 script:
-  - mvn clean -DskipTests -fae --errors --batch-mode -q install
-  - cd ./core
-  - mvn -fae --errors --batch-mode -q test
-  - cd ../runtime
-  - mvn -fae --errors --batch-mode -q test
-  - cd ../examples
-  - mvn -fae --errors --batch-mode -q test
-  - cd ../
+  - mvn clean -fae --errors --batch-mode -q package
+
+after_failure:
+  - export SSHPASS=$FLAME_PASS
+  - sshpass -e scp -v -o stricthostkeychecking=no oom.hprof flamestream@marnikitta.com:~/$TRAVIS_BUILD_ID.hprof
