@@ -26,4 +26,4 @@ script:
 
 after_failure:
   - export SSHPASS=$FLAME_PASS
-  - sshpass -e scp -v -o stricthostkeychecking=no oom.hprof flamestream@marnikitta.com:~/$TRAVIS_BUILD_ID.hprof
+  - [ -f oom.hprof ] && sshpass -e scp -v -o stricthostkeychecking=no oom.hprof flamestream@marnikitta.com:~/$TRAVIS_BUILD_ID.hprof
