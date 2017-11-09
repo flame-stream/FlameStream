@@ -16,13 +16,12 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -59,24 +58,9 @@ public final class LocalClusterEnvironment implements Environment {
       FileUtils.deleteDirectory(new File("leveldb"));
 
       this.zk = new ZooKeeperApplication();
-      this.zkThread = new Thread(() -> {
-        try {
-          zk.run();
-        } catch (IOException e) {
-          try {
-            new BufferedReader(
-                    new InputStreamReader(
-                            Runtime.getRuntime().exec("lsof -i").getInputStream()
-                    )
-            ).lines().forEach(System.out::println);
-          } catch (IOException e1) {
-            e1.printStackTrace();
-          }
-          e.printStackTrace();
-        }
-      });
+      this.zkThread = new Thread(Unchecked.runnable(zk::run));
       zkThread.start();
-      TimeUnit.SECONDS.sleep(3);
+      TimeUnit.SECONDS.sleep(1);
 
       this.zooKeeper = new ZooKeeper(ZK_STRING, 5000, e -> LOG.info("Init zookeeperString ZKEvent: {}", e));
       this.dns = freeSockets(workersCount);
@@ -95,14 +79,11 @@ public final class LocalClusterEnvironment implements Environment {
     try {
       remoteEnvironment.close();
 
-      LOG.info("Shutting down worker applications");
       workerApplication.forEach(WorkerApplication::shutdown);
       workerApplication.clear();
 
-      LOG.info("Shutting down Zookeeper");
       zk.shutdown();
       zkThread.join();
-      LOG.info("Zookeeper thread joined");
 
       FileUtils.deleteDirectory(new File("zookeeper"));
       FileUtils.deleteDirectory(new File("leveldb"));
