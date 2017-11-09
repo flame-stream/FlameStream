@@ -5,12 +5,20 @@ package com.spbsu.flamestream.runtime.ack;
  * Date: 06.09.2017
  */
 public interface AckTable {
-  void report(long windowHead, long xor);
-
   /**
+   * @param timestamp of the ack
+   * @param xor       number to be XORed
    * @return true if min time may be updated
    */
-  boolean ack(long ts, long xor);
+  boolean ack(long timestamp, long xor);
 
+  /**
+   * @param timestamp indicates that xor value for this timestamp can be nullified
+   */
+  void report(long timestamp);
+
+  /**
+   * @return current min timestamp within this table
+   */
   long min();
 }

@@ -7,7 +7,7 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.InPort;
-import com.spbsu.flamestream.runtime.ack.AckerReport;
+import com.spbsu.flamestream.runtime.ack.messages.Ack;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.AddressedItem;
 import com.spbsu.flamestream.runtime.tick.HashMapping;
@@ -43,7 +43,6 @@ final class TickFrontActor extends LoggingActor {
     this.tickConcierges = cluster.entrySet()
             .stream()
             .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(String.valueOf(tickInfo.id()))));
-
     this.currentWindowHead = tickInfo.startTs();
   }
 
@@ -81,6 +80,29 @@ final class TickFrontActor extends LoggingActor {
             .build();
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private void dispatchItem(DataItem<?> item) {
+    final ToIntFunction hashFunction = target.hashFunction();
+    final int hash = hashFunction.applyAsInt(item.payload());
+
+    //noinspection ConstantConditions
+    final ActorRef receiver = mapping.valueFor(hash);
+    final AddressedItem message = new AddressedItem(item, target);
+    receiver.tell(message, self());
+
+    { //report
+      long time = item.meta().globalTime().time();
+      if (time >= currentWindowHead + tickInfo.window()) {
+        for (; currentWindowHead < lower(time); this.currentWindowHead += tickInfo.window(), this.currentXor = 0) {
+          final Ack report = new Ack(new GlobalTime(currentWindowHead, frontId), currentXor, true);
+          //noinspection ConstantConditions
+          routes.acker().tell(report, self());
+        }
+      }
+      this.currentXor ^= item.ack();
+    }
+  }
+
   private void processTsResponse(TickFrontPing tickFrontPing) {
     final long ts = tickFrontPing.ts();
     if (ts >= tickInfo.stopTs()) {
@@ -91,39 +113,15 @@ final class TickFrontActor extends LoggingActor {
     }
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private void dispatchItem(DataItem<?> item) {
-    final ToIntFunction hashFunction = target.hashFunction();
-    final int hash = hashFunction.applyAsInt(item.payload());
-
-    assert mapping != null;
-    final ActorRef receiver = mapping.valueFor(hash);
-    final AddressedItem message = new AddressedItem(item, target);
-    receiver.tell(message, self());
-
-    report(item.meta().globalTime().time(), item.ack());
+  private void reportUpTo(long windowHead) {
+    for (; currentWindowHead < windowHead; this.currentWindowHead += tickInfo.window(), this.currentXor = 0) {
+      final Ack report = new Ack(new GlobalTime(currentWindowHead, frontId), currentXor, true);
+      //noinspection ConstantConditions
+      routes.acker().tell(report, self());
+    }
   }
 
   private long lower(long ts) {
     return tickInfo.startTs() + tickInfo.window() * ((ts - tickInfo.startTs()) / tickInfo.window());
-  }
-
-  private void report(long time, long xor) {
-    if (time >= currentWindowHead + tickInfo.window()) {
-      reportUpTo(lower(time));
-    }
-    this.currentXor ^= xor;
-  }
-
-  private void reportUpTo(long windowHead) {
-    for (; currentWindowHead < windowHead; this.currentWindowHead += tickInfo.window(), this.currentXor = 0) {
-      closeWindow(currentWindowHead, currentXor);
-    }
-  }
-
-  private void closeWindow(long windowHead, long xor) {
-    final AckerReport report = new AckerReport(new GlobalTime(windowHead, frontId), xor);
-    assert routes != null;
-    routes.acker().tell(report, self());
   }
 }

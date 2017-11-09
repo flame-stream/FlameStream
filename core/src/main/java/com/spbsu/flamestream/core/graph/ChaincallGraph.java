@@ -8,8 +8,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-public final class ChaincallGraph implements AtomicGraph {
+public final class ChaincallGraph extends AbstractAtomicGraph {
   private final ComposedGraph<AtomicGraph> composedGraph;
   private final Map<InPort, AtomicGraph> upstreams = new HashMap<>();
 
@@ -54,8 +55,21 @@ public final class ChaincallGraph implements AtomicGraph {
   }
 
   @Override
-  public ComposedGraph<AtomicGraph> flattened() {
-    return new ComposedGraphImpl<>(Collections.singleton(this));
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ChaincallGraph that = (ChaincallGraph) o;
+    return Objects.equals(composedGraph, that.composedGraph) &&
+            Objects.equals(upstreams, that.upstreams);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(composedGraph, upstreams);
   }
 
   private final class ChainHandle implements AtomicHandle {
