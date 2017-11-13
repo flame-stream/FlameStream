@@ -27,6 +27,6 @@ public final class Ack {
 
   @Override
   public String toString() {
-    return "Ack{" + "xor=" + xor + ", time=" + time + ", report=" + report + '}';
+    return "Ack{" + "xor=" + xor + ", time=" + time + ", heartbeat=" + report + '}';
   }
 }

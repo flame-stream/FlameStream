@@ -46,7 +46,7 @@ public class AckTableTest extends FlameStreamSuite {
             .map(ts -> new Pair<>(ts, ThreadLocalRandom.current().nextLong()))
             .collect(Collectors.toList());
 
-    LongStream.range(0, windowsCount).forEach(value -> ackTable.report(window * value));
+    LongStream.range(0, windowsCount).forEach(value -> ackTable.heartbeat(window * value));
     final SortedSet<Long> sortedSet = new TreeSet<>();
     xors.forEach(pair -> {
       ackTable.ack(pair.first, pair.second);
@@ -97,7 +97,7 @@ public class AckTableTest extends FlameStreamSuite {
 
   private void performanceTest(AckTable ackTable, long window, long windowsCount, List<Pair<Long, Long>> xors) {
     final long start = System.nanoTime();
-    LongStream.range(0, windowsCount).forEach(value -> ackTable.report(window * value));
+    LongStream.range(0, windowsCount).forEach(value -> ackTable.heartbeat(window * value));
     xors.forEach(pair -> ackTable.ack(pair.first, pair.second));
     Collections.shuffle(xors);
     xors.forEach(pair -> ackTable.ack(pair.first, pair.second));

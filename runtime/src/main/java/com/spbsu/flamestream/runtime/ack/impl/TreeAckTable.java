@@ -3,7 +3,7 @@ package com.spbsu.flamestream.runtime.ack.impl;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-final class TreeAckTable extends WindowedAckTable {
+final class TreeAckTable extends HeartbeatAckTable {
   // FIXME: 7/6/17 DO NOT BOX
   private final SortedMap<Long, Long> table;
 

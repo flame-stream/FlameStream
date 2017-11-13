@@ -61,7 +61,7 @@ public final class AckActor extends LoggingActor {
 
   private void handleHeartBeat(Heartbeat heartbeat) {
     final GlobalTime time = heartbeat.time();
-    tables.get(time.front()).report(time.time());
+    tables.get(time.front()).heartbeat(time.time());
     checkMinTime();
   }
 

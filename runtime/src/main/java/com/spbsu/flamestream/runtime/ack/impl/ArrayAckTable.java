@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.runtime.ack.impl;
 
-public final class ArrayAckTable extends WindowedAckTable {
+public final class ArrayAckTable extends HeartbeatAckTable {
   private final long[] xorStorage;
   private int minPosition;
 

@@ -15,7 +15,7 @@ public interface AckTable {
   /**
    * @param timestamp indicates that xor value for this timestamp can be nullified
    */
-  void report(long timestamp);
+  void heartbeat(long timestamp);
 
   /**
    * @return current min timestamp within this table
