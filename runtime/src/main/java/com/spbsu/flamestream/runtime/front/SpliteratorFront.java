@@ -62,7 +62,8 @@ public final class SpliteratorFront<T> extends LoggingActor {
   }
 
   private void onAccepted(Accepted accepted) {
-    if (accepted.globalTime().equals(pending)) {
+    //noinspection ConstantConditions
+    if (accepted.globalTime().equals(pending.meta().globalTime())) {
       pending = null;
       emmit();
     } else {
