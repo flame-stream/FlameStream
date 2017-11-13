@@ -1,19 +1,33 @@
 package com.spbsu.flamestream.runtime;
 
+import akka.actor.ActorIdentity;
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.ComposedGraph;
-import com.spbsu.flamestream.core.graph.Graph;
-import com.spbsu.flamestream.core.graph.InPort;
+import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
+import com.spbsu.flamestream.runtime.front.ActorFront;
 import com.spbsu.flamestream.runtime.range.HashRange;
+import com.spbsu.flamestream.runtime.raw.RawData;
+import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -25,10 +39,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class TestEnvironment implements Environment {
   private static final long DEFAULT_TEST_WINDOW = 10;
+  private final ActorSystem system;
 
   private final Environment innerEnvironment;
   private final long windowInMillis;
-  private final Map<Integer, Consumer<Object>> consumers = new HashMap<>();
 
   public TestEnvironment(Environment inner) {
     this(inner, DEFAULT_TEST_WINDOW);
@@ -37,6 +51,11 @@ public class TestEnvironment implements Environment {
   public TestEnvironment(Environment inner, long windowInMillis) {
     this.innerEnvironment = inner;
     this.windowInMillis = windowInMillis;
+
+    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + "localhost")
+            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" +))
+            .withFallback(ConfigFactory.load("remote"));
+    this.system = ActorSystem.create("worker", config);
   }
 
   public void deploy(ComposedGraph<AtomicGraph> graph, int tickLengthSeconds, int ticksCount) {
@@ -66,23 +85,37 @@ public class TestEnvironment implements Environment {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
-
   }
 
-  public Consumer<Object> roundRobinFronts(int n) {
-    final Map< = createFronts(n);
-    return new Co
-  }
+  public Consumer<Object> randomFrontConsumer(int n) {
+    final ActorRef balancingActor = system.actorOf(Props.create(() -> new LoggingActor() {
+      private final List<ActorRef> fronts = new ArrayList<>();
 
-  public Consumer<Object> randomFrontConsumer(int maxFrontsCount) {
-    final Set<Integer> fronts = innerEnvironment.availableFronts();
-    final List<Consumer<Object>> collectors = fronts.stream()
-            .map(innerEnvironment::frontConsumer)
-            .limit(maxFrontsCount)
+      @Override
+      public Receive createReceive() {
+        return ReceiveBuilder.create()
+                .match(ActorIdentity.class, i -> fronts.add(sender()))
+                .match(
+                        RawData.class,
+                        r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size())).tell(r, self())
+                )
+                .build();
+      }
+    }));
+
+    final ActorPath path = balancingActor.path();
+
+    final List<Props> props = IntStream.range(0, n)
+            .mapToObj(id -> ActorFront.props(id, path))
             .collect(Collectors.toList());
 
-    final Random rd = new Random();
-    return obj -> collectors.get(rd.nextInt(collectors.size())).accept(obj);
+    final List<Integer> workers = new ArrayList<>(availableWorkers());
+
+    for (int i = 0; i < props.size(); i++) {
+      deployFront(workers.get(i % workers.size()), i, props.get(i));
+    }
+
+    return o -> balancingActor.tell(new SingleRawData<>(o), ActorRef.noSender());
   }
 
   private Map<HashRange, Integer> rangeMappingForTick() {
@@ -138,9 +171,5 @@ public class TestEnvironment implements Environment {
   @Override
   public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     return innerEnvironment.wrapInSink(hash, mySuperConsumer);
-  }
-
-  public Consumer<Object> frontConsumer(int frontId) {
-
   }
 }
