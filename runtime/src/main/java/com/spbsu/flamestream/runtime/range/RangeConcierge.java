@@ -5,11 +5,13 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.InPort;
+import com.spbsu.flamestream.core.graph.source.Source;
 import com.spbsu.flamestream.runtime.ack.messages.Commit;
 import com.spbsu.flamestream.runtime.ack.messages.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.ack.messages.RangeCommitDone;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.atomic.AtomicActor;
+import com.spbsu.flamestream.runtime.source.SourceActor;
 import com.spbsu.flamestream.runtime.tick.StartTick;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
@@ -98,13 +100,17 @@ public final class RangeConcierge extends LoggingActor {
   }
 
   private Map<AtomicGraph, ActorRef> initializedAtomics(Collection<? extends AtomicGraph> atomicGraphs,
-          TickRoutes tickRoutes) {
+                                                        TickRoutes tickRoutes) {
     return atomicGraphs.stream().collect(toMap(Function.identity(), atomic -> actorForAtomic(atomic, tickRoutes)));
   }
 
   private ActorRef actorForAtomic(AtomicGraph atomic, TickRoutes tickRoutes) {
     final String id = UUID.randomUUID().toString();
     log().debug("Creating actor for atomic: id= {}, class={}", id, atomic.getClass());
-    return context().actorOf(AtomicActor.props(atomic, tickInfo, tickRoutes), id);
+    if (atomic instanceof Source) {
+      return context().actorOf(SourceActor.props((Source) atomic, tickInfo, tickRoutes), id);
+    } else {
+      return context().actorOf(AtomicActor.props(atomic, tickInfo, tickRoutes), id);
+    }
   }
 }
