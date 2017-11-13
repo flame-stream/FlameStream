@@ -34,26 +34,25 @@ public class InvertedIndexRunner implements EnvironmentRunner {
     final int limit = config.hasPath("limit") ? config.getInt("limit") : 250;
 
     final Stream<WikipediaPage> source = (inputPath == null ? WikipeadiaInput.dumpStreamFromResources(
-        "wikipedia/national_football_teams_dump.xml") : WikipeadiaInput.dumpStreamFromFile(inputPath)).limit(limit)
-        .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
+            "wikipedia/national_football_teams_dump.xml") : WikipeadiaInput.dumpStreamFromFile(inputPath)).limit(limit)
+            .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
 
     final int tickLengthInSec = config.getInt("tick-length-sec");
     try (TestEnvironment testEnvironment = new TestEnvironment(environment, 15)) {
       //noinspection RedundantCast,unchecked
-      testEnvironment.deploy(
-          FlameStreamExample.INVERTED_INDEX.graph(hash -> testEnvironment
-              .wrapInSink(((ToIntFunction<? super WordBase>) hash), container -> {
-                if (container instanceof WordIndexAdd) {
-                  final WordIndexAdd indexAdd = (WordIndexAdd) container;
-                  final int docId = IndexItemInLong.pageId(indexAdd.positions()[0]);
-                  latencyMeasurer.finish(docId);
-                }
-              })).flattened(), tickLengthInSec, 1);
+      final Consumer<Object> sink = testEnvironment.deploy(
+              FlameStreamExample.INVERTED_INDEX.graph(hash -> testEnvironment
+                      .wrapInSink(((ToIntFunction<? super WordBase>) hash), container -> {
+                        if (container instanceof WordIndexAdd) {
+                          final WordIndexAdd indexAdd = (WordIndexAdd) container;
+                          final int docId = IndexItemInLong.pageId(indexAdd.positions()[0]);
+                          latencyMeasurer.finish(docId);
+                        }
+                      })).flattened(), tickLengthInSec, 1, 1); // TODO: 13.11.2017 set proper number of fronts
 
       final int[] pagesCount = {0};
       final int sleepTimeInMs = config.hasPath("rate") ? config.getInt("rate") : 100;
 
-      final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1); // FIXME: 13.11.2017
       source.forEach(wikipediaPage -> {
         sink.accept(wikipediaPage);
         pagesCount[0]++;

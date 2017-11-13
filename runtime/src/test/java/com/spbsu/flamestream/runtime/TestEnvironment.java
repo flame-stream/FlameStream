@@ -1,12 +1,6 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.ActorIdentity;
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Address;
-import akka.actor.Props;
-import akka.actor.RootActorPath;
+import akka.actor.*;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.ComposedGraph;
@@ -21,12 +15,7 @@ import com.typesafe.config.ConfigFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -47,7 +36,6 @@ public class TestEnvironment implements Environment {
   private final ActorSystem system;
   private final Environment innerEnvironment;
   private final long windowInMillis;
-  private final Set<Integer> fronts = new HashSet<>();
 
   public TestEnvironment(Environment inner) {
     this(inner, DEFAULT_TEST_WINDOW);
@@ -70,10 +58,25 @@ public class TestEnvironment implements Environment {
   }
 
   // TODO: 13.11.2017 accept graph instead of composed graph
-  public void deploy(ComposedGraph<AtomicGraph> graph, int tickLengthSeconds, int ticksCount) {
+  public Consumer<Object> deploy(ComposedGraph<AtomicGraph> graph, int tickLengthSeconds, int ticksCount, int frontsCount) {
+    final Consumer<Object> consumer;
+    { //create consumer
+      final ActorRef balancingActor = system.actorOf(Props.create(BalancingActor.class), "balancing-actor");
+      final Address address = Address.apply("akka.tcp", "worker", actorSysAddress.host(), actorSysAddress.port());
+      final ActorPath path = RootActorPath.apply(address, "/").child("user").child("balancing-actor");
+      final List<Props> props = IntStream.range(0, frontsCount)
+              .mapToObj(id -> ActorFront.props(id, path))
+              .collect(Collectors.toList());
+
+      final List<Integer> workers = new ArrayList<>(availableWorkers());
+      for (int i = 0; i < props.size(); i++) {
+        deployFront(workers.get(i % workers.size()), i, props.get(i));
+      }
+      consumer = o -> balancingActor.tell(new SingleRawData<>(o), ActorRef.noSender());
+    }
+
     final Map<HashRange, Integer> workers = rangeMappingForTick();
     final long tickMills = SECONDS.toMillis(tickLengthSeconds);
-
     long startTs = System.currentTimeMillis();
     for (int i = 0; i < ticksCount; ++i, startTs += tickMills) {
       //noinspection ConstantConditions
@@ -84,7 +87,7 @@ public class TestEnvironment implements Environment {
               graph,
               workers.values().stream().min(Integer::compareTo).get(),
               workers,
-              fronts, windowInMillis,
+              IntStream.range(0, frontsCount).boxed().collect(Collectors.toSet()), windowInMillis,
               i == 0 ? emptySet() : singleton(i - 1L)
       );
       innerEnvironment.deploy(tickInfo);
@@ -97,43 +100,7 @@ public class TestEnvironment implements Environment {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  public Consumer<Object> randomFrontConsumer(int n) {
-    final ActorRef balancingActor = system.actorOf(Props.create(LoggingActor.class, () -> new LoggingActor() {
-      private final List<ActorRef> fronts = new ArrayList<>();
-
-      @Override
-      public Receive createReceive() {
-        return ReceiveBuilder.create()
-                .match(ActorIdentity.class, i -> {
-                  fronts.add(sender());
-                })
-                /*.match(
-                        RawData.class,
-                        r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size())).tell(r, self())
-                )*/
-                .matchAny(o -> {
-                })
-                .build();
-      }
-    }), "balancing-actor");
-
-    final Address address = Address.apply("akka.tcp", "worker", actorSysAddress.host(), actorSysAddress.port());
-    final ActorPath path = RootActorPath.apply(address, "/").child("user").child("balancing-actor");
-
-    final List<Props> props = IntStream.range(0, n)
-            .peek(fronts::add)
-            .mapToObj(id -> ActorFront.props(id, path))
-            .collect(Collectors.toList());
-
-    final List<Integer> workers = new ArrayList<>(availableWorkers());
-
-    for (int i = 0; i < props.size(); i++) {
-      deployFront(workers.get(i % workers.size()), i, props.get(i));
-    }
-
-    return o -> balancingActor.tell(new SingleRawData<>(o), ActorRef.noSender());
+    return consumer;
   }
 
   private Map<HashRange, Integer> rangeMappingForTick() {
@@ -189,5 +156,24 @@ public class TestEnvironment implements Environment {
   @Override
   public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     return innerEnvironment.wrapInSink(hash, mySuperConsumer);
+  }
+
+  private static class BalancingActor extends LoggingActor {
+    private final List<ActorRef> fronts = new ArrayList<>();
+
+    @Override
+    public Receive createReceive() {
+      return ReceiveBuilder.create()
+              .match(ActorIdentity.class, i -> {
+                fronts.add(sender());
+              })
+                  /*.match(
+                          RawData.class,
+                          r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size())).tell(r, self())
+                  )*/
+              .matchAny(o -> {
+              })
+              .build();
+    }
   }
 }

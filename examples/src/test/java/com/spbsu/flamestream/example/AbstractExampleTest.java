@@ -21,12 +21,11 @@ public abstract class AbstractExampleTest extends FlameStreamSuite {
          TestEnvironment environment = new TestEnvironment(lce)) {
       final List<Object> result = new ArrayList<>();
       //noinspection RedundantCast,unchecked
-      environment.deploy(example().graph(h -> environment.wrapInSink(
-          (ToIntFunction<? super T>) h,
-          result::add
-      )).flattened(), tickLengthInSec, 1);
+      final Consumer<Object> sink = environment.deploy(example().graph(h -> environment.wrapInSink(
+              (ToIntFunction<? super T>) h,
+              result::add
+      )).flattened(), tickLengthInSec, 1, fronts);
 
-      final Consumer<Object> sink = environment.randomFrontConsumer(fronts);
       checker.input().forEach(wikipediaPage -> {
         sink.accept(wikipediaPage);
         try {

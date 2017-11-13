@@ -31,16 +31,15 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
       final int window = 7;
 
       //noinspection unchecked
-      environment.deploy(GroupingAcceptanceTest.groupGraph(
-          environment.wrapInSink(HashFunction.OBJECT_HASH, di -> result.add((List<Long>) di)),
-          window,
-          groupHash,
-          equalz,
-          filterHash
-      ), 10, 1);
+      final Consumer<Object> sink = environment.deploy(GroupingAcceptanceTest.groupGraph(
+              environment.wrapInSink(HashFunction.OBJECT_HASH, di -> result.add((List<Long>) di)),
+              window,
+              groupHash,
+              equalz,
+              filterHash
+      ), 10, 1, 1);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = environment.randomFrontConsumer(1);
       source.forEach(sink);
       environment.awaitTick(12);
 
@@ -76,8 +75,8 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
     final BarrierSuite<Long> barrier = new BarrierSuite<>(sink);
 
     final Graph graph = source.fuse(source, source.outPort(), filter.inPort())
-        .fuse(grouping, filter.outPort(), grouping.inPort())
-        .fuse(barrier, grouping.outPort(), barrier.inPort());
+            .fuse(grouping, filter.outPort(), grouping.inPort())
+            .fuse(barrier, grouping.outPort(), barrier.inPort());
     return graph.flattened();
   }
 
@@ -86,14 +85,14 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
   public void noReorderingSingleHash() {
     //noinspection Convert2Lambda
     GroupingAcceptanceTest.doIt(
-        HashFunction.constantHash(100),
-        HashFunction.constantHash(100),
-        new BiPredicate<Long, Long>() {
-          @Override
-          public boolean test(Long a, Long b) {
-            return true;
-          }
-        }
+            HashFunction.constantHash(100),
+            HashFunction.constantHash(100),
+            new BiPredicate<Long, Long>() {
+              @Override
+              public boolean test(Long a, Long b) {
+                return true;
+              }
+            }
     );
   }
 
@@ -116,14 +115,14 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
   public void reorderingSingleHash() {
     //noinspection Convert2Lambda
     GroupingAcceptanceTest.doIt(
-        HashFunction.constantHash(100),
-        HashFunction.uniformLimitedHash(100),
-        new BiPredicate<Long, Long>() {
-          @Override
-          public boolean test(Long a, Long b) {
-            return true;
-          }
-        }
+            HashFunction.constantHash(100),
+            HashFunction.uniformLimitedHash(100),
+            new BiPredicate<Long, Long>() {
+              @Override
+              public boolean test(Long a, Long b) {
+                return true;
+              }
+            }
     );
   }
 

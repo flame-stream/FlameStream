@@ -41,12 +41,12 @@ public final class SumTest {
     final BarrierSuite<Sum> barrier = new BarrierSuite<>(sink);
 
     final Graph graph = source.fuse(source, source.outPort(), merge.inPorts().get(0)).fuse(grouping, merge.outPort(), grouping.inPort())
-        .fuse(enricher, grouping.outPort(), enricher.inPort())
-        .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
-        .fuse(reducer, junkFilter.outPort(), reducer.inPort())
-        .fuse(broadcast, reducer.outPort(), broadcast.inPort())
-        .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
-        .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
+            .fuse(enricher, grouping.outPort(), enricher.inPort())
+            .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
+            .fuse(reducer, junkFilter.outPort(), reducer.inPort())
+            .fuse(broadcast, reducer.outPort(), broadcast.inPort())
+            .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
+            .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
     return graph.flattened();
   }
 
@@ -73,16 +73,16 @@ public final class SumTest {
 
       final Deque<Sum> result = new ArrayDeque<>();
 
-      environment.deploy(SumTest.sumGraph(
-          environment.wrapInSink(HashFunction.constantHash(1), k -> result.add((Sum) k))
-      ), tickLength, 1);
+      final Consumer<Object> sink = environment.deploy(SumTest.sumGraph(
+              environment.wrapInSink(HashFunction.constantHash(1), k -> result.add((Sum) k))
+      ), tickLength, 1, fronts);
 
       final List<LongNumb> source = new Random().ints(inputSize)
-          .map(i -> i % 100)
-          .map(Math::abs)
-          .mapToObj(LongNumb::new)
-          .collect(Collectors.toList());
-      final Consumer<Object> sink = environment.randomFrontConsumer(fronts);
+              .map(i -> i % 100)
+              .map(Math::abs)
+              .mapToObj(LongNumb::new)
+              .collect(Collectors.toList());
+
       source.forEach(longNumb -> {
         sink.accept(longNumb);
         try {
@@ -95,8 +95,8 @@ public final class SumTest {
       environment.awaitTick(tickLength + 5);
 
       final long expected = source.stream()
-          .reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value()))
-          .value();
+              .reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value()))
+              .value();
       final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
 
       Assert.assertEquals(actual, expected);

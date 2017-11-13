@@ -41,12 +41,11 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
          TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
-      environment.deploy(FilterAcceptanceTest.multiGraph(
+      final Consumer<Object> sink = environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
-      ), 15, 1);
+      ), 15, 1, 4);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = environment.randomFrontConsumer(4);
       source.forEach(sink);
 
       environment.awaitTick(15);
@@ -63,12 +62,11 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
          TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
-      environment.deploy(FilterAcceptanceTest.multiGraph(
+      final Consumer<Object> sink = environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
-      ), 2, 10);
+      ), 2, 10, 4);
 
       final List<Integer> source = new Random().ints(20000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = environment.randomFrontConsumer(4);
       source.forEach(sink);
       environment.awaitTick(40);
 
