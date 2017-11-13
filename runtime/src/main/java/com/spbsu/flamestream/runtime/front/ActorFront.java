@@ -3,17 +3,23 @@ package com.spbsu.flamestream.runtime.front;
 import akka.actor.ActorIdentity;
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
+import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.raw.RawData;
 import com.spbsu.flamestream.runtime.source.api.Accepted;
+import com.spbsu.flamestream.runtime.source.api.Heartbeat;
 import com.spbsu.flamestream.runtime.source.api.NewHole;
 import com.spbsu.flamestream.runtime.source.api.PleaseWait;
 import com.spbsu.flamestream.runtime.source.api.Replay;
 import org.jetbrains.annotations.Nullable;
 import scala.Option;
+import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.ArrayDeque;
@@ -31,11 +37,13 @@ public final class ActorFront<T> extends LoggingActor {
   private ActorRef hole = context().system().deadLetters();
 
   private final Queue<T> queue = new ArrayDeque<>();
+  private final NavigableSet<DataItem<T>> history = new ConcurrentSkipListSet<>(Comparator.comparing(DataItem::meta));
 
   @Nullable
   private DataItem<T> pending = null;
 
-  private final NavigableSet<DataItem<T>> history = new ConcurrentSkipListSet<>(Comparator.comparing(DataItem::meta));
+  @Nullable
+  private Cancellable ping;
 
   private ActorFront(int frontId, ActorPath remoteActor) {
     this.frontId = frontId;
@@ -50,6 +58,22 @@ public final class ActorFront<T> extends LoggingActor {
   public void preStart() throws Exception {
     super.preStart();
     context().actorSelection(remoteActor).tell(new ActorIdentity("hi", Option.apply(self())), self());
+
+    this.ping = context().system().scheduler().schedule(
+            Duration.Zero(),
+            FiniteDuration.apply(100, TimeUnit.MILLISECONDS),
+            self(),
+            "ping",
+            context().system().dispatcher(),
+            self()
+    );
+  }
+
+  @Override
+  public void postStop() {
+    if (ping != null) {
+      ping.cancel();
+    }
   }
 
   @Override
@@ -60,11 +84,15 @@ public final class ActorFront<T> extends LoggingActor {
             .match(Replay.class, this::onReplay)
             .match(Accepted.class, this::onAccepted)
             .match(PleaseWait.class, this::onPleaseWait)
+            .match(String.class, s -> s.equals("ping"), p -> emmitWatermark())
             .build();
   }
 
   private void onRaw(RawData<T> data) {
     data.forEach(queue::add);
+    if (pending == null) {
+      emmit();
+    }
   }
 
   private void onPleaseWait(PleaseWait pleaseWait) {
@@ -97,13 +125,16 @@ public final class ActorFront<T> extends LoggingActor {
     ).forEach(dataItem -> hole.tell(dataItem, sender()));
   }
 
+  private void emmitWatermark() {
+    hole.tell(new Heartbeat(currentMeta().globalTime()), self());
+  }
+
   private void emmit() {
-    if (pending == null) {
-      spliterator.tryAdvance(element -> {
-        pending = new PayloadDataItem<>(currentMeta(), element);
-        history.add(pending);
-        hole.tell(pending, self());
-      });
+    if (pending == null && queue.isEmpty()) {
+      final T element = queue.poll();
+      pending = new PayloadDataItem<>(currentMeta(), element);
+      history.add(pending);
+      hole.tell(pending, self());
     } else {
       hole.tell(pending, null);
     }
