@@ -50,7 +50,7 @@ public final class ActorFront<T> extends LoggingActor {
     this.remoteActor = remoteActor;
   }
 
-  public static <T> Props props(int frontId, ActorPath path) {
+  public static Props props(int frontId, ActorPath path) {
     return Props.create(ActorFront.class, frontId, path);
   }
 

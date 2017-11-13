@@ -1,7 +1,10 @@
 package com.spbsu.flamestream.runtime.front;
 
+import akka.actor.Deploy;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.serialization.Serialization;
+import akka.serialization.SerializationExtension;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.configuration.CommonSerializer;
 import com.spbsu.flamestream.runtime.configuration.FrontSerializer;
@@ -10,6 +13,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
+import java.io.NotSerializableException;
 import java.util.List;
 
 public final class FrontConcierge extends LoggingActor {
@@ -55,7 +59,8 @@ public final class FrontConcierge extends LoggingActor {
       if (!getContext().findChild(frontId).isPresent()) {
         final byte[] data = zk.getData(prefix + '/' + frontId, false, null);
         final Props frontProps = serializer.deserializeFront(data);
-        getContext().actorOf(frontProps, frontId);
+        final Props props = frontProps.withDeploy(Deploy.local());
+        getContext().actorOf(props, frontId);
       }
     }
   }

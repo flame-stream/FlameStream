@@ -12,7 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class Source extends AbstractAtomicGraph {
-  private final static int MAX_IN_FLIGHT_ITEMS = 10;
+  private static final int MAX_IN_FLIGHT_ITEMS = 10;
 
   private final OutPort outPort = new OutPort();
   private final List<GlobalTime> inFlight = new ArrayList<>(MAX_IN_FLIGHT_ITEMS);

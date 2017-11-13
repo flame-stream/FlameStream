@@ -1,6 +1,12 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.*;
+import akka.actor.ActorIdentity;
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Address;
+import akka.actor.Props;
+import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.ComposedGraph;
@@ -15,7 +21,12 @@ import com.typesafe.config.ConfigFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -95,7 +106,9 @@ public class TestEnvironment implements Environment {
       @Override
       public Receive createReceive() {
         return ReceiveBuilder.create()
-                .match(ActorIdentity.class, i -> fronts.add(sender()))
+                .match(ActorIdentity.class, i -> {
+                  fronts.add(sender());
+                })
                 /*.match(
                         RawData.class,
                         r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size())).tell(r, self())
