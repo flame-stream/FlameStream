@@ -52,10 +52,10 @@ public class TestEnvironment implements Environment {
     this.innerEnvironment = inner;
     this.windowInMillis = windowInMillis;
 
-    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + "localhost")
-            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" +))
+    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + 23456)
+            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + "localhost"))
             .withFallback(ConfigFactory.load("remote"));
-    this.system = ActorSystem.create("worker", config);
+    this.system = ActorSystem.create("environment", config);
   }
 
   public void deploy(ComposedGraph<AtomicGraph> graph, int tickLengthSeconds, int ticksCount) {
