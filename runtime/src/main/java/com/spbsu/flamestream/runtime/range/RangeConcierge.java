@@ -54,7 +54,7 @@ public final class RangeConcierge extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create().match(StartTick.class, startTick -> {
       tickRoutes = startTick.tickRoutingInfo();
-      initializedGraph = initializedAtomics(tickInfo.graph().graph().subGraphs(), tickRoutes);
+      initializedGraph = initializedAtomics(tickInfo.graph().subGraphs(), tickRoutes);
       routingTable = RangeConcierge.withFlattenedKey(initializedGraph);
 
       unstashAll();

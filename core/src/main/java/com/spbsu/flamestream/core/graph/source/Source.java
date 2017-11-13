@@ -27,6 +27,10 @@ public final class Source extends AbstractAtomicGraph {
     return Collections.singletonList(outPort);
   }
 
+  public OutPort outPort() {
+    return this.outPort;
+  }
+
   public void onMinGTimeUpdate(GlobalTime globalTime, SourceHandle handle) {
     // TODO: 10.11.2017 analyze performance
     final Iterator<GlobalTime> iterator = inFlight.iterator();

@@ -1,10 +1,6 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.ActorIdentity;
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
+import akka.actor.*;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.ComposedGraph;
@@ -18,11 +14,7 @@ import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
@@ -43,6 +35,7 @@ public class TestEnvironment implements Environment {
 
   private final Environment innerEnvironment;
   private final long windowInMillis;
+  private final Set<Integer> fronts = new HashSet<>();
 
   public TestEnvironment(Environment inner) {
     this(inner, DEFAULT_TEST_WINDOW);
@@ -58,6 +51,7 @@ public class TestEnvironment implements Environment {
     this.system = ActorSystem.create("environment", config);
   }
 
+  // TODO: 13.11.2017 accept graph instead of composed graph
   public void deploy(ComposedGraph<AtomicGraph> graph, int tickLengthSeconds, int ticksCount) {
     final Map<HashRange, Integer> workers = rangeMappingForTick();
     final long tickMills = SECONDS.toMillis(tickLengthSeconds);
@@ -72,7 +66,7 @@ public class TestEnvironment implements Environment {
               graph,
               workers.values().stream().min(Integer::compareTo).get(),
               workers,
-              windowInMillis,
+              fronts, windowInMillis,
               i == 0 ? emptySet() : singleton(i - 1L)
       );
       innerEnvironment.deploy(tickInfo);
@@ -106,6 +100,7 @@ public class TestEnvironment implements Environment {
     final ActorPath path = balancingActor.path();
 
     final List<Props> props = IntStream.range(0, n)
+            .peek(fronts::add)
             .mapToObj(id -> ActorFront.props(id, path))
             .collect(Collectors.toList());
 

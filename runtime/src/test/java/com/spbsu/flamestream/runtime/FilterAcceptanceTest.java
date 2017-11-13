@@ -7,6 +7,7 @@ import com.spbsu.flamestream.core.graph.ComposedGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.core.graph.source.Source;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public final class FilterAcceptanceTest extends FlameStreamSuite {
 
   private static ComposedGraph<AtomicGraph> multiGraph(AtomicGraph sink) {
+    final Source source = new Source();
     final StatelessMap<Integer, Integer> filter1 = new StatelessMap<>(new HumbleFiler(-1), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter2 = new StatelessMap<>(new HumbleFiler(-2), HashFunction.OBJECT_HASH);
     final StatelessMap<Integer, Integer> filter3 = new StatelessMap<>(new HumbleFiler(-3), HashFunction.OBJECT_HASH);
@@ -26,7 +28,8 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
 
     final BarrierSuite<Integer> barrier = new BarrierSuite<>(sink);
 
-    final Graph graph = filter1.fuse(filter2, filter1.outPort(), filter2.inPort())
+    final Graph graph = source.fuse(filter1, source.outPort(), filter1.inPort())
+            .fuse(filter2, filter1.outPort(), filter2.inPort())
             .fuse(filter3, filter2.outPort(), filter3.inPort())
             .fuse(filter4, filter3.outPort(), filter4.inPort())
             .fuse(barrier, filter4.outPort(), barrier.inPort());

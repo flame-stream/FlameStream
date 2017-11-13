@@ -5,20 +5,12 @@ import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.ChaincallGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
-import com.spbsu.flamestream.core.graph.ops.Broadcast;
-import com.spbsu.flamestream.core.graph.ops.Filter;
-import com.spbsu.flamestream.core.graph.ops.FlatMap;
-import com.spbsu.flamestream.core.graph.ops.Grouping;
-import com.spbsu.flamestream.core.graph.ops.Merge;
-import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.core.graph.ops.*;
+import com.spbsu.flamestream.core.graph.source.Source;
 import com.spbsu.flamestream.example.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.index.model.WordBase;
 import com.spbsu.flamestream.example.index.model.WordPagePositions;
-import com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions;
-import com.spbsu.flamestream.example.index.ops.WordIndexDiffFilter;
-import com.spbsu.flamestream.example.index.ops.WordIndexFilter;
-import com.spbsu.flamestream.example.index.ops.WordIndexToDiffOutput;
-import com.spbsu.flamestream.example.index.ops.WrongOrderingFilter;
+import com.spbsu.flamestream.example.index.ops.*;
 import com.spbsu.flamestream.example.wordcount.model.WordContainer;
 import com.spbsu.flamestream.example.wordcount.model.WordCounter;
 import com.spbsu.flamestream.example.wordcount.model.WordEntry;
@@ -70,6 +62,7 @@ public enum FlameStreamExample {
 
     @Override
     public Graph graph(Function<ToIntFunction<?>, AtomicGraph> sinkBuilder) {
+      final Source source = new Source();
       final Merge merge = new Merge(Arrays.asList(wordHash, wordHash));
       final Filter<WordBase> indexDiffFilter = new Filter<>(new WordIndexDiffFilter(), wordHash);
       final Grouping<WordBase> grouping = new Grouping<>(wordHash, wordEqualz, 2);
@@ -79,19 +72,20 @@ public enum FlameStreamExample {
       final Broadcast<WordBase> broadcast = new Broadcast<>(wordHash, 2);
       final BarrierSuite<WordBase> metaFilter = new BarrierSuite<>(sinkBuilder.apply(wordHash));
 
-      final Graph chain = new ChaincallGraph(merge.fuse(grouping, merge.outPort(), grouping.inPort())
-              .fuse(wrongOrderingFilter, grouping.outPort(), wrongOrderingFilter.inPort())
-              .fuse(indexer, wrongOrderingFilter.outPort(), indexer.inPort())
-              .fuse(broadcast, indexer.outPort(), broadcast.inPort())
-              .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
-              .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
-              .fuse(indexDiffFilter, broadcast.outPorts().get(0), indexDiffFilter.inPort())
-              .wire(indexDiffFilter.outPort(), merge.inPorts().get(1))
-              .flattened());
+      final Graph chain = new ChaincallGraph(source.fuse(source, source.outPort(), merge.inPorts().get(0))
+          .fuse(grouping, merge.outPort(), grouping.inPort())
+          .fuse(wrongOrderingFilter, grouping.outPort(), wrongOrderingFilter.inPort())
+          .fuse(indexer, wrongOrderingFilter.outPort(), indexer.inPort())
+          .fuse(broadcast, indexer.outPort(), broadcast.inPort())
+          .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
+          .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
+          .fuse(indexDiffFilter, broadcast.outPorts().get(0), indexDiffFilter.inPort())
+          .wire(indexDiffFilter.outPort(), merge.inPorts().get(1))
+          .flattened());
 
       final FlatMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlatMap<>(
-              new WikipediaPageToWordPositions(),
-              wikiPageHash
+          new WikipediaPageToWordPositions(),
+          wikiPageHash
       );
       return wikiPageToPositions.fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0));
     }
@@ -120,23 +114,25 @@ public enum FlameStreamExample {
 
     @Override
     public Graph graph(Function<ToIntFunction<?>, AtomicGraph> sinkBuilder) {
+      final Source source = new Source();
       final Merge merge = new Merge(Arrays.asList(wordHash, wordHash));
       final Grouping<WordContainer> grouping = new Grouping<>(wordHash, equalz, 2);
       final Filter<List<WordContainer>> filter = new Filter<>(new WordContainerOrderingFilter(), groupHash);
       final StatelessMap<List<WordContainer>, WordCounter> counter = new StatelessMap<>(
-              new CountWordEntries(),
-              groupHash
+          new CountWordEntries(),
+          groupHash
       );
       final Broadcast<WordCounter> broadcast = new Broadcast<>(wordHash, 2);
       final BarrierSuite<WordCounter> barrier = new BarrierSuite<>(sinkBuilder.apply(wordHash));
 
-      final Graph logicChain = new ChaincallGraph(merge.fuse(grouping, merge.outPort(), grouping.inPort())
-              .fuse(filter, grouping.outPort(), filter.inPort())
-              .fuse(counter, filter.outPort(), counter.inPort())
-              .fuse(broadcast, counter.outPort(), broadcast.inPort())
-              .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
-              .wire(broadcast.outPorts().get(1), merge.inPorts().get(1))
-              .flattened());
+      final Graph logicChain = new ChaincallGraph(source.fuse(source, source.outPort(), merge.inPorts().get(0))
+          .fuse(grouping, merge.outPort(), grouping.inPort())
+          .fuse(filter, grouping.outPort(), filter.inPort())
+          .fuse(counter, filter.outPort(), counter.inPort())
+          .fuse(broadcast, counter.outPort(), broadcast.inPort())
+          .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
+          .wire(broadcast.outPorts().get(1), merge.inPorts().get(1))
+          .flattened());
 
       final FlatMap<String, WordEntry> splitter = new FlatMap<>(new Function<String, Stream<WordEntry>>() {
         @Override

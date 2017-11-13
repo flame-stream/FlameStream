@@ -33,10 +33,7 @@ public final class AckActor extends LoggingActor {
   private AckActor(TickInfo tickInfo, ActorRef tickWatcher) {
     this.tickInfo = tickInfo;
     this.tickWatcher = tickWatcher;
-
-    tickInfo.graph()
-            .frontBindings()
-            .keySet()
+    tickInfo.fronts()
             .forEach(i -> tables.put(i, new ArrayAckTable(tickInfo.startTs(), tickInfo.stopTs(), tickInfo.window())));
   }
 

@@ -8,6 +8,7 @@ import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.core.graph.source.Source;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
@@ -31,11 +32,11 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
 
       //noinspection unchecked
       environment.deploy(GroupingAcceptanceTest.groupGraph(
-              environment.wrapInSink(HashFunction.OBJECT_HASH, di -> result.add((List<Long>) di)),
-              window,
-              groupHash,
-              equalz,
-              filterHash
+          environment.wrapInSink(HashFunction.OBJECT_HASH, di -> result.add((List<Long>) di)),
+          window,
+          groupHash,
+          equalz,
+          filterHash
       ), 10, 1);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
@@ -68,13 +69,15 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
                                                        HashFunction<? super Long> groupHash,
                                                        BiPredicate<? super Long, ? super Long> equalz,
                                                        HashFunction<? super Long> filterHash) {
+    final Source source = new Source();
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
     final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window);
 
     final BarrierSuite<Long> barrier = new BarrierSuite<>(sink);
 
-    final Graph graph = filter.fuse(grouping, filter.outPort(), grouping.inPort())
-            .fuse(barrier, grouping.outPort(), barrier.inPort());
+    final Graph graph = source.fuse(source, source.outPort(), filter.inPort())
+        .fuse(grouping, filter.outPort(), grouping.inPort())
+        .fuse(barrier, grouping.outPort(), barrier.inPort());
     return graph.flattened();
   }
 
@@ -83,14 +86,14 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
   public void noReorderingSingleHash() {
     //noinspection Convert2Lambda
     GroupingAcceptanceTest.doIt(
-            HashFunction.constantHash(100),
-            HashFunction.constantHash(100),
-            new BiPredicate<Long, Long>() {
-              @Override
-              public boolean test(Long a, Long b) {
-                return true;
-              }
-            }
+        HashFunction.constantHash(100),
+        HashFunction.constantHash(100),
+        new BiPredicate<Long, Long>() {
+          @Override
+          public boolean test(Long a, Long b) {
+            return true;
+          }
+        }
     );
   }
 
@@ -113,14 +116,14 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
   public void reorderingSingleHash() {
     //noinspection Convert2Lambda
     GroupingAcceptanceTest.doIt(
-            HashFunction.constantHash(100),
-            HashFunction.uniformLimitedHash(100),
-            new BiPredicate<Long, Long>() {
-              @Override
-              public boolean test(Long a, Long b) {
-                return true;
-              }
-            }
+        HashFunction.constantHash(100),
+        HashFunction.uniformLimitedHash(100),
+        new BiPredicate<Long, Long>() {
+          @Override
+          public boolean test(Long a, Long b) {
+            return true;
+          }
+        }
     );
   }
 

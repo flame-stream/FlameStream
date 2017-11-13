@@ -42,12 +42,12 @@ public final class WordCountRunner implements EnvironmentRunner {
     try (TestEnvironment testEnvironment = new TestEnvironment(environment, 1)) {
       //noinspection RedundantCast,unchecked
       testEnvironment.deploy(
-              testEnvironment.withFusedFronts(FlameStreamExample.WORD_COUNT.graph(hash -> testEnvironment.wrapInSink(
-                      (ToIntFunction<? super WordCounter>) hash,
-                      o -> latencyMeasurer.finish((WordCounter) o)
-              ))),
-              60,
-              1
+          FlameStreamExample.WORD_COUNT.graph(hash -> testEnvironment.wrapInSink(
+              (ToIntFunction<? super WordCounter>) hash,
+              o -> latencyMeasurer.finish((WordCounter) o)
+          )).flattened(),
+          60,
+          1
       );
 
       final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1);
@@ -68,6 +68,6 @@ public final class WordCountRunner implements EnvironmentRunner {
 
   private static Stream<String> input() {
     return Stream.generate(() -> new Random().ints(1000, 0, 1000).mapToObj(num -> "word" + num).collect(joining(" ")))
-            .limit(500);
+        .limit(500);
   }
 }

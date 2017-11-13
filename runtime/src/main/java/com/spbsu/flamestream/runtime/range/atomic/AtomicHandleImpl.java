@@ -36,7 +36,7 @@ public class AtomicHandleImpl implements AtomicHandle {
 
   @Override
   public void push(OutPort out, DataItem<?> result) {
-    final InPort destination = tickInfo.graph().graph().downstreams().get(out);
+    final InPort destination = tickInfo.graph().downstreams().get(out);
     if (destination == null) {
       throw new RoutingException("Unable to find port for " + out);
     }
