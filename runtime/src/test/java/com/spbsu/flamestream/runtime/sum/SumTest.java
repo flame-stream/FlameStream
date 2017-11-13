@@ -40,7 +40,7 @@ public final class SumTest {
 
     final BarrierSuite<Sum> barrier = new BarrierSuite<>(sink);
 
-    final Graph graph = source.fuse(source, source.outPort(), merge.inPorts().get(0)).fuse(grouping, merge.outPort(), grouping.inPort())
+    final Graph graph = source.fuse(merge, source.outPort(), merge.inPorts().get(0)).fuse(grouping, merge.outPort(), grouping.inPort())
             .fuse(enricher, grouping.outPort(), enricher.inPort())
             .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
             .fuse(reducer, junkFilter.outPort(), reducer.inPort())

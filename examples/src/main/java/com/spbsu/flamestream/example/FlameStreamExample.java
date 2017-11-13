@@ -72,22 +72,22 @@ public enum FlameStreamExample {
       final Broadcast<WordBase> broadcast = new Broadcast<>(wordHash, 2);
       final BarrierSuite<WordBase> metaFilter = new BarrierSuite<>(sinkBuilder.apply(wordHash));
 
-      final Graph chain = new ChaincallGraph(source.fuse(source, source.outPort(), merge.inPorts().get(0))
-          .fuse(grouping, merge.outPort(), grouping.inPort())
-          .fuse(wrongOrderingFilter, grouping.outPort(), wrongOrderingFilter.inPort())
-          .fuse(indexer, wrongOrderingFilter.outPort(), indexer.inPort())
-          .fuse(broadcast, indexer.outPort(), broadcast.inPort())
-          .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
-          .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
-          .fuse(indexDiffFilter, broadcast.outPorts().get(0), indexDiffFilter.inPort())
-          .wire(indexDiffFilter.outPort(), merge.inPorts().get(1))
-          .flattened());
+      final Graph chain = new ChaincallGraph(merge.fuse(grouping, merge.outPort(), grouping.inPort())
+              .fuse(wrongOrderingFilter, grouping.outPort(), wrongOrderingFilter.inPort())
+              .fuse(indexer, wrongOrderingFilter.outPort(), indexer.inPort())
+              .fuse(broadcast, indexer.outPort(), broadcast.inPort())
+              .fuse(indexFilter, broadcast.outPorts().get(1), indexFilter.inPort())
+              .fuse(metaFilter, indexFilter.outPort(), metaFilter.inPort())
+              .fuse(indexDiffFilter, broadcast.outPorts().get(0), indexDiffFilter.inPort())
+              .wire(indexDiffFilter.outPort(), merge.inPorts().get(1))
+              .flattened());
 
       final FlatMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlatMap<>(
-          new WikipediaPageToWordPositions(),
-          wikiPageHash
+              new WikipediaPageToWordPositions(),
+              wikiPageHash
       );
-      return wikiPageToPositions.fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0));
+      return source.fuse(wikiPageToPositions, source.outPort(), wikiPageToPositions.inPort())
+              .fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0));
     }
   },
   WORD_COUNT {
@@ -119,20 +119,19 @@ public enum FlameStreamExample {
       final Grouping<WordContainer> grouping = new Grouping<>(wordHash, equalz, 2);
       final Filter<List<WordContainer>> filter = new Filter<>(new WordContainerOrderingFilter(), groupHash);
       final StatelessMap<List<WordContainer>, WordCounter> counter = new StatelessMap<>(
-          new CountWordEntries(),
-          groupHash
+              new CountWordEntries(),
+              groupHash
       );
       final Broadcast<WordCounter> broadcast = new Broadcast<>(wordHash, 2);
       final BarrierSuite<WordCounter> barrier = new BarrierSuite<>(sinkBuilder.apply(wordHash));
 
-      final Graph logicChain = new ChaincallGraph(source.fuse(source, source.outPort(), merge.inPorts().get(0))
-          .fuse(grouping, merge.outPort(), grouping.inPort())
-          .fuse(filter, grouping.outPort(), filter.inPort())
-          .fuse(counter, filter.outPort(), counter.inPort())
-          .fuse(broadcast, counter.outPort(), broadcast.inPort())
-          .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
-          .wire(broadcast.outPorts().get(1), merge.inPorts().get(1))
-          .flattened());
+      final Graph logicChain = new ChaincallGraph(merge.fuse(grouping, merge.outPort(), grouping.inPort())
+              .fuse(filter, grouping.outPort(), filter.inPort())
+              .fuse(counter, filter.outPort(), counter.inPort())
+              .fuse(broadcast, counter.outPort(), broadcast.inPort())
+              .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
+              .wire(broadcast.outPorts().get(1), merge.inPorts().get(1))
+              .flattened());
 
       final FlatMap<String, WordEntry> splitter = new FlatMap<>(new Function<String, Stream<WordEntry>>() {
         @Override
@@ -140,7 +139,8 @@ public enum FlameStreamExample {
           return Arrays.stream(PATTERN.split(s)).map(WordEntry::new);
         }
       }, HashFunction.OBJECT_HASH);
-      return splitter.fuse(logicChain, splitter.outPort(), merge.inPorts().get(0));
+      return source.fuse(splitter, source.outPort(), splitter.inPort())
+              .fuse(logicChain, splitter.outPort(), merge.inPorts().get(0));
     }
   };
 

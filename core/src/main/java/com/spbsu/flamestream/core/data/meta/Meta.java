@@ -7,7 +7,7 @@ public interface Meta extends Comparable<Meta> {
     return new MetaImpl(time);
   }
 
-  GlobalTime globalTime();
+   GlobalTime globalTime();
 
   Trace trace();
 

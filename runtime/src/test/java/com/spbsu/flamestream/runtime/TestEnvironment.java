@@ -8,14 +8,18 @@ import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.front.ActorFront;
 import com.spbsu.flamestream.runtime.range.HashRange;
+import com.spbsu.flamestream.runtime.raw.RawData;
 import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -62,7 +66,7 @@ public class TestEnvironment implements Environment {
     final Consumer<Object> consumer;
     { //create consumer
       final ActorRef balancingActor = system.actorOf(Props.create(BalancingActor.class), "balancing-actor");
-      final Address address = Address.apply("akka.tcp", "worker", actorSysAddress.host(), actorSysAddress.port());
+      final Address address = Address.apply("akka.tcp", "environment", actorSysAddress.host(), actorSysAddress.port());
       final ActorPath path = RootActorPath.apply(address, "/").child("user").child("balancing-actor");
       final List<Props> props = IntStream.range(0, frontsCount)
               .mapToObj(id -> ActorFront.props(id, path))
@@ -133,6 +137,7 @@ public class TestEnvironment implements Environment {
   public void close() {
     try {
       innerEnvironment.close();
+      Await.ready(system.terminate(), Duration.Inf());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -167,12 +172,10 @@ public class TestEnvironment implements Environment {
               .match(ActorIdentity.class, i -> {
                 fronts.add(sender());
               })
-                  /*.match(
-                          RawData.class,
-                          r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size())).tell(r, self())
-                  )*/
-              .matchAny(o -> {
-              })
+              .match(
+                      RawData.class,
+                      r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size())).tell(r, self())
+              )
               .build();
     }
   }

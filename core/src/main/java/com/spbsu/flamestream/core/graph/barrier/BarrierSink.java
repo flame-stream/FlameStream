@@ -10,7 +10,6 @@ import com.spbsu.flamestream.core.graph.barrier.collector.LinearCollector;
 import java.util.List;
 
 import static java.lang.String.format;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
 final class BarrierSink extends AbstractAtomicGraph {

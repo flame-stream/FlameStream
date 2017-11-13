@@ -74,7 +74,7 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
 
     final BarrierSuite<Long> barrier = new BarrierSuite<>(sink);
 
-    final Graph graph = source.fuse(source, source.outPort(), filter.inPort())
+    final Graph graph = source.fuse(filter, source.outPort(), filter.inPort())
             .fuse(grouping, filter.outPort(), grouping.inPort())
             .fuse(barrier, grouping.outPort(), barrier.inPort());
     return graph.flattened();

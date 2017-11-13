@@ -8,7 +8,6 @@ import com.spbsu.flamestream.core.graph.OutPort;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 public final class Source extends AbstractAtomicGraph {
@@ -33,25 +32,29 @@ public final class Source extends AbstractAtomicGraph {
 
   public void onMinGTimeUpdate(GlobalTime globalTime, SourceHandle handle) {
     // TODO: 10.11.2017 analyze performance
-    final Iterator<GlobalTime> iterator = inFlight.iterator();
+    /*final Iterator<GlobalTime> iterator = inFlight.iterator();
     while (iterator.hasNext()) {
       final GlobalTime next = iterator.next();
       if (next.compareTo(globalTime) < 0) {
         handle.accept(next);
         iterator.remove();
       }
-    }
+    }*/
   }
 
   public void onNext(DataItem<?> item, SourceHandle handle) {
     handle.push(outPort, item);
+    handle.ack(item.ack(), item.meta().globalTime());
+
     final GlobalTime time = item.meta().globalTime();
-    inFlight.add(time);
+    handle.accept(time);
+
+    /*inFlight.add(time);
     if (inFlight.size() < MAX_IN_FLIGHT_ITEMS) {
       handle.accept(time);
     } else if (inFlight.size() > MAX_IN_FLIGHT_ITEMS) {
       throw new IllegalStateException("Limit of in flight items is exceeded");
-    }
+    }*/
   }
 
   public void onHeartbeat(GlobalTime globalTime, SourceHandle handle) {

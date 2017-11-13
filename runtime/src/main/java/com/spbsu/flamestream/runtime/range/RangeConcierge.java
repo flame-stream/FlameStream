@@ -73,7 +73,7 @@ public final class RangeConcierge extends LoggingActor {
   }
 
   private void broadcast(Object message) {
-    routingTable.values().forEach(atomic -> atomic.tell(message, sender()));
+    initializedGraph.values().forEach(atomic -> atomic.tell(message, sender()));
   }
 
   private void routeToPort(AddressedItem atomicMessage) {

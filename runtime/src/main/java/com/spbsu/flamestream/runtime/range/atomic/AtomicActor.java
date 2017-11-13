@@ -37,7 +37,7 @@ public class AtomicActor extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(AddressedItem.class, this::onAtomicMessage)
-            .match(MinTimeUpdate.class, this::onMinTimeUpdate)
+            .match(MinTimeUpdate.class, minTimeUpdate -> onMinTimeUpdate(minTimeUpdate))
             .match(Commit.class, commit -> onCommit())
             .build();
   }
