@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.front.FrontActor;
 import com.spbsu.flamestream.runtime.front.FrontConcierge;
 import com.spbsu.flamestream.runtime.tick.TickCommitDone;
 import com.spbsu.flamestream.runtime.tick.TickConcierge;
