@@ -130,12 +130,12 @@ public final class ActorFront<T> extends LoggingActor {
   }
 
   private void emmit() {
-    if (pending == null && queue.isEmpty()) {
+    if (pending == null && !queue.isEmpty()) {
       final T element = queue.poll();
       pending = new PayloadDataItem<>(currentMeta(), element);
       history.add(pending);
       hole.tell(pending, self());
-    } else {
+    } else if (pending != null) {
       hole.tell(pending, null);
     }
   }
