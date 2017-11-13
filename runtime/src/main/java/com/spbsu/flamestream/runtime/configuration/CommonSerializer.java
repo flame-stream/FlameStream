@@ -8,6 +8,7 @@ import com.spbsu.flamestream.runtime.tick.TickInfo;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import scala.collection.JavaConversions;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class CommonSerializer implements TickInfoSerializer, FrontSerializer {
@@ -51,7 +52,7 @@ public final class CommonSerializer implements TickInfoSerializer, FrontSerializ
 
     public DumbProps(Props props) {
       aClass = props.actorClass();
-      args = JavaConversions.seqAsJavaList(props.args());
+      args = new ArrayList<>(JavaConversions.seqAsJavaList(props.args()));
     }
 
     public Props asProps() {
