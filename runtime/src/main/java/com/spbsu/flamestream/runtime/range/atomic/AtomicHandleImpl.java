@@ -18,15 +18,15 @@ import com.spbsu.flamestream.runtime.tick.TickRoutes;
 
 import java.util.function.ToIntFunction;
 
-public final class AtomicHandleImpl implements AtomicHandle {
-  private final TickInfo tickInfo;
-  private final ActorContext context;
-  private final LoggingAdapter log;
-  private final TickRoutes tickRoutes;
+public class AtomicHandleImpl implements AtomicHandle {
+  protected final ActorContext context;
+  protected final TickRoutes tickRoutes;
 
+  private final LoggingAdapter log;
+  private final TickInfo tickInfo;
   private final HashMapping<ActorRef> hashMapping;
 
-  AtomicHandleImpl(TickInfo tickInfo, TickRoutes tickRoutes, ActorContext context) {
+  public AtomicHandleImpl(TickInfo tickInfo, TickRoutes tickRoutes, ActorContext context) {
     this.tickInfo = tickInfo;
     this.tickRoutes = tickRoutes;
     this.context = context;

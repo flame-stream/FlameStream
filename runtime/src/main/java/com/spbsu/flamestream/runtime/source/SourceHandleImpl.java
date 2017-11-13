@@ -2,13 +2,12 @@ package com.spbsu.flamestream.runtime.source;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
-import com.spbsu.flamestream.core.TickInfo;
-import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.source.SourceHandle;
 import com.spbsu.flamestream.runtime.range.atomic.AtomicHandleImpl;
 import com.spbsu.flamestream.runtime.source.api.Accepted;
 import com.spbsu.flamestream.runtime.source.api.Heartbeat;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
 
 import java.util.HashMap;
@@ -31,8 +30,8 @@ public class SourceHandleImpl extends AtomicHandleImpl implements SourceHandle {
   }
 
   @Override
-  public void accept(DataItem<?> dataItem) {
-    frontRefs.get(dataItem.meta().globalTime().front()).tell(new Accepted(dataItem), context.self());
+  public void accept(GlobalTime globalTime) {
+    frontRefs.get(globalTime.front()).tell(new Accepted(globalTime), context.self());
   }
 
   void putRef(int frontId, ActorRef frontRef) {

@@ -1,19 +1,19 @@
 package com.spbsu.flamestream.runtime.source.api;
 
-import com.spbsu.flamestream.core.data.DataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
 /**
  * User: Artem
  * Date: 10.11.2017
  */
 public class Accepted {
-  private final DataItem dataItem;
+  private final GlobalTime globalTime;
 
-  public Accepted(DataItem dataItem) {
-    this.dataItem = dataItem;
+  public Accepted(GlobalTime globalTime) {
+    this.globalTime = globalTime;
   }
 
-  public DataItem dataItem() {
-    return this.dataItem;
+  public GlobalTime globalTime() {
+    return this.globalTime;
   }
 }

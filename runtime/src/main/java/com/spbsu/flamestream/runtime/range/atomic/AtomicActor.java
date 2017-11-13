@@ -13,12 +13,12 @@ import com.spbsu.flamestream.runtime.range.AtomicCommitDone;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
 
-public final class AtomicActor extends LoggingActor {
+public class AtomicActor extends LoggingActor {
   private final AtomicActorStatistics stat = new AtomicActorStatistics();
   private final AtomicGraph atomic;
   private final AtomicHandle handle;
 
-  private AtomicActor(AtomicGraph atomic, TickInfo tickInfo, TickRoutes tickRoutes) {
+  protected AtomicActor(AtomicGraph atomic, TickInfo tickInfo, TickRoutes tickRoutes) {
     this.atomic = atomic;
     this.handle = new AtomicHandleImpl(tickInfo, tickRoutes, context());
   }
@@ -67,7 +67,7 @@ public final class AtomicActor extends LoggingActor {
     stat.recordOnAtomicMessage(stop - start);
   }
 
-  private void onMinTimeUpdate(MinTimeUpdate message) {
+  protected void onMinTimeUpdate(MinTimeUpdate message) {
     final long start = System.nanoTime();
 
     atomic.onMinGTimeUpdate(message.minTime(), handle);

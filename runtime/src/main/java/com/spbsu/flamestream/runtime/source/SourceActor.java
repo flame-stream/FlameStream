@@ -2,7 +2,6 @@ package com.spbsu.flamestream.runtime.source;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.TickInfo;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.source.Source;
 import com.spbsu.flamestream.runtime.ack.messages.MinTimeUpdate;
@@ -10,6 +9,7 @@ import com.spbsu.flamestream.runtime.range.atomic.AtomicActor;
 import com.spbsu.flamestream.runtime.source.api.Heartbeat;
 import com.spbsu.flamestream.runtime.source.api.NewHole;
 import com.spbsu.flamestream.runtime.source.api.PleaseWait;
+import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
 
 /**
