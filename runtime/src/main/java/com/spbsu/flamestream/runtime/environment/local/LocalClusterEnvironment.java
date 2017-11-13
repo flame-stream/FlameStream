@@ -126,6 +126,33 @@ public final class LocalClusterEnvironment implements Environment {
             ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT
     );
+
+    zooKeeper.create(
+            "/workers",
+            new byte[0],
+            ZKUtil.parseACLs("world:anyone:crdwa"),
+            CreateMode.PERSISTENT
+    );
+
+    dns.keySet().forEach(
+            Unchecked.consumer(
+                    id -> {
+                      zooKeeper.create(
+                              "/workers/" + id,
+                              new byte[0],
+                              ZKUtil.parseACLs("world:anyone:crdwa"),
+                              CreateMode.PERSISTENT
+                      );
+
+                      zooKeeper.create(
+                              "/workers/" + id + "/fronts",
+                              new byte[0],
+                              ZKUtil.parseACLs("world:anyone:crdwa"),
+                              CreateMode.PERSISTENT
+                      );
+                    }
+            )
+    );
   }
 
   private void pushFronts(Set<Integer> fronts) throws KeeperException, InterruptedException, JsonProcessingException {
