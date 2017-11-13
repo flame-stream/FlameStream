@@ -42,25 +42,25 @@ public class SourceActor extends AtomicActor {
   @Override
   public Receive createReceive() {
     //noinspection unchecked
-    return ReceiveBuilder.create()
-            .match(DataItem.class, dataItem -> {
-              final long time = dataItem.meta().globalTime().time();
-              if (time < tickInfo.startTs()) {
-                throw new IllegalStateException("DataItems ts cannot be less than tick start");
-              } else if (time >= tickInfo.stopTs()) {
-                sender().tell(new PleaseWait(42), self()); // TODO: 10.11.2017 think about magic number
-              }
-              sourceHandle.putRef(dataItem.meta().globalTime().front(), sender());
-              source.onNext(dataItem, sourceHandle);
-            })
-            .match(Heartbeat.class, heartbeat -> {
-              final long time = heartbeat.time().time();
-              if (time >= tickInfo.startTs() && time < tickInfo.stopTs()) {
-                source.onHeartbeat(heartbeat.time(), sourceHandle);
-              }
-            })
-            .matchAny(super.createReceive())
-            .build();
+    return super.createReceive().orElse(
+            ReceiveBuilder.create()
+                    .match(DataItem.class, dataItem -> {
+                      final long time = dataItem.meta().globalTime().time();
+                      if (time < tickInfo.startTs()) {
+                        throw new IllegalStateException("DataItems ts cannot be less than tick start");
+                      } else if (time >= tickInfo.stopTs()) {
+                        sender().tell(new PleaseWait(42), self()); // TODO: 10.11.2017 think about magic number
+                      }
+                      sourceHandle.putRef(dataItem.meta().globalTime().front(), sender());
+                      source.onNext(dataItem, sourceHandle);
+                    })
+                    .match(Heartbeat.class, heartbeat -> {
+                      final long time = heartbeat.time().time();
+                      if (time >= tickInfo.startTs() && time < tickInfo.stopTs()) {
+                        source.onHeartbeat(heartbeat.time(), sourceHandle);
+                      }
+                    })
+                    .build()
     );
   }
 
