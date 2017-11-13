@@ -13,11 +13,7 @@ public interface Environment extends AutoCloseable {
 
   void deployFront(int nodeId, int frontId, Props frontProps);
 
-  Set<Integer> availableFronts();
-
   Set<Integer> availableWorkers();
 
   <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer);
-
-  Consumer<Object> frontConsumer(int frontId);
 }

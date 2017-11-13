@@ -1,19 +1,14 @@
 package com.spbsu.flamestream.runtime.environment.local;
 
-import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.Address;
 import akka.actor.Props;
-import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.ack.messages.CommitTick;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.CollectingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
-import com.spbsu.flamestream.runtime.front.FrontActor;
-import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickCommitDone;
 import com.spbsu.flamestream.runtime.tick.TickConcierge;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
@@ -41,14 +36,11 @@ public final class LocalEnvironment implements Environment {
   private final ActorRef fakeWatcher;
   private final ActorSystem localSystem;
 
-  private final ActorRef front;
+  private ActorRef front;
 
   public LocalEnvironment() {
     this.localSystem = ActorSystem.create(SYSTEM_NAME, ConfigFactory.load("local"));
     this.fakeWatcher = localSystem.actorOf(FakeTickWatcher.props(tickConcierges), "fake-watcher");
-
-    final ActorPath myPath = RootActorPath.apply(Address.apply("akka", SYSTEM_NAME), "/").child("user");
-    this.front = localSystem.actorOf(FrontActor.props(singletonMap(1, myPath), 1), "front");
   }
 
   @Override
@@ -68,9 +60,18 @@ public final class LocalEnvironment implements Environment {
   }
 
   @Override
+  public void deployFront(int nodeId, int frontId, Props frontProps) {
+    if (front == null) {
+      front = localSystem.actorOf(frontProps, "front");
+    } else {
+      throw new IllegalStateException("There cannot be more than one front in local env");
+    }
+  }
+
+  /*@Override
   public Set<Integer> availableFronts() {
     return singleton(1);
-  }
+  }*/
 
   @Override
   public Set<Integer> availableWorkers() {
@@ -82,14 +83,14 @@ public final class LocalEnvironment implements Environment {
     return new LocalActorSink<>(hash, localSystem.actorOf(CollectingActor.props(mySuperConsumer), "collector"));
   }
 
-  @Override
+  /*@Override
   public Consumer<Object> frontConsumer(int frontId) {
     if (frontId == 1) {
       return object -> front.tell(new SingleRawData<>(object), ActorRef.noSender());
     } else {
       throw new IllegalArgumentException("oops");
     }
-  }
+  }*/
 
   @Override
   public void close() {
