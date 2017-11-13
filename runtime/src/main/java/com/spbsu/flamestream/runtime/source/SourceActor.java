@@ -34,7 +34,7 @@ public class SourceActor extends AtomicActor {
 
   @Override
   public void preStart() throws Exception {
-    context().actorSelection("/user/fronts/*").tell(new NewHole(self(), tickInfo.startTs()), self());
+    context().actorSelection("/user/watcher/concierge/fronts/*").tell(new NewHole(self(), tickInfo.startTs()), self());
     super.preStart();
   }
 

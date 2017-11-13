@@ -8,14 +8,14 @@ import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.front.ActorFront;
 import com.spbsu.flamestream.runtime.range.HashRange;
-import com.spbsu.flamestream.runtime.raw.RawData;
 import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -31,8 +31,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class TestEnvironment implements Environment {
   private static final long DEFAULT_TEST_WINDOW = 10;
-  private final ActorSystem system;
 
+  private final DumbInetSocketAddress actorSysAddress;
+  private final ActorSystem system;
   private final Environment innerEnvironment;
   private final long windowInMillis;
   private final Set<Integer> fronts = new HashSet<>();
@@ -45,8 +46,14 @@ public class TestEnvironment implements Environment {
     this.innerEnvironment = inner;
     this.windowInMillis = windowInMillis;
 
-    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + 23456)
-            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + "localhost"))
+    try {
+      actorSysAddress = new DumbInetSocketAddress(InetAddress.getLocalHost().getHostName(), 23456);
+    } catch (UnknownHostException e) {
+      throw new RuntimeException(e);
+    }
+
+    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + actorSysAddress.port())
+            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + actorSysAddress.host()))
             .withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("environment", config);
   }
@@ -82,22 +89,25 @@ public class TestEnvironment implements Environment {
   }
 
   public Consumer<Object> randomFrontConsumer(int n) {
-    final ActorRef balancingActor = system.actorOf(Props.create(() -> new LoggingActor() {
+    final ActorRef balancingActor = system.actorOf(Props.create(LoggingActor.class, () -> new LoggingActor() {
       private final List<ActorRef> fronts = new ArrayList<>();
 
       @Override
       public Receive createReceive() {
         return ReceiveBuilder.create()
                 .match(ActorIdentity.class, i -> fronts.add(sender()))
-                .match(
+                /*.match(
                         RawData.class,
                         r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size())).tell(r, self())
-                )
+                )*/
+                .matchAny(o -> {
+                })
                 .build();
       }
-    }));
+    }), "balancing-actor");
 
-    final ActorPath path = balancingActor.path();
+    final Address address = Address.apply("akka.tcp", "worker", actorSysAddress.host(), actorSysAddress.port());
+    final ActorPath path = RootActorPath.apply(address, "/").child("user").child("balancing-actor");
 
     final List<Props> props = IntStream.range(0, n)
             .peek(fronts::add)
