@@ -8,6 +8,7 @@ import com.spbsu.flamestream.runtime.ack.impl.ArrayAckTable;
 import com.spbsu.flamestream.runtime.ack.messages.*;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.HashRange;
+import com.spbsu.flamestream.runtime.source.api.Heartbeat;
 import com.spbsu.flamestream.runtime.tick.StartTick;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
@@ -54,7 +55,14 @@ public final class AckActor extends LoggingActor {
   private Receive acking() {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
+            .match(Heartbeat.class, this::handleHeartBeat)
             .build();
+  }
+
+  private void handleHeartBeat(Heartbeat heartbeat) {
+    final GlobalTime time = heartbeat.time();
+    tables.get(time.front()).report(time.time());
+    checkMinTime();
   }
 
   @Override
@@ -69,16 +77,9 @@ public final class AckActor extends LoggingActor {
     final AckTable ackTable = tables.get(globalTime.front());
     final long time = globalTime.time();
 
-    final boolean report = ack.isReport();
-    if (report) {
-      log().debug("Front report received: {}", ack);
-      ackTable.report(time);
-    }
-
     final long start = System.nanoTime();
     //assertMonotonicAck(ack.time());
-    final boolean nullified = ackTable.ack(time, ack.xor());
-    if (nullified || report) {
+    if (ackTable.ack(time, ack.xor())) {
       checkMinTime();
       stat.recordReleasingAck(System.nanoTime() - start);
     } else {
