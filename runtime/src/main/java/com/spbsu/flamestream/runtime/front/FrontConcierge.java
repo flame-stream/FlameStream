@@ -19,7 +19,7 @@ public final class FrontConcierge extends LoggingActor {
   private final String prefix;
 
   private FrontConcierge(int nodeId, ZooKeeper zk) {
-    this.prefix = "/workers/" + nodeId;
+    this.prefix = "/workers/" + nodeId + "/fronts";
     this.zk = zk;
   }
 
@@ -51,7 +51,6 @@ public final class FrontConcierge extends LoggingActor {
 
   private void fetchFront() throws KeeperException, InterruptedException {
     final List<String> fronts = zk.getChildren(prefix, selfWatcher());
-
     for (String frontId : fronts) {
       if (!getContext().findChild(frontId).isPresent()) {
         final byte[] data = zk.getData(prefix + '/' + frontId, false, null);

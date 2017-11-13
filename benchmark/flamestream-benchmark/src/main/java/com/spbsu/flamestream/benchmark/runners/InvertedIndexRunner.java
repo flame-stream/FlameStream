@@ -53,7 +53,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
       final int[] pagesCount = {0};
       final int sleepTimeInMs = config.hasPath("rate") ? config.getInt("rate") : 100;
 
-      final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1); // FIXME: 13.11.2017 
+      final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1); // FIXME: 13.11.2017
       source.forEach(wikipediaPage -> {
         sink.accept(wikipediaPage);
         pagesCount[0]++;
