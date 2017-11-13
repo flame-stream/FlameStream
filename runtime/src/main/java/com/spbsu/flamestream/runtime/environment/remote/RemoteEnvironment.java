@@ -1,12 +1,6 @@
 package com.spbsu.flamestream.runtime.environment.remote;
 
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
-import akka.actor.ActorSystem;
-import akka.actor.Address;
-import akka.actor.Props;
-import akka.actor.RootActorPath;
+import akka.actor.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
@@ -16,7 +10,6 @@ import com.spbsu.flamestream.runtime.configuration.FrontSerializer;
 import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
 import com.spbsu.flamestream.runtime.environment.CollectingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
-import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -87,22 +80,12 @@ public final class RemoteEnvironment implements Environment {
   public void deployFront(int nodeId, int frontId, Props frontProps) {
     try {
       zooKeeper.create(
-              "/workers/" + nodeId + "/" + frontId,
+              "/workers/" + nodeId + "/fronts/" + frontId,
               frontSerializer.serialize(frontProps),
               ZKUtil.parseACLs("world:anyone:crdwa"),
               CreateMode.PERSISTENT
       );
     } catch (KeeperException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public Set<Integer> availableFronts() {
-    try {
-      final byte[] data = zooKeeper.getData("/fronts", false, new Stat());
-      return mapper.readValue(data, new TypeReference<Set<Integer>>() {});
-    } catch (IOException | KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
@@ -121,32 +104,14 @@ public final class RemoteEnvironment implements Environment {
 
   private ActorPath wrapperPath(String suffix) {
     final Address address = new Address("akka.tcp", SYSTEM_NAME, environmentAddress.getHostName(), SYSTEM_PORT);
-
     return RootActorPath.apply(address, "/").child("user").child(suffix);
-  }
-
-  @Override
-  public Consumer<Object> frontConsumer(int frontId) {
-    final DumbInetSocketAddress front = dns().get(frontId);
-    if (front == null) {
-      throw new IllegalArgumentException("There is no front with id " + frontId);
-    }
-
-    final ActorSelection frontSelection = localSystem.actorSelection(frontPath(front));
-
-    return object -> frontSelection.tell(new SingleRawData<>(object), ActorRef.noSender());
-  }
-
-  private ActorPath frontPath(DumbInetSocketAddress frontAddress) {
-    final Address address = new Address("akka.tcp", "worker", frontAddress.host(), frontAddress.port());
-
-    return RootActorPath.apply(address, "/").child("user").child("watcher").child("concierge").child("front");
   }
 
   private Map<Integer, DumbInetSocketAddress> dns() {
     try {
       final byte[] data = zooKeeper.getData("/dns", false, new Stat());
-      return mapper.readValue(data, new TypeReference<Map<Integer, DumbInetSocketAddress>>() {});
+      return mapper.readValue(data, new TypeReference<Map<Integer, DumbInetSocketAddress>>() {
+      });
     } catch (IOException | InterruptedException | KeeperException e) {
       throw new RuntimeException(e);
     }

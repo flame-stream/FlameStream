@@ -1,17 +1,15 @@
 package com.spbsu.flamestream.runtime;
 
+import akka.actor.Props;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.ComposedGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
@@ -30,6 +28,7 @@ public class TestEnvironment implements Environment {
 
   private final Environment innerEnvironment;
   private final long windowInMillis;
+  private final Map<Integer, Consumer<Object>> consumers = new HashMap<>();
 
   public TestEnvironment(Environment inner) {
     this(inner, DEFAULT_TEST_WINDOW);
@@ -40,23 +39,18 @@ public class TestEnvironment implements Environment {
     this.windowInMillis = windowInMillis;
   }
 
-  public TheGraph withFusedFronts(Graph graph) {
-    final Map<Integer, InPort> frontBindings = availableFronts().stream()
-            .collect(Collectors.toMap(Function.identity(), e -> graph.inPorts().get(0)));
-    return new TheGraph(graph, frontBindings);
-  }
-
-  public void deploy(TheGraph theGraph, int tickLengthSeconds, int ticksCount) {
+  public void deploy(ComposedGraph<AtomicGraph> graph, int tickLengthSeconds, int ticksCount) {
     final Map<HashRange, Integer> workers = rangeMappingForTick();
     final long tickMills = SECONDS.toMillis(tickLengthSeconds);
 
     long startTs = System.currentTimeMillis();
     for (int i = 0; i < ticksCount; ++i, startTs += tickMills) {
+      //noinspection ConstantConditions
       final TickInfo tickInfo = new TickInfo(
               i,
               startTs,
               startTs + tickMills,
-              theGraph,
+              graph,
               workers.values().stream().min(Integer::compareTo).get(),
               workers,
               windowInMillis,
@@ -73,6 +67,11 @@ public class TestEnvironment implements Environment {
       throw new RuntimeException(e);
     }
 
+  }
+
+  public Consumer<Object> roundRobinFronts(int n) {
+    final Map< = createFronts(n);
+    return new Co
   }
 
   public Consumer<Object> randomFrontConsumer(int maxFrontsCount) {
@@ -127,8 +126,8 @@ public class TestEnvironment implements Environment {
   }
 
   @Override
-  public Set<Integer> availableFronts() {
-    return innerEnvironment.availableFronts();
+  public void deployFront(int nodeId, int frontId, Props frontProps) {
+    innerEnvironment.deployFront(nodeId, frontId, frontProps);
   }
 
   @Override
@@ -141,8 +140,7 @@ public class TestEnvironment implements Environment {
     return innerEnvironment.wrapInSink(hash, mySuperConsumer);
   }
 
-  @Override
   public Consumer<Object> frontConsumer(int frontId) {
-    return innerEnvironment.frontConsumer(frontId);
+
   }
 }

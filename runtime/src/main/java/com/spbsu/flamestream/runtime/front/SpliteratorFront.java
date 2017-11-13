@@ -39,8 +39,8 @@ public final class SpliteratorFront<T> extends LoggingActor {
     this.spliterator = spliterator;
   }
 
-  public static <T> Props props(int frontId, Stream<T> stream) {
-    return Props.create(Stream.class, frontId, stream);
+  public static <T> Props props(int frontId, Spliterator<T> spliterator) {
+    return Props.create(Stream.class, frontId, spliterator);
   }
 
   @Override
