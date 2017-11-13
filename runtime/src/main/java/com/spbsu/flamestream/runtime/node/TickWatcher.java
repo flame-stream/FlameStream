@@ -5,7 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.ack.messages.CommitTick;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.configuration.KryoInfoSerializer;
+import com.spbsu.flamestream.runtime.configuration.CommonSerializer;
 import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
 import com.spbsu.flamestream.runtime.tick.TickCommitDone;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class TickWatcher extends LoggingActor {
-  private final TickInfoSerializer serializer = new KryoInfoSerializer();
+  private final TickInfoSerializer serializer = new CommonSerializer();
   private final ZooKeeper zooKeeper;
   private final ActorRef subscriber;
 
@@ -81,7 +81,7 @@ public final class TickWatcher extends LoggingActor {
         if (committed) {
           subscriber.tell(new TickCommitDone(Long.parseLong(tick)), self());
         } else {
-          final TickInfo tickInfo = serializer.deserialize(data);
+          final TickInfo tickInfo = serializer.deserializeTick(data);
           seenTicks.put(Long.parseLong(tick), tickInfo);
           subscriber.tell(tickInfo, sender());
         }

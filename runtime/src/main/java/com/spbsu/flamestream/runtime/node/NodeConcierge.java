@@ -36,8 +36,6 @@ public final class NodeConcierge extends LoggingActor {
   @Nullable
   private Map<Integer, ActorPath> nodeConierges = null;
 
-  private ActorRef front = null;
-
   @Nullable
   private ActorRef tickWatcher = null;
 
@@ -57,10 +55,6 @@ public final class NodeConcierge extends LoggingActor {
 
     final Set<Integer> fronts = fetchFronts();
     log().info("Fronts fetched: {}", fronts);
-
-    if (fronts.contains(id)) {
-      this.front = context().actorOf(FrontActor.props(nodeConierges, id), "front");
-    }
 
     tickWatcher = context().actorOf(TickWatcher.props(zooKeeper, self()), "tickWatcher");
     super.preStart();

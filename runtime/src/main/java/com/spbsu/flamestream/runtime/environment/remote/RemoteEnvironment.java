@@ -5,12 +5,14 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Address;
+import akka.actor.Props;
 import akka.actor.RootActorPath;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
-import com.spbsu.flamestream.runtime.configuration.KryoInfoSerializer;
+import com.spbsu.flamestream.runtime.configuration.CommonSerializer;
+import com.spbsu.flamestream.runtime.configuration.FrontSerializer;
 import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
 import com.spbsu.flamestream.runtime.environment.CollectingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
@@ -46,7 +48,8 @@ public final class RemoteEnvironment implements Environment {
 
   private final ObjectMapper mapper = new ObjectMapper();
 
-  private final TickInfoSerializer serializer = new KryoInfoSerializer();
+  private final TickInfoSerializer tickInfoSerializer = new CommonSerializer();
+  private final FrontSerializer frontSerializer = new CommonSerializer();
   private final ZooKeeper zooKeeper;
   private final ActorSystem localSystem;
 
@@ -71,7 +74,21 @@ public final class RemoteEnvironment implements Environment {
     try {
       zooKeeper.create(
               "/ticks/" + tickInfo.id(),
-              serializer.serialize(tickInfo),
+              tickInfoSerializer.serialize(tickInfo),
+              ZKUtil.parseACLs("world:anyone:crdwa"),
+              CreateMode.PERSISTENT
+      );
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void deployFront(int nodeId, int frontId, Props frontProps) {
+    try {
+      zooKeeper.create(
+              "/workers/" + nodeId + "/" + frontId,
+              frontSerializer.serialize(frontProps),
               ZKUtil.parseACLs("world:anyone:crdwa"),
               CreateMode.PERSISTENT
       );
