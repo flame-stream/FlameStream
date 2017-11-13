@@ -61,7 +61,6 @@ public class SourceActor extends AtomicActor {
             })
             .matchAny(super.createReceive())
             .build();
-    );
   }
 
   @Override
