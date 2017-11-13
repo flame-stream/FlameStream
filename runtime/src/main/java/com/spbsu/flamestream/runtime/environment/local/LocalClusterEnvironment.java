@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime.environment.local;
 
+import akka.actor.Props;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
@@ -152,8 +153,8 @@ public final class LocalClusterEnvironment implements Environment {
   }
 
   @Override
-  public Set<Integer> availableFronts() {
-    return remoteEnvironment.availableFronts();
+  public void deployFront(int nodeId, int frontId, Props frontProps) {
+    remoteEnvironment.deployFront(nodeId, frontId, frontProps);
   }
 
   @Override
@@ -164,11 +165,6 @@ public final class LocalClusterEnvironment implements Environment {
   @Override
   public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     return remoteEnvironment.wrapInSink(hash, mySuperConsumer);
-  }
-
-  @Override
-  public Consumer<Object> frontConsumer(int frontId) {
-    return remoteEnvironment.frontConsumer(frontId);
   }
 
   private static final class ZooKeeperApplication extends ZooKeeperServerMain {
