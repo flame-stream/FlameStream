@@ -30,7 +30,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.IntStream;
 
@@ -45,7 +44,7 @@ public final class LocalClusterEnvironment implements Environment {
   private final ObjectMapper mapper = new ObjectMapper();
 
   private final Collection<WorkerApplication> workerApplication = new HashSet<>();
-  private final Map<Integer, DumbInetSocketAddress> dns;
+  private final Map<String, DumbInetSocketAddress> dns;
 
   private final ZooKeeper zooKeeper;
   private final ZooKeeperApplication zk;
@@ -93,13 +92,13 @@ public final class LocalClusterEnvironment implements Environment {
     }
   }
 
-  private Map<Integer, DumbInetSocketAddress> freeSockets(int workersCount) {
+  private Map<String, DumbInetSocketAddress> freeSockets(int workersCount) {
     return IntStream.range(
             LocalClusterEnvironment.START_WORKER_PORT,
             LocalClusterEnvironment.START_WORKER_PORT + workersCount
     )
             .boxed()
-            .collect(toMap(Function.identity(), port -> new DumbInetSocketAddress("localhost", port)));
+            .collect(toMap(key -> "worker" + key, port -> new DumbInetSocketAddress("localhost", port)));
   }
 
   private void deployPartitioning() {
@@ -116,10 +115,10 @@ public final class LocalClusterEnvironment implements Environment {
     zooKeeper.create("/ticks", new byte[0], ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
   }
 
-  private void pushDns(Map<Integer, DumbInetSocketAddress> dns) throws
-                                                                KeeperException,
-                                                                InterruptedException,
-                                                                JsonProcessingException {
+  private void pushDns(Map<String, DumbInetSocketAddress> dns) throws
+                                                               KeeperException,
+                                                               InterruptedException,
+                                                               JsonProcessingException {
     zooKeeper.create(
             "/dns",
             mapper.writeValueAsBytes(dns),
@@ -155,7 +154,7 @@ public final class LocalClusterEnvironment implements Environment {
     );
   }
 
-  private void pushFronts(Set<Integer> fronts) throws KeeperException, InterruptedException, JsonProcessingException {
+  private void pushFronts(Set<String> fronts) throws KeeperException, InterruptedException, JsonProcessingException {
     zooKeeper.create(
             "/fronts",
             mapper.writeValueAsBytes(fronts),
@@ -180,12 +179,12 @@ public final class LocalClusterEnvironment implements Environment {
   }
 
   @Override
-  public void deployFront(int nodeId, int frontId, Props frontProps) {
+  public void deployFront(String nodeId, String frontId, Props frontProps) {
     remoteEnvironment.deployFront(nodeId, frontId, frontProps);
   }
 
   @Override
-  public Set<Integer> availableWorkers() {
+  public Set<String> availableWorkers() {
     return remoteEnvironment.availableWorkers();
   }
 

@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.node;
 
 import akka.actor.Props;
+import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
@@ -10,16 +11,16 @@ import static org.apache.zookeeper.Watcher.Event;
 public final class LifecycleWatcher extends LoggingActor {
   public static final int SESSION_TIMEOUT = 5000;
   private final String zkConnectString;
-  private final int id;
+  private final String id;
 
   private ZooKeeper zk = null;
 
-  private LifecycleWatcher(String zkConnectString, int id) {
+  private LifecycleWatcher(String zkConnectString, String id) {
     this.zkConnectString = zkConnectString;
     this.id = id;
   }
 
-  public static Props props(String zkConnectString, int id) {
+  public static Props props(String zkConnectString, String id) {
     return Props.create(LifecycleWatcher.class, zkConnectString, id);
   }
 
@@ -43,7 +44,9 @@ public final class LifecycleWatcher extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder().match(WatchedEvent.class, this::onWatchedEvent).build();
+    return ReceiveBuilder.create()
+            .match(WatchedEvent.class, this::onWatchedEvent)
+            .build();
   }
 
   private void onWatchedEvent(WatchedEvent event) {
@@ -53,7 +56,7 @@ public final class LifecycleWatcher extends LoggingActor {
       switch (state) {
         case SyncConnected:
           log().info("Connected to ZK");
-          initConcierge();
+          context().actorOf(NodeConcierge.props(id, zk), "concierge");
           break;
         case Expired:
           log().info("Session expired");
@@ -67,7 +70,4 @@ public final class LifecycleWatcher extends LoggingActor {
     }
   }
 
-  private void initConcierge() {
-    context().actorOf(NodeConcierge.props(id, zk), "concierge");
-  }
 }

@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.actor.Address;
 import akka.actor.Props;
 import akka.actor.RootActorPath;
+import akka.japi.pf.ReceiveBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
@@ -29,22 +30,22 @@ public final class NodeConcierge extends LoggingActor {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private final ZooKeeper zk;
-  private final int id;
+  private final String id;
 
   private final Set<Long> committedTicks = new HashSet<>();
 
   @Nullable
-  private Map<Integer, ActorPath> nodeConierges = null;
+  private Map<String, ActorPath> nodeConierges = null;
 
   @Nullable
   private ActorRef tickWatcher = null;
 
-  private NodeConcierge(int id, ZooKeeper zk) {
+  private NodeConcierge(String id, ZooKeeper zk) {
     this.zk = zk;
     this.id = id;
   }
 
-  public static Props props(int id, ZooKeeper zooKeeper) {
+  public static Props props(String id, ZooKeeper zooKeeper) {
     return Props.create(NodeConcierge.class, id, zooKeeper);
   }
 
@@ -60,14 +61,15 @@ public final class NodeConcierge extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder().match(TickInfo.class, this::onNewTick)
+    return ReceiveBuilder.create()
+            .match(TickInfo.class, this::onNewTick)
             .match(TickCommitDone.class, this::onTickCommitted)
             .build();
   }
 
   private void onNewTick(TickInfo tickInfo) {
     final String suffix = String.valueOf(tickInfo.id());
-    final Map<Integer, ActorPath> rangeConcierges = nodeConierges.entrySet()
+    final Map<String, ActorPath> rangeConcierges = nodeConierges.entrySet()
             .stream()
             .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(suffix)));
 
@@ -85,12 +87,12 @@ public final class NodeConcierge extends LoggingActor {
     getContext().getChildren().forEach(c -> c.tell(committed, sender()));
   }
 
-  private Map<Integer, ActorPath> fetchDns() throws IOException, KeeperException, InterruptedException {
+  private Map<String, ActorPath> fetchDns() throws IOException, KeeperException, InterruptedException {
     final String path = "/dns";
     final byte[] data = zk.getData(path, false, new Stat());
-    final Map<Integer, DumbInetSocketAddress> dns = NodeConcierge.MAPPER.readValue(
+    final Map<String, DumbInetSocketAddress> dns = NodeConcierge.MAPPER.readValue(
             data,
-            new TypeReference<Map<Integer, DumbInetSocketAddress>>() {}
+            new TypeReference<Map<String, DumbInetSocketAddress>>() {}
     );
 
     return dns.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> pathFor(e.getValue())));

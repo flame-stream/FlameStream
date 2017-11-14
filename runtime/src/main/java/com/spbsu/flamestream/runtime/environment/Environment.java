@@ -11,9 +11,9 @@ import java.util.function.ToIntFunction;
 public interface Environment extends AutoCloseable {
   void deploy(TickInfo tickInfo);
 
-  void deployFront(int nodeId, int frontId, Props frontProps);
+  void deployFront(String nodeId, String frontId, Props frontProps);
 
-  Set<Integer> availableWorkers();
+  Set<String> availableWorkers();
 
   <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer);
 }

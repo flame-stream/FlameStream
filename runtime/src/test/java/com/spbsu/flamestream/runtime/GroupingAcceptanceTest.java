@@ -37,7 +37,7 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
               groupHash,
               equalz,
               filterHash
-      ), 10, 1, 1);
+      ).flattened(), 10, 1, 1);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
       source.forEach(sink);

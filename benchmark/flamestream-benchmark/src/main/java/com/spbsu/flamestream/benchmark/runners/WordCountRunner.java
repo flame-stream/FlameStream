@@ -45,7 +45,7 @@ public final class WordCountRunner implements EnvironmentRunner {
               FlameStreamExample.WORD_COUNT.graph(hash -> testEnvironment.wrapInSink(
                       (ToIntFunction<? super WordCounter>) hash,
                       o -> latencyMeasurer.finish((WordCounter) o)
-              )).flattened(),
+              )),
               60,
               1, 1
       );

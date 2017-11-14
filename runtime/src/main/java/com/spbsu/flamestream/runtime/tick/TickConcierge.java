@@ -18,27 +18,27 @@ import static java.util.stream.Collectors.toSet;
 
 public final class TickConcierge extends LoggingActor {
   private final TickInfo tickInfo;
-  private final int localId;
+  private final String localId;
 
   private final Set<Long> awaitedTicks;
 
   @Nullable
   private TickRoutes routes = null;
 
-  private TickConcierge(TickInfo tickInfo, int localId, Map<Integer, ActorPath> cluster, ActorRef tickWatcher) {
+  private TickConcierge(TickInfo tickInfo, String localId, Map<String, ActorPath> cluster, ActorRef tickWatcher) {
     this.tickInfo = tickInfo;
     this.localId = localId;
     this.awaitedTicks = new HashSet<>(tickInfo.tickDependencies());
 
     myRanges(tickInfo.hashMapping()).forEach(this::rangeConcierge);
-    if (tickInfo.ackerLocation() == localId) {
+    if (tickInfo.ackerLocation().equals(localId)) {
       context().actorOf(AckActor.props(tickInfo, tickWatcher), "acker");
     }
 
     context().actorOf(TickRoutesResolver.props(cluster, tickInfo), "resolver");
   }
 
-  public static Props props(TickInfo tickInfo, int localId, Map<Integer, ActorPath> cluster, ActorRef tickWatcher) {
+  public static Props props(TickInfo tickInfo, String localId, Map<String, ActorPath> cluster, ActorRef tickWatcher) {
     return Props.create(TickConcierge.class, tickInfo, localId, cluster, tickWatcher);
   }
 
@@ -64,21 +64,23 @@ public final class TickConcierge extends LoggingActor {
   }
 
   private Receive tickRunning() {
-    return ReceiveBuilder.create().match(TickCommitDone.class, committed -> {
-      if (committed.tickId() == tickInfo.id()) {
-        log().info("My job is done here");
-        context().stop(self());
-      } else {
-        unhandled(committed);
-      }
-    }).build();
+    return ReceiveBuilder.create()
+            .match(TickCommitDone.class, committed -> {
+              if (committed.tickId() == tickInfo.id()) {
+                log().info("My job is done here");
+                context().stop(self());
+              } else {
+                unhandled(committed);
+              }
+            })
+            .build();
   }
 
   private ActorRef rangeConcierge(HashRange range) {
     return context().actorOf(RangeConcierge.props(tickInfo, range), range.toString());
   }
 
-  private Iterable<HashRange> myRanges(Map<HashRange, Integer> mappings) {
+  private Iterable<HashRange> myRanges(Map<HashRange, String> mappings) {
     return mappings.entrySet()
             .stream()
             .filter(e -> e.getValue().equals(localId))

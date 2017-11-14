@@ -4,17 +4,17 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public final class GlobalTime implements Comparable<GlobalTime> {
-  public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, -1);
+  public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, "min");
   //Inner representation is a subject for a discussion and/or an optimization
 
   private static final Comparator<GlobalTime> NATURAL_ORDER = Comparator.comparingLong(GlobalTime::time)
-          .thenComparingInt(GlobalTime::front);
+          .thenComparing(GlobalTime::front);
 
   private final long time;
 
-  private final int front;
+  private final String front;
 
-  public GlobalTime(long time, int front) {
+  public GlobalTime(long time, String front) {
     this.time = time;
     this.front = front;
   }
@@ -23,7 +23,7 @@ public final class GlobalTime implements Comparable<GlobalTime> {
     return time;
   }
 
-  public int front() {
+  public String front() {
     return front;
   }
 
@@ -41,7 +41,7 @@ public final class GlobalTime implements Comparable<GlobalTime> {
       return false;
     }
     final GlobalTime that = (GlobalTime) o;
-    return (time == that.time) && (front == that.front);
+    return (time == that.time) && (front.equals(that.front));
   }
 
   @Override

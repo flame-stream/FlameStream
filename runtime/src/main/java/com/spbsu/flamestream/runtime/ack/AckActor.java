@@ -5,22 +5,26 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.ack.impl.ArrayAckTable;
-import com.spbsu.flamestream.runtime.ack.messages.*;
+import com.spbsu.flamestream.runtime.ack.messages.Ack;
+import com.spbsu.flamestream.runtime.ack.messages.Commit;
+import com.spbsu.flamestream.runtime.ack.messages.CommitTick;
+import com.spbsu.flamestream.runtime.ack.messages.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.ack.messages.RangeCommitDone;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.HashRange;
 import com.spbsu.flamestream.runtime.source.api.Heartbeat;
 import com.spbsu.flamestream.runtime.tick.StartTick;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public final class AckActor extends LoggingActor {
-  private final TIntObjectMap<AckTable> tables = new TIntObjectHashMap<>();
+  private final Map<String, AckTable> tables = new HashMap<>();
   private final AckerStatistics stat = new AckerStatistics();
   private final Collection<HashRange> committers = new HashSet<>();
   private GlobalTime currentMin = GlobalTime.MIN;
@@ -120,15 +124,14 @@ public final class AckActor extends LoggingActor {
   }
 
   private GlobalTime minAmongTables() {
-    final int[] frontMin = {Integer.MAX_VALUE};
+    final String[] frontMin = {"Hi"};
     final long[] timeMin = {Long.MAX_VALUE};
-    tables.forEachEntry((f, table) -> {
+    tables.forEach((f, table) -> {
       final long tmpMin = table.min();
-      if (tmpMin < timeMin[0] || tmpMin == timeMin[0] && f < frontMin[0]) {
+      if (tmpMin < timeMin[0] || tmpMin == timeMin[0] && f.compareTo(frontMin[0]) < 0) {
         frontMin[0] = f;
         timeMin[0] = tmpMin;
       }
-      return true;
     });
     return new GlobalTime(timeMin[0], frontMin[0]);
   }

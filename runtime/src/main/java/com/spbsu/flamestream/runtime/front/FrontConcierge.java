@@ -22,13 +22,13 @@ public final class FrontConcierge extends LoggingActor {
 
   private final String prefix;
 
-  private FrontConcierge(int nodeId, ZooKeeper zk) {
-    this.prefix = "/workers/" + nodeId + "/fronts";
+  private FrontConcierge(String id, ZooKeeper zk) {
+    this.prefix = "/workers/" + id + "/fronts";
     this.zk = zk;
   }
 
-  public static Props props(int nodeId, ZooKeeper zk) {
-    return Props.create(FrontConcierge.class, nodeId, zk);
+  public static Props props(String id, ZooKeeper zk) {
+    return Props.create(FrontConcierge.class, id, zk);
   }
 
   @Override

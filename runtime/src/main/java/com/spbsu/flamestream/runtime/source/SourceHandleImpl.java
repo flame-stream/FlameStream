@@ -18,7 +18,7 @@ import java.util.Map;
  * Date: 10.11.2017
  */
 public class SourceHandleImpl extends AtomicHandleImpl implements SourceHandle {
-  private final Map<Integer, ActorRef> frontRefs = new HashMap<>();
+  private final Map<String, ActorRef> frontRefs = new HashMap<>();
 
   SourceHandleImpl(TickInfo tickInfo, TickRoutes tickRoutes, ActorContext context) {
     super(tickInfo, tickRoutes, context);
@@ -34,7 +34,7 @@ public class SourceHandleImpl extends AtomicHandleImpl implements SourceHandle {
     frontRefs.get(globalTime.front()).tell(new Accepted(globalTime), context.self());
   }
 
-  void putRef(int frontId, ActorRef frontRef) {
+  void putRef(String frontId, ActorRef frontRef) {
     frontRefs.putIfAbsent(frontId, frontRef);
   }
 }

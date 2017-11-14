@@ -1,9 +1,16 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.*;
+import akka.actor.ActorIdentity;
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Address;
+import akka.actor.Props;
+import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
+import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.front.ActorFront;
@@ -18,7 +25,11 @@ import scala.concurrent.duration.Duration;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
@@ -61,6 +72,7 @@ public class TestEnvironment implements Environment {
     this.system = ActorSystem.create("environment", config);
   }
 
+  // TODO: 13.11.2017 accept graph instead of composed graph
   public Consumer<Object> deploy(Graph graph,
           int tickLengthSeconds,
           int ticksCount,
@@ -71,17 +83,18 @@ public class TestEnvironment implements Environment {
       final Address address = Address.apply("akka.tcp", "environment", actorSysAddress.host(), actorSysAddress.port());
       final ActorPath path = RootActorPath.apply(address, "/").child("user").child("balancing-actor");
       final List<Props> props = IntStream.range(0, frontsCount)
-              .mapToObj(id -> ActorFront.props(id, path))
+              .mapToObj(String::valueOf)
+              .map(id -> ActorFront.props(id, path))
               .collect(Collectors.toList());
 
-      final List<Integer> workers = new ArrayList<>(availableWorkers());
+      final List<String> workers = new ArrayList<>(availableWorkers());
       for (int i = 0; i < props.size(); i++) {
-        deployFront(workers.get(i % workers.size()), i, props.get(i));
+        deployFront(workers.get(i % workers.size()), "front-" + i, props.get(i));
       }
       consumer = o -> balancingActor.tell(new SingleRawData<>(o), ActorRef.noSender());
     }
 
-    final Map<HashRange, Integer> workers = rangeMappingForTick();
+    final Map<HashRange, String> workers = rangeMappingForTick();
     final long tickMills = SECONDS.toMillis(tickLengthSeconds);
     long startTs = System.currentTimeMillis();
     for (int i = 0; i < ticksCount; ++i, startTs += tickMills) {
@@ -91,9 +104,10 @@ public class TestEnvironment implements Environment {
               startTs,
               startTs + tickMills,
               graph.flattened(),
-              workers.values().stream().min(Integer::compareTo).get(),
+              workers.values().stream().min(String::compareTo).get(),
               workers,
-              IntStream.range(0, frontsCount).boxed().collect(Collectors.toSet()), windowInMillis,
+              IntStream.range(0, frontsCount).boxed().map(String::valueOf).collect(Collectors.toSet()),
+              windowInMillis,
               i == 0 ? emptySet() : singleton(i - 1L)
       );
       innerEnvironment.deploy(tickInfo);
@@ -109,15 +123,15 @@ public class TestEnvironment implements Environment {
     return consumer;
   }
 
-  private Map<HashRange, Integer> rangeMappingForTick() {
-    final Map<HashRange, Integer> result = new HashMap<>();
-    final Set<Integer> workerIds = innerEnvironment.availableWorkers();
+  private Map<HashRange, String> rangeMappingForTick() {
+    final Map<HashRange, String> result = new HashMap<>();
+    final Set<String> workerIds = innerEnvironment.availableWorkers();
 
     final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / workerIds.size());
     long left = Integer.MIN_VALUE;
     long right = left + step;
 
-    for (int workerId : workerIds) {
+    for (String workerId : workerIds) {
       result.put(new HashRange((int) left, (int) right), workerId);
 
       left += step;
@@ -151,12 +165,12 @@ public class TestEnvironment implements Environment {
   }
 
   @Override
-  public void deployFront(int nodeId, int frontId, Props frontProps) {
+  public void deployFront(String nodeId, String frontId, Props frontProps) {
     innerEnvironment.deployFront(nodeId, frontId, frontProps);
   }
 
   @Override
-  public Set<Integer> availableWorkers() {
+  public Set<String> availableWorkers() {
     return innerEnvironment.availableWorkers();
   }
 

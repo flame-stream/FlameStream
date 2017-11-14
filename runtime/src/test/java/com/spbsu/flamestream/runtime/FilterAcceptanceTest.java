@@ -42,7 +42,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
       final Queue<Integer> result = new ArrayDeque<>();
       final Consumer<Object> sink = environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
-      ), 15, 1, 4);
+      ).flattened(), 15, 1, 4);
 
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
       source.forEach(sink);
@@ -63,7 +63,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
       final Queue<Integer> result = new ArrayDeque<>();
       final Consumer<Object> sink = environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
-      ), 2, 10, 4);
+      ).flattened(), 2, 10, 4);
 
       final List<Integer> source = new Random().ints(20000).boxed().collect(Collectors.toList());
       source.forEach(sink);

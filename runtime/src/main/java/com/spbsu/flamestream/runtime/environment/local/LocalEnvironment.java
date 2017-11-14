@@ -48,8 +48,8 @@ public final class LocalEnvironment implements Environment {
     final ActorRef concierge = localSystem.actorOf(
             TickConcierge.props(
                     tickInfo,
-                    1,
-                    singletonMap(1, localSystem.child(String.valueOf(tickInfo.id()))),
+                    "1",
+                    singletonMap("1", localSystem.child(String.valueOf(tickInfo.id()))),
                     fakeWatcher
             ),
             String.valueOf(tickInfo.id())
@@ -60,7 +60,7 @@ public final class LocalEnvironment implements Environment {
   }
 
   @Override
-  public void deployFront(int nodeId, int frontId, Props frontProps) {
+  public void deployFront(String nodeId, String frontId, Props frontProps) {
     if (front == null) {
       front = localSystem.actorOf(frontProps, "front");
     } else {
@@ -74,8 +74,8 @@ public final class LocalEnvironment implements Environment {
   }*/
 
   @Override
-  public Set<Integer> availableWorkers() {
-    return singleton(1);
+  public Set<String> availableWorkers() {
+    return singleton("1");
   }
 
   @Override

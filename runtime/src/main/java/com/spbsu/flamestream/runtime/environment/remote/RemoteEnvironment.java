@@ -81,7 +81,7 @@ public final class RemoteEnvironment implements Environment {
   }
 
   @Override
-  public void deployFront(int nodeId, int frontId, Props frontProps) {
+  public void deployFront(String nodeId, String frontId, Props frontProps) {
     try {
       zooKeeper.create(
               "/workers/" + nodeId + "/fronts/" + frontId,
@@ -95,7 +95,7 @@ public final class RemoteEnvironment implements Environment {
   }
 
   @Override
-  public Set<Integer> availableWorkers() {
+  public Set<String> availableWorkers() {
     return dns().keySet();
   }
 
@@ -111,10 +111,10 @@ public final class RemoteEnvironment implements Environment {
     return RootActorPath.apply(address, "/").child("user").child(suffix);
   }
 
-  private Map<Integer, DumbInetSocketAddress> dns() {
+  private Map<String, DumbInetSocketAddress> dns() {
     try {
       final byte[] data = zooKeeper.getData("/dns", false, new Stat());
-      return mapper.readValue(data, new TypeReference<Map<Integer, DumbInetSocketAddress>>() {
+      return mapper.readValue(data, new TypeReference<Map<String, DumbInetSocketAddress>>() {
       });
     } catch (IOException | InterruptedException | KeeperException e) {
       throw new RuntimeException(e);

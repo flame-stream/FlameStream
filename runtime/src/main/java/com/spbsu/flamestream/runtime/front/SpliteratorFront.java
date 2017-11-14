@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public final class SpliteratorFront<T> extends LoggingActor {
-  private final int frontId;
+  private final String frontId;
   private final Spliterator<T> spliterator;
 
   private long prevGlobalTs = 0;
@@ -34,12 +34,12 @@ public final class SpliteratorFront<T> extends LoggingActor {
 
   private final NavigableSet<DataItem<T>> history = new ConcurrentSkipListSet<>(Comparator.comparing(DataItem::meta));
 
-  private SpliteratorFront(int frontId, Spliterator<T> spliterator) {
+  private SpliteratorFront(String frontId, Spliterator<T> spliterator) {
     this.frontId = frontId;
     this.spliterator = spliterator;
   }
 
-  public static <T> Props props(int frontId, Spliterator<T> spliterator) {
+  public static <T> Props props(String frontId, Spliterator<T> spliterator) {
     return Props.create(Stream.class, frontId, spliterator);
   }
 

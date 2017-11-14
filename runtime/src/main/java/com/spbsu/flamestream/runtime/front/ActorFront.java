@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 
 public final class ActorFront<T> extends LoggingActor {
-  private final int frontId;
+  private final String frontId;
   private final ActorPath remoteActor;
 
   private long prevGlobalTs = 0;
@@ -45,12 +45,12 @@ public final class ActorFront<T> extends LoggingActor {
   @Nullable
   private Cancellable ping;
 
-  private ActorFront(int frontId, ActorPath remoteActor) {
+  private ActorFront(String frontId, ActorPath remoteActor) {
     this.frontId = frontId;
     this.remoteActor = remoteActor;
   }
 
-  public static Props props(int frontId, ActorPath path) {
+  public static Props props(String frontId, ActorPath path) {
     return Props.create(ActorFront.class, frontId, path);
   }
 

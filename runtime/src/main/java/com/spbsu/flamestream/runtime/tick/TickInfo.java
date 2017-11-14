@@ -17,9 +17,9 @@ public final class TickInfo {
 
   private final ComposedGraph<AtomicGraph> graph;
 
-  private final Map<HashRange, Integer> hashMapping;
+  private final Map<HashRange, String> hashMapping;
 
-  private final Set<Integer> fronts;
+  private final Set<String> fronts;
 
   private final Set<Long> tickDependencies;
 
@@ -29,15 +29,16 @@ public final class TickInfo {
 
   private final long window;
 
-  private final int ackerLocation;
+  private final String ackerLocation;
 
   public TickInfo(long id,
                   long startTs,
                   long stopTs,
                   ComposedGraph<AtomicGraph> graph,
-                  int ackerLocation,
-                  Map<HashRange, Integer> hashMapping,
-                  Set<Integer> fronts, long window,
+                  String ackerLocation,
+                  Map<HashRange, String> hashMapping,
+                  Set<String> fronts,
+                  long window,
                   Set<Long> tickDependencies) {
     if (!graph.inPorts().isEmpty() || !graph.outPorts().isEmpty()) {
       throw new IllegalArgumentException("InPorts or OutPorts are not empty");
@@ -70,12 +71,16 @@ public final class TickInfo {
     return graph;
   }
 
-  public int ackerLocation() {
+  public String ackerLocation() {
     return ackerLocation;
   }
 
-  public Map<HashRange, Integer> hashMapping() {
+  public Map<HashRange, String> hashMapping() {
     return unmodifiableMap(hashMapping);
+  }
+
+  public Set<String> fronts() {
+    return unmodifiableSet(fronts);
   }
 
   public long window() {
@@ -91,9 +96,5 @@ public final class TickInfo {
     return "TickInfo{" + "id=" + id + ", graph=" + graph + ", hashMapping=" + hashMapping + ", tickDependencies="
         + tickDependencies + ", startTs=" + startTs + ", stopTs=" + stopTs + ", window=" + window
         + ", ackerLocation=" + ackerLocation + '}';
-  }
-
-  public Set<Integer> fronts() {
-    return fronts;
   }
 }

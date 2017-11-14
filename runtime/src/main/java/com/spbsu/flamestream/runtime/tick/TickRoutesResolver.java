@@ -16,26 +16,26 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public final class TickRoutesResolver extends LoggingActor {
-  private final Map<Integer, ActorPath> cluster;
+  private final Map<String, ActorPath> cluster;
   private final TickInfo tickInfo;
   private final Map<HashRange, ActorSelection> tmpRanges = new HashMap<>();
   private final Map<HashRange, ActorRef> refs = new HashMap<>();
   private ActorSelection tmpAcker = null;
   private ActorRef acker = null;
 
-  private TickRoutesResolver(Map<Integer, ActorPath> cluster, TickInfo tickInfo) {
+  private TickRoutesResolver(Map<String, ActorPath> cluster, TickInfo tickInfo) {
     this.cluster = new HashMap<>(cluster);
     this.tickInfo = tickInfo;
   }
 
-  public static Props props(Map<Integer, ActorPath> cluster, TickInfo tickInfo) {
+  public static Props props(Map<String, ActorPath> cluster, TickInfo tickInfo) {
     return Props.create(TickRoutesResolver.class, cluster, tickInfo);
   }
 
   @Override
   public void preStart() throws Exception {
     log().info("Identifying {}", cluster);
-    final Map<HashRange, Integer> map = tickInfo.hashMapping();
+    final Map<HashRange, String> map = tickInfo.hashMapping();
     map.forEach((range, id) -> {
       final ActorPath path = cluster.get(id).child(range.toString());
       final ActorSelection selection = context().actorSelection(path);
