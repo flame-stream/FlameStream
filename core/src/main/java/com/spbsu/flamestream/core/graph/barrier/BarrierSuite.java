@@ -1,6 +1,8 @@
 package com.spbsu.flamestream.core.graph.barrier;
 
 import com.spbsu.flamestream.core.graph.*;
+import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
+import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
 
 import java.util.List;
 import java.util.Objects;

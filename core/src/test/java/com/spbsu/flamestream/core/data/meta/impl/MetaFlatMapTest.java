@@ -7,7 +7,7 @@ import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
-import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
 import com.spbsu.flamestream.core.graph.ops.FlatMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;

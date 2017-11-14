@@ -1,4 +1,8 @@
-package com.spbsu.flamestream.core.graph;
+package com.spbsu.flamestream.core.graph.atomic.impl;
+
+import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
+import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
+import com.spbsu.flamestream.core.graph.composed.impl.ComposedGraphImpl;
 
 import java.util.Collections;
 import java.util.Objects;

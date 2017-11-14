@@ -2,8 +2,8 @@ package com.spbsu.flamestream.runtime.environment.local;
 
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.data.DataItem;
-import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
-import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.atomic.impl.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.runtime.raw.SingleRawData;

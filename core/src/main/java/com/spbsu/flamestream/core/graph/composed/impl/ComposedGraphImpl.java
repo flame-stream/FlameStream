@@ -1,4 +1,10 @@
-package com.spbsu.flamestream.core.graph;
+package com.spbsu.flamestream.core.graph.composed.impl;
+
+import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
+import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.InPort;
+import com.spbsu.flamestream.core.graph.OutPort;
+import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,7 +21,7 @@ public final class ComposedGraphImpl<T extends Graph> implements ComposedGraph<T
     this(graphs, Collections.emptyMap());
   }
 
-  ComposedGraphImpl(T graph, OutPort from, InPort to) {
+  public ComposedGraphImpl(T graph, OutPort from, InPort to) {
     this(Collections.singleton(graph), Collections.singletonMap(from, to));
   }
 

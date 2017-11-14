@@ -3,7 +3,7 @@ package com.spbsu.flamestream.runtime.range;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.source.Source;
 import com.spbsu.flamestream.runtime.ack.messages.Commit;

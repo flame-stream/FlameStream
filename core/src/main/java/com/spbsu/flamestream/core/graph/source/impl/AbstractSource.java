@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.core.graph.source.impl;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.atomic.impl.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.graph.source.Source;

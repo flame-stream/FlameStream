@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.core.graph.source;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
 
 /**
  * User: Artem

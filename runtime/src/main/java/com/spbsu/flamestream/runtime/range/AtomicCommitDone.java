@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.runtime.range;
 
-import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
 
 public final class AtomicCommitDone {
   private final AtomicGraph atomicGraph;
