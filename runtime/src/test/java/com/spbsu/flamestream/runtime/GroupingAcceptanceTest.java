@@ -2,9 +2,8 @@ package com.spbsu.flamestream.runtime;
 
 import com.spbsu.flamestream.FlameStreamSuite;
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
-import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
 import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
@@ -64,7 +63,7 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
     return mustHave;
   }
 
-  private static ComposedGraph<AtomicGraph> groupGraph(AtomicGraph sink,
+  private static Graph groupGraph(AtomicGraph sink,
                                                        int window,
                                                        HashFunction<? super Long> groupHash,
                                                        BiPredicate<? super Long, ? super Long> equalz,
@@ -75,10 +74,9 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
 
     final BarrierSuite<Long> barrier = new BarrierSuite<>(sink);
 
-    final Graph graph = source.fuse(filter, source.outPort(), filter.inPort())
+    return source.fuse(filter, source.outPort(), filter.inPort())
             .fuse(grouping, filter.outPort(), grouping.inPort())
             .fuse(barrier, grouping.outPort(), barrier.inPort());
-    return graph.flattened();
   }
 
   @SuppressWarnings("Convert2Lambda")

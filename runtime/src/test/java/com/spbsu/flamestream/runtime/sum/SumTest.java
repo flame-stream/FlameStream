@@ -1,9 +1,8 @@
 package com.spbsu.flamestream.runtime.sum;
 
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
-import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
 import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.*;
 import com.spbsu.flamestream.core.graph.source.impl.AbstractSource;
@@ -20,7 +19,7 @@ import java.util.stream.Collectors;
 
 public final class SumTest {
 
-  private static ComposedGraph<AtomicGraph> sumGraph(AtomicGraph sink) {
+  private static Graph sumGraph(AtomicGraph sink) {
     final HashFunction<Numb> identity = HashFunction.constantHash(1);
     final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
     //noinspection Convert2Lambda
@@ -41,14 +40,13 @@ public final class SumTest {
 
     final BarrierSuite<Sum> barrier = new BarrierSuite<>(sink);
 
-    final Graph graph = source.fuse(merge, source.outPort(), merge.inPorts().get(0)).fuse(grouping, merge.outPort(), grouping.inPort())
+    return source.fuse(merge, source.outPort(), merge.inPorts().get(0)).fuse(grouping, merge.outPort(), grouping.inPort())
             .fuse(enricher, grouping.outPort(), enricher.inPort())
             .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
             .fuse(reducer, junkFilter.outPort(), reducer.inPort())
             .fuse(broadcast, reducer.outPort(), broadcast.inPort())
             .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
             .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
-    return graph.flattened();
   }
 
   @Test

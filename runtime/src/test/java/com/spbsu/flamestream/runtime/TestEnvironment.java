@@ -1,15 +1,9 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.ActorIdentity;
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Address;
-import akka.actor.Props;
-import akka.actor.RootActorPath;
+import akka.actor.*;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
-import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.front.ActorFront;
@@ -24,11 +18,7 @@ import scala.concurrent.duration.Duration;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
@@ -71,8 +61,7 @@ public class TestEnvironment implements Environment {
     this.system = ActorSystem.create("environment", config);
   }
 
-  // TODO: 13.11.2017 accept graph instead of composed graph
-  public Consumer<Object> deploy(ComposedGraph<AtomicGraph> graph,
+  public Consumer<Object> deploy(Graph graph,
           int tickLengthSeconds,
           int ticksCount,
           int frontsCount) {
@@ -101,7 +90,7 @@ public class TestEnvironment implements Environment {
               i,
               startTs,
               startTs + tickMills,
-              graph,
+              graph.flattened(),
               workers.values().stream().min(Integer::compareTo).get(),
               workers,
               IntStream.range(0, frontsCount).boxed().collect(Collectors.toSet()), windowInMillis,

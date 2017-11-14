@@ -24,7 +24,7 @@ public abstract class AbstractExampleTest extends FlameStreamSuite {
       final Consumer<Object> sink = environment.deploy(example().graph(h -> environment.wrapInSink(
               (ToIntFunction<? super T>) h,
               result::add
-      )).flattened(), tickLengthInSec, 1, fronts);
+      )), tickLengthInSec, 1, fronts);
 
       checker.input().forEach(wikipediaPage -> {
         sink.accept(wikipediaPage);
