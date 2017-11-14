@@ -67,6 +67,5 @@ public class SourceActor extends AtomicActor {
   @Override
   protected void onMinTimeUpdate(MinTimeUpdate message) {
     source.onMinGTimeUpdate(message.minTime(), sourceHandle);
-    super.onMinTimeUpdate(message);
   }
 }
