@@ -13,6 +13,8 @@ public class SimpleSource extends AbstractSource {
   public void onNext(DataItem<?> item, SourceHandle handle) {
     handle.push(outPort, item);
     handle.ack(item.ack(), item.meta().globalTime());
+
     handle.accept(item.meta().globalTime());
+    super.onNext(item, handle);
   }
 }
