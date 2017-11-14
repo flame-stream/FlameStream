@@ -14,6 +14,7 @@ import java.util.List;
  * Date: 14.11.2017
  */
 public class BackPressureSource extends AbstractSource {
+  // TODO: 14.11.2017 tune magic constant in runtime
   private static final int MAX_IN_FLIGHT_ITEMS = 10;
   private final List<InFlightElement> inFlight = new ArrayList<>();
 
@@ -37,13 +38,15 @@ public class BackPressureSource extends AbstractSource {
   public void onNext(DataItem<?> item, SourceHandle handle) {
     handle.push(outPort, item);
     handle.ack(item.ack(), item.meta().globalTime());
-    
+
     if (inFlight.size() < MAX_IN_FLIGHT_ITEMS) {
       handle.accept(item.meta().globalTime());
       inFlight.add(new InFlightElement(item.meta().globalTime(), true));
     } else {
       inFlight.add(new InFlightElement(item.meta().globalTime(), false));
     }
+
+    super.onNext(item, handle);
   }
 
   private static class InFlightElement {
