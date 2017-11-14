@@ -16,8 +16,8 @@ cache:
 
 env:
   global:
-    - MAVEN_OPTS="-Xmx256m"
-    - JAVA_OPTS="-Xmx256m"
+    - MAVEN_OPTS="-Xmx256m -Xms256m"
+    - JAVA_OPTS="-Xmx256m -Xms256m"
 
 install: true
 
@@ -27,4 +27,4 @@ script:
 after_failure:
   - ls -al
   - export SSHPASS=$FLAME_PASS
-  - sshpass -e scp -v -o stricthostkeychecking=no oom.hprof flamestream@marnikitta.com:~/$TRAVIS_BUILD_ID.hprof
+  - sshpass -e scp -v -o stricthostkeychecking=no runtime/oom.hprof flamestream@marnikitta.com:~/$TRAVIS_BUILD_ID.hprof
