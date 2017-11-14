@@ -6,7 +6,8 @@ import com.spbsu.flamestream.core.graph.ComposedGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.*;
-import com.spbsu.flamestream.core.graph.source.Source;
+import com.spbsu.flamestream.core.graph.source.impl.AbstractSource;
+import com.spbsu.flamestream.core.graph.source.impl.SimpleSource;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.testng.Assert;
@@ -30,7 +31,7 @@ public final class SumTest {
       }
     };
 
-    final Source source = new Source();
+    final AbstractSource source = new SimpleSource();
     final Merge merge = new Merge(Arrays.asList(identity, identity));
     final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2);
     final StatelessMap<List<Numb>, List<Numb>> enricher = new StatelessMap<>(new IdentityEnricher(), groupIdentity);

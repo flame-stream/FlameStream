@@ -6,7 +6,8 @@ import com.spbsu.flamestream.core.graph.ChaincallGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.*;
-import com.spbsu.flamestream.core.graph.source.Source;
+import com.spbsu.flamestream.core.graph.source.impl.AbstractSource;
+import com.spbsu.flamestream.core.graph.source.impl.SimpleSource;
 import com.spbsu.flamestream.example.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.index.model.WordBase;
 import com.spbsu.flamestream.example.index.model.WordPagePositions;
@@ -62,7 +63,7 @@ public enum FlameStreamExample {
 
     @Override
     public Graph graph(Function<ToIntFunction<?>, AtomicGraph> sinkBuilder) {
-      final Source source = new Source();
+      final AbstractSource source = new SimpleSource();
       final Merge merge = new Merge(Arrays.asList(wordHash, wordHash));
       final Filter<WordBase> indexDiffFilter = new Filter<>(new WordIndexDiffFilter(), wordHash);
       final Grouping<WordBase> grouping = new Grouping<>(wordHash, wordEqualz, 2);
@@ -114,7 +115,7 @@ public enum FlameStreamExample {
 
     @Override
     public Graph graph(Function<ToIntFunction<?>, AtomicGraph> sinkBuilder) {
-      final Source source = new Source();
+      final AbstractSource source = new SimpleSource();
       final Merge merge = new Merge(Arrays.asList(wordHash, wordHash));
       final Grouping<WordContainer> grouping = new Grouping<>(wordHash, equalz, 2);
       final Filter<List<WordContainer>> filter = new Filter<>(new WordContainerOrderingFilter(), groupHash);
