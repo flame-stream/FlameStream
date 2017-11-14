@@ -22,8 +22,9 @@ env:
 install: true
 
 script:
-  - mvn clean -fae --errors --batch-mode -q package
+  - mvn -fae --errors --batch-mode -q clean package
 
 after_failure:
+  - ls -al
   - export SSHPASS=$FLAME_PASS
   - sshpass -e scp -v -o stricthostkeychecking=no oom.hprof flamestream@marnikitta.com:~/$TRAVIS_BUILD_ID.hprof
