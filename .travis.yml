@@ -22,7 +22,7 @@ env:
 install: true
 
 script:
-  - mvn -fae --errors --batch-mode -q clean package
+  - mvn -fae --errors --batch-mode clean package
 
 after_failure:
   - ls -al
