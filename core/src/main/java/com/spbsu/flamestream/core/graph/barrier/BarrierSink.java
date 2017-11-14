@@ -10,7 +10,6 @@ import com.spbsu.flamestream.core.graph.barrier.collector.LinearCollector;
 import java.util.List;
 
 import static java.lang.String.format;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
 final class BarrierSink extends AbstractAtomicGraph {
@@ -72,7 +71,8 @@ final class BarrierSink extends AbstractAtomicGraph {
     private final InPort inPort;
     private final OutPort outPort;
 
-    private final BarrierStatistics barrierStatistics = new BarrierStatistics();
+    // FIXME: 14.11.2017 
+    //private final BarrierStatistics barrierStatistics = new BarrierStatistics();
     private final BarrierCollector collector = new LinearCollector();
 
     Barrier() {
@@ -83,7 +83,7 @@ final class BarrierSink extends AbstractAtomicGraph {
     @Override
     public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
       collector.enqueue(item);
-      barrierStatistics.enqueue(item.meta().globalTime());
+      //barrierStatistics.enqueue(item.meta().globalTime());
     }
 
     @Override
@@ -93,13 +93,13 @@ final class BarrierSink extends AbstractAtomicGraph {
         final DataItem<Object> dataItem = new PayloadDataItem<>(di.meta(), data);
         handle.push(outPort, dataItem);
         handle.ack(dataItem.ack(), dataItem.meta().globalTime());
-        barrierStatistics.release(di.meta().globalTime());
+        //barrierStatistics.release(di.meta().globalTime());
       });
     }
 
     @Override
     public void onCommit(AtomicHandle handle) {
-      handle.submitStatistics(barrierStatistics);
+      //handle.submitStatistics(barrierStatistics);
       if (!collector.isEmpty()) {
         throw new IllegalStateException("Barrier should be empty");
       }
