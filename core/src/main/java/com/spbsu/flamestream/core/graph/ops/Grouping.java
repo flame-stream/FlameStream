@@ -11,8 +11,8 @@ import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.graph.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.graph.ops.stat.GroupingStatistics;
-import gnu.trove.map.TLongObjectMap;
-import gnu.trove.map.hash.TLongObjectHashMap;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +30,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   private final BiPredicate<? super T, ? super T> equalz;
   private final int window;
 
-  private TLongObjectMap<Object> buffers = null;
+  private TIntObjectMap<Object> buffers = null;
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
   public Grouping(ToIntFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, int window) {
@@ -72,7 +72,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   @Override
   public void onStart(AtomicHandle handle) {
     // TODO: 5/18/17 Load state
-    this.buffers = new TLongObjectHashMap<>();
+    this.buffers = new TIntObjectHashMap<>();
   }
 
   @Override
@@ -118,7 +118,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   @SuppressWarnings("unchecked")
   private InvalidatingBucket<T> getBucketFor(DataItem<T> item) {
-    final long hashValue = hash.applyAsInt(item.payload());
+    final int hashValue = hash.applyAsInt(item.payload());
     final Object obj = buffers.get(hashValue);
     if (obj == null) {
       final InvalidatingBucket<T> newBucket = new ArrayInvalidatingBucket<>();
@@ -127,41 +127,29 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     } else {
       if (obj instanceof List) {
         final List<InvalidatingBucket<T>> container = (List<InvalidatingBucket<T>>) obj;
-        return getFromContainer(item, container);
+        final InvalidatingBucket<T> result = container.stream()
+                .filter(bucket -> equalz.test(bucket.get(0).payload(), item.payload()))
+                .findAny()
+                .orElse(new ArrayInvalidatingBucket<>());
+        if (result.isEmpty()) {
+          container.add(result);
+          return result;
+        } else {
+          return result;
+        }
       } else {
         final InvalidatingBucket<T> bucket = (InvalidatingBucket<T>) obj;
-        return getFromBucket(item, bucket);
+        if (equalz.test(bucket.get(0).payload(), item.payload())) {
+          return bucket;
+        } else {
+          final List<InvalidatingBucket<T>> container = new ArrayList<>();
+          container.add(bucket);
+          final InvalidatingBucket<T> newList = new ArrayInvalidatingBucket<>();
+          container.add(newList);
+          buffers.put(hash.applyAsInt(item.payload()), container);
+          return newList;
+        }
       }
     }
-  }
-
-  private InvalidatingBucket<T> getFromContainer(DataItem<T> item, List<InvalidatingBucket<T>> container) {
-    final InvalidatingBucket<T> result = searchBucket(item, container);
-    if (result.isEmpty()) {
-      container.add(result);
-      return result;
-    } else {
-      return result;
-    }
-  }
-
-  private InvalidatingBucket<T> getFromBucket(DataItem<T> item, InvalidatingBucket<T> bucket) {
-    if (equalz.test(bucket.get(0).payload(), item.payload())) {
-      return bucket;
-    } else {
-      final List<InvalidatingBucket<T>> container = new ArrayList<>();
-      container.add(bucket);
-      final InvalidatingBucket<T> newList = new ArrayInvalidatingBucket<>();
-      container.add(newList);
-      buffers.put(hash.applyAsInt(item.payload()), container);
-      return newList;
-    }
-  }
-
-  private InvalidatingBucket<T> searchBucket(DataItem<T> item, List<InvalidatingBucket<T>> container) {
-    return container.stream()
-            .filter(bucket -> equalz.test(bucket.get(0).payload(), item.payload()))
-            .findAny()
-            .orElse(new ArrayInvalidatingBucket<>());
   }
 }
