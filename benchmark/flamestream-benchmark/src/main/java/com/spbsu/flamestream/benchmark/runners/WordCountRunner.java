@@ -58,10 +58,12 @@ public final class WordCountRunner implements EnvironmentRunner {
           throw new RuntimeException(e);
         }
       });
-      testEnvironment.awaitTick(20);
+      testEnvironment.awaitTicks();
 
       final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
       LOG.info("Result: {}", stat);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 

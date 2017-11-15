@@ -63,10 +63,12 @@ public class InvertedIndexRunner implements EnvironmentRunner {
           throw new RuntimeException(e);
         }
       });
-      testEnvironment.awaitTick(tickLengthInSec - pagesCount[0] * sleepTimeInMs / 1000 + 5);
+      testEnvironment.awaitTicks();
 
       final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
       LOG.info("Result: {}", stat);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 }
