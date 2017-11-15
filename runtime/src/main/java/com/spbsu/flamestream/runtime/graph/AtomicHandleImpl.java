@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.range.atomic;
+package com.spbsu.flamestream.runtime.graph;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
@@ -10,7 +10,7 @@ import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.stat.Statistics;
-import com.spbsu.flamestream.runtime.ack.messages.Ack;
+import com.spbsu.flamestream.runtime.ack.api.Ack;
 import com.spbsu.flamestream.runtime.range.AddressedItem;
 import com.spbsu.flamestream.runtime.tick.HashMapping;
 import com.spbsu.flamestream.runtime.tick.TickInfo;

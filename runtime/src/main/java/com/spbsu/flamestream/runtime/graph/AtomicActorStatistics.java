@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.range.atomic;
+package com.spbsu.flamestream.runtime.graph;
 
 import com.spbsu.flamestream.core.stat.Statistics;
 
@@ -8,16 +8,16 @@ import java.util.Map;
 
 import static com.spbsu.flamestream.core.stat.Statistics.asMap;
 
-public final class AtomicActorStatistics implements Statistics {
+final class AtomicActorStatistics implements Statistics {
 
   private final LongSummaryStatistics onAtomic = new LongSummaryStatistics();
   private final LongSummaryStatistics onMinTime = new LongSummaryStatistics();
 
-  public void recordOnAtomicMessage(long nanoDuration) {
+  void recordOnAtomicMessage(long nanoDuration) {
     onAtomic.accept(nanoDuration);
   }
 
-  public void recordOnMinTimeUpdate(long nanoDuration) {
+  void recordOnMinTimeUpdate(long nanoDuration) {
     onMinTime.accept(nanoDuration);
   }
 

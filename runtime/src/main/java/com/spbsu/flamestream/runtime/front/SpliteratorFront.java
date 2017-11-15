@@ -8,10 +8,7 @@ import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.source.api.Accepted;
-import com.spbsu.flamestream.runtime.source.api.NewHole;
-import com.spbsu.flamestream.runtime.source.api.PleaseWait;
-import com.spbsu.flamestream.runtime.source.api.Replay;
+import com.spbsu.flamestream.runtime.graph.source.api.*;
 import org.jetbrains.annotations.Nullable;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -20,9 +17,9 @@ import java.util.NavigableSet;
 import java.util.Spliterator;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 public final class SpliteratorFront<T> extends LoggingActor {
+  private final NavigableSet<DataItem<T>> history = new ConcurrentSkipListSet<>(Comparator.comparing(DataItem::meta));
   private final String frontId;
   private final Spliterator<T> spliterator;
 
@@ -32,15 +29,13 @@ public final class SpliteratorFront<T> extends LoggingActor {
   @Nullable
   private DataItem<T> pending = null;
 
-  private final NavigableSet<DataItem<T>> history = new ConcurrentSkipListSet<>(Comparator.comparing(DataItem::meta));
-
   private SpliteratorFront(String frontId, Spliterator<T> spliterator) {
     this.frontId = frontId;
     this.spliterator = spliterator;
   }
 
   public static <T> Props props(String frontId, Spliterator<T> spliterator) {
-    return Props.create(Stream.class, frontId, spliterator);
+    return Props.create(SpliteratorFront.class, frontId, spliterator);
   }
 
   @Override
@@ -85,24 +80,29 @@ public final class SpliteratorFront<T> extends LoggingActor {
 
   private void emmit() {
     if (pending == null) {
-      spliterator.tryAdvance(element -> {
+      final boolean advanced = spliterator.tryAdvance(element -> {
         pending = new PayloadDataItem<>(currentMeta(), element);
         history.add(pending);
         hole.tell(pending, self());
       });
+      if (!advanced) {
+        hole.tell(new Heartbeat(new GlobalTime(Long.MAX_VALUE, frontId)), self());
+      }
     } else {
       hole.tell(pending, null);
     }
   }
 
-  private Meta currentMeta() {
+  private GlobalTime currentGlobalTime() {
     long globalTs = System.currentTimeMillis();
     if (globalTs <= prevGlobalTs) {
       globalTs = prevGlobalTs + 1;
     }
     prevGlobalTs = globalTs;
+    return new GlobalTime(globalTs, frontId);
+  }
 
-    final GlobalTime globalTime = new GlobalTime(globalTs, frontId);
-    return Meta.meta(globalTime);
+  private Meta currentMeta() {
+    return Meta.meta(currentGlobalTime());
   }
 }

@@ -6,7 +6,7 @@ import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Spliterator;
 import java.util.function.ToIntFunction;
 
 /**
@@ -16,26 +16,19 @@ import java.util.function.ToIntFunction;
 public abstract class AbstractExampleTest extends FlameStreamSuite {
   protected abstract FlameStreamExample example();
 
-  protected <T> void test(ExampleChecker<T> checker, int fronts, int workers, int tickLengthInSec, int waitTickInSec) {
+  protected <T> void test(ExampleChecker<T> checker, int workers, int tickLengthInSec) {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(workers);
          TestEnvironment environment = new TestEnvironment(lce)) {
       final List<Object> result = new ArrayList<>();
       //noinspection RedundantCast,unchecked
-      final Consumer<Object> sink = environment.deploy(example().graph(h -> environment.wrapInSink(
+      environment.deploy(example().graph(h -> environment.wrapInSink(
               (ToIntFunction<? super T>) h,
               result::add
-      )), tickLengthInSec, 1, fronts);
-
-      checker.input().forEach(wikipediaPage -> {
-        sink.accept(wikipediaPage);
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      });
+      )), (Spliterator<Object>) checker.input().spliterator(), tickLengthInSec, 1);
 
       environment.awaitTicks();
+      Thread.sleep(1000); //wait for results
+
       checker.assertCorrect(result.stream());
     } catch (InterruptedException e) {
       throw new RuntimeException(e);

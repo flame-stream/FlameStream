@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.source.api;
+package com.spbsu.flamestream.runtime.graph.source.api;
 
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;

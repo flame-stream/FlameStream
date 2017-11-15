@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.ack.messages;
+package com.spbsu.flamestream.runtime.ack.api;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 

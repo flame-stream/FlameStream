@@ -1,22 +1,14 @@
 package com.spbsu.flamestream.runtime.front;
 
-import akka.actor.ActorIdentity;
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.Cancellable;
-import akka.actor.Props;
+import akka.actor.*;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.runtime.graph.source.api.*;
 import com.spbsu.flamestream.runtime.raw.RawData;
-import com.spbsu.flamestream.runtime.source.api.Accepted;
-import com.spbsu.flamestream.runtime.source.api.Heartbeat;
-import com.spbsu.flamestream.runtime.source.api.NewHole;
-import com.spbsu.flamestream.runtime.source.api.PleaseWait;
-import com.spbsu.flamestream.runtime.source.api.Replay;
 import org.jetbrains.annotations.Nullable;
 import scala.Option;
 import scala.concurrent.duration.Duration;
@@ -41,7 +33,6 @@ public final class ActorFront<T> extends LoggingActor {
 
   @Nullable
   private DataItem<T> pending = null;
-
   @Nullable
   private Cancellable ping;
 

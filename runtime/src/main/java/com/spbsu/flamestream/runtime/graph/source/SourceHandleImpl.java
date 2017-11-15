@@ -1,12 +1,12 @@
-package com.spbsu.flamestream.runtime.source;
+package com.spbsu.flamestream.runtime.graph.source;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.source.SourceHandle;
-import com.spbsu.flamestream.runtime.range.atomic.AtomicHandleImpl;
-import com.spbsu.flamestream.runtime.source.api.Accepted;
-import com.spbsu.flamestream.runtime.source.api.Heartbeat;
+import com.spbsu.flamestream.runtime.graph.AtomicHandleImpl;
+import com.spbsu.flamestream.runtime.graph.source.api.Accepted;
+import com.spbsu.flamestream.runtime.graph.source.api.Heartbeat;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
 

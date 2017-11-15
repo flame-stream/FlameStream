@@ -5,14 +5,10 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.ack.impl.ArrayAckTable;
-import com.spbsu.flamestream.runtime.ack.messages.Ack;
-import com.spbsu.flamestream.runtime.ack.messages.Commit;
-import com.spbsu.flamestream.runtime.ack.messages.CommitTick;
-import com.spbsu.flamestream.runtime.ack.messages.MinTimeUpdate;
-import com.spbsu.flamestream.runtime.ack.messages.RangeCommitDone;
+import com.spbsu.flamestream.runtime.ack.api.*;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.runtime.graph.source.api.Heartbeat;
 import com.spbsu.flamestream.runtime.range.HashRange;
-import com.spbsu.flamestream.runtime.source.api.Heartbeat;
 import com.spbsu.flamestream.runtime.tick.StartTick;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.spbsu.flamestream.runtime.tick.TickRoutes;
@@ -117,7 +113,8 @@ public final class AckActor extends LoggingActor {
                   context().stop(self());
                 }
               })
-              .match(Heartbeat.class, heartbeat -> {})
+              .match(Heartbeat.class, heartbeat -> {
+              })
               .build());
     }
   }

@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.ack.messages;
+package com.spbsu.flamestream.runtime.ack.api;
 
 public final class CommitTick {
   private final long tickId;

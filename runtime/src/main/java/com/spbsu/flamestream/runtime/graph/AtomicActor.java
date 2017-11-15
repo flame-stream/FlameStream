@@ -1,12 +1,12 @@
-package com.spbsu.flamestream.runtime.range.atomic;
+package com.spbsu.flamestream.runtime.graph;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
 import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
-import com.spbsu.flamestream.runtime.ack.messages.Commit;
-import com.spbsu.flamestream.runtime.ack.messages.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.ack.api.Commit;
+import com.spbsu.flamestream.runtime.ack.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.range.AddressedItem;
 import com.spbsu.flamestream.runtime.range.AtomicCommitDone;

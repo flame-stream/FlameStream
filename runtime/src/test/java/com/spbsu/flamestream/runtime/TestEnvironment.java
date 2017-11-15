@@ -1,21 +1,15 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.ActorIdentity;
-import akka.actor.ActorPath;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Address;
-import akka.actor.Props;
-import akka.actor.RootActorPath;
+import akka.actor.*;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
-import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.front.ActorFront;
+import com.spbsu.flamestream.runtime.front.MediatorFront;
+import com.spbsu.flamestream.runtime.front.SpliteratorFront;
 import com.spbsu.flamestream.runtime.range.HashRange;
-import com.spbsu.flamestream.runtime.raw.RawData;
 import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 import com.typesafe.config.Config;
@@ -25,11 +19,7 @@ import scala.concurrent.duration.Duration;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
@@ -56,6 +46,7 @@ public class TestEnvironment implements Environment {
     this(inner, DEFAULT_TEST_WINDOW);
   }
 
+  @SuppressWarnings("WeakerAccess")
   public TestEnvironment(Environment inner, long windowInMillis) {
     this.innerEnvironment = inner;
     this.windowInMillis = windowInMillis;
@@ -72,16 +63,14 @@ public class TestEnvironment implements Environment {
     this.system = ActorSystem.create("environment", config);
   }
 
-  // TODO: 13.11.2017 accept graph instead of composed graph
   public Consumer<Object> deploy(Graph graph,
-          int tickLengthSeconds,
-          int ticksCount,
-          int frontsCount) {
+                                 int tickLengthSeconds,
+                                 int ticksCount,
+                                 int frontsCount) {
     final Consumer<Object> consumer;
     { //create consumer
       final ActorRef balancingActor = system.actorOf(Props.create(BalancingActor.class), "balancing-actor");
-      final Address address = Address.apply("akka.tcp", "environment", actorSysAddress.host(), actorSysAddress.port());
-      final ActorPath path = RootActorPath.apply(address, "/").child("user").child("balancing-actor");
+      final ActorPath path = localPath("balancing-actor");
       final List<Props> props = IntStream.range(0, frontsCount)
               .mapToObj(String::valueOf)
               .map(id -> ActorFront.props(id, path))
@@ -93,7 +82,23 @@ public class TestEnvironment implements Environment {
       }
       consumer = o -> balancingActor.tell(new SingleRawData<>(o), ActorRef.noSender());
     }
+    deployGraph(graph, tickLengthSeconds, ticksCount, frontsCount);
+    return consumer;
+  }
 
+  public void deploy(Graph graph,
+                     Spliterator<Object> spliterator,
+                     int tickLengthSeconds,
+                     int ticksCount) {
+    final String frontName = "0";
+    system.actorOf(SpliteratorFront.props(frontName, spliterator), frontName);
+
+    final Props mediatorProps = MediatorFront.props(localPath(frontName));
+    deployFront(availableWorkers().stream().findAny().orElseThrow(IllegalStateException::new), frontName, mediatorProps);
+    deployGraph(graph, tickLengthSeconds, ticksCount, 1);
+  }
+
+  private void deployGraph(Graph graph, int tickLengthSeconds, int ticksCount, int frontsCount) {
     final Map<HashRange, String> workers = rangeMappingForTick();
     final long tickMills = SECONDS.toMillis(tickLengthSeconds);
     long startTs = System.currentTimeMillis();
@@ -120,7 +125,6 @@ public class TestEnvironment implements Environment {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
-    return consumer;
   }
 
   private Map<HashRange, String> rangeMappingForTick() {
@@ -187,6 +191,11 @@ public class TestEnvironment implements Environment {
     return innerEnvironment.ticks();
   }
 
+  private ActorPath localPath(String actorName) {
+    final Address address = Address.apply("akka.tcp", "environment", actorSysAddress.host(), actorSysAddress.port());
+    return RootActorPath.apply(address, "/").child("user").child(actorName);
+  }
+
   private static class BalancingActor extends LoggingActor {
     private final List<ActorRef> fronts = new ArrayList<>();
 
@@ -200,7 +209,7 @@ public class TestEnvironment implements Environment {
                 getContext().become(ReceiveBuilder.create()
                         .match(ActorIdentity.class, id -> fronts.add(sender()))
                         .match(
-                                RawData.class,
+                                SingleRawData.class,
                                 r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size())).tell(r, self())
                         )
                         .build()

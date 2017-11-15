@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.range.atomic;
+package com.spbsu.flamestream.runtime.graph;
 
 class RoutingException extends RuntimeException {
   private static final long serialVersionUID = 5189602567459523932L;

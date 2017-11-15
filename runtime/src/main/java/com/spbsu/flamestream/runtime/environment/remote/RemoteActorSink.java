@@ -8,7 +8,7 @@ import com.spbsu.flamestream.core.graph.atomic.impl.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.runtime.range.atomic.AtomicHandleImpl;
+import com.spbsu.flamestream.runtime.graph.AtomicHandleImpl;
 import com.spbsu.flamestream.runtime.raw.SingleRawData;
 import org.jetbrains.annotations.Nullable;
 
