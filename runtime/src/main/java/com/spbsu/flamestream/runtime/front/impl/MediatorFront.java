@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.front;
+package com.spbsu.flamestream.runtime.front.impl;
 
 import akka.actor.ActorPath;
 import akka.actor.Props;

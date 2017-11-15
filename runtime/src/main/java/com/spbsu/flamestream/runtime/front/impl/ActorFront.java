@@ -1,7 +1,6 @@
-package com.spbsu.flamestream.runtime.front;
+package com.spbsu.flamestream.runtime.front.impl;
 
-import akka.actor.ActorRef;
-import akka.actor.Props;
+import akka.actor.*;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
@@ -9,43 +8,82 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.graph.source.api.*;
+import com.spbsu.flamestream.runtime.raw.RawData;
 import org.jetbrains.annotations.Nullable;
+import scala.Option;
+import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.NavigableSet;
-import java.util.Spliterator;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 
-public final class SpliteratorFront<T> extends LoggingActor {
-  private final NavigableSet<DataItem<T>> history = new ConcurrentSkipListSet<>(Comparator.comparing(DataItem::meta));
+public final class ActorFront<T> extends LoggingActor {
   private final String frontId;
-  private final Spliterator<T> spliterator;
+  private final ActorPath remoteActor;
 
   private long prevGlobalTs = 0;
   private ActorRef hole = context().system().deadLetters();
 
+  private final Queue<T> queue = new ArrayDeque<>();
+  private final NavigableSet<DataItem<T>> history = new ConcurrentSkipListSet<>(Comparator.comparing(DataItem::meta));
+
   @Nullable
   private DataItem<T> pending = null;
+  @Nullable
+  private Cancellable ping;
 
-  private SpliteratorFront(String frontId, Spliterator<T> spliterator) {
+  private ActorFront(String frontId, ActorPath remoteActor) {
     this.frontId = frontId;
-    this.spliterator = spliterator;
+    this.remoteActor = remoteActor;
   }
 
-  public static <T> Props props(String frontId, Spliterator<T> spliterator) {
-    return Props.create(SpliteratorFront.class, frontId, spliterator);
+  public static Props props(String frontId, ActorPath path) {
+    return Props.create(ActorFront.class, frontId, path);
+  }
+
+  @Override
+  public void preStart() throws Exception {
+    super.preStart();
+    context().actorSelection(remoteActor).tell(new ActorIdentity("hi", Option.apply(self())), self());
+
+    this.ping = context().system().scheduler().schedule(
+            Duration.Zero(),
+            FiniteDuration.apply(100, TimeUnit.MILLISECONDS),
+            self(),
+            "ping",
+            context().system().dispatcher(),
+            self()
+    );
+  }
+
+  @Override
+  public void postStop() {
+    if (ping != null) {
+      ping.cancel();
+    }
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
+            .match(RawData.class, this::onRaw)
             .match(NewHole.class, this::onNewHole)
             .match(Replay.class, this::onReplay)
             .match(Accepted.class, this::onAccepted)
             .match(PleaseWait.class, this::onPleaseWait)
+            .match(String.class, s -> s.equals("ping"), p -> emmitWatermark())
             .build();
+  }
+
+  private void onRaw(RawData<T> data) {
+    data.forEach(queue::add);
+    if (pending == null) {
+      emmit();
+    }
   }
 
   private void onPleaseWait(PleaseWait pleaseWait) {
@@ -62,7 +100,7 @@ public final class SpliteratorFront<T> extends LoggingActor {
       pending = null;
       emmit();
     } else {
-      throw new IllegalStateException("Unexpected ack");
+      throw new IllegalStateException("Unexpected ack"); // TODO: 13.11.2017 think about me
     }
   }
 
@@ -78,31 +116,29 @@ public final class SpliteratorFront<T> extends LoggingActor {
     ).forEach(dataItem -> hole.tell(dataItem, sender()));
   }
 
+  private void emmitWatermark() {
+    hole.tell(new Heartbeat(currentMeta().globalTime()), self());
+  }
+
   private void emmit() {
-    if (pending == null) {
-      final boolean advanced = spliterator.tryAdvance(element -> {
-        pending = new PayloadDataItem<>(currentMeta(), element);
-        history.add(pending);
-        hole.tell(pending, self());
-      });
-      if (!advanced) {
-        hole.tell(new Heartbeat(new GlobalTime(Long.MAX_VALUE, frontId)), self());
-      }
-    } else {
+    if (pending == null && !queue.isEmpty()) {
+      final T element = queue.poll();
+      pending = new PayloadDataItem<>(currentMeta(), element);
+      history.add(pending);
+      hole.tell(pending, self());
+    } else if (pending != null) {
       hole.tell(pending, null);
     }
   }
 
-  private GlobalTime currentGlobalTime() {
+  private Meta currentMeta() {
     long globalTs = System.currentTimeMillis();
     if (globalTs <= prevGlobalTs) {
       globalTs = prevGlobalTs + 1;
     }
     prevGlobalTs = globalTs;
-    return new GlobalTime(globalTs, frontId);
-  }
 
-  private Meta currentMeta() {
-    return Meta.meta(currentGlobalTime());
+    final GlobalTime globalTime = new GlobalTime(globalTs, frontId);
+    return Meta.meta(globalTime);
   }
 }
