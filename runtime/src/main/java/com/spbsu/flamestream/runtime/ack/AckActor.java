@@ -93,7 +93,7 @@ public final class AckActor extends LoggingActor {
 
   private void checkMinTime() {
     final GlobalTime minAmongTables = minAmongTables();
-    if (minAmongTables.compareTo(this.currentMin) > 0) {
+    if (minAmongTables.compareTo(currentMin) > 0) {
       this.currentMin = minAmongTables;
       { //send min updates
         log().debug("New min time: {}", this.currentMin);
@@ -102,24 +102,22 @@ public final class AckActor extends LoggingActor {
       }
     }
 
-    if (minAmongTables.time() == tickInfo.stopTs()) {
-      { //send commit
-        log().info("Committing");
-        //noinspection ConstantConditions
-        tickRoutes.rangeConcierges().values().forEach(r -> r.tell(new Commit(), self()));
-      }
-      getContext().become(ReceiveBuilder.create().match(RangeCommitDone.class, rangeCommitDone -> {
-        log().debug("Received: {}", rangeCommitDone);
-        final HashRange committer = rangeCommitDone.committer();
-        committers.add(committer);
-        if (committers.equals(tickInfo.hashMapping().keySet())) {
-          log().info("Tick commit done");
-          tickWatcher.tell(new CommitTick(tickInfo.id()), self());
-          context().stop(self());
-        }
-      }).build());
-    } else if (minAmongTables.time() > tickInfo.stopTs()) {
-      throw new IllegalStateException("Ledger min must be less or equal to tick stop ts");
+    if (minAmongTables.time() >= tickInfo.stopTs()) {
+      log().info("Committing");
+      tickRoutes.rangeConcierges().values().forEach(r -> r.tell(new Commit(), self()));
+
+      getContext().become(ReceiveBuilder.create()
+              .match(RangeCommitDone.class, rangeCommitDone -> {
+                log().debug("Received: {}", rangeCommitDone);
+                final HashRange committer = rangeCommitDone.committer();
+                committers.add(committer);
+                if (committers.equals(tickInfo.hashMapping().keySet())) {
+                  log().info("Tick commit done");
+                  tickWatcher.tell(new CommitTick(tickInfo.id()), self());
+                  context().stop(self());
+                }
+              })
+              .build());
     }
   }
 
