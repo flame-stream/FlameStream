@@ -47,12 +47,14 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
       final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
       source.forEach(sink);
 
-      environment.awaitTick(15);
+      environment.awaitTicks();
 
       Assert.assertEquals(
               new HashSet<>(result),
               source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
       );
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -67,12 +69,15 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
 
       final List<Integer> source = new Random().ints(20000).boxed().collect(Collectors.toList());
       source.forEach(sink);
-      environment.awaitTick(40);
+
+      environment.awaitTicks();
 
       Assert.assertEquals(
               new HashSet<>(result),
               source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
       );
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 

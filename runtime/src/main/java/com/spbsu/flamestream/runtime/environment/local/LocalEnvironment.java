@@ -83,6 +83,16 @@ public final class LocalEnvironment implements Environment {
     return new LocalActorSink<>(hash, localSystem.actorOf(CollectingActor.props(mySuperConsumer), "collector"));
   }
 
+  @Override
+  public void awaitTick(long tickId) throws InterruptedException {
+    Thread.sleep(10000);
+  }
+
+  @Override
+  public Set<Long> ticks() {
+    return tickConcierges.keySet();
+  }
+
   /*@Override
   public Consumer<Object> frontConsumer(int frontId) {
     if (frontId == 1) {

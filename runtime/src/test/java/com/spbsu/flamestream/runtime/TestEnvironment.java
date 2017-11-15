@@ -141,11 +141,9 @@ public class TestEnvironment implements Environment {
     return result;
   }
 
-  public void awaitTick(int seconds) {
-    try {
-      SECONDS.sleep(seconds);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+  public void awaitTicks() throws InterruptedException {
+    for (long tick : ticks()) {
+      awaitTick(tick);
     }
   }
 
@@ -177,6 +175,16 @@ public class TestEnvironment implements Environment {
   @Override
   public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     return innerEnvironment.wrapInSink(hash, mySuperConsumer);
+  }
+
+  @Override
+  public void awaitTick(long tickId) throws InterruptedException {
+    innerEnvironment.awaitTick(tickId);
+  }
+
+  @Override
+  public Set<Long> ticks() {
+    return innerEnvironment.ticks();
   }
 
   private static class BalancingActor extends LoggingActor {

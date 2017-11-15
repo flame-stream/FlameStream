@@ -35,8 +35,10 @@ public abstract class AbstractExampleTest extends FlameStreamSuite {
         }
       });
 
-      environment.awaitTick(waitTickInSec);
+      environment.awaitTicks();
       checker.assertCorrect(result.stream());
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 }

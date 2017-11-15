@@ -20,6 +20,7 @@ import com.typesafe.config.ConfigFactory;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -30,12 +31,15 @@ import scala.concurrent.duration.Duration;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
+import java.util.stream.Collectors;
 
 public final class RemoteEnvironment implements Environment {
   private static final String SYSTEM_NAME = "remote-environment";
@@ -104,6 +108,41 @@ public final class RemoteEnvironment implements Environment {
     final String suffix = UUID.randomUUID().toString();
     localSystem.actorOf(CollectingActor.props(mySuperConsumer), suffix);
     return new RemoteActorSink<>(hash, wrapperPath(suffix));
+  }
+
+  @Override
+  public void awaitTick(long tickId) throws InterruptedException {
+    final Object monitor = new Object();
+    final AtomicBoolean exists = new AtomicBoolean(false);
+
+    synchronized (monitor) {
+      try {
+        final Stat stat = zooKeeper.exists("/ticks/" + tickId + "/committed", w -> {
+          if (w.getType() == Watcher.Event.EventType.NodeCreated) {
+            synchronized (monitor) {
+              exists.set(true);
+              monitor.notifyAll();
+            }
+          }
+        });
+
+        while (stat == null && !exists.get()) {
+          monitor.wait();
+        }
+      } catch (KeeperException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  @Override
+  public Set<Long> ticks() {
+    try {
+      final List<String> children = zooKeeper.getChildren("/ticks", false);
+      return children.stream().map(Long::parseLong).collect(Collectors.toSet());
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private ActorPath wrapperPath(String suffix) {

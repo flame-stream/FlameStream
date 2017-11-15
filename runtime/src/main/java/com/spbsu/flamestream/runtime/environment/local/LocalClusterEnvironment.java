@@ -193,6 +193,16 @@ public final class LocalClusterEnvironment implements Environment {
     return remoteEnvironment.wrapInSink(hash, mySuperConsumer);
   }
 
+  @Override
+  public void awaitTick(long tickId) throws InterruptedException {
+    remoteEnvironment.awaitTick(tickId);
+  }
+
+  @Override
+  public Set<Long> ticks() {
+    return remoteEnvironment.ticks();
+  }
+
   private static final class ZooKeeperApplication extends ZooKeeperServerMain {
     void run() throws IOException {
       final QuorumPeerConfig quorumConfig = new QuorumPeerConfig();

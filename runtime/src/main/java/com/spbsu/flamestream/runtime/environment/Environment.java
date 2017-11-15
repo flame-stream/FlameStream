@@ -16,4 +16,8 @@ public interface Environment extends AutoCloseable {
   Set<String> availableWorkers();
 
   <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer);
+
+  void awaitTick(long tickId) throws InterruptedException;
+
+  Set<Long> ticks();
 }

@@ -41,9 +41,11 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
       source.forEach(sink);
-      environment.awaitTick(12);
+      environment.awaitTicks();
 
       Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, groupHash, window));
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 

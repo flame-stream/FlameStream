@@ -91,7 +91,7 @@ public final class SumTest {
         }
       });
 
-      environment.awaitTick(tickLength + 5);
+      environment.awaitTicks();
 
       final long expected = source.stream()
               .reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value()))
@@ -99,6 +99,8 @@ public final class SumTest {
       final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
 
       Assert.assertEquals(actual, expected);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 }
