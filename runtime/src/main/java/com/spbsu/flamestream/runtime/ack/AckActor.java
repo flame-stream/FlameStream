@@ -117,6 +117,7 @@ public final class AckActor extends LoggingActor {
                   context().stop(self());
                 }
               })
+              .match(Heartbeat.class, heartbeat -> {})
               .build());
     }
   }
