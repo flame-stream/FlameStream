@@ -2,7 +2,7 @@ package com.spbsu.flamestream.core.graph.source.impl;
 
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.source.SourceHandle;
 
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class BackPressureSource extends AbstractSource {
   @Override
   public void onNext(DataItem<?> item, SourceHandle handle) {
     handle.push(outPort, item);
-    handle.ack(item.ack(), item.meta().globalTime());
+    handle.ack(item.xor(), item.meta().globalTime());
 
     if (inFlight.size() < MAX_IN_FLIGHT_ITEMS) {
       handle.accept(item.meta().globalTime());
