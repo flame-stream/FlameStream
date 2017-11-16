@@ -13,10 +13,6 @@ import com.spbsu.flamestream.runtime.node.tick.api.TickRoutes;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * User: Artem
- * Date: 10.11.2017
- */
 class SourceHandleImpl extends AtomicHandleImpl implements SourceHandle {
   private final Map<String, ActorRef> frontRefs = new HashMap<>();
 

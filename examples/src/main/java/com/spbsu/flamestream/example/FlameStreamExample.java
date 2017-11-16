@@ -12,7 +12,7 @@ import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.Merge;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
 import com.spbsu.flamestream.core.graph.source.AbstractSource;
-import com.spbsu.flamestream.core.graph.source.SimpleSource;
+import com.spbsu.flamestream.core.graph.source.BackPressureSource;
 import com.spbsu.flamestream.example.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.index.model.WordBase;
 import com.spbsu.flamestream.example.index.model.WordPagePositions;
@@ -35,10 +35,6 @@ import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-/**
- * User: Artem
- * Date: 27.09.2017
- */
 @SuppressWarnings({"Convert2Lambda", "NonSerializableFieldInSerializableClass"})
 public enum FlameStreamExample {
   INVERTED_INDEX {
@@ -72,7 +68,7 @@ public enum FlameStreamExample {
 
     @Override
     public Graph graph(Function<ToIntFunction<?>, AtomicGraph> sinkBuilder) {
-      final AbstractSource source = new SimpleSource();
+      final AbstractSource source = new BackPressureSource();
       final Merge merge = new Merge(Arrays.asList(wordHash, wordHash));
       final Filter<WordBase> indexDiffFilter = new Filter<>(new WordIndexDiffFilter(), wordHash);
       final Grouping<WordBase> grouping = new Grouping<>(wordHash, wordEqualz, 2);
@@ -124,7 +120,7 @@ public enum FlameStreamExample {
 
     @Override
     public Graph graph(Function<ToIntFunction<?>, AtomicGraph> sinkBuilder) {
-      final AbstractSource source = new SimpleSource();
+      final AbstractSource source = new BackPressureSource();
       final Merge merge = new Merge(Arrays.asList(wordHash, wordHash));
       final Grouping<WordContainer> grouping = new Grouping<>(wordHash, equalz, 2);
       final Filter<List<WordContainer>> filter = new Filter<>(new WordContainerOrderingFilter(), groupHash);
