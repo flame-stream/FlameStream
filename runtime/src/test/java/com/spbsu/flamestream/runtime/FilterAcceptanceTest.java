@@ -1,9 +1,9 @@
 package com.spbsu.flamestream.runtime;
 
 import com.spbsu.flamestream.common.FlameStreamSuite;
-import com.spbsu.flamestream.core.graph.HashFunction;
-import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
 import com.spbsu.flamestream.core.graph.source.AbstractSource;
@@ -12,7 +12,11 @@ import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Queue;
+import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,7 +42,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
   @Test
   public void linearFilter() {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
-         TestEnvironment environment = new TestEnvironment(lce)) {
+            TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
       final Consumer<Object> sink = environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)
@@ -61,7 +65,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
   @Test(enabled = false)
   public void multipleTicksLinearFilter() {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
-         TestEnvironment environment = new TestEnvironment(lce)) {
+            TestEnvironment environment = new TestEnvironment(lce)) {
       final Queue<Integer> result = new ArrayDeque<>();
       final Consumer<Object> sink = environment.deploy(FilterAcceptanceTest.multiGraph(
               environment.wrapInSink(HashFunction.OBJECT_HASH, result::add)

@@ -1,9 +1,9 @@
 package com.spbsu.flamestream.runtime;
 
 import com.spbsu.flamestream.common.FlameStreamSuite;
-import com.spbsu.flamestream.core.graph.HashFunction;
-import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
@@ -15,7 +15,11 @@ import org.jooq.lambda.Seq;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -23,10 +27,10 @@ import java.util.stream.Collectors;
 
 public final class GroupingAcceptanceTest extends FlameStreamSuite {
   private static void doIt(HashFunction<? super Long> groupHash,
-                           HashFunction<? super Long> filterHash,
-                           BiPredicate<? super Long, ? super Long> equalz) {
+          HashFunction<? super Long> filterHash,
+          BiPredicate<? super Long, ? super Long> equalz) {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(5);
-         TestEnvironment environment = new TestEnvironment(lce)) {
+            TestEnvironment environment = new TestEnvironment(lce)) {
       final Set<List<Long>> result = new HashSet<>();
       final int window = 7;
 
@@ -66,10 +70,10 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
   }
 
   private static Graph groupGraph(AtomicGraph sink,
-                                                       int window,
-                                                       HashFunction<? super Long> groupHash,
-                                                       BiPredicate<? super Long, ? super Long> equalz,
-                                                       HashFunction<? super Long> filterHash) {
+          int window,
+          HashFunction<? super Long> groupHash,
+          BiPredicate<? super Long, ? super Long> equalz,
+          HashFunction<? super Long> filterHash) {
     final AbstractSource source = new SimpleSource();
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
     final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window);

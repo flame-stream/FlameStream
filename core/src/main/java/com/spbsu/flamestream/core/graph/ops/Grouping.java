@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.core.graph.ops;
 
+import com.spbsu.flamestream.common.Statistics;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
@@ -10,7 +11,6 @@ import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.graph.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
-import com.spbsu.flamestream.common.Statistics;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 

@@ -100,7 +100,7 @@ public final class RangeConcierge extends LoggingActor {
   }
 
   private Map<AtomicGraph, ActorRef> initializedAtomics(Collection<? extends AtomicGraph> atomicGraphs,
-                                                        TickRoutes tickRoutes) {
+          TickRoutes tickRoutes) {
     return atomicGraphs.stream().collect(toMap(Function.identity(), atomic -> actorForAtomic(atomic, tickRoutes)));
   }
 

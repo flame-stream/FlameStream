@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.core.graph.barrier;
 
+import com.spbsu.flamestream.common.Statistics;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
@@ -9,7 +10,6 @@ import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.ChaincallGraph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.common.Statistics;
 import gnu.trove.impl.Constants;
 import gnu.trove.map.TObjectLongMap;
 import gnu.trove.map.hash.TObjectLongHashMap;

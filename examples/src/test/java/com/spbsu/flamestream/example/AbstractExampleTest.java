@@ -18,7 +18,7 @@ public abstract class AbstractExampleTest extends FlameStreamSuite {
 
   protected <T> void test(ExampleChecker<T> checker, int workers, int tickLengthInSec) {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(workers);
-         TestEnvironment environment = new TestEnvironment(lce)) {
+            TestEnvironment environment = new TestEnvironment(lce)) {
       final List<Object> result = new ArrayList<>();
       //noinspection RedundantCast,unchecked
       environment.deploy(example().graph(h -> environment.wrapInSink(

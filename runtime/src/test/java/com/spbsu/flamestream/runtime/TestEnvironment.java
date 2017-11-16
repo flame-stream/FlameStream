@@ -1,9 +1,15 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.*;
+import akka.actor.ActorIdentity;
+import akka.actor.ActorPath;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Address;
+import akka.actor.Props;
+import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.front.impl.ActorFront;
@@ -19,7 +25,12 @@ import scala.concurrent.duration.Duration;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Spliterator;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
@@ -64,9 +75,9 @@ public class TestEnvironment implements Environment {
   }
 
   public Consumer<Object> deploy(Graph graph,
-                                 int tickLengthSeconds,
-                                 int ticksCount,
-                                 int frontsCount) {
+          int tickLengthSeconds,
+          int ticksCount,
+          int frontsCount) {
     final Consumer<Object> consumer;
     { //create consumer
       final ActorRef balancingActor = system.actorOf(Props.create(BalancingActor.class), "balancing-actor");
@@ -87,14 +98,18 @@ public class TestEnvironment implements Environment {
   }
 
   public void deploy(Graph graph,
-                     Spliterator<Object> spliterator,
-                     int tickLengthSeconds,
-                     int ticksCount) {
+          Spliterator<Object> spliterator,
+          int tickLengthSeconds,
+          int ticksCount) {
     final String frontName = "0";
     system.actorOf(SpliteratorFront.props(frontName, spliterator), frontName);
 
     final Props mediatorProps = MediatorFront.props(localPath(frontName));
-    deployFront(availableWorkers().stream().findAny().orElseThrow(IllegalStateException::new), frontName, mediatorProps);
+    deployFront(
+            availableWorkers().stream().findAny().orElseThrow(IllegalStateException::new),
+            frontName,
+            mediatorProps
+    );
     deployGraph(graph, tickLengthSeconds, ticksCount, 1);
   }
 

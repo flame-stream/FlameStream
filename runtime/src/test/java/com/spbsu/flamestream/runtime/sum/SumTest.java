@@ -1,10 +1,14 @@
 package com.spbsu.flamestream.runtime.sum;
 
-import com.spbsu.flamestream.core.graph.HashFunction;
-import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
-import com.spbsu.flamestream.core.graph.ops.*;
+import com.spbsu.flamestream.core.graph.ops.Broadcast;
+import com.spbsu.flamestream.core.graph.ops.Filter;
+import com.spbsu.flamestream.core.graph.ops.Grouping;
+import com.spbsu.flamestream.core.graph.ops.Merge;
+import com.spbsu.flamestream.core.graph.ops.StatelessMap;
 import com.spbsu.flamestream.core.graph.source.AbstractSource;
 import com.spbsu.flamestream.core.graph.source.SimpleSource;
 import com.spbsu.flamestream.runtime.TestEnvironment;
@@ -12,7 +16,12 @@ import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Random;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -40,7 +49,8 @@ public final class SumTest {
 
     final BarrierSuite<Sum> barrier = new BarrierSuite<>(sink);
 
-    return source.fuse(merge, source.outPort(), merge.inPorts().get(0)).fuse(grouping, merge.outPort(), grouping.inPort())
+    return source.fuse(merge, source.outPort(), merge.inPorts().get(0))
+            .fuse(grouping, merge.outPort(), grouping.inPort())
             .fuse(enricher, grouping.outPort(), enricher.inPort())
             .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
             .fuse(reducer, junkFilter.outPort(), reducer.inPort())
@@ -68,7 +78,7 @@ public final class SumTest {
 
   private void test(int tickLength, int inputSize, int fronts) {
     try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
-         TestEnvironment environment = new TestEnvironment(lce)) {
+            TestEnvironment environment = new TestEnvironment(lce)) {
 
       final Deque<Sum> result = new ArrayDeque<>();
 

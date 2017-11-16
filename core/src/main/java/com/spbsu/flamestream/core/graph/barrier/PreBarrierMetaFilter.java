@@ -1,10 +1,10 @@
 package com.spbsu.flamestream.core.graph.barrier;
 
-import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 

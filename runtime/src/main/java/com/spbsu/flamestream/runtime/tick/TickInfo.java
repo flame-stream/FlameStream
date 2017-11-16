@@ -32,14 +32,14 @@ public final class TickInfo {
   private final String ackerLocation;
 
   public TickInfo(long id,
-                  long startTs,
-                  long stopTs,
-                  ComposedGraph<AtomicGraph> graph,
-                  String ackerLocation,
-                  Map<HashRange, String> hashMapping,
-                  Set<String> fronts,
-                  long window,
-                  Set<Long> tickDependencies) {
+          long startTs,
+          long stopTs,
+          ComposedGraph<AtomicGraph> graph,
+          String ackerLocation,
+          Map<HashRange, String> hashMapping,
+          Set<String> fronts,
+          long window,
+          Set<Long> tickDependencies) {
     if (!graph.inPorts().isEmpty() || !graph.outPorts().isEmpty()) {
       throw new IllegalArgumentException("InPorts or OutPorts are not empty");
     }
@@ -94,7 +94,7 @@ public final class TickInfo {
   @Override
   public String toString() {
     return "TickInfo{" + "id=" + id + ", graph=" + graph + ", hashMapping=" + hashMapping + ", tickDependencies="
-        + tickDependencies + ", startTs=" + startTs + ", stopTs=" + stopTs + ", window=" + window
-        + ", ackerLocation=" + ackerLocation + '}';
+            + tickDependencies + ", startTs=" + startTs + ", stopTs=" + stopTs + ", window=" + window
+            + ", ackerLocation=" + ackerLocation + '}';
   }
 }

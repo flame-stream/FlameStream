@@ -2,12 +2,12 @@ package com.spbsu.flamestream.core.graph.ops;
 
 import com.spbsu.flamestream.common.FlameStreamSuite;
 import com.spbsu.flamestream.core.FakeAtomicHandle;
-import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.testng.Assert;

@@ -2,8 +2,8 @@ package com.spbsu.flamestream.core.graph.barrier;
 
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.graph.invalidation.ArrayInvalidatingBucket;
+import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
 
 import java.util.SortedMap;
 import java.util.TreeMap;
