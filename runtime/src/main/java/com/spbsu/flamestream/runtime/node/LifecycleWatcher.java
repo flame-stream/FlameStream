@@ -2,13 +2,13 @@ package com.spbsu.flamestream.runtime.node;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
 
 import static org.apache.zookeeper.Watcher.Event;
 
-public final class LifecycleWatcher extends LoggingActor {
+public class LifecycleWatcher extends LoggingActor {
   public static final int SESSION_TIMEOUT = 5000;
   private final String zkConnectString;
   private final String id;
@@ -69,5 +69,4 @@ public final class LifecycleWatcher extends LoggingActor {
       unhandled(event);
     }
   }
-
 }

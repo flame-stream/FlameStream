@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.example;
 
 import com.spbsu.flamestream.common.FlameStreamSuite;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 
@@ -22,7 +23,7 @@ public abstract class AbstractExampleTest extends FlameStreamSuite {
       final List<Object> result = new ArrayList<>();
       //noinspection RedundantCast,unchecked
       environment.deploy(example().graph(h -> environment.wrapInSink(
-              (ToIntFunction<? super T>) h,
+              (HashFunction<? super T>) h,
               result::add
       )), (Spliterator<Object>) checker.input().spliterator(), tickLengthInSec, 1);
 

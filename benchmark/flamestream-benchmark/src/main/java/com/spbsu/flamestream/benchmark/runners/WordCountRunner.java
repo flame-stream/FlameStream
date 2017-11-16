@@ -2,6 +2,7 @@ package com.spbsu.flamestream.benchmark.runners;
 
 import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.benchmark.EnvironmentRunner;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.example.FlameStreamExample;
 import com.spbsu.flamestream.example.wordcount.model.WordCounter;
 import com.spbsu.flamestream.runtime.TestEnvironment;
@@ -43,7 +44,7 @@ public final class WordCountRunner implements EnvironmentRunner {
       //noinspection RedundantCast,unchecked
       final Consumer<Object> sink = testEnvironment.deploy(
               FlameStreamExample.WORD_COUNT.graph(hash -> testEnvironment.wrapInSink(
-                      (ToIntFunction<? super WordCounter>) hash,
+                      (HashFunction<? super WordCounter>) hash,
                       o -> latencyMeasurer.finish((WordCounter) o)
               )),
               60,

@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.ActorSystem;
-import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
+import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.node.LifecycleWatcher;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -15,7 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeoutException;
 
-public final class WorkerApplication {
+public class WorkerApplication {
   private static final int PORT = 4387;
   private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
   private final DumbInetSocketAddress host;

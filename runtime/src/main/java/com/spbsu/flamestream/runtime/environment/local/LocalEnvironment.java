@@ -5,13 +5,14 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.runtime.ack.api.CommitTick;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.core.graph.HashFunction;
+import com.spbsu.flamestream.runtime.acker.api.CommitTick;
+import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.CollectingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
-import com.spbsu.flamestream.runtime.tick.TickCommitDone;
-import com.spbsu.flamestream.runtime.tick.TickConcierge;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.node.tick.api.TickCommitDone;
+import com.spbsu.flamestream.runtime.node.tick.TickConcierge;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.io.FileUtils;
 import scala.concurrent.Await;
@@ -24,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-import java.util.function.ToIntFunction;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -79,7 +79,7 @@ public final class LocalEnvironment implements Environment {
   }
 
   @Override
-  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
+  public <T> AtomicGraph wrapInSink(HashFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     return new LocalActorSink<>(hash, localSystem.actorOf(CollectingActor.props(mySuperConsumer), "collector"));
   }
 

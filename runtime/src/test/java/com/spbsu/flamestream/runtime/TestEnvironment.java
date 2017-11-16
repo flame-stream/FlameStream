@@ -10,14 +10,16 @@ import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.core.graph.HashFunction;
+import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
+import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
-import com.spbsu.flamestream.runtime.front.impl.ActorFront;
-import com.spbsu.flamestream.runtime.front.impl.MediatorFront;
-import com.spbsu.flamestream.runtime.front.impl.SpliteratorFront;
-import com.spbsu.flamestream.runtime.range.HashRange;
-import com.spbsu.flamestream.runtime.raw.SingleRawData;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.node.front.ActorFront;
+import com.spbsu.flamestream.runtime.node.front.MediatorFront;
+import com.spbsu.flamestream.runtime.node.front.SpliteratorFront;
+import com.spbsu.flamestream.runtime.node.tick.range.HashRange;
+import com.spbsu.flamestream.runtime.environment.raw.SingleRawData;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import scala.concurrent.Await;
@@ -33,7 +35,6 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
-import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -192,7 +193,7 @@ public class TestEnvironment implements Environment {
   }
 
   @Override
-  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
+  public <T> AtomicGraph wrapInSink(HashFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     return innerEnvironment.wrapInSink(hash, mySuperConsumer);
   }
 

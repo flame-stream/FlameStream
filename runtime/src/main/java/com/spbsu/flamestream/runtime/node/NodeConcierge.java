@@ -8,12 +8,12 @@ import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.front.FrontConcierge;
-import com.spbsu.flamestream.runtime.tick.TickCommitDone;
-import com.spbsu.flamestream.runtime.tick.TickConcierge;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.node.front.FrontConcierge;
+import com.spbsu.flamestream.runtime.node.tick.api.TickCommitDone;
+import com.spbsu.flamestream.runtime.node.tick.TickConcierge;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
+import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
+import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
@@ -26,7 +26,7 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toMap;
 
-public final class NodeConcierge extends LoggingActor {
+class NodeConcierge extends LoggingActor {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private final ZooKeeper zk;
@@ -45,7 +45,7 @@ public final class NodeConcierge extends LoggingActor {
     this.id = id;
   }
 
-  public static Props props(String id, ZooKeeper zooKeeper) {
+  static Props props(String id, ZooKeeper zooKeeper) {
     return Props.create(NodeConcierge.class, id, zooKeeper);
   }
 

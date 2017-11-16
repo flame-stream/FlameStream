@@ -4,11 +4,12 @@ import akka.actor.Props;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.runtime.application.WorkerApplication;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.environment.remote.RemoteEnvironment;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
+import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
@@ -30,13 +31,12 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.ToIntFunction;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
-public final class LocalClusterEnvironment implements Environment {
+public class LocalClusterEnvironment implements Environment {
   private static final String ZK_STRING = "localhost:2181";
   private static final int START_WORKER_PORT = 5223;
 
@@ -189,7 +189,7 @@ public final class LocalClusterEnvironment implements Environment {
   }
 
   @Override
-  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
+  public <T> AtomicGraph wrapInSink(HashFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     return remoteEnvironment.wrapInSink(hash, mySuperConsumer);
   }
 

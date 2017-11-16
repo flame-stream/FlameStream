@@ -2,6 +2,7 @@ package com.spbsu.flamestream.benchmark.runners;
 
 import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.benchmark.EnvironmentRunner;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.example.FlameStreamExample;
 import com.spbsu.flamestream.example.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.index.model.WordBase;
@@ -42,7 +43,7 @@ public class InvertedIndexRunner implements EnvironmentRunner {
       //noinspection RedundantCast,unchecked
       final Consumer<Object> sink = testEnvironment.deploy(
               FlameStreamExample.INVERTED_INDEX.graph(hash -> testEnvironment
-                      .wrapInSink(((ToIntFunction<? super WordBase>) hash), container -> {
+                      .wrapInSink(((HashFunction<? super WordBase>) hash), container -> {
                         if (container instanceof WordIndexAdd) {
                           final WordIndexAdd indexAdd = (WordIndexAdd) container;
                           final int docId = IndexItemInLong.pageId(indexAdd.positions()[0]);

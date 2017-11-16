@@ -8,13 +8,14 @@ import akka.actor.RootActorPath;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
-import com.spbsu.flamestream.runtime.configuration.CommonSerializer;
-import com.spbsu.flamestream.runtime.configuration.FrontSerializer;
-import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
+import com.spbsu.flamestream.core.graph.HashFunction;
+import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
+import com.spbsu.flamestream.runtime.utils.serialization.CommonSerializer;
+import com.spbsu.flamestream.runtime.utils.serialization.FrontSerializer;
+import com.spbsu.flamestream.runtime.utils.serialization.TickInfoSerializer;
 import com.spbsu.flamestream.runtime.environment.CollectingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.hadoop.util.ZKUtil;
@@ -38,7 +39,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 public final class RemoteEnvironment implements Environment {
@@ -104,7 +104,7 @@ public final class RemoteEnvironment implements Environment {
   }
 
   @Override
-  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
+  public <T> AtomicGraph wrapInSink(HashFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     final String suffix = UUID.randomUUID().toString();
     localSystem.actorOf(CollectingActor.props(mySuperConsumer), suffix);
     return new RemoteActorSink<>(hash, wrapperPath(suffix));
