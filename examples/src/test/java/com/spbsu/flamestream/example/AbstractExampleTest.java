@@ -28,7 +28,6 @@ public abstract class AbstractExampleTest extends FlameStreamSuite {
       )), (Spliterator<Object>) checker.input().spliterator(), tickLengthInSec, 1);
 
       environment.awaitTicks();
-      Thread.sleep(1000); //wait for results
 
       checker.assertCorrect(result.stream());
     } catch (InterruptedException e) {
