@@ -137,7 +137,7 @@ public final class RemoteEnvironment implements Environment {
           throw new RuntimeException("Ooops");
         }
 
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(5);
       } catch (KeeperException e) {
         throw new RuntimeException(e);
       }
