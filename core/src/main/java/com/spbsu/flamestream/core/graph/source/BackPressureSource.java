@@ -8,10 +8,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * User: Artem
- * Date: 14.11.2017
- */
 public class BackPressureSource extends AbstractSource {
   // TODO: 14.11.2017 tune magic constant in runtime
   private static final int MAX_IN_FLIGHT_ITEMS = 10;
@@ -24,7 +20,7 @@ public class BackPressureSource extends AbstractSource {
     while (iterator.hasNext()) {
       final InFlightElement next = iterator.next();
       final GlobalTime nextTime = next.globalTime;
-      if (nextTime.compareTo(globalTime) < 0) {
+      if (nextTime.compareTo(globalTime) <= 0) {
         iterator.remove();
         if (!next.accepted) {
           sourceHandle.accept(nextTime);
@@ -42,10 +38,9 @@ public class BackPressureSource extends AbstractSource {
       handle.accept(item.meta().globalTime());
       inFlight.add(new InFlightElement(item.meta().globalTime(), true));
     } else {
+      handle.heartbeat(item.meta().globalTime());
       inFlight.add(new InFlightElement(item.meta().globalTime(), false));
     }
-
-    super.onNext(item, handle);
   }
 
   private static class InFlightElement {
