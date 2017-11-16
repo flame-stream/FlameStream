@@ -1,10 +1,10 @@
 package com.spbsu.flamestream.core.graph.barrier;
 
-import com.spbsu.flamestream.core.HashFunction;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
-import com.spbsu.flamestream.core.graph.atomic.impl.AbstractAtomicGraph;
-import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 
@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.ToIntFunction;
 
-final class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
+class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
@@ -26,11 +26,11 @@ final class PreBarrierMetaFilter<T> extends AbstractAtomicGraph {
             item.meta().advanced(incrementLocalTimeAndGet()),
             new PreBarrierMetaElement<>(
                     item.payload(),
-                    HashFunction.UNIFORM_OBJECT_HASH.hash(item.meta().globalTime().front())
+                    HashFunction.UNIFORM_OBJECT_HASH.hash(item.meta().globalTime())
             )
     );
     handle.push(outPort(), newItem);
-    handle.ack(newItem.ack(), newItem.meta().globalTime());
+    handle.ack(newItem.xor(), newItem.meta().globalTime());
   }
 
   OutPort outPort() {

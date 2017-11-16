@@ -1,23 +1,21 @@
-package com.spbsu.flamestream.core.data.meta.impl;
+package com.spbsu.flamestream.core.data.meta;
 
 /**
  * Wrapper class for localEvents
  * Local events are represented as longs, all actions with localEvents should be done with this interfaces
  */
-@SuppressWarnings("UtilityClass")
-final class LocalEvent {
-
-  public static final long LOW_QUADWORD = 0xffffffffL;
+class LocalEvent {
+  private static final long LOW_QUADWORD = 0xffffffffL;
 
   private LocalEvent() {
   }
 
   static int childIdOf(long localEvent) {
-    return (int) (localEvent & LOW_QUADWORD);
+    return Math.toIntExact(localEvent & LOW_QUADWORD);
   }
 
   static int localTimeOf(long localEvent) {
-    return (int) (localEvent >> Integer.SIZE);
+    return Math.toIntExact(localEvent >> Integer.SIZE);
   }
 
   static long localEvent(int localTime, int childId) {

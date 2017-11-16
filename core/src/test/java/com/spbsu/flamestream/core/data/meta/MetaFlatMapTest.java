@@ -1,16 +1,11 @@
-package com.spbsu.flamestream.core.data.meta.impl;
+package com.spbsu.flamestream.core.data.meta;
 
-import com.spbsu.flamestream.FlameStreamSuite;
+import com.spbsu.flamestream.common.FlameStreamSuite;
 import com.spbsu.flamestream.core.FakeAtomicHandle;
-import com.spbsu.flamestream.core.HashFunction;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
-import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.data.meta.LocalEvent;
-import com.spbsu.flamestream.core.data.meta.Meta;
-import com.spbsu.flamestream.core.data.meta.MetaImpl;
-import com.spbsu.flamestream.core.data.meta.TraceImpl;
-import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.ops.FlatMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;

@@ -3,7 +3,7 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.*;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.Graph;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.front.impl.ActorFront;

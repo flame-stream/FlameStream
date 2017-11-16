@@ -3,8 +3,8 @@ package com.spbsu.flamestream.core.graph.ops;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
-import com.spbsu.flamestream.core.graph.atomic.impl.AbstractAtomicGraph;
-import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 
@@ -14,7 +14,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class Broadcast<T> extends AbstractAtomicGraph {
+public class Broadcast<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final List<OutPort> broadcastPorts;
 
@@ -32,7 +32,7 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
 
       final DataItem<?> newItem = new PayloadDataItem<>(newMeta, item.payload());
       handle.push(outPorts.get(i), newItem);
-      handle.ack(newItem.ack(), newItem.meta().globalTime());
+      handle.ack(newItem.xor(), newItem.meta().globalTime());
     }
   }
 

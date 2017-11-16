@@ -2,8 +2,8 @@ package com.spbsu.flamestream.core.graph.ops;
 
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
-import com.spbsu.flamestream.core.graph.atomic.impl.AbstractAtomicGraph;
-import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
-public final class StatelessMap<T, R> extends AbstractAtomicGraph {
+public class StatelessMap<T, R> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
@@ -29,25 +29,25 @@ public final class StatelessMap<T, R> extends AbstractAtomicGraph {
 
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
-    @SuppressWarnings("unchecked") final R res = function.apply((T) item.payload());
-
+    //noinspection unchecked
+    final R res = function.apply((T) item.payload());
     final DataItem<R> result = new PayloadDataItem<>(item.meta().advanced(incrementLocalTimeAndGet()), res);
 
     handler.push(outPort(), result);
-    handler.ack(result.ack(), result.meta().globalTime());
+    handler.ack(result.xor(), result.meta().globalTime());
   }
 
   public InPort inPort() {
     return inPort;
   }
 
+  public OutPort outPort() {
+    return outPort;
+  }
+
   @Override
   public List<InPort> inPorts() {
     return Collections.singletonList(inPort);
-  }
-
-  public OutPort outPort() {
-    return outPort;
   }
 
   @Override

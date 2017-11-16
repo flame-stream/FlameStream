@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example;
 
-import com.spbsu.flamestream.FlameStreamSuite;
+import com.spbsu.flamestream.common.FlameStreamSuite;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 

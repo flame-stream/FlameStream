@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core.graph.source.impl;
+package com.spbsu.flamestream.core.graph.source;
 
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
@@ -18,8 +18,7 @@ import java.util.List;
 public abstract class AbstractSource extends AbstractAtomicGraph implements Source {
   // TODO: 14.11.2017 tune magic constant in runtime
   private static final int MAX_ITEMS_BETWEEN_HEARTBEATS = 100;
-
-  protected final OutPort outPort = new OutPort();
+  private final OutPort outPort = new OutPort();
   private int itemsAfterPrevHeartbeat = 0;
 
   @Override
@@ -33,7 +32,7 @@ public abstract class AbstractSource extends AbstractAtomicGraph implements Sour
   }
 
   public OutPort outPort() {
-    return this.outPort;
+    return outPort;
   }
 
   @Override

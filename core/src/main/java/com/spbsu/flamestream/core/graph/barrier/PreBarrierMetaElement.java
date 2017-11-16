@@ -1,14 +1,12 @@
 package com.spbsu.flamestream.core.graph.barrier;
 
-import com.spbsu.flamestream.core.HashFunction;
+import com.spbsu.flamestream.core.graph.HashFunction;
 
-final class PreBarrierMetaElement<T> {
+class PreBarrierMetaElement<T> {
   @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
   static final HashFunction<PreBarrierMetaElement<?>> HASH_FUNCTION = new HashFunction<PreBarrierMetaElement<?>>() {
     @Override
-    public int hash(PreBarrierMetaElement<?> value) {
-      return value.metaHash();
-    }
+    public int hash(PreBarrierMetaElement<?> element) {return element.metaHash();}
   };
 
   private final T payload;
@@ -23,10 +21,9 @@ final class PreBarrierMetaElement<T> {
     return payload;
   }
 
-  int metaHash() {
+  private int metaHash() {
     return metaHash;
   }
-
 
   @Override
   public String toString() {

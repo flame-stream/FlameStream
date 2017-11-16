@@ -78,7 +78,6 @@ public final class AckActor extends LoggingActor {
     final long time = globalTime.time();
 
     final long start = System.nanoTime();
-    //assertMonotonicAck(ack.time());
     if (ackTable.ack(time, ack.xor())) {
       checkMinTime();
       stat.recordReleasingAck(System.nanoTime() - start);

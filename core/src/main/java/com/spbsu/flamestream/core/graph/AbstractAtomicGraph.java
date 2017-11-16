@@ -1,13 +1,9 @@
-package com.spbsu.flamestream.core.graph.atomic.impl;
-
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
-import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
-import com.spbsu.flamestream.core.graph.composed.impl.ComposedGraphImpl;
+package com.spbsu.flamestream.core.graph;
 
 import java.util.Collections;
 import java.util.Objects;
 
-public abstract class AbstractAtomicGraph implements AtomicGraph {
+public abstract class AbstractAtomicGraph extends AbstractGraph implements AtomicGraph {
   private int localTime = 0;
 
   protected final int incrementLocalTimeAndGet() {

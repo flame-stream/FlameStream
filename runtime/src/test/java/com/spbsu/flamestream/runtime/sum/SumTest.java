@@ -1,12 +1,12 @@
 package com.spbsu.flamestream.runtime.sum;
 
-import com.spbsu.flamestream.core.HashFunction;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.graph.Graph;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.*;
-import com.spbsu.flamestream.core.graph.source.impl.AbstractSource;
-import com.spbsu.flamestream.core.graph.source.impl.SimpleSource;
+import com.spbsu.flamestream.core.graph.source.AbstractSource;
+import com.spbsu.flamestream.core.graph.source.SimpleSource;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.testng.Assert;

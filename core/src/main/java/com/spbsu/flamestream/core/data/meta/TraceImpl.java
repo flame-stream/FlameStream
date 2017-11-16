@@ -1,17 +1,21 @@
-package com.spbsu.flamestream.core.data.meta.impl;
+package com.spbsu.flamestream.core.data.meta;
 
-import com.spbsu.flamestream.core.data.meta.Trace;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static com.spbsu.flamestream.core.data.meta.impl.LocalEvent.*;
+import static com.spbsu.flamestream.core.data.meta.LocalEvent.childIdOf;
+import static com.spbsu.flamestream.core.data.meta.LocalEvent.localEvent;
+import static com.spbsu.flamestream.core.data.meta.LocalEvent.localTimeOf;
 
-public final class TraceImpl implements Trace {
+class TraceImpl implements Trace {
+  @VisibleForTesting
   @SuppressWarnings("PackageVisibleField")
   final long[] trace;
 
-  public TraceImpl(long[] trace) {
+  TraceImpl(long[] trace) {
+    //noinspection AssignmentOrReturnOfFieldWithMutableType
     this.trace = trace;
   }
 

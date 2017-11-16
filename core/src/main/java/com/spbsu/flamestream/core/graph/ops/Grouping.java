@@ -4,24 +4,27 @@ import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
-import com.spbsu.flamestream.core.graph.atomic.impl.AbstractAtomicGraph;
-import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
 import com.spbsu.flamestream.core.graph.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.graph.invalidation.InvalidatingBucket;
-import com.spbsu.flamestream.core.graph.ops.stat.GroupingStatistics;
+import com.spbsu.flamestream.common.Statistics;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.LongSummaryStatistics;
+import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
-public final class Grouping<T> extends AbstractAtomicGraph {
+public class Grouping<T> extends AbstractAtomicGraph {
   private final GroupingStatistics stat = new GroupingStatistics();
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
@@ -42,7 +45,6 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
   @Override
   public void onCommit(AtomicHandle handle) {
-    //handle.saveState(this.inPort, this.buffers);
     handle.submitStatistics(stat);
   }
 
@@ -51,17 +53,22 @@ public final class Grouping<T> extends AbstractAtomicGraph {
     currentMinTime = globalTime;
   }
 
+  @Override
+  public void onStart(AtomicHandle handle) {
+    this.buffers = new TIntObjectHashMap<>();
+  }
+
   public InPort inPort() {
     return inPort;
+  }
+
+  public OutPort outPort() {
+    return outPort;
   }
 
   @Override
   public List<InPort> inPorts() {
     return Collections.singletonList(inPort);
-  }
-
-  public OutPort outPort() {
-    return outPort;
   }
 
   @Override
@@ -70,16 +77,10 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   @Override
-  public void onStart(AtomicHandle handle) {
-    // TODO: 5/18/17 Load state
-    this.buffers = new TIntObjectHashMap<>();
-  }
-
-  @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handle) {
     //noinspection unchecked
     final DataItem<T> dataItem = (DataItem<T>) item;
-    final InvalidatingBucket<T> bucket = getBucketFor(dataItem);
+    final InvalidatingBucket<T> bucket = bucketFor(dataItem);
     final int position = bucket.insert(dataItem);
     stat.recordBucketSize(bucket.size());
 
@@ -101,7 +102,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
 
     for (DataItem<?> item : items) {
       handle.push(outPort(), item);
-      handle.ack(item.ack(), item.meta().globalTime());
+      handle.ack(item.xor(), item.meta().globalTime());
     }
   }
 
@@ -117,7 +118,7 @@ public final class Grouping<T> extends AbstractAtomicGraph {
   }
 
   @SuppressWarnings("unchecked")
-  private InvalidatingBucket<T> getBucketFor(DataItem<T> item) {
+  private InvalidatingBucket<T> bucketFor(DataItem<T> item) {
     final int hashValue = hash.applyAsInt(item.payload());
     final Object obj = buffers.get(hashValue);
     if (obj == null) {
@@ -131,12 +132,11 @@ public final class Grouping<T> extends AbstractAtomicGraph {
                 .filter(bucket -> equalz.test(bucket.get(0).payload(), item.payload()))
                 .findAny()
                 .orElse(new ArrayInvalidatingBucket<>());
+
         if (result.isEmpty()) {
           container.add(result);
-          return result;
-        } else {
-          return result;
         }
+        return result;
       } else {
         final InvalidatingBucket<T> bucket = (InvalidatingBucket<T>) obj;
         if (equalz.test(bucket.get(0).payload(), item.payload())) {
@@ -150,6 +150,32 @@ public final class Grouping<T> extends AbstractAtomicGraph {
           return newList;
         }
       }
+    }
+  }
+
+  private static final class GroupingStatistics implements Statistics {
+    private final LongSummaryStatistics replay = new LongSummaryStatistics();
+    private final LongSummaryStatistics bucketSize = new LongSummaryStatistics();
+
+    void recordReplaySize(int replaySize) {
+      replay.accept(replaySize);
+    }
+
+    void recordBucketSize(long size) {
+      bucketSize.accept(size);
+    }
+
+    @Override
+    public Map<String, Double> metrics() {
+      final Map<String, Double> result = new HashMap<>();
+      result.putAll(Statistics.asMap("Replay", replay));
+      result.putAll(Statistics.asMap("Bucket size", bucketSize));
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return metrics().toString();
     }
   }
 }

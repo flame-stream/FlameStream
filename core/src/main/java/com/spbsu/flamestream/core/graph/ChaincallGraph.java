@@ -1,12 +1,8 @@
-package com.spbsu.flamestream.core.graph.atomic.impl;
+package com.spbsu.flamestream.core.graph;
 
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.graph.*;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
-import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
-import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
-import com.spbsu.flamestream.core.stat.Statistics;
+import com.spbsu.flamestream.common.Statistics;
 
 import java.util.HashMap;
 import java.util.List;

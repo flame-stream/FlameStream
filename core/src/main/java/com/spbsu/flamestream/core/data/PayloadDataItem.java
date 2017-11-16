@@ -5,7 +5,7 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
-public final class PayloadDataItem<T> implements DataItem<T> {
+public class PayloadDataItem<T> implements DataItem<T> {
   private final Meta meta;
 
   private final T payload;
@@ -29,7 +29,7 @@ public final class PayloadDataItem<T> implements DataItem<T> {
   }
 
   @Override
-  public long ack() {
+  public long xor() {
     return ackHashCode;
   }
 

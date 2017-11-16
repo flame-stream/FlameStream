@@ -7,7 +7,7 @@ import akka.actor.Props;
 import akka.actor.RootActorPath;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.configuration.CommonSerializer;
 import com.spbsu.flamestream.runtime.configuration.FrontSerializer;

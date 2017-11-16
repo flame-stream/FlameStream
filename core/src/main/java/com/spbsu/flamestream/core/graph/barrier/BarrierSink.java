@@ -3,20 +3,25 @@ package com.spbsu.flamestream.core.graph.barrier;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.graph.*;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
-import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
-import com.spbsu.flamestream.core.graph.barrier.collector.BarrierCollector;
-import com.spbsu.flamestream.core.graph.barrier.collector.LinearCollector;
-import com.spbsu.flamestream.core.graph.atomic.impl.AbstractAtomicGraph;
-import com.spbsu.flamestream.core.graph.atomic.impl.ChaincallGraph;
+import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
+import com.spbsu.flamestream.core.graph.ChaincallGraph;
+import com.spbsu.flamestream.core.graph.InPort;
+import com.spbsu.flamestream.core.graph.OutPort;
+import com.spbsu.flamestream.common.Statistics;
+import gnu.trove.impl.Constants;
+import gnu.trove.map.TObjectLongMap;
+import gnu.trove.map.hash.TObjectLongHashMap;
 
 import java.util.List;
+import java.util.LongSummaryStatistics;
+import java.util.Map;
 
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 
-final class BarrierSink extends AbstractAtomicGraph {
+class BarrierSink extends AbstractAtomicGraph {
   private final ChaincallGraph innerGraph;
 
   BarrierSink(AtomicGraph sink) {
@@ -71,13 +76,13 @@ final class BarrierSink extends AbstractAtomicGraph {
     return "BarrierSink{" + "innerGraph=" + innerGraph + '}';
   }
 
-  private static final class Barrier extends AbstractAtomicGraph {
+  private static class Barrier extends AbstractAtomicGraph {
     private final InPort inPort;
     private final OutPort outPort;
 
     // FIXME: 14.11.2017 
     //private final BarrierStatistics barrierStatistics = new BarrierStatistics();
-    private final BarrierCollector collector = new LinearCollector();
+    private final BarrierCollector collector = new BarrierCollector();
 
     Barrier() {
       this.inPort = new InPort(PreBarrierMetaElement.HASH_FUNCTION);
@@ -96,7 +101,7 @@ final class BarrierSink extends AbstractAtomicGraph {
         final Object data = ((PreBarrierMetaElement<?>) di.payload()).payload();
         final DataItem<Object> dataItem = new PayloadDataItem<>(di.meta(), data);
         handle.push(outPort, dataItem);
-        handle.ack(dataItem.ack(), dataItem.meta().globalTime());
+        handle.ack(dataItem.xor(), dataItem.meta().globalTime());
         //barrierStatistics.release(di.meta().globalTime());
       });
     }
@@ -121,6 +126,33 @@ final class BarrierSink extends AbstractAtomicGraph {
     @Override
     public List<OutPort> outPorts() {
       return singletonList(outPort);
+    }
+  }
+
+  private static class BarrierStatistics implements Statistics {
+    private final TObjectLongMap<GlobalTime> timeMeasure = new TObjectLongHashMap<>();
+    private final LongSummaryStatistics duration = new LongSummaryStatistics();
+
+    void enqueue(GlobalTime globalTime) {
+      timeMeasure.put(globalTime, System.nanoTime());
+    }
+
+    void release(GlobalTime globalTime) {
+      final long start = timeMeasure.get(globalTime);
+      if (start != Constants.DEFAULT_LONG_NO_ENTRY_VALUE) {
+        duration.accept(System.nanoTime() - start);
+        timeMeasure.remove(globalTime);
+      }
+    }
+
+    @Override
+    public Map<String, Double> metrics() {
+      return Statistics.asMap("Barrier releasing duration", duration);
+    }
+
+    @Override
+    public String toString() {
+      return metrics().toString();
     }
   }
 }

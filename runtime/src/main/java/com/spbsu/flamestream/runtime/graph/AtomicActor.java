@@ -3,8 +3,8 @@ package com.spbsu.flamestream.runtime.graph;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
-import com.spbsu.flamestream.core.graph.atomic.AtomicHandle;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.runtime.ack.api.Commit;
 import com.spbsu.flamestream.runtime.ack.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.actor.LoggingActor;
@@ -61,7 +61,7 @@ public class AtomicActor extends LoggingActor {
 
     final DataItem<?> item = message.item();
     atomic.onPush(message.port(), item, handle);
-    handle.ack(item.ack(), item.meta().globalTime());
+    handle.ack(item.xor(), item.meta().globalTime());
 
     final long stop = System.nanoTime();
     stat.recordOnAtomicMessage(stop - start);

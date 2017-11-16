@@ -1,12 +1,12 @@
 package com.spbsu.flamestream.runtime.graph;
 
-import com.spbsu.flamestream.core.stat.Statistics;
+import com.spbsu.flamestream.common.Statistics;
 
 import java.util.HashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 
-import static com.spbsu.flamestream.core.stat.Statistics.asMap;
+import static com.spbsu.flamestream.common.Statistics.asMap;
 
 final class AtomicActorStatistics implements Statistics {
 

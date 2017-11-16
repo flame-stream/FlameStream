@@ -1,8 +1,12 @@
 package com.spbsu.flamestream.core.graph.barrier;
 
-import com.spbsu.flamestream.core.graph.*;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
-import com.spbsu.flamestream.core.graph.composed.ComposedGraph;
+import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
+import com.spbsu.flamestream.core.graph.AbstractGraph;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
+import com.spbsu.flamestream.core.graph.ComposedGraph;
+import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.InPort;
+import com.spbsu.flamestream.core.graph.OutPort;
 
 import java.util.List;
 import java.util.Objects;
@@ -10,7 +14,7 @@ import java.util.function.ToIntFunction;
 
 import static java.util.Collections.emptyList;
 
-public final class BarrierSuite<T> implements Graph {
+public class BarrierSuite<T> extends AbstractGraph {
   private final PreBarrierMetaFilter<T> preBarrierMetaFilter;
   private final BarrierSink barrierSink;
 
@@ -38,7 +42,9 @@ public final class BarrierSuite<T> implements Graph {
 
   @Override
   public ComposedGraph<AtomicGraph> flattened() {
-    return preBarrierMetaFilter.fuse(barrierSink, preBarrierMetaFilter.outPort(), barrierSink.inPort()).flattened();
+    return preBarrierMetaFilter
+            .fuse(barrierSink, preBarrierMetaFilter.outPort(), barrierSink.inPort())
+            .flattened();
   }
 
   @Override

@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.ack.impl;
 
 import com.spbsu.commons.util.Pair;
-import com.spbsu.flamestream.FlameStreamSuite;
+import com.spbsu.flamestream.common.FlameStreamSuite;
 import com.spbsu.flamestream.runtime.ack.AckTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

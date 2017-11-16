@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.environment;
 
 import akka.actor.Props;
-import com.spbsu.flamestream.core.graph.atomic.AtomicGraph;
+import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.runtime.tick.TickInfo;
 
 import java.util.Set;

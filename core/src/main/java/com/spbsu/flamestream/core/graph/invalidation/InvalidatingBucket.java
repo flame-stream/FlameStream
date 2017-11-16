@@ -5,10 +5,6 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.stream.Stream;
 
-/**
- * User: Artem
- * Date: 01.11.2017
- */
 public interface InvalidatingBucket<E> {
 
   /**
