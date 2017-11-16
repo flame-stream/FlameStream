@@ -9,13 +9,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.HashFunction;
+import com.spbsu.flamestream.runtime.environment.CollectingActor;
+import com.spbsu.flamestream.runtime.environment.Environment;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.serialization.CommonSerializer;
 import com.spbsu.flamestream.runtime.utils.serialization.FrontSerializer;
 import com.spbsu.flamestream.runtime.utils.serialization.TickInfoSerializer;
-import com.spbsu.flamestream.runtime.environment.CollectingActor;
-import com.spbsu.flamestream.runtime.environment.Environment;
-import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.hadoop.util.ZKUtil;
@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -125,10 +127,17 @@ public final class RemoteEnvironment implements Environment {
             }
           }
         });
+        exists.set(stat != null);
 
-        while (stat == null && !exists.get()) {
-          monitor.wait();
+        if (!exists.get()) {
+          monitor.wait(TimeUnit.MINUTES.toMillis(5));
         }
+
+        if (!exists.get()) {
+          throw new RuntimeException("Ooops");
+        }
+
+        TimeUnit.SECONDS.sleep(2);
       } catch (KeeperException e) {
         throw new RuntimeException(e);
       }
