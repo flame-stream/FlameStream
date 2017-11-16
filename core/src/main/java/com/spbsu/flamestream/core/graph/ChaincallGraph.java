@@ -1,10 +1,9 @@
 package com.spbsu.flamestream.core.graph;
 
+import com.spbsu.flamestream.common.Statistics;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.stat.Statistics;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +78,6 @@ public final class ChaincallGraph extends AbstractAtomicGraph {
       this.superHandle = superHandle;
     }
 
-    //TODO: refactor atomic handle
     @Override
     public void push(OutPort out, DataItem<?> result) {
       final InPort destination = composedGraph.downstreams().get(out);

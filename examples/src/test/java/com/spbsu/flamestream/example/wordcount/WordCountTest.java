@@ -14,13 +14,13 @@ public class WordCountTest extends AbstractExampleTest {
   @DataProvider
   public Object[][] testWordCountProvider() {
     return new Object[][]{
-            {1, 4}, {4, 4}, {4, 1}, {1, 1}
+            {1}, {4}
     };
   }
 
   @Test(dataProvider = "testWordCountProvider")
-  public void testWordCount(int fronts, int workers) {
-    test(WordCountCheckers.CHECK_COUNT, fronts, workers, 20, 20);
+  public void testWordCount(int workers) {
+    test(WordCountCheckers.CHECK_COUNT, workers, 20);
   }
 
   @Override

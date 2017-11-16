@@ -1,19 +1,14 @@
 package com.spbsu.flamestream.core.graph;
 
-import java.security.SecureRandom;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.ToIntFunction;
 
-public final class InPort {
-  private static final Random RANDOM = new SecureRandom();
-  private static final long OFFSET = 64L - 41L;
-  private static final long RAND_MASK = (1L << InPort.OFFSET) - 1L;
-
+public class InPort {
   private final long id;
   private final ToIntFunction<?> hashFunction;
 
   public InPort(ToIntFunction<?> function) {
-    this.id = (System.currentTimeMillis() << InPort.OFFSET) + (InPort.RANDOM.nextLong() & InPort.RAND_MASK);
+    this.id = ThreadLocalRandom.current().nextLong();
     this.hashFunction = function;
   }
 

@@ -14,11 +14,9 @@ import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
-public final class FlatMap<T, R> extends AbstractAtomicGraph {
+public class FlatMap<T, R> extends AbstractAtomicGraph {
   private final Function<T, Stream<R>> function;
-
   private final OutPort outPort = new OutPort();
-
   private final InPort inPort;
 
   public FlatMap(Function<T, Stream<R>> function, ToIntFunction<? super T> hash) {
@@ -26,9 +24,9 @@ public final class FlatMap<T, R> extends AbstractAtomicGraph {
     this.inPort = new InPort(hash);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void onPush(InPort inPort, DataItem<?> item, AtomicHandle handler) {
+    //noinspection unchecked
     final Stream<R> res = function.apply((T) item.payload());
     final int newLocalTime = incrementLocalTimeAndGet();
 
@@ -39,7 +37,7 @@ public final class FlatMap<T, R> extends AbstractAtomicGraph {
       final DataItem<R> newDataItem = new PayloadDataItem<>(newMeta, t);
 
       handler.push(outPort(), newDataItem);
-      xor[0] ^= newDataItem.ack();
+      xor[0] ^= newDataItem.xor();
 
       childId[0]++;
     });
@@ -50,13 +48,13 @@ public final class FlatMap<T, R> extends AbstractAtomicGraph {
     return inPort;
   }
 
+  public OutPort outPort() {
+    return outPort;
+  }
+
   @Override
   public List<InPort> inPorts() {
     return Collections.singletonList(inPort);
-  }
-
-  public OutPort outPort() {
-    return outPort;
   }
 
   @Override

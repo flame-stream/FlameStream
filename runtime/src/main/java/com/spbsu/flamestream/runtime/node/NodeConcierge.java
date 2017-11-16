@@ -5,14 +5,15 @@ import akka.actor.ActorRef;
 import akka.actor.Address;
 import akka.actor.Props;
 import akka.actor.RootActorPath;
+import akka.japi.pf.ReceiveBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.front.FrontActor;
-import com.spbsu.flamestream.runtime.tick.TickCommitDone;
-import com.spbsu.flamestream.runtime.tick.TickConcierge;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.node.front.FrontConcierge;
+import com.spbsu.flamestream.runtime.node.tick.api.TickCommitDone;
+import com.spbsu.flamestream.runtime.node.tick.TickConcierge;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
+import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
+import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
@@ -25,28 +26,26 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toMap;
 
-public final class NodeConcierge extends LoggingActor {
+class NodeConcierge extends LoggingActor {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final ZooKeeper zooKeeper;
-  private final int id;
+  private final ZooKeeper zk;
+  private final String id;
 
   private final Set<Long> committedTicks = new HashSet<>();
 
   @Nullable
-  private Map<Integer, ActorPath> nodeConierges = null;
-
-  private ActorRef front = null;
+  private Map<String, ActorPath> nodeConierges = null;
 
   @Nullable
   private ActorRef tickWatcher = null;
 
-  private NodeConcierge(int id, ZooKeeper zooKeeper) {
-    this.zooKeeper = zooKeeper;
+  private NodeConcierge(String id, ZooKeeper zk) {
+    this.zk = zk;
     this.id = id;
   }
 
-  public static Props props(int id, ZooKeeper zooKeeper) {
+  static Props props(String id, ZooKeeper zooKeeper) {
     return Props.create(NodeConcierge.class, id, zooKeeper);
   }
 
@@ -55,27 +54,22 @@ public final class NodeConcierge extends LoggingActor {
     nodeConierges = fetchDns();
     log().info("DNS fetched: {}", nodeConierges);
 
-    final Set<Integer> fronts = fetchFronts();
-    log().info("Fronts fetched: {}", fronts);
-
-    if (fronts.contains(id)) {
-      this.front = context().actorOf(FrontActor.props(nodeConierges, id), "front");
-    }
-
-    tickWatcher = context().actorOf(TickWatcher.props(zooKeeper, self()), "tickWatcher");
+    tickWatcher = context().actorOf(TickWatcher.props(zk, self()), "tickWatcher");
+    context().actorOf(FrontConcierge.props(id, zk), "fronts");
     super.preStart();
   }
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder().match(TickInfo.class, this::onNewTick)
+    return ReceiveBuilder.create()
+            .match(TickInfo.class, this::onNewTick)
             .match(TickCommitDone.class, this::onTickCommitted)
             .build();
   }
 
   private void onNewTick(TickInfo tickInfo) {
     final String suffix = String.valueOf(tickInfo.id());
-    final Map<Integer, ActorPath> rangeConcierges = nodeConierges.entrySet()
+    final Map<String, ActorPath> rangeConcierges = nodeConierges.entrySet()
             .stream()
             .collect(toMap(Map.Entry::getKey, e -> e.getValue().child(suffix)));
 
@@ -86,10 +80,6 @@ public final class NodeConcierge extends LoggingActor {
 
     //FIXME: in long term future we need to store every single tick.
     committedTicks.forEach(t -> tickConcierge.tell(new TickCommitDone(t), self()));
-
-    if (front != null) {
-      front.tell(tickInfo, self());
-    }
   }
 
   private void onTickCommitted(TickCommitDone committed) {
@@ -97,27 +87,19 @@ public final class NodeConcierge extends LoggingActor {
     getContext().getChildren().forEach(c -> c.tell(committed, sender()));
   }
 
-  private Map<Integer, ActorPath> fetchDns() throws IOException, KeeperException, InterruptedException {
+  private Map<String, ActorPath> fetchDns() throws IOException, KeeperException, InterruptedException {
     final String path = "/dns";
-    final byte[] data = zooKeeper.getData(path, false, new Stat());
-    final Map<Integer, DumbInetSocketAddress> dns = NodeConcierge.MAPPER.readValue(
+    final byte[] data = zk.getData(path, false, new Stat());
+    final Map<String, DumbInetSocketAddress> dns = NodeConcierge.MAPPER.readValue(
             data,
-            new TypeReference<Map<Integer, DumbInetSocketAddress>>() {}
+            new TypeReference<Map<String, DumbInetSocketAddress>>() {}
     );
 
     return dns.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> pathFor(e.getValue())));
   }
 
   private ActorPath pathFor(DumbInetSocketAddress socketAddress) {
-    // TODO: 5/8/17 Properly resolve ActorRef
     final Address address = Address.apply("akka.tcp", "worker", socketAddress.host(), socketAddress.port());
-
     return RootActorPath.apply(address, "/").child("user").child("watcher").child("concierge");
-  }
-
-  private Set<Integer> fetchFronts() throws KeeperException, InterruptedException, IOException {
-    final String path = "/fronts";
-    final byte[] data = zooKeeper.getData(path, false, new Stat());
-    return NodeConcierge.MAPPER.readValue(data, new TypeReference<Set<Integer>>() {});
   }
 }

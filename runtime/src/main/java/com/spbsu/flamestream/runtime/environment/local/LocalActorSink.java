@@ -6,7 +6,7 @@ import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.runtime.raw.SingleRawData;
+import com.spbsu.flamestream.runtime.environment.raw.SingleRawData;
 
 import java.util.List;
 import java.util.function.ToIntFunction;
@@ -14,12 +14,11 @@ import java.util.function.ToIntFunction;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
-public final class LocalActorSink<T> extends AbstractAtomicGraph {
+class LocalActorSink<T> extends AbstractAtomicGraph {
   private final ActorRef actor;
-
   private final InPort inPort;
 
-  public LocalActorSink(ToIntFunction<? super T> hash, ActorRef actor) {
+  LocalActorSink(ToIntFunction<? super T> hash, ActorRef actor) {
     this.actor = actor;
     this.inPort = new InPort(hash);
   }

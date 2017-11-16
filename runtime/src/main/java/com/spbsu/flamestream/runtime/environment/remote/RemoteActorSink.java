@@ -8,8 +8,8 @@ import com.spbsu.flamestream.core.graph.AbstractAtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.OutPort;
-import com.spbsu.flamestream.runtime.range.atomic.AtomicHandleImpl;
-import com.spbsu.flamestream.runtime.raw.SingleRawData;
+import com.spbsu.flamestream.runtime.node.tick.range.atomic.AtomicHandleImpl;
+import com.spbsu.flamestream.runtime.environment.raw.SingleRawData;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -18,13 +18,13 @@ import java.util.function.ToIntFunction;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
-public final class RemoteActorSink<T> extends AbstractAtomicGraph {
+class RemoteActorSink<T> extends AbstractAtomicGraph {
   private final ActorPath path;
   private final InPort inPort;
   @Nullable
   private ActorSelection actor = null;
 
-  public RemoteActorSink(ToIntFunction<? super T> hashFunction, ActorPath receiverPath) {
+  RemoteActorSink(ToIntFunction<? super T> hashFunction, ActorPath receiverPath) {
     this.path = receiverPath;
     this.inPort = new InPort(hashFunction);
   }

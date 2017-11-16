@@ -1,13 +1,15 @@
 package com.spbsu.flamestream.runtime.environment.local;
 
+import akka.actor.Props;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.runtime.application.WorkerApplication;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.spbsu.flamestream.runtime.environment.remote.RemoteEnvironment;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
+import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
@@ -29,14 +31,12 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.ToIntFunction;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
-public final class LocalClusterEnvironment implements Environment {
+public class LocalClusterEnvironment implements Environment {
   private static final String ZK_STRING = "localhost:2181";
   private static final int START_WORKER_PORT = 5223;
 
@@ -44,7 +44,7 @@ public final class LocalClusterEnvironment implements Environment {
   private final ObjectMapper mapper = new ObjectMapper();
 
   private final Collection<WorkerApplication> workerApplication = new HashSet<>();
-  private final Map<Integer, DumbInetSocketAddress> dns;
+  private final Map<String, DumbInetSocketAddress> dns;
 
   private final ZooKeeper zooKeeper;
   private final ZooKeeperApplication zk;
@@ -92,13 +92,13 @@ public final class LocalClusterEnvironment implements Environment {
     }
   }
 
-  private Map<Integer, DumbInetSocketAddress> freeSockets(int workersCount) {
+  private Map<String, DumbInetSocketAddress> freeSockets(int workersCount) {
     return IntStream.range(
             LocalClusterEnvironment.START_WORKER_PORT,
             LocalClusterEnvironment.START_WORKER_PORT + workersCount
     )
             .boxed()
-            .collect(toMap(Function.identity(), port -> new DumbInetSocketAddress("localhost", port)));
+            .collect(toMap(key -> "worker" + key, port -> new DumbInetSocketAddress("localhost", port)));
   }
 
   private void deployPartitioning() {
@@ -115,19 +115,46 @@ public final class LocalClusterEnvironment implements Environment {
     zooKeeper.create("/ticks", new byte[0], ZKUtil.parseACLs("world:anyone:crdwa"), CreateMode.PERSISTENT);
   }
 
-  private void pushDns(Map<Integer, DumbInetSocketAddress> dns) throws
-                                                                KeeperException,
-                                                                InterruptedException,
-                                                                JsonProcessingException {
+  private void pushDns(Map<String, DumbInetSocketAddress> dns) throws
+                                                               KeeperException,
+                                                               InterruptedException,
+                                                               JsonProcessingException {
     zooKeeper.create(
             "/dns",
             mapper.writeValueAsBytes(dns),
             ZKUtil.parseACLs("world:anyone:crdwa"),
             CreateMode.PERSISTENT
     );
+
+    zooKeeper.create(
+            "/workers",
+            new byte[0],
+            ZKUtil.parseACLs("world:anyone:crdwa"),
+            CreateMode.PERSISTENT
+    );
+
+    dns.keySet().forEach(
+            Unchecked.consumer(
+                    id -> {
+                      zooKeeper.create(
+                              "/workers/" + id,
+                              new byte[0],
+                              ZKUtil.parseACLs("world:anyone:crdwa"),
+                              CreateMode.PERSISTENT
+                      );
+
+                      zooKeeper.create(
+                              "/workers/" + id + "/fronts",
+                              new byte[0],
+                              ZKUtil.parseACLs("world:anyone:crdwa"),
+                              CreateMode.PERSISTENT
+                      );
+                    }
+            )
+    );
   }
 
-  private void pushFronts(Set<Integer> fronts) throws KeeperException, InterruptedException, JsonProcessingException {
+  private void pushFronts(Set<String> fronts) throws KeeperException, InterruptedException, JsonProcessingException {
     zooKeeper.create(
             "/fronts",
             mapper.writeValueAsBytes(fronts),
@@ -152,23 +179,28 @@ public final class LocalClusterEnvironment implements Environment {
   }
 
   @Override
-  public Set<Integer> availableFronts() {
-    return remoteEnvironment.availableFronts();
+  public void deployFront(String nodeId, String frontId, Props frontProps) {
+    remoteEnvironment.deployFront(nodeId, frontId, frontProps);
   }
 
   @Override
-  public Set<Integer> availableWorkers() {
+  public Set<String> availableWorkers() {
     return remoteEnvironment.availableWorkers();
   }
 
   @Override
-  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
+  public <T> AtomicGraph wrapInSink(HashFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     return remoteEnvironment.wrapInSink(hash, mySuperConsumer);
   }
 
   @Override
-  public Consumer<Object> frontConsumer(int frontId) {
-    return remoteEnvironment.frontConsumer(frontId);
+  public void awaitTick(long tickId) throws InterruptedException {
+    remoteEnvironment.awaitTick(tickId);
+  }
+
+  @Override
+  public Set<Long> ticks() {
+    return remoteEnvironment.ticks();
   }
 
   private static final class ZooKeeperApplication extends ZooKeeperServerMain {

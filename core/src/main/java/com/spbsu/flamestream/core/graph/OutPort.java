@@ -1,18 +1,13 @@
 package com.spbsu.flamestream.core.graph;
 
-import java.security.SecureRandom;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
-public final class OutPort {
-  private static final Random RANDOM = new SecureRandom();
-  private static final long OFFSET = 64L - 41L;
-  private static final long RAND_MASK = (1L << OutPort.OFFSET) - 1L;
+public class OutPort {
   private final long id;
 
   public OutPort() {
-    this.id = (System.currentTimeMillis() << OutPort.OFFSET) + (OutPort.RANDOM.nextLong() & OutPort.RAND_MASK);
+    this.id = ThreadLocalRandom.current().nextLong();
   }
-
 
   public long id() {
     return id;

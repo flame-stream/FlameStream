@@ -1,20 +1,20 @@
 package com.spbsu.flamestream.runtime;
 
-import com.spbsu.flamestream.FlameStreamSuite;
-import com.spbsu.flamestream.core.HashFunction;
+import com.spbsu.flamestream.common.FlameStreamSuite;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
-import com.spbsu.flamestream.core.graph.InPort;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.core.graph.source.AbstractSource;
+import com.spbsu.flamestream.core.graph.source.SimpleSource;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,21 +35,21 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
       final int window = 7;
 
       //noinspection unchecked
-      environment.deploy(GroupingAcceptanceTest.groupGraph(
-              environment.availableFronts(),
+      final Consumer<Object> sink = environment.deploy(GroupingAcceptanceTest.groupGraph(
               environment.wrapInSink(HashFunction.OBJECT_HASH, di -> result.add((List<Long>) di)),
               window,
               groupHash,
               equalz,
               filterHash
-      ), 10, 1);
+      ).flattened(), 10, 1, 1);
 
       final List<Long> source = new Random().longs(1000).boxed().collect(Collectors.toList());
-      final Consumer<Object> sink = environment.randomFrontConsumer(1);
       source.forEach(sink);
-      environment.awaitTick(12);
+      environment.awaitTicks();
 
       Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, groupHash, window));
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -69,23 +69,20 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
     return mustHave;
   }
 
-  private static TheGraph groupGraph(Collection<Integer> fronts,
-          AtomicGraph sink,
+  private static Graph groupGraph(AtomicGraph sink,
           int window,
           HashFunction<? super Long> groupHash,
           BiPredicate<? super Long, ? super Long> equalz,
           HashFunction<? super Long> filterHash) {
+    final AbstractSource source = new SimpleSource();
     final StatelessMap<Long, Long> filter = new StatelessMap<>(new Id(), filterHash);
     final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window);
 
     final BarrierSuite<Long> barrier = new BarrierSuite<>(sink);
 
-    final Graph graph = filter.fuse(grouping, filter.outPort(), grouping.inPort())
+    return source.fuse(filter, source.outPort(), filter.inPort())
+            .fuse(grouping, filter.outPort(), grouping.inPort())
             .fuse(barrier, grouping.outPort(), barrier.inPort());
-
-    final Map<Integer, InPort> frontBindings = fronts.stream()
-            .collect(Collectors.toMap(Function.identity(), e -> filter.inPort()));
-    return new TheGraph(graph, frontBindings);
   }
 
   @SuppressWarnings("Convert2Lambda")

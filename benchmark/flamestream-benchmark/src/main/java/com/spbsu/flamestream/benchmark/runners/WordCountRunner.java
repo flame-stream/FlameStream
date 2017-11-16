@@ -2,6 +2,7 @@ package com.spbsu.flamestream.benchmark.runners;
 
 import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.benchmark.EnvironmentRunner;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.example.FlameStreamExample;
 import com.spbsu.flamestream.example.wordcount.model.WordCounter;
 import com.spbsu.flamestream.runtime.TestEnvironment;
@@ -41,16 +42,15 @@ public final class WordCountRunner implements EnvironmentRunner {
 
     try (TestEnvironment testEnvironment = new TestEnvironment(environment, 1)) {
       //noinspection RedundantCast,unchecked
-      testEnvironment.deploy(
-              testEnvironment.withFusedFronts(FlameStreamExample.WORD_COUNT.graph(hash -> testEnvironment.wrapInSink(
-                      (ToIntFunction<? super WordCounter>) hash,
+      final Consumer<Object> sink = testEnvironment.deploy(
+              FlameStreamExample.WORD_COUNT.graph(hash -> testEnvironment.wrapInSink(
+                      (HashFunction<? super WordCounter>) hash,
                       o -> latencyMeasurer.finish((WordCounter) o)
-              ))),
+              )),
               60,
-              1
+              1, 1
       );
 
-      final Consumer<Object> sink = testEnvironment.randomFrontConsumer(1);
       input.forEach(s -> {
         sink.accept(s);
         try {
@@ -59,10 +59,12 @@ public final class WordCountRunner implements EnvironmentRunner {
           throw new RuntimeException(e);
         }
       });
-      testEnvironment.awaitTick(20);
+      testEnvironment.awaitTicks();
 
       final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
       LOG.info("Result: {}", stat);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 

@@ -1,22 +1,18 @@
 package com.spbsu.flamestream.runtime.environment.local;
 
-import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.Address;
 import akka.actor.Props;
-import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.runtime.ack.messages.CommitTick;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
+import com.spbsu.flamestream.core.graph.HashFunction;
+import com.spbsu.flamestream.runtime.acker.api.CommitTick;
+import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.environment.CollectingActor;
 import com.spbsu.flamestream.runtime.environment.Environment;
-import com.spbsu.flamestream.runtime.front.FrontActor;
-import com.spbsu.flamestream.runtime.raw.SingleRawData;
-import com.spbsu.flamestream.runtime.tick.TickCommitDone;
-import com.spbsu.flamestream.runtime.tick.TickConcierge;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.node.tick.api.TickCommitDone;
+import com.spbsu.flamestream.runtime.node.tick.TickConcierge;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.io.FileUtils;
 import scala.concurrent.Await;
@@ -29,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-import java.util.function.ToIntFunction;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -41,14 +36,11 @@ public final class LocalEnvironment implements Environment {
   private final ActorRef fakeWatcher;
   private final ActorSystem localSystem;
 
-  private final ActorRef front;
+  private ActorRef front;
 
   public LocalEnvironment() {
     this.localSystem = ActorSystem.create(SYSTEM_NAME, ConfigFactory.load("local"));
     this.fakeWatcher = localSystem.actorOf(FakeTickWatcher.props(tickConcierges), "fake-watcher");
-
-    final ActorPath myPath = RootActorPath.apply(Address.apply("akka", SYSTEM_NAME), "/").child("user");
-    this.front = localSystem.actorOf(FrontActor.props(singletonMap(1, myPath), 1), "front");
   }
 
   @Override
@@ -56,8 +48,8 @@ public final class LocalEnvironment implements Environment {
     final ActorRef concierge = localSystem.actorOf(
             TickConcierge.props(
                     tickInfo,
-                    1,
-                    singletonMap(1, localSystem.child(String.valueOf(tickInfo.id()))),
+                    "1",
+                    singletonMap("1", localSystem.child(String.valueOf(tickInfo.id()))),
                     fakeWatcher
             ),
             String.valueOf(tickInfo.id())
@@ -68,28 +60,47 @@ public final class LocalEnvironment implements Environment {
   }
 
   @Override
+  public void deployFront(String nodeId, String frontId, Props frontProps) {
+    if (front == null) {
+      front = localSystem.actorOf(frontProps, "front");
+    } else {
+      throw new IllegalStateException("There cannot be more than one front in local env");
+    }
+  }
+
+  /*@Override
   public Set<Integer> availableFronts() {
     return singleton(1);
+  }*/
+
+  @Override
+  public Set<String> availableWorkers() {
+    return singleton("1");
   }
 
   @Override
-  public Set<Integer> availableWorkers() {
-    return singleton(1);
-  }
-
-  @Override
-  public <T> AtomicGraph wrapInSink(ToIntFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
+  public <T> AtomicGraph wrapInSink(HashFunction<? super T> hash, Consumer<? super T> mySuperConsumer) {
     return new LocalActorSink<>(hash, localSystem.actorOf(CollectingActor.props(mySuperConsumer), "collector"));
   }
 
   @Override
+  public void awaitTick(long tickId) throws InterruptedException {
+    Thread.sleep(10000);
+  }
+
+  @Override
+  public Set<Long> ticks() {
+    return tickConcierges.keySet();
+  }
+
+  /*@Override
   public Consumer<Object> frontConsumer(int frontId) {
     if (frontId == 1) {
       return object -> front.tell(new SingleRawData<>(object), ActorRef.noSender());
     } else {
       throw new IllegalArgumentException("oops");
     }
-  }
+  }*/
 
   @Override
   public void close() {

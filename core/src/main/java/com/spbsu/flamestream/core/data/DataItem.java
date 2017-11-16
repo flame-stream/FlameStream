@@ -7,5 +7,5 @@ public interface DataItem<T> {
 
   T payload();
 
-  long ack();
+  long xor();
 }

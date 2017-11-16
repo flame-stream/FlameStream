@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.ActorSystem;
-import com.spbsu.flamestream.runtime.DumbInetSocketAddress;
+import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.node.LifecycleWatcher;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -11,27 +11,26 @@ import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeoutException;
 
-public final class WorkerApplication {
+public class WorkerApplication {
   private static final int PORT = 4387;
   private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
   private final DumbInetSocketAddress host;
   private final String zkConnectString;
-  private final int id;
+  private final String id;
 
   private ActorSystem system = null;
 
-  private WorkerApplication(int id, String zkConnectString) {
+  private WorkerApplication(String id, String zkConnectString) {
     this.id = id;
     this.host = new DumbInetSocketAddress("localhost", PORT);
     this.zkConnectString = zkConnectString;
   }
 
-  public WorkerApplication(int id, DumbInetSocketAddress host, String zkConnectString) {
+  public WorkerApplication(String id, DumbInetSocketAddress host, String zkConnectString) {
     this.id = id;
     this.host = host;
     this.zkConnectString = zkConnectString;
@@ -50,7 +49,7 @@ public final class WorkerApplication {
     final String host = config.getString("host");
     final DumbInetSocketAddress socketAddress = new DumbInetSocketAddress(host, port);
 
-    new WorkerApplication(config.getInt("id"), socketAddress, config.getString("zk_string")).run();
+    new WorkerApplication(config.getString("id"), socketAddress, config.getString("zk_string")).run();
   }
 
   public void run() {

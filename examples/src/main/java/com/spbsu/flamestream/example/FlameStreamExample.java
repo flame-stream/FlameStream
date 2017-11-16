@@ -1,9 +1,9 @@
 package com.spbsu.flamestream.example;
 
-import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.ChaincallGraph;
 import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
 import com.spbsu.flamestream.core.graph.ops.Broadcast;
 import com.spbsu.flamestream.core.graph.ops.Filter;
@@ -11,6 +11,8 @@ import com.spbsu.flamestream.core.graph.ops.FlatMap;
 import com.spbsu.flamestream.core.graph.ops.Grouping;
 import com.spbsu.flamestream.core.graph.ops.Merge;
 import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+import com.spbsu.flamestream.core.graph.source.AbstractSource;
+import com.spbsu.flamestream.core.graph.source.SimpleSource;
 import com.spbsu.flamestream.example.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.index.model.WordBase;
 import com.spbsu.flamestream.example.index.model.WordPagePositions;
@@ -70,6 +72,7 @@ public enum FlameStreamExample {
 
     @Override
     public Graph graph(Function<ToIntFunction<?>, AtomicGraph> sinkBuilder) {
+      final AbstractSource source = new SimpleSource();
       final Merge merge = new Merge(Arrays.asList(wordHash, wordHash));
       final Filter<WordBase> indexDiffFilter = new Filter<>(new WordIndexDiffFilter(), wordHash);
       final Grouping<WordBase> grouping = new Grouping<>(wordHash, wordEqualz, 2);
@@ -93,7 +96,8 @@ public enum FlameStreamExample {
               new WikipediaPageToWordPositions(),
               wikiPageHash
       );
-      return wikiPageToPositions.fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0));
+      return source.fuse(wikiPageToPositions, source.outPort(), wikiPageToPositions.inPort())
+              .fuse(chain, wikiPageToPositions.outPort(), merge.inPorts().get(0));
     }
   },
   WORD_COUNT {
@@ -120,6 +124,7 @@ public enum FlameStreamExample {
 
     @Override
     public Graph graph(Function<ToIntFunction<?>, AtomicGraph> sinkBuilder) {
+      final AbstractSource source = new SimpleSource();
       final Merge merge = new Merge(Arrays.asList(wordHash, wordHash));
       final Grouping<WordContainer> grouping = new Grouping<>(wordHash, equalz, 2);
       final Filter<List<WordContainer>> filter = new Filter<>(new WordContainerOrderingFilter(), groupHash);
@@ -144,7 +149,8 @@ public enum FlameStreamExample {
           return Arrays.stream(PATTERN.split(s)).map(WordEntry::new);
         }
       }, HashFunction.OBJECT_HASH);
-      return splitter.fuse(logicChain, splitter.outPort(), merge.inPorts().get(0));
+      return source.fuse(splitter, source.outPort(), splitter.inPort())
+              .fuse(logicChain, splitter.outPort(), merge.inPorts().get(0));
     }
   };
 

@@ -3,12 +3,12 @@ package com.spbsu.flamestream.runtime.node;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.ack.messages.CommitTick;
-import com.spbsu.flamestream.runtime.actor.LoggingActor;
-import com.spbsu.flamestream.runtime.configuration.KryoInfoSerializer;
-import com.spbsu.flamestream.runtime.configuration.TickInfoSerializer;
-import com.spbsu.flamestream.runtime.tick.TickCommitDone;
-import com.spbsu.flamestream.runtime.tick.TickInfo;
+import com.spbsu.flamestream.runtime.acker.api.CommitTick;
+import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import com.spbsu.flamestream.runtime.utils.serialization.CommonSerializer;
+import com.spbsu.flamestream.runtime.utils.serialization.TickInfoSerializer;
+import com.spbsu.flamestream.runtime.node.tick.api.TickCommitDone;
+import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -20,8 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class TickWatcher extends LoggingActor {
-  private final TickInfoSerializer serializer = new KryoInfoSerializer();
+public class TickWatcher extends LoggingActor {
+  private final TickInfoSerializer serializer = new CommonSerializer();
   private final ZooKeeper zooKeeper;
   private final ActorRef subscriber;
 
@@ -81,7 +81,7 @@ public final class TickWatcher extends LoggingActor {
         if (committed) {
           subscriber.tell(new TickCommitDone(Long.parseLong(tick)), self());
         } else {
-          final TickInfo tickInfo = serializer.deserialize(data);
+          final TickInfo tickInfo = serializer.deserializeTick(data);
           seenTicks.put(Long.parseLong(tick), tickInfo);
           subscriber.tell(tickInfo, sender());
         }

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
-public final class Filter<T> extends AbstractAtomicGraph {
+public class Filter<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final OutPort outPort = new OutPort();
 
@@ -34,9 +34,7 @@ public final class Filter<T> extends AbstractAtomicGraph {
       );
 
       handler.push(outPort(), result);
-      handler.ack(result.ack(), result.meta().globalTime());
-    } else {
-      // TODO: 5/9/17 DELIVER NULL
+      handler.ack(result.xor(), result.meta().globalTime());
     }
   }
 

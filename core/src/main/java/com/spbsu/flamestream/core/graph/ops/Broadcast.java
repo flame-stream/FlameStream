@@ -14,7 +14,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class Broadcast<T> extends AbstractAtomicGraph {
+public class Broadcast<T> extends AbstractAtomicGraph {
   private final InPort inPort;
   private final List<OutPort> broadcastPorts;
 
@@ -32,7 +32,7 @@ public final class Broadcast<T> extends AbstractAtomicGraph {
 
       final DataItem<?> newItem = new PayloadDataItem<>(newMeta, item.payload());
       handle.push(outPorts.get(i), newItem);
-      handle.ack(newItem.ack(), newItem.meta().globalTime());
+      handle.ack(newItem.xor(), newItem.meta().globalTime());
     }
   }
 

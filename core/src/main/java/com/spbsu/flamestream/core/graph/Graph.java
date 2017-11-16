@@ -1,16 +1,13 @@
 package com.spbsu.flamestream.core.graph;
 
-import java.util.HashSet;
 import java.util.List;
 
-/**
- * Created by marnikitta on 2/5/17.
- * inspired by akka-stream
- */
 public interface Graph {
   List<InPort> inPorts();
 
   List<OutPort> outPorts();
+
+  ComposedGraph<AtomicGraph> flattened();
 
   /**
    * Fuses this Graph to `that` Graph by wiring together `from` and `to`.
@@ -21,9 +18,7 @@ public interface Graph {
    * @return a Graph representing the fusion of `this` and `that`
    **/
 
-  default Graph fuse(Graph that, OutPort from, InPort to) {
-    return compose(that).wire(from, to);
-  }
+  Graph fuse(Graph that, OutPort from, InPort to);
 
   /**
    * Creates a new Graph which is `this` Graph composed with `that` Graph.
@@ -32,12 +27,7 @@ public interface Graph {
    * @return a Graph that represents the composition of `this` and `that`
    **/
 
-  default Graph compose(Graph that) {
-    final HashSet<Graph> graphs = new HashSet<>();
-    graphs.add(this);
-    graphs.add(that);
-    return new ComposedGraphImpl<>(graphs);
-  }
+  Graph compose(Graph that);
 
   /**
    * Creates a new Graph based on the current Graph but with
@@ -47,9 +37,5 @@ public interface Graph {
    * @param to   the InPort to wire
    * @return a new Graph with the ports wired
    */
-  default Graph wire(OutPort from, InPort to) {
-    return new ComposedGraphImpl<>(this, from, to);
-  }
-
-  ComposedGraph<AtomicGraph> flattened();
+  Graph wire(OutPort from, InPort to);
 }
