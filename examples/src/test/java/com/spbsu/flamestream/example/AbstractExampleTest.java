@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example;
 
-import com.spbsu.flamestream.common.FlameStreamSuite;
+import com.spbsu.flamestream.FlameStreamSuite;
 import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
@@ -8,7 +8,6 @@ import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Spliterator;
-import java.util.function.ToIntFunction;
 
 /**
  * User: Artem

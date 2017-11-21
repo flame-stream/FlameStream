@@ -4,7 +4,7 @@ import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.spbsu.flamestream.common.Statistics;
+import com.spbsu.flamestream.core.utils.Statistics;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.graph.AtomicHandle;

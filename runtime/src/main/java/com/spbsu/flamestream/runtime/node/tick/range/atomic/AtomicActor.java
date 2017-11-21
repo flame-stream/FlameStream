@@ -2,7 +2,7 @@ package com.spbsu.flamestream.runtime.node.tick.range.atomic;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.common.Statistics;
+import com.spbsu.flamestream.core.utils.Statistics;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;

@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.common;
+package com.spbsu.flamestream.core;
 
 import org.testng.annotations.BeforeMethod;
 

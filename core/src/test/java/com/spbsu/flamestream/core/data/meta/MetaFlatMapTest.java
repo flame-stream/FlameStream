@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.core.data.meta;
 
-import com.spbsu.flamestream.common.FlameStreamSuite;
+import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.core.FakeAtomicHandle;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;

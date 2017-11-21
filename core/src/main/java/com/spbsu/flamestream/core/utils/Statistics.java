@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.common;
+package com.spbsu.flamestream.core.utils;
 
 import java.util.HashMap;
 import java.util.LongSummaryStatistics;
