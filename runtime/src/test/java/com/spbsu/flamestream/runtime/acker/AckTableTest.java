@@ -2,6 +2,9 @@ package com.spbsu.flamestream.runtime.acker;
 
 import com.spbsu.commons.util.Pair;
 import com.spbsu.flamestream.core.FlameStreamSuite;
+import com.spbsu.flamestream.runtime.acker.table.AckTable;
+import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
+import com.spbsu.flamestream.runtime.acker.table.TreeAckTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;

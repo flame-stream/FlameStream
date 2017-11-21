@@ -1,21 +1,22 @@
 package com.spbsu.flamestream.runtime.acker;
 
-import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.utils.Statistics;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.utils.Statistics;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.Commit;
 import com.spbsu.flamestream.runtime.acker.api.CommitTick;
+import com.spbsu.flamestream.runtime.acker.api.FrontRegistered;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.RangeCommitDone;
+import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
+import com.spbsu.flamestream.runtime.acker.table.AckTable;
+import com.spbsu.flamestream.runtime.node.materializer.GraphRoutes;
+import com.spbsu.flamestream.runtime.utils.HashRange;
+import com.spbsu.flamestream.runtime.node.materializer.graph.atomic.source.api.Heartbeat;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import com.spbsu.flamestream.runtime.node.tick.range.atomic.source.api.Heartbeat;
-import com.spbsu.flamestream.runtime.node.tick.range.HashRange;
-import com.spbsu.flamestream.runtime.node.tick.api.StartTick;
-import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;
-import com.spbsu.flamestream.runtime.node.tick.api.TickRoutes;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -23,34 +24,47 @@ import java.util.HashSet;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 
-public class AckActor extends LoggingActor {
-  private final TickInfo tickInfo;
-  private final ActorRef tickWatcher;
-  private TickRoutes tickRoutes = null;
 
+/**
+ * <h3>Actor Contract</h3>
+ * <h4>Inbound Messages</h4>
+ * <ol>
+ * <li>{@link RegisterFront} requests to add front to the supervision</li>
+ * <li>{@link Ack} acks</li>
+ * <li>{@link Heartbeat} heartbeats</li>
+ * </ol>
+ * <h4>Outbound Messages</h4>
+ * <ol>
+ * <li>{@link FrontRegistered} - reply to the front registration request. Sets the lowest allowed timestamp</li>
+ * <li>{@link MinTimeUpdate} mintime</li>
+ * </ol>
+ * <h4>Failure Modes</h4>
+ * <ol>
+ * <li>{@link RuntimeException} - if something goes wrong</li>
+ * </ol>
+ */
+public class AckActor extends LoggingActor {
   private final Map<String, AckTable> tables = new HashMap<>();
   private final AckerStatistics stat = new AckerStatistics();
   private final Collection<HashRange> committers = new HashSet<>();
 
   private GlobalTime currentMin = GlobalTime.MIN;
 
-  private AckActor(TickInfo tickInfo, ActorRef tickWatcher) {
-    this.tickInfo = tickInfo;
-    this.tickWatcher = tickWatcher;
-    tickInfo.fronts()
-            .forEach(i -> tables.put(i, new ArrayAckTable(tickInfo.startTs(), tickInfo.stopTs(), tickInfo.window())));
+  @Nullable
+  private GraphRoutes routes = null;
+
+  private AckActor() {
   }
 
-  public static Props props(TickInfo tickInfo, ActorRef tickWatcher) {
-    return Props.create(AckActor.class, tickInfo, tickWatcher);
+  public static Props props() {
+    return Props.create(AckActor.class);
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(StartTick.class, start -> {
-              log().info("Received start tick");
-              tickRoutes = start.tickRoutingInfo();
+            .match(GraphRoutes.class, routes -> {
+              this.routes = routes;
               unstashAll();
               getContext().become(acking());
             })
