@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.core.graph.barrier;
 
-import com.spbsu.flamestream.common.Statistics;
+import com.spbsu.flamestream.core.utils.Statistics;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;

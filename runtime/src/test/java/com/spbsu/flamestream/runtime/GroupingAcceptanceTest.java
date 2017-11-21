@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.runtime;
 
-import com.spbsu.flamestream.common.FlameStreamSuite;
+import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.Graph;
 import com.spbsu.flamestream.core.graph.HashFunction;

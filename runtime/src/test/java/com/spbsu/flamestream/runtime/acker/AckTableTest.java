@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.acker;
 
 import com.spbsu.commons.util.Pair;
-import com.spbsu.flamestream.common.FlameStreamSuite;
+import com.spbsu.flamestream.core.FlameStreamSuite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
