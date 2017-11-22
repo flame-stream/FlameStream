@@ -3,10 +3,13 @@ package com.spbsu.flamestream.runtime.node.front;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.FlameRuntime;
+import com.spbsu.flamestream.runtime.node.front.api.FrontInstance;
+import com.spbsu.flamestream.runtime.node.front.barrier.FrontBarrier;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class FrontManager extends LoggingActor {
   private FrontManager() {
+    context().actorOf(FrontBarrier.props(), "barrier");
   }
 
   public static Props props() {
@@ -16,7 +19,7 @@ public class FrontManager extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(FlameRuntime.Front.class, front -> context().actorOf(FrontActor.props(front)))
             .build();
   }
+
 }

@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.node.materializer.graph.api;
+package com.spbsu.flamestream.runtime.node.materializer;
 
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.InPort;
@@ -16,12 +16,12 @@ public class AddressedItem {
     return item;
   }
 
-  public InPort port() {
+  public InPort destanation() {
     return port;
   }
 
   @Override
   public String toString() {
-    return "AddressedItem{" + "item=" + item + ", port=" + port + '}';
+    return "AddressedItem{" + "item=" + item + ", destanation=" + port + '}';
   }
 }

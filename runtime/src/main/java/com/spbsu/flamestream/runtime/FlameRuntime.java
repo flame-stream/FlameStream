@@ -14,6 +14,7 @@ public interface FlameRuntime {
     void stop();
 
     <T extends Front> Stream<FrontHandle<T>> attachFront(Class<T> front, Properties props);
+
     <T extends Rear> Stream<RearHandle<T>> outputOf(Class<T> rear, Properties props);
   }
 
@@ -25,10 +26,12 @@ public interface FlameRuntime {
 
   interface Front {
     void onStart(Consumer<Object> handle);
+
     void onRequest(GlobalTime from);
+
     void onCheckpoint(GlobalTime from);
   }
 
-  interface Rear extends Consumer<Object>{
+  interface Rear extends Consumer<Object> {
   }
 }

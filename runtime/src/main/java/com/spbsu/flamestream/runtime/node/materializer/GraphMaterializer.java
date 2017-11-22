@@ -6,12 +6,13 @@ import akka.actor.Deploy;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.remote.RemoteScope;
-import akka.routing.Router;
-import com.spbsu.flamestream.runtime.acker.AckActor;
-import com.spbsu.flamestream.runtime.node.api.NewGraph;
+import com.spbsu.flamestream.runtime.node.api.GraphInstance;
+import com.spbsu.flamestream.runtime.node.materializer.acker.Acker;
 import com.spbsu.flamestream.runtime.node.materializer.graph.LocalGraph;
-import com.spbsu.flamestream.runtime.utils.HashRange;
+import com.spbsu.flamestream.runtime.node.materializer.router.CoarseRouter;
+import com.spbsu.flamestream.runtime.node.materializer.router.FlameRouter;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import org.apache.commons.lang.math.IntRange;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,37 +23,36 @@ import java.util.Map;
  * If this set is changed than the materializer will be changed
  */
 public class GraphMaterializer extends LoggingActor {
-  private final Map<HashRange, Address> cluster;
+  private final Map<IntRange, Address> cluster;
 
-  private GraphMaterializer(Map<HashRange, Address> cluster) {
+  private GraphMaterializer(Map<IntRange, Address> cluster) {
     this.cluster = cluster;
   }
 
-  public static Props props(Map<String, Address> cluster) {
+  public static Props props(Map<IntRange, Address> cluster) {
     return Props.create(GraphMaterializer.class, cluster);
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(NewGraph.class, this::deploy)
+            .match(GraphInstance.class, this::deploy)
             .build();
   }
 
-  private void deploy(NewGraph graph) {
-    final ActorRef acker = context().actorOf(AckActor.props(), "acker_" + graph.id());
-    final Map<HashRange, ActorRef> rangeGraphs = new HashMap<>();
+  private void deploy(GraphInstance instance) {
+    final ActorRef acker = context().actorOf(Acker.props((frontId, attachTimestamp) -> {}), "acker_" + instance.id());
+    final Map<IntRange, ActorRef> rangeGraphs = new HashMap<>();
     cluster.forEach((range, address) -> {
       final ActorRef rangeGraph = context().actorOf(
-              LocalGraph.props(graph.graph()).withDeploy(new Deploy(new RemoteScope(address))),
+              LocalGraph.props(instance.graph()).withDeploy(new Deploy(new RemoteScope(address))),
               range.toString()
       );
       rangeGraphs.put(range, rangeGraph);
     });
 
-    acker.tell(new GraphRoutes(rangeGraphs, acker), self());
-    rangeGraphs.values().forEach(g -> g.tell(new GraphRoutes(rangeGraphs, acker), self()));
+    final FlameRouter router = new CoarseRouter(instance.graph(), rangeGraphs);
+    acker.tell(router, self());
+    rangeGraphs.values().forEach(g -> g.tell(router, self()));
   }
-
-  private final Router `
 }

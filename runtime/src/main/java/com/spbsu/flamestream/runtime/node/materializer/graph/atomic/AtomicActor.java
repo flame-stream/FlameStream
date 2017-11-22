@@ -5,11 +5,10 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.DataItem;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
 import com.spbsu.flamestream.core.graph.AtomicHandle;
-import com.spbsu.flamestream.core.graph.ComposedGraph;
 import com.spbsu.flamestream.core.utils.Statistics;
-import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.node.materializer.AddressedItem;
 import com.spbsu.flamestream.runtime.node.materializer.GraphRoutes;
-import com.spbsu.flamestream.runtime.node.materializer.graph.api.AddressedItem;
+import com.spbsu.flamestream.runtime.node.materializer.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.node.materializer.graph.api.Commit;
 import com.spbsu.flamestream.runtime.node.materializer.graph.atomic.api.AtomicCommitDone;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -23,13 +22,13 @@ public class AtomicActor extends LoggingActor {
   private final AtomicGraph atomic;
   private final AtomicHandle handle;
 
-  protected AtomicActor(AtomicGraph atomic, ComposedGraph<AtomicGraph> graph, GraphRoutes routes) {
+  protected AtomicActor(AtomicGraph atomic, GraphRoutes routes) {
     this.atomic = atomic;
-    this.handle = new AtomicHandleImpl(graph, routes, context());
+    this.handle = new AtomicHandleImpl(routes, context());
   }
 
-  public static Props props(AtomicGraph atomic, ComposedGraph<AtomicGraph> graph, GraphRoutes routes) {
-    return Props.create(AtomicActor.class, atomic, graph, routes);
+  public static Props props(AtomicGraph atomic, GraphRoutes routes) {
+    return Props.create(AtomicActor.class, atomic, routes);
   }
 
   @Override
@@ -65,7 +64,7 @@ public class AtomicActor extends LoggingActor {
     final long start = System.nanoTime();
 
     final DataItem<?> item = message.item();
-    atomic.onPush(message.port(), item, handle);
+    atomic.onPush(message.destanation(), item, handle);
     handle.ack(item.xor(), item.meta().globalTime());
 
     final long stop = System.nanoTime();

@@ -1,12 +1,12 @@
-package com.spbsu.flamestream.runtime.acker.api;
+package com.spbsu.flamestream.runtime.node.materializer.acker.api;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
-public class FrontRegistered {
+public class FrontTicket {
   private final String frontId;
   private final GlobalTime allowedTimestamp;
 
-  public FrontRegistered(String frontId, GlobalTime allowedTimestamp) {
+  public FrontTicket(String frontId, GlobalTime allowedTimestamp) {
     this.frontId = frontId;
     this.allowedTimestamp = allowedTimestamp;
   }

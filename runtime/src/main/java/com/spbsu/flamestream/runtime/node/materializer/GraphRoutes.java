@@ -1,20 +1,20 @@
 package com.spbsu.flamestream.runtime.node.materializer;
 
 import akka.actor.ActorRef;
-import akka.routing.Router;
+import com.spbsu.flamestream.runtime.node.materializer.router.FlameRouter;
 
 public class GraphRoutes {
-  private final Router graphRouter;
   private final ActorRef acker;
+  private final FlameRouter router;
 
-  public GraphRoutes(Router graphRouter,
+  public GraphRoutes(FlameRouter router,
                      ActorRef acker) {
-    this.graphRouter = graphRouter;
+    this.router = router;
     this.acker = acker;
   }
 
-  public Router graphRouter() {
-    return graphRouter;
+  public FlameRouter router() {
+    return router;
   }
 
   public ActorRef acker() {

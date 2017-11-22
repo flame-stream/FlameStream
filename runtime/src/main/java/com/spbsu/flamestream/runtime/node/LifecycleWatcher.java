@@ -26,20 +26,18 @@ public class LifecycleWatcher extends LoggingActor {
 
   @Override
   public void preStart() throws Exception {
-    super.preStart();
-
     this.zk = new ZooKeeper(zkConnectString, SESSION_TIMEOUT, event -> self().tell(event, self()));
+    super.preStart();
   }
 
   @Override
   public void postStop() {
-    super.postStop();
-
     try {
       zk.close();
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
+    super.postStop();
   }
 
   @Override

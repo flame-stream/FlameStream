@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.acker.api;
+package com.spbsu.flamestream.runtime.node.materializer.acker.api;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 

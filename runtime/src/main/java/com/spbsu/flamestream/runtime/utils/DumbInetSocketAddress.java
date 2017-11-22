@@ -20,7 +20,7 @@ public final class DumbInetSocketAddress {
   }
 
   @JsonCreator
-  public DumbInetSocketAddress(@JsonProperty("host") String host, @JsonProperty("port") int port) {
+  public DumbInetSocketAddress(@JsonProperty("host") String host, @JsonProperty("destanation") int port) {
     this.host = host;
     this.port = port;
   }
@@ -30,7 +30,7 @@ public final class DumbInetSocketAddress {
     return host;
   }
 
-  @JsonProperty("port")
+  @JsonProperty("destanation")
   public int port() {
     return port;
   }
@@ -41,7 +41,7 @@ public final class DumbInetSocketAddress {
 
   @Override
   public String toString() {
-    return "DumbInetSocketAddress{" + "host='" + host + '\'' + ", port=" + port + '}';
+    return "DumbInetSocketAddress{" + "host='" + host + '\'' + ", destanation=" + port + '}';
   }
 
   @Override

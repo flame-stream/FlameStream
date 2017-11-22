@@ -3,8 +3,6 @@ package com.spbsu.flamestream.runtime.node.materializer.graph.atomic.source;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.core.graph.ComposedGraph;
 import com.spbsu.flamestream.core.graph.source.SourceHandle;
 import com.spbsu.flamestream.runtime.node.materializer.GraphRoutes;
 import com.spbsu.flamestream.runtime.node.materializer.graph.atomic.AtomicHandleImpl;
@@ -17,13 +15,13 @@ import java.util.Map;
 class SourceHandleImpl extends AtomicHandleImpl implements SourceHandle {
   private final Map<String, ActorRef> frontRefs = new HashMap<>();
 
-  SourceHandleImpl(ComposedGraph<AtomicGraph> graph, GraphRoutes routes, ActorContext context) {
-    super(graph, routes, context);
+  SourceHandleImpl(GraphRoutes routes, ActorContext context) {
+    super(routes, context);
   }
 
   @Override
   public void heartbeat(GlobalTime time) {
-    tickRoutes.acker().tell(new Heartbeat(time), context.self());
+    routes.acker().tell(new Heartbeat(time), context.self());
   }
 
   @Override

@@ -4,12 +4,12 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.core.graph.Graph;
+import com.spbsu.flamestream.core.graph.ComposedGraph;
 import com.spbsu.flamestream.core.graph.InPort;
 import com.spbsu.flamestream.core.graph.source.Source;
-import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.node.materializer.AddressedItem;
 import com.spbsu.flamestream.runtime.node.materializer.GraphRoutes;
-import com.spbsu.flamestream.runtime.node.materializer.graph.api.AddressedItem;
+import com.spbsu.flamestream.runtime.node.materializer.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.node.materializer.graph.api.Commit;
 import com.spbsu.flamestream.runtime.node.materializer.graph.api.MaterializationCommitDone;
 import com.spbsu.flamestream.runtime.node.materializer.graph.atomic.AtomicActor;
@@ -26,18 +26,17 @@ import java.util.function.Function;
 import static java.util.stream.Collectors.toMap;
 
 public class LocalGraph extends LoggingActor {
-  private final Graph graph;
+  private final ComposedGraph<AtomicGraph> graph;
 
   private Map<InPort, ActorRef> routingTable = null;
   private Map<AtomicGraph, ActorRef> initializedGraph = null;
-
   private GraphRoutes routes = null;
 
-  private LocalGraph(Graph graph) {
+  private LocalGraph(ComposedGraph<AtomicGraph> graph) {
     this.graph = graph;
   }
 
-  public static Props props(Graph graph) {
+  public static Props props(ComposedGraph<AtomicGraph> graph) {
     return Props.create(LocalGraph.class, graph);
   }
 
@@ -57,6 +56,7 @@ public class LocalGraph extends LoggingActor {
             .match(GraphRoutes.class, routes -> {
               initializedGraph = initializedAtomics(graph.flattened().subGraphs(), routes);
               routingTable = LocalGraph.withFlattenedKey(initializedGraph);
+              context().actorSelection("/user/watcher/node/front_barrier").tell(routingTable, self());
               unstashAll();
               getContext().become(ranging());
             })
@@ -76,7 +76,7 @@ public class LocalGraph extends LoggingActor {
   }
 
   private void routeToPort(AddressedItem atomicMessage) {
-    final ActorRef route = routingTable.getOrDefault(atomicMessage.port(), context().system().deadLetters());
+    final ActorRef route = routingTable.getOrDefault(atomicMessage.destanation(), context().system().deadLetters());
     route.tell(atomicMessage, sender());
   }
 
@@ -105,11 +105,11 @@ public class LocalGraph extends LoggingActor {
 
   private ActorRef actorForAtomic(AtomicGraph atomic, GraphRoutes tickRoutes) {
     final String id = UUID.randomUUID().toString();
-    log().debug("Creating actor for atomic: id= {}, class={}", id, atomic.getClass());
+    log().debug("Creating actor for atomic: frontId= {}, class={}", id, atomic.getClass());
     if (atomic instanceof Source) {
-      return context().actorOf(SourceActor.props((Source) atomic, tickInfo, tickRoutes), id);
+      return context().actorOf(SourceActor.props(atomic, tickRoutes), id);
     } else {
-      return context().actorOf(AtomicActor.props(atomic, tickInfo, tickRoutes), id);
+      return context().actorOf(AtomicActor.props(atomic, tickRoutes), id);
     }
   }
 }
