@@ -9,7 +9,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -65,6 +65,7 @@ public class AckTableTest extends FlameStreamSuite {
 
   @Test
   public void logicTest() {
+    final Random rd = new Random(1);
     final long head = 1;
     final int capacity = 100;
     final long window = 10;
@@ -76,12 +77,12 @@ public class AckTableTest extends FlameStreamSuite {
       final long epochFloor = head + epoch * width;
       final long epochCeil = head + (epoch + 1) * width;
 
-      final Map<Long, Long> xors = ThreadLocalRandom.current()
+      final Map<Long, Long> xors = rd
               .longs(epochFloor, epochCeil)
               .limit(width)
               .distinct()
               .boxed()
-              .collect(Collectors.toMap(Function.identity(), e -> ThreadLocalRandom.current().nextLong()));
+              .collect(Collectors.toMap(Function.identity(), e -> rd.nextLong()));
 
       xors.forEach(table::ack);
       table.heartbeat(epochCeil);
