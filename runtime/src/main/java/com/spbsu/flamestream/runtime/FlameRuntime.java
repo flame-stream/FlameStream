@@ -8,7 +8,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 public interface FlameRuntime {
-  Flame run(Graph g);
+  Flame run(Graph<?, ?> g);
 
   interface Flame {
     void extinguish();
