@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.core.data;
 
+import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.Objects;
