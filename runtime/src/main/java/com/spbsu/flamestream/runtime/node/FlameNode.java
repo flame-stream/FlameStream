@@ -5,7 +5,7 @@ import akka.actor.Address;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.ZookeeperFlameClient;
-import com.spbsu.flamestream.runtime.node.front.FrontManager;
+import com.spbsu.flamestream.runtime.node.graph.front.FrontManager;
 import com.spbsu.flamestream.runtime.node.graph.GraphManager;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;

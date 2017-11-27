@@ -14,9 +14,9 @@
 //import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 //import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 //import com.spbsu.flamestream.runtime.environment.Environment;
-//import com.spbsu.flamestream.runtime.node.front.ActorFront;
-//import com.spbsu.flamestream.runtime.node.front.MediatorFront;
-//import com.spbsu.flamestream.runtime.node.front.SpliteratorFront;
+//import com.spbsu.flamestream.runtime.node.graph.front.ActorFront;
+//import com.spbsu.flamestream.runtime.node.graph.front.MediatorFront;
+//import com.spbsu.flamestream.runtime.node.graph.front.SpliteratorFront;
 //import com.spbsu.flamestream.runtime.utils.HashRange;
 //import com.spbsu.flamestream.runtime.environment.raw.SingleRawData;
 //import com.spbsu.flamestream.runtime.node.tick.api.TickInfo;

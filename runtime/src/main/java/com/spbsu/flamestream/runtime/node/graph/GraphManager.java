@@ -7,15 +7,18 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.remote.RemoteScope;
 import com.spbsu.flamestream.runtime.node.graph.api.GraphInstance;
-import com.spbsu.flamestream.runtime.acker.Acker;
-import com.spbsu.flamestream.runtime.node.graph.instance.GraphExecutor;
-import com.spbsu.flamestream.runtime.node.graph.router.CoarseRouter;
-import com.spbsu.flamestream.runtime.node.graph.router.FlameRouter;
+import com.spbsu.flamestream.runtime.node.graph.acker.Acker;
+import com.spbsu.flamestream.runtime.node.graph.materialization.GraphMaterialization;
+import com.spbsu.flamestream.runtime.node.graph.materialization.api.AddressedItem;
+import com.spbsu.flamestream.runtime.node.graph.materialization.GraphRouter;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
+import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
 import org.apache.commons.lang.math.IntRange;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.ToIntFunction;
 
 
 /**
@@ -45,14 +48,40 @@ public class GraphManager extends LoggingActor {
     final Map<IntRange, ActorRef> rangeGraphs = new HashMap<>();
     cluster.forEach((range, address) -> {
       final ActorRef rangeGraph = context().actorOf(
-              GraphExecutor.props(instance.graph()).withDeploy(new Deploy(new RemoteScope(address))),
+              GraphMaterialization.props(instance.graph()).withDeploy(new Deploy(new RemoteScope(address))),
               range.toString()
       );
       rangeGraphs.put(range, rangeGraph);
     });
 
-    final FlameRouter router = new CoarseRouter(instance.graph(), rangeGraphs);
+    final GraphRouter router = new CoarseRouter(instance.graph(), rangeGraphs);
     acker.tell(router, self());
     rangeGraphs.values().forEach(g -> g.tell(router, self()));
+  }
+
+  public static class CoarseRouter implements GraphRouter {
+    private final ComposedGraph<AtomicGraph> graph;
+    private final IntRangeMap<ActorRef> hashRanges;
+
+    public CoarseRouter(ComposedGraph<AtomicGraph> graph,
+                        Map<IntRange, ActorRef> hashRanges) {
+      this.graph = graph;
+      this.hashRanges = new ListIntRangeMap<>(hashRanges);
+    }
+
+    @Override
+    public void tell(DataItem<?> message, OutPort source, ActorRef sender) {
+      final InPort destination = graph.downstreams().get(source);
+
+      //noinspection rawtypes
+      final ToIntFunction hashFunction = destination.hashFunction();
+
+      //noinspection unchecked
+      final int hash = hashFunction.applyAsInt(message.payload());
+      final AddressedItem result = new AddressedItem(message, destination);
+
+      final ActorRef ref = hashRanges.get(hash);
+      ref.tell(result, sender);
+    }
   }
 }

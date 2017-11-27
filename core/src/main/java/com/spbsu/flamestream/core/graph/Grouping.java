@@ -15,7 +15,7 @@ import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Grouping<T> extends Graph.Node.Stub implements BiFunction<DataItem<? extends T>, InvalidatingBucket, Stream<DataItem<List<T>>>> {
+public class Grouping<T> extends Graph.Vertex.Stub implements BiFunction<DataItem<? extends T>, InvalidatingBucket, Stream<DataItem<List<T>>>> {
   private final HashFunction<? super T> hash;
   private final BiPredicate<? super T, ? super T> equalz;
   private final int window;
@@ -51,5 +51,14 @@ public class Grouping<T> extends Graph.Node.Stub implements BiFunction<DataItem<
       items.add(new PayloadDataItem<>(meta, groupingResult));
     }
     return items.stream();
+  }
+
+  @Override
+  public String toString() {
+    return "Grouping{" +
+            "hash=" + hash +
+            ", equalz=" + equalz +
+            ", window=" + window +
+            '}';
   }
 }
