@@ -4,15 +4,24 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
+import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
-import com.spbsu.flamestream.core.graph.state.GroupingStateImpl;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -21,8 +30,14 @@ import java.util.stream.Stream;
 public final class GroupingTest extends FlameStreamSuite {
 
   private static <T> List<List<T>> groupMe(Stream<DataItem<T>> input, int window) {
-    final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window, new GroupingStateImpl());
-    return input.flatMap(grouping::apply)
+    final Map<DataItem, InvalidatingBucket> state = new HashMap<>();
+    final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window);
+    return input
+            .map(di -> new DataItemForTest<>(di, grouping.inputHash(), grouping.equalz()))
+            .flatMap(di -> {
+              state.putIfAbsent(di, new ArrayInvalidatingBucket());
+              return grouping.apply(di, state.get(di));
+            })
             .map(DataItem::payload)
             .collect(Collectors.toList());
   }

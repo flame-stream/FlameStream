@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.core.graph;
 
-import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
@@ -9,11 +9,11 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class Map<T, R> extends Graph.Node.Stub<T> implements Function<DataItem<T>, Stream<DataItem<R>>> {
+public class FlameMap<T, R> extends Graph.Node.Stub<T> implements Function<DataItem<? extends T>, Stream<DataItem<R>>> {
   private final Function<T, Stream<R>> function;
   private final HashFunction<? super T> hash;
 
-  public Map(Function<T, Stream<R>> function, HashFunction<? super T> hash) {
+  public FlameMap(Function<T, Stream<R>> function, HashFunction<? super T> hash) {
     this.function = function;
     this.hash = hash;
   }
@@ -24,7 +24,7 @@ public class Map<T, R> extends Graph.Node.Stub<T> implements Function<DataItem<T
   }
 
   @Override
-  public Stream<DataItem<R>> apply(DataItem<T> dataItem) {
+  public Stream<DataItem<R>> apply(DataItem<? extends T> dataItem) {
     final Stream<R> result = function.apply(dataItem.payload());
     if (result == null) {
       return null;
