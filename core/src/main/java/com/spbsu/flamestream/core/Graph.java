@@ -2,7 +2,6 @@ package com.spbsu.flamestream.core;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.spbsu.flamestream.core.graph.WiringException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,9 +39,9 @@ public interface Graph<In, Out> {
 
     <I, O> Graph build(Node<I> source, Node<O> sink) {
       if (adjLists.values().contains(source)) {
-        throw new WiringException("Source must not have inputs");
+        throw new IllegalStateException("Source must not have inputs");
       } else if (adjLists.keySet().contains(sink)) {
-        throw new WiringException("Source must not have outputs");
+        throw new IllegalStateException("Source must not have outputs");
       }
 
       final Collection<Node> allNodes = new ArrayList<>(adjLists.keySet());

@@ -8,16 +8,10 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 15.11.2017
  */
-public interface Front<H extends Front.Handle> {
+public interface Front {
   void onStart(Consumer<?> consumer);
 
   void onRequestNext(GlobalTime from);
 
   void onCheckpoint(GlobalTime to);
-
-  H handle();
-  
-  interface Handle {
-    void detach();
-  }
 }

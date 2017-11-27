@@ -4,7 +4,7 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
-import com.spbsu.flamestream.core.graph.Map;
+import com.spbsu.flamestream.core.graph.FlameMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -23,7 +23,7 @@ public class MetaMapTest extends FlameStreamSuite {
   public void testFlatFilterLogic() {
     final int flatNumber = 10;
     final Function<Integer, Stream<Integer>> function = integer -> Stream.generate(() -> integer).limit(flatNumber);
-    final Map<Integer, Integer> map = new Map<>(function, HashFunction.constantHash(1));
+    final FlameMap<Integer, Integer> map = new FlameMap<>(function, HashFunction.constantHash(1));
 
     final int inputSize = 10;
     final List<DataItem<Integer>> input = IntStream.range(0, inputSize)
