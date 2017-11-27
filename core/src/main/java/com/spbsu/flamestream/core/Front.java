@@ -1,15 +1,23 @@
 package com.spbsu.flamestream.core;
 
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+
 import java.util.function.Consumer;
 
 /**
  * User: Artem
  * Date: 15.11.2017
  */
-public interface Front {
+public interface Front<H extends Front.Handle> {
   void onStart(Consumer<?> consumer);
 
-  void onRequestNext(long from);
+  void onRequestNext(GlobalTime from);
 
-  void onCheckpoint(long to);
+  void onCheckpoint(GlobalTime to);
+
+  H handle();
+  
+  interface Handle {
+    void detach();
+  }
 }

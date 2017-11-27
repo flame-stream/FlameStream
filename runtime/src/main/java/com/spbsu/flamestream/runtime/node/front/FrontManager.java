@@ -2,8 +2,6 @@ package com.spbsu.flamestream.runtime.node.front;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.node.front.api.FrontInstance;
 import com.spbsu.flamestream.runtime.node.front.barrier.FrontBarrier;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 

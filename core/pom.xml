@@ -15,12 +15,6 @@
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
-        <dependency>
-            <groupId>com.spbsu.flamestream</groupId>
-            <artifactId>flamestream-common</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-
         <!--Logging-->
         <dependency>
             <groupId>org.slf4j</groupId>

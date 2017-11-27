@@ -1,0 +1,70 @@
+package com.spbsu.flamestream.runtime;
+
+import akka.actor.ActorSystem;
+import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.concurrent.TimeoutException;
+
+public class WorkerApplication {
+  private static final int PORT = 4387;
+  private static final Logger LOG = LoggerFactory.getLogger(WorkerApplication.class);
+  private final DumbInetSocketAddress host;
+  private final String zkConnectString;
+  private final String id;
+
+  private ActorSystem system = null;
+
+  private WorkerApplication(String id, String zkConnectString) {
+    this.id = id;
+    this.host = new DumbInetSocketAddress("localhost", PORT);
+    this.zkConnectString = zkConnectString;
+  }
+
+  public WorkerApplication(String id, DumbInetSocketAddress host, String zkConnectString) {
+    this.id = id;
+    this.host = host;
+    this.zkConnectString = zkConnectString;
+  }
+
+  public static void main(String... args) throws IOException {
+    final Config config;
+    if (args.length == 1) {
+      config = ConfigFactory.parseReader(Files.newBufferedReader(Paths.get(args[0])))
+              .withFallback(ConfigFactory.load("fs"));
+    } else {
+      config = ConfigFactory.load("fs");
+    }
+
+    final int port = config.getInt("destanation");
+    final String host = config.getString("host");
+    final DumbInetSocketAddress socketAddress = new DumbInetSocketAddress(host, port);
+
+    new WorkerApplication(config.getString("frontId"), socketAddress, config.getString("zk_string")).run();
+  }
+
+  public void run() {
+    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.destanation=" + host.port())
+            .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + host.host()))
+            .withFallback(ConfigFactory.load("remote"));
+    this.system = ActorSystem.create("worker", config);
+
+    system.actorOf(LifecycleWatcher.props(zkConnectString, id), "watcher");
+  }
+
+  public void shutdown() {
+    try {
+      Await.ready(system.terminate(), Duration.Inf());
+    } catch (InterruptedException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
+  }
+}

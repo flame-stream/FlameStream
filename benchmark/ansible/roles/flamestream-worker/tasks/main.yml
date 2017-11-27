@@ -40,6 +40,6 @@
     -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+HeapDumpOnOutOfMemoryError \
     -cp \
     "{{ flamestream_dir }}/worker.jar:{{ flamestream_dir }}/examples.jar" \
-    com.spbsu.flamestream.runtime.application.WorkerApplication {{ flamestream_dir }}/fs.conf \
+    com.spbsu.flamestream.runtime.WorkerApplication {{ flamestream_dir }}/fs.conf \
     > {{ flamestream_dir}}/worker.log 2>&1 &
   tags: bootstrap

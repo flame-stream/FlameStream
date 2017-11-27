@@ -5,12 +5,12 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
 import akka.util.Timeout;
-import com.spbsu.flamestream.runtime.node.front.api.NewHole;
+import com.spbsu.flamestream.runtime.node.front.instance.api.NewHole;
 import com.spbsu.flamestream.runtime.node.front.barrier.api.AttachFront;
 import com.spbsu.flamestream.runtime.node.front.barrier.api.LocalFront;
 import com.spbsu.flamestream.runtime.node.front.barrier.api.LocalSourceEntrance;
-import com.spbsu.flamestream.runtime.node.materializer.acker.api.FrontTicket;
-import com.spbsu.flamestream.runtime.node.materializer.acker.api.RegisterFront;
+import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
+import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.HashMap;
