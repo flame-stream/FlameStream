@@ -46,7 +46,7 @@ public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
   }
 
   @Override
-  public Graph<?, ?> graphBy(String id) {
+  public Graph graphBy(String id) {
     try {
       final byte[] data = zooKeeper.getData("/graphs/" + id, false, null);
       final ByteBufferInput input = new ByteBufferInput(data);
@@ -68,7 +68,7 @@ public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
     }
   }
 
-  public Graph<?, ?> frontById(String graphId, String frontId) {
+  public Graph frontById(String graphId, String frontId) {
     try {
       final byte[] data = zooKeeper.getData("/graphs/" + graphId + "/fronts/" + frontId, false, null);
       final ByteBufferInput input = new ByteBufferInput(data);
@@ -79,7 +79,7 @@ public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
   }
 
   @Override
-  public void put(String graphId, Graph<?, ?> graph) {
+  public void put(String graphId, Graph graph) {
     try {
       final ByteBufferOutput o = new ByteBufferOutput(1000, 20000);
       kryo.writeObject(o, graph);

@@ -10,17 +10,17 @@ import com.spbsu.flamestream.runtime.node.graph.materialization.api.Commit;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class GraphMaterialization extends LoggingActor {
-  private final Graph<?, ?> graph;
+  private final Graph graph;
   private final ActorRef acker;
   private final ActorRef barrier;
 
-  private GraphMaterialization(Graph<?, ?> graph, ActorRef acker, ActorRef barrier) {
+  private GraphMaterialization(Graph graph, ActorRef acker, ActorRef barrier) {
     this.graph = graph;
     this.acker = acker;
     this.barrier = barrier;
   }
 
-  public static Props props(Graph<?, ?> graph, ActorRef acker, ActorRef barrier) {
+  public static Props props(Graph graph, ActorRef acker, ActorRef barrier) {
     return Props.create(GraphMaterialization.class, graph, acker, barrier);
   }
 

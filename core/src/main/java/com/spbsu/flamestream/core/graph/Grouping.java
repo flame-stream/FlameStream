@@ -15,7 +15,7 @@ import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Grouping<T> extends Graph.Vertex.Stub implements BiFunction<DataItem<? extends T>, InvalidatingBucket, Stream<DataItem<List<T>>>> {
+public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
   private final HashFunction<? super T> hash;
   private final BiPredicate<? super T, ? super T> equalz;
   private final int window;
@@ -27,7 +27,6 @@ public class Grouping<T> extends Graph.Vertex.Stub implements BiFunction<DataIte
     this.equalz = equalz;
   }
 
-  @Override
   public HashFunction<? super T> inputHash() {
     return hash;
   }
@@ -36,21 +35,22 @@ public class Grouping<T> extends Graph.Vertex.Stub implements BiFunction<DataIte
     return this.equalz;
   }
 
-  @Override
-  public Stream<DataItem<List<T>>> apply(DataItem<? extends T> dataItem, InvalidatingBucket bucket) {
-    final int position = bucket.insert(dataItem);
-    final Collection<DataItem<List<T>>> items = new ArrayList<>();
-    for (int right = position + 1; right <= Math.min(position + window, bucket.size()); ++right) {
-      final int left = Math.max(right - window, 0);
-      final Meta meta = bucket.get(right - 1).meta().advanced(incrementLocalTimeAndGet());
-      //noinspection unchecked
-      final List<T> groupingResult = bucket.rangeStream(left, right)
-              .map(DataItem::payload)
-              .map(o -> (T) o)
-              .collect(Collectors.toList());
-      items.add(new PayloadDataItem<>(meta, groupingResult));
-    }
-    return items.stream();
+  public BiFunction<DataItem<? extends T>, InvalidatingBucket, Stream<DataItem<List<T>>>> operation() {
+    return (dataItem, bucket) -> {
+      final int position = bucket.insert(dataItem);
+      final Collection<DataItem<List<T>>> items = new ArrayList<>();
+      for (int right = position + 1; right <= Math.min(position + window, bucket.size()); ++right) {
+        final int left = Math.max(right - window, 0);
+        final Meta meta = bucket.get(right - 1).meta().advanced(incrementLocalTimeAndGet());
+        //noinspection unchecked
+        final List<T> groupingResult = bucket.rangeStream(left, right)
+                .map(DataItem::payload)
+                .map(o -> (T) o)
+                .collect(Collectors.toList());
+        items.add(new PayloadDataItem<>(meta, groupingResult));
+      }
+      return items.stream();
+    };
   }
 
   @Override

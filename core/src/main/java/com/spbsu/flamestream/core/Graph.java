@@ -8,32 +8,33 @@ import java.util.Collection;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
-public interface Graph<In, Out> {
-  Stream<Vertex<?>> nodes();
+public interface Graph {
+  Stream<Vertex> nodes();
 
-  Stream<Vertex<?>> outputs(Vertex<?> vertex);
+  Stream<Vertex> outputs(Vertex vertex);
 
-  Vertex<In> source();
+  Vertex source();
 
-  Vertex<Out> sink();
+  Vertex sink();
 
-  interface Vertex<I> {
-    HashFunction<? super I> inputHash();
-
+  interface Vertex {
     String id();
 
-    abstract class Stub<I> implements Vertex<I> {
+    abstract class Stub implements Vertex {
       private final long id = ThreadLocalRandom.current().nextLong();
+
+      @Override
+      public String id() {
+        return toString() + "{id=" + id + "}";
+      }
+    }
+
+    abstract class LocalTimeStub extends Stub {
       private int localTime = 0;
 
       protected final int incrementLocalTimeAndGet() {
         this.localTime += 1;
         return localTime;
-      }
-
-      @Override
-      public String id() {
-        return toString() + "{id=" + id + "}";
       }
     }
   }
@@ -46,7 +47,7 @@ public interface Graph<In, Out> {
       return this;
     }
 
-    <I, O> Graph build(Vertex<I> source, Vertex<O> sink) {
+    Graph build(Vertex source, Vertex sink) {
       if (adjLists.values().contains(source)) {
         throw new IllegalStateException("Source must not have inputs");
       } else if (adjLists.keySet().contains(sink)) {
@@ -67,12 +68,12 @@ public interface Graph<In, Out> {
         }
 
         @Override
-        public Vertex<I> source() {
+        public Vertex source() {
           return source;
         }
 
         @Override
-        public Vertex<O> sink() {
+        public Vertex sink() {
           return sink;
         }
       };

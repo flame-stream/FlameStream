@@ -36,7 +36,7 @@ public final class GroupingTest extends FlameStreamSuite {
             .map(di -> new DataItemForTest<>(di, grouping.inputHash(), grouping.equalz()))
             .flatMap(di -> {
               state.putIfAbsent(di, new ArrayInvalidatingBucket());
-              return grouping.apply(di, state.get(di));
+              return grouping.operation().apply(di, state.get(di));
             })
             .map(DataItem::payload)
             .collect(Collectors.toList());

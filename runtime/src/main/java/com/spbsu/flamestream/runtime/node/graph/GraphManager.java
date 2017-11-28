@@ -27,13 +27,13 @@ public class GraphManager extends LoggingActor {
   private final IntRange localRange;
   private final IntRange ackerLocation;
 
-  private final Graph<?, ?> logicalGraph;
+  private final Graph logicalGraph;
   private final Map<IntRange, ActorRef> managers;
 
   private final ActorRef edgeManager;
 
   private GraphManager(IntRange localRange,
-                       Graph<?, ?> logicalGraph,
+                       Graph logicalGraph,
                        Map<IntRange, ActorRef> managers,
                        IntRange ackerLocation) {
     this.ackerLocation = ackerLocation;
@@ -46,7 +46,7 @@ public class GraphManager extends LoggingActor {
     }
   }
 
-  public static Props props(IntRange localRange, Graph<?, ?> logicalGraph, Map<IntRange, ActorRef> managers) {
+  public static Props props(IntRange localRange, Graph logicalGraph, Map<IntRange, ActorRef> managers) {
     return Props.create(GraphManager.class, localRange, logicalGraph, managers);
   }
 
@@ -106,17 +106,17 @@ public class GraphManager extends LoggingActor {
   }
 
   public static class CoarseRouter implements GraphRouter {
-    private final Graph<?, ?> graph;
+    private final Graph graph;
     private final IntRangeMap<ActorRef> hashRanges;
 
-    public CoarseRouter(Graph<?, ?> graph,
+    public CoarseRouter(Graph graph,
                         Map<IntRange, ActorRef> hashRanges) {
       this.graph = graph;
       this.hashRanges = new ListIntRangeMap<>(hashRanges);
     }
 
     @Override
-    public void tell(DataItem<?> message, Graph.Vertex<?> destanation, ActorRef sender) {
+    public void tell(DataItem<?> message, Graph.Vertex destanation, ActorRef sender) {
       // TODO: 11/28/17
     }
   }

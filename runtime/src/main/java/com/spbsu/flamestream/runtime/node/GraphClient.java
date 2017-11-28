@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 public interface GraphClient {
   Set<String> graphs(Consumer<Set<String>> watcher);
 
-  Graph<?, ?> graphBy(String id);
+  Graph graphBy(String id);
 
-  void put(String graphId, Graph<?, ?> graph);
+  void put(String graphId, Graph graph);
 }
