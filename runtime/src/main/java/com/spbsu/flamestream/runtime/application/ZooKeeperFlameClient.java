@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class ZooKeeperFlameClient implements FlameNode.Notifier, ConfigurationClient {
+public class ZooKeeperFlameClient implements FlameNode.NodeNotifier, ConfigurationClient {
   private final Kryo kryo;
   private final ObjectMapper mapper = new ObjectMapper();
   private final ZooKeeper zooKeeper;

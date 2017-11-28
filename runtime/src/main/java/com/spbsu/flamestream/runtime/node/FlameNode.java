@@ -7,11 +7,12 @@ import akka.actor.Props;
 import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.application.ZooKeeperFlameClient;
 import com.spbsu.flamestream.runtime.node.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.node.config.ConfigurationClient;
-import com.spbsu.flamestream.runtime.node.graph.GraphManager;
+import com.spbsu.flamestream.runtime.node.graph.LogicGraphManager;
 import com.spbsu.flamestream.runtime.node.graph.edge.EdgeManager;
+import com.spbsu.flamestream.runtime.node.graph.edge.api.FrontInstance;
+import com.spbsu.flamestream.runtime.node.graph.edge.api.RearInstance;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.commons.lang.math.IntRange;
 import org.apache.zookeeper.ZooKeeper;
@@ -22,23 +23,23 @@ import java.util.stream.Collectors;
 
 public class FlameNode extends LoggingActor {
   private final String id;
-  private final Notifier notifier;
+  private final NodeNotifier notifier;
   private final ConfigurationClient configurationClient;
   private final ClusterConfig config;
 
   private final ActorRef edgeManager;
   private final ActorRef graphManager;
 
-  private FlameNode(String id, ZooKeeper zk) {
+  private FlameNode(String id, ConfigurationClient configurationClient, NodeNotifier notifier) {
     this.id = id;
-    this.notifier = new ZooKeeperFlameClient(zk);
-    this.configurationClient = new ZooKeeperFlameClient(zk);
+    this.notifier = notifier;
+    this.configurationClient = configurationClient;
 
     // TODO: 11/27/17 handle configuration changes
     this.config = configurationClient.configuration(configuration -> {});
 
     this.edgeManager = context().actorOf(EdgeManager.props(), "edge");
-    this.graphManager = context().actorOf(GraphManager.props(systems()), "graph");
+    this.graphManager = context().actorOf(LogicGraphManager.props(systems()), "graph");
   }
 
   public static Props props(String id, ZooKeeper zooKeeper) {
@@ -67,7 +68,11 @@ public class FlameNode extends LoggingActor {
     ));
   }
 
-  public interface Notifier {
-    void setObserver(Consumer<Graph> observer);
+  public interface NodeNotifier {
+    void setGraphObserver(Consumer<Graph> observer);
+
+    void setFrontObserver(Consumer<FrontInstance<?>> observer);
+
+    void setRearObserver(Consumer<RearInstance<?>> rearObserver);
   }
 }
