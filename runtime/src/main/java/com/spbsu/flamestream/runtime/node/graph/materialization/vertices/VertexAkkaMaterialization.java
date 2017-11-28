@@ -6,24 +6,21 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.node.graph.materialization.api.Commit;
 
-import java.util.stream.Stream;
-
 /**
  * User: Artem
  * Date: 27.11.2017
  */
-public class VertexAkkaMaterialization extends VertexMaterialization.Stub {
+public class VertexAkkaMaterialization implements VertexMaterialization {
   private final ActorContext context;
   private final ActorRef vertexActor;
 
-  public VertexAkkaMaterialization(VertexMaterialization materialization, Stream<String> nextVertices, ActorContext context) {
-    super(materialization.vertexId());
+  public VertexAkkaMaterialization(VertexMaterialization materialization, ActorContext context) {
     this.context = context;
-    vertexActor = context.actorOf(VertexActor.props(materialization, nextVertices));
+    vertexActor = context.actorOf(VertexActor.props(materialization));
   }
 
   @Override
-  public void onMinGTimeUpdate(GlobalTime globalTime) {
+  public void onMinTime(GlobalTime globalTime) {
     vertexActor.tell(globalTime, context.self());
   }
 
@@ -33,8 +30,7 @@ public class VertexAkkaMaterialization extends VertexMaterialization.Stub {
   }
 
   @Override
-  public Stream<DataItem<?>> apply(DataItem<?> dataItem) {
+  public void accept(DataItem<?> dataItem) {
     vertexActor.tell(dataItem, context.self());
-    return Stream.empty();
   }
 }
