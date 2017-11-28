@@ -1,3 +1,4 @@
+/*
 package com.spbsu.flamestream.runtime.application;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -6,9 +7,9 @@ import com.esotericsoftware.kryo.io.ByteBufferOutput;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.node.FlameNode;
-import com.spbsu.flamestream.runtime.node.config.ConfigurationClient;
-import com.spbsu.flamestream.runtime.node.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.FlameNode;
+import com.spbsu.flamestream.runtime.config.ConfigurationClient;
+import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -145,3 +146,4 @@ public class ZooKeeperFlameClient implements FlameNode.ZookeeperClient, Configur
     }
   }
 }
+*/

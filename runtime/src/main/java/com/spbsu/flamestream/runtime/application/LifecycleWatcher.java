@@ -2,7 +2,7 @@ package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.node.FlameNode;
+import com.spbsu.flamestream.runtime.FlameNode;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
