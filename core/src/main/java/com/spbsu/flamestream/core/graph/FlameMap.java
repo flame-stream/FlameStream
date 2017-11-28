@@ -9,7 +9,7 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class FlameMap<T, R> extends Graph.Node.Stub<T> implements Function<DataItem<? extends T>, Stream<DataItem<R>>> {
+public class FlameMap<T, R> extends Graph.Vertex.Stub<T> implements Function<DataItem<? extends T>, Stream<DataItem<R>>> {
   private final Function<T, Stream<R>> function;
   private final HashFunction<? super T> hash;
 
@@ -36,5 +36,13 @@ public class FlameMap<T, R> extends Graph.Node.Stub<T> implements Function<DataI
       final Meta newMeta = dataItem.meta().advanced(newLocalTime, childId[0]++);
       return new PayloadDataItem<>(newMeta, r);
     });
+  }
+
+  @Override
+  public String toString() {
+    return "FlameMap{" +
+            "function=" + function +
+            ", hash=" + hash +
+            '}';
   }
 }

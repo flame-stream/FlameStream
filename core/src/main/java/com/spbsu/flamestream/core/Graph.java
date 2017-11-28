@@ -5,65 +5,74 @@ import com.google.common.collect.Multimap;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public interface Graph<In, Out> {
-  Stream<Node<?>> nodes();
+  Stream<Vertex<?>> nodes();
 
-  Stream<Node<?>> outputs(Node<?> node);
+  Stream<Vertex<?>> outputs(Vertex<?> vertex);
 
-  Node<In> source();
+  Vertex<In> source();
 
-  Node<Out> sink();
+  Vertex<Out> sink();
 
-  interface Node<I> {
+  interface Vertex<I> {
     HashFunction<? super I> inputHash();
 
-    abstract class Stub<I> implements Node<I> {
+    String id();
+
+    abstract class Stub<I> implements Vertex<I> {
+      private final long id = ThreadLocalRandom.current().nextLong();
       private int localTime = 0;
 
       protected final int incrementLocalTimeAndGet() {
         this.localTime += 1;
         return localTime;
       }
+
+      @Override
+      public String id() {
+        return toString() + "{id=" + id + "}";
+      }
     }
   }
 
   class Builder {
-    private Multimap<Node, Node> adjLists = HashMultimap.create();
+    private Multimap<Vertex, Vertex> adjLists = HashMultimap.create();
 
-    Builder link(Node from, Node to) {
+    Builder link(Vertex from, Vertex to) {
       adjLists.put(from, to);
       return this;
     }
 
-    <I, O> Graph build(Node<I> source, Node<O> sink) {
+    <I, O> Graph build(Vertex<I> source, Vertex<O> sink) {
       if (adjLists.values().contains(source)) {
         throw new IllegalStateException("Source must not have inputs");
       } else if (adjLists.keySet().contains(sink)) {
         throw new IllegalStateException("Source must not have outputs");
       }
 
-      final Collection<Node> allNodes = new ArrayList<>(adjLists.keySet());
-      allNodes.add(sink);
+      final Collection<Vertex> allVertices = new ArrayList<>(adjLists.keySet());
+      allVertices.add(sink);
       return new Graph() {
         @Override
-        public Stream<Node> nodes() {
-          return allNodes.stream();
+        public Stream<Vertex> nodes() {
+          return allVertices.stream();
         }
 
         @Override
-        public Stream<Node> outputs(Node node) {
-          return adjLists.get(node).stream();
+        public Stream<Vertex> outputs(Vertex vertex) {
+          return adjLists.get(vertex).stream();
         }
 
         @Override
-        public Node<I> source() {
+        public Vertex<I> source() {
           return source;
         }
 
         @Override
-        public Node<O> sink() {
+        public Vertex<O> sink() {
           return sink;
         }
       };
