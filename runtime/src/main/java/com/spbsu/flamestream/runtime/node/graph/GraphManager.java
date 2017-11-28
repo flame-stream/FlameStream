@@ -1,16 +1,16 @@
 package com.spbsu.flamestream.runtime.node.graph;
 
 import akka.actor.ActorRef;
-import akka.actor.Address;
 import akka.actor.Deploy;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.remote.RemoteScope;
-import com.spbsu.flamestream.runtime.node.graph.api.GraphInstance;
+import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.node.graph.acker.Acker;
+import com.spbsu.flamestream.runtime.node.graph.api.GraphInstance;
 import com.spbsu.flamestream.runtime.node.graph.materialization.GraphMaterialization;
-import com.spbsu.flamestream.runtime.node.graph.materialization.api.AddressedItem;
 import com.spbsu.flamestream.runtime.node.graph.materialization.GraphRouter;
+import com.spbsu.flamestream.runtime.node.graph.materialization.api.AddressedItem;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
@@ -26,14 +26,14 @@ import java.util.function.ToIntFunction;
  * If this set is changed than the graph will be changed
  */
 public class GraphManager extends LoggingActor {
-  private final Map<IntRange, Address> cluster;
+  private final Graph<?, ?> logicalGraph;
 
-  private GraphManager(Map<IntRange, Address> cluster) {
-    this.cluster = cluster;
+  private GraphManager(Graph<?, ?> logicalGraph) {
+    this.logicalGraph = logicalGraph;
   }
 
-  public static Props props(Map<IntRange, Address> cluster) {
-    return Props.create(GraphManager.class, cluster);
+  public static Props props(Graph<?, ?> logicalGraph) {
+    return Props.create(GraphManager.class, logicalGraph);
   }
 
   @Override

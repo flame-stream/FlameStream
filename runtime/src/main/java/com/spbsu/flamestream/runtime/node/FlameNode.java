@@ -1,55 +1,65 @@
 package com.spbsu.flamestream.runtime.node;
 
+import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Address;
 import akka.actor.Props;
+import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.ZookeeperFlameClient;
-import com.spbsu.flamestream.runtime.node.graph.front.FrontManager;
+import com.spbsu.flamestream.runtime.node.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.node.graph.GraphManager;
-import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
+import com.spbsu.flamestream.runtime.node.graph.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.commons.lang.math.IntRange;
 import org.apache.zookeeper.ZooKeeper;
 
-import java.util.NavigableMap;
-import java.util.TreeMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-class FlameNode extends LoggingActor {
+public class FlameNode extends LoggingActor {
   private final String id;
-  private ZookeeperFlameClient zookeeper;
+  private final GraphClient graphClient;
+  private final ConfigurationClient configurationClient;
+  private final ClusterConfig config;
 
-  private final ActorRef frontManager;
-  private final ActorRef graphMaterializer;
+  private final ActorRef edgeManager;
+  private final ActorRef graphManager;
 
   private FlameNode(String id, ZooKeeper zk) {
     this.id = id;
-    this.zookeeper = new ZookeeperFlameClient(zk);
+    this.graphClient = new ZooKeeperFlameClient(zk);
+    this.configurationClient = new ZooKeeperFlameClient(zk);
 
-    this.frontManager = context().actorOf(FrontManager.props(), "fronts");
-    this.graphMaterializer = context().actorOf(GraphManager.props(systems()), "graph");
+    // TODO: 11/27/17 handle configuration changes
+    this.config = configurationClient.configuration(configuration -> {});
+
+    this.edgeManager = context().actorOf(EdgeManager.props(), "edge");
+    this.graphManager = context().actorOf(GraphManager.props(systems()), "graph");
   }
 
-  static Props props(String id, ZooKeeper zooKeeper) {
+  public static Props props(String id, ZooKeeper zooKeeper) {
     return Props.create(FlameNode.class, id, zooKeeper);
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
+            .match()
             .build();
   }
 
-  private NavigableMap<IntRange, Address> systems() {
-    final NavigableMap<IntRange, DumbInetSocketAddress> dns = zookeeper.dns(d -> self().tell(
-            d,
-            ActorRef.noSender()
+  private Map<IntRange, ActorPath> paths() {
+    return config.nodeConfigs().collect(Collectors.toMap(
+            node -> node.range().asRange(),
+            node -> {
+              final Address system = Address.apply(
+                      "akka.tcp",
+                      "worker",
+                      node.address().host(),
+                      node.address().port()
+              );
+              return RootActorPath.apply(system, "watcher").child("node");
+            }
     ));
-
-    final NavigableMap<IntRange, Address> systems = new TreeMap<>();
-    dns.forEach((s, address) ->
-            systems.put(s, new Address("akka.tcp", "worker", address.host(), address.port())));
-    return systems;
   }
-
 }

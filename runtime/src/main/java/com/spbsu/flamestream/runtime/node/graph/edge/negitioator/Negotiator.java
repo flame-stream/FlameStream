@@ -1,16 +1,16 @@
-package com.spbsu.flamestream.runtime.node.graph.front.barrier;
+package com.spbsu.flamestream.runtime.node.graph.edge.negitioator;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
 import akka.util.Timeout;
-import com.spbsu.flamestream.runtime.node.graph.front.instance.api.NewHole;
-import com.spbsu.flamestream.runtime.node.graph.front.barrier.api.AttachFront;
-import com.spbsu.flamestream.runtime.node.graph.front.barrier.api.LocalFront;
-import com.spbsu.flamestream.runtime.node.graph.front.barrier.api.LocalSourceEntrance;
-import com.spbsu.flamestream.runtime.node.graph.acker.api.FrontTicket;
-import com.spbsu.flamestream.runtime.node.graph.acker.api.RegisterFront;
+import com.spbsu.flamestream.runtime.node.graph.edge.front.api.NewHole;
+import com.spbsu.flamestream.runtime.node.graph.edge.negitioator.api.AttachFront;
+import com.spbsu.flamestream.runtime.node.graph.edge.negitioator.api.LocalFront;
+import com.spbsu.flamestream.runtime.node.graph.edge.negitioator.api.LocalSourceEntrance;
+import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
+import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.HashMap;
@@ -18,15 +18,15 @@ import java.util.Map;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class FrontBarrier extends LoggingActor {
+public class Negotiator extends LoggingActor {
   private final Map<String, LocalSourceEntrance> localSources = new HashMap<>();
   private final Map<String, LocalFront> localFronts = new HashMap<>();
 
-  private FrontBarrier() {
+  private Negotiator() {
   }
 
   public static Props props() {
-    return Props.create(FrontBarrier.class);
+    return Props.create(Negotiator.class);
   }
 
   @Override

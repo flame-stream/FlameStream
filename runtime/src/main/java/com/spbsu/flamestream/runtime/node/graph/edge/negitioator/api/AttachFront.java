@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.node.graph.front.barrier.api;
+package com.spbsu.flamestream.runtime.node.graph.edge.negitioator.api;
 
 public class AttachFront {
   private final String frontId;

@@ -1,9 +1,9 @@
-package com.spbsu.flamestream.runtime.node.graph.front.instance;
+package com.spbsu.flamestream.runtime.node.graph.edge.front;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.node.graph.front.api.FrontInstance;
+import com.spbsu.flamestream.runtime.node.graph.edge.api.FrontInstance;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 class FrontActor extends LoggingActor {

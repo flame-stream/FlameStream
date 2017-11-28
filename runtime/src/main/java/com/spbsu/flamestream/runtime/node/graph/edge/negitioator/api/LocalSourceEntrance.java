@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.node.graph.front.barrier.api;
+package com.spbsu.flamestream.runtime.node.graph.edge.negitioator.api;
 
 import akka.actor.ActorRef;
 
