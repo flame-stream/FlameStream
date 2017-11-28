@@ -16,12 +16,12 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
 import org.apache.commons.lang.math.IntRange;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class LogicGraphManager extends LoggingActor {
@@ -32,34 +32,40 @@ public class LogicGraphManager extends LoggingActor {
   private final ActorRef materialization;
   private final ActorRef negotiator;
   private final ActorRef barrier;
-  private final IntRange ackerRange;
 
-  @Nullable
-  private final ActorRef localAcker;
+  private final ActorRef acker;
 
   private LogicGraphManager(Graph logicalGraph,
-                            IntRange localRange,
-                            IntRange ackerRange,
-                            Map<IntRange, ActorRef> managers,
                             ActorRef negotiator,
-                            ActorRef barrier) {
+                            ActorRef barrier,
+                            IntRange localRange,
+                            IntRange ackerLocation,
+                            Map<IntRange, ActorRef> managers) throws ExecutionException, InterruptedException {
     this.localRange = localRange;
     this.logicalGraph = logicalGraph;
-    this.ackerRange = ackerRange;
     this.negotiator = negotiator;
     this.barrier = barrier;
     this.managers = managers;
     this.materialization = context().actorOf(GraphMaterialization.props(logicalGraph, barrier));
 
-    if (localRange.equals(ackerRange)) {
-      localAcker = context().actorOf(Acker.props((frontId, attachTimestamp) -> {}), "acker");
+    if (localRange.equals(ackerLocation)) {
+      acker = context().actorOf(Acker.props((frontId, attachTimestamp) -> {}), "acker");
     } else {
-      localAcker = null;
+      acker = PatternsCS.ask(
+              managers.get(ackerLocation),
+              "gimmeAcker",
+              Timeout.apply(10, TimeUnit.SECONDS)
+      ).thenApply(response -> (ActorRef) response).toCompletableFuture().get();
     }
   }
 
-  public static Props props(IntRange localRange, Graph logicalGraph, Map<IntRange, ActorRef> managers) {
-    return Props.create(LogicGraphManager.class, localRange, logicalGraph, managers);
+  public static Props props(Graph logicalGraph,
+                            IntRange localRange,
+                            IntRange ackerLocation,
+                            Map<IntRange, ActorRef> managers,
+                            ActorRef negotiator,
+                            ActorRef barrier) {
+    return Props.create(LogicGraphManager.class, logicalGraph, localRange, ackerLocation, managers, negotiator, barrier);
   }
 
   @Override
@@ -70,8 +76,8 @@ public class LogicGraphManager extends LoggingActor {
               final FlameRoutes flameRoutes = new FlameRoutes(ackerRef, router);
               materialization.tell(flameRoutes, self());
               negotiator.tell(new NewMaterialization(materialization, ackerRef), self());
-              if (localAcker != null) {
-                localAcker.tell(flameRoutes, self());
+              if (acker != null) {
+                acker.tell(flameRoutes, self());
               }
             }
     );
@@ -90,8 +96,8 @@ public class LogicGraphManager extends LoggingActor {
                     String.class,
                     s -> s.equals("gimmeAcker"),
                     s -> {
-                      if (localAcker != null) {
-                        sender().tell(localAcker, self());
+                      if (acker != null) {
+                        sender().tell(acker, self());
                       } else {
                         unhandled(s);
                       }
@@ -101,11 +107,7 @@ public class LogicGraphManager extends LoggingActor {
   }
 
   private CompletionStage<ActorRef> resolvedAcker() {
-    return PatternsCS.ask(
-            managers.get(ackerRange),
-            "gimmeAcker",
-            Timeout.apply(10, TimeUnit.SECONDS)
-    ).thenApply(response -> (ActorRef) response);
+    return
   }
 
   private CompletionStage<CoarseRouter> resolvedRoutes() {
@@ -136,9 +138,11 @@ public class LogicGraphManager extends LoggingActor {
 
   public static class CoarseRouter implements GraphRouter {
     private final Graph graph;
+    private final IntRangeMap<ActorRef> managers;
     private final IntRangeMap<ActorRef> hashRanges;
 
     public CoarseRouter(Graph graph,
+                        IntRangeMap<ActorRef> managers,
                         Map<IntRange, ActorRef> hashRanges) {
       this.graph = graph;
       this.hashRanges = new ListIntRangeMap<>(hashRanges);

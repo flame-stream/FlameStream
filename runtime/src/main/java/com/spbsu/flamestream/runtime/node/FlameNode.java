@@ -9,15 +9,14 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.node.barrier.Barrier;
 import com.spbsu.flamestream.runtime.node.config.ClusterConfig;
-import com.spbsu.flamestream.runtime.node.config.ConfigurationClient;
-import com.spbsu.flamestream.runtime.node.graph.LogicGraphManager;
 import com.spbsu.flamestream.runtime.node.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.node.edge.api.FrontInstance;
 import com.spbsu.flamestream.runtime.node.edge.api.RearInstance;
+import com.spbsu.flamestream.runtime.node.graph.LogicGraphManager;
+import com.spbsu.flamestream.runtime.node.graph.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.node.negitioator.Negotiator;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.commons.lang.math.IntRange;
-import org.apache.zookeeper.ZooKeeper;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -25,43 +24,46 @@ import java.util.stream.Collectors;
 
 public class FlameNode extends LoggingActor {
   private final String id;
-  private final NodeNotifier notifier;
-  private final ConfigurationClient configurationClient;
-  private final ClusterConfig config;
+  private final AttachRegistry registry;
 
   private final ActorRef edgeManager;
-  private final ActorRef graphManager;
   private final ActorRef negotiator;
   private final ActorRef barrier;
 
-  private FlameNode(String id, ConfigurationClient configurationClient, NodeNotifier notifier) {
-    this.id = id;
-    this.notifier = notifier;
-    this.configurationClient = configurationClient;
+  private ClusterConfig currentConfig;
 
+  private FlameNode(String id, AttachRegistry attachRegistry, ClusterConfig initialConfig) {
+    this.id = id;
+
+    this.registry = attachRegistry;
+    this.currentConfig = initialConfig;
     this.negotiator = context().actorOf(Negotiator.props(), "negotiator");
     this.barrier = context().actorOf(Barrier.props(), "barrier");
-
-    this.config = configurationClient.configuration(configuration -> {});
-
-    this.graphManager = context().actorOf(LogicGraphManager.props(systems()), "graph");
-
-    this.edgeManager = context().actorOf(EdgeManager.props(), "edge");
+    this.edgeManager = context().actorOf(EdgeManager.props(negotiator), "edge");
   }
 
-  public static Props props(String id, ZooKeeper zooKeeper) {
-    return Props.create(FlameNode.class, id, zooKeeper);
+  public static Props props(String id, AttachRegistry attachRegistry, ClusterConfig initialConfig) {
+    return Props.create(FlameNode.class, id, id, attachRegistry, initialConfig);
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match()
+            .match(
+                    ClusterConfig.class,
+                    config -> log().warning("On flight configuration changes are not supported yet")
+            )
+            .match(Graph.class, graph -> context().actorOf(LogicGraphManager.props(graph, )))
             .build();
   }
 
+  private IntRange localRange() {
+    return currentConfig.nodeConfigs().get(id).range().asRange();
+  }
+
   private Map<IntRange, ActorPath> paths() {
-    return config.nodeConfigs().collect(Collectors.toMap(
+    final Map<IntRange, ActorPath>
+    return currentConfig.nodeConfigs().collect(Collectors.toMap(
             node -> node.range().asRange(),
             node -> {
               final Address system = Address.apply(
@@ -75,11 +77,15 @@ public class FlameNode extends LoggingActor {
     ));
   }
 
-  public interface NodeNotifier {
+  public interface ZookeeperClient {
+    AttachRegistry registry();
+
+    void setConfigurationObserver(Consumer<ClusterConfig> observer);
+
     void setGraphObserver(Consumer<Graph> observer);
 
     void setFrontObserver(Consumer<FrontInstance<?>> observer);
 
-    void setRearObserver(Consumer<RearInstance<?>> rearObserver);
+    void setRearObserver(Consumer<RearInstance<?>> observer);
   }
 }

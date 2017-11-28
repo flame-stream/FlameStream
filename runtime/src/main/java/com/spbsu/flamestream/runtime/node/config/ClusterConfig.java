@@ -5,22 +5,24 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class ClusterConfig {
-  private final List<NodeConfig> nodeConfigs;
+  private final Map<String, NodeConfig> nodeConfigs;
   private final String ackerLocation;
 
   @JsonCreator
-  public ClusterConfig(@JsonProperty("nodes") List<NodeConfig> nodeConfigs,
+  public ClusterConfig(@JsonProperty("nodes") Map<String, NodeConfig> nodeConfigs,
                        @JsonProperty("acker_location") String ackerLocation) {
-    this.nodeConfigs = new ArrayList<>(nodeConfigs);
+    this.nodeConfigs = new HashMap<>(nodeConfigs);
     this.ackerLocation = ackerLocation;
   }
 
   @JsonProperty("nodes")
-  private List<NodeConfig> nodeConfigsForSerialization() {
+  public Map<String, NodeConfig> nodeConfigs() {
     return nodeConfigs;
   }
 
@@ -29,10 +31,6 @@ public class ClusterConfig {
     return ackerLocation;
   }
 
-  @JsonIgnore
-  public Stream<NodeConfig> nodeConfigs() {
-    return nodeConfigs.stream();
-  }
 
   @Override
   public String toString() {

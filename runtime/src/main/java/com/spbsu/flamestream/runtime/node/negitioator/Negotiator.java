@@ -40,24 +40,21 @@ public class Negotiator extends LoggingActor {
             .match(NewMaterialization.class, mat -> {
               currentAcker = mat.acker();
               currentSource = mat.source();
-
-              localFronts.forEach((id, ref) -> {
-                PatternsCS.ask(
-                        currentAcker,
-                        new RegisterFront(id),
-                        Timeout.apply(10, SECONDS)
-                )
-                        .thenApply(ticket -> (FrontTicket) ticket)
-                        .thenAccept(o -> {
-                          final NewHole newHole = new NewHole(currentSource, o.allowedTimestamp());
-                          ref.tell(newHole, self());
-                        });
-
-              });
+              localFronts.keySet().forEach(this::asyncAttach);
             })
             .match(AttachFront.class, attachFront -> {
               localFronts.put(attachFront.frontId(), attachFront.front());
+              asyncAttach(attachFront.frontId());
             })
             .build();
+  }
+
+  private void asyncAttach(String frontId) {
+    PatternsCS.ask(currentAcker, new RegisterFront(frontId), Timeout.apply(10, SECONDS))
+            .thenApply(ticket -> (FrontTicket) ticket)
+            .thenAccept(o -> {
+              final NewHole newHole = new NewHole(currentSource, o.allowedTimestamp());
+              localFronts.get(frontId).tell(newHole, self());
+            });
   }
 }
