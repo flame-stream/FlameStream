@@ -7,12 +7,14 @@ import akka.actor.Props;
 import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.runtime.node.barrier.Barrier;
 import com.spbsu.flamestream.runtime.node.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.node.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.node.graph.LogicGraphManager;
-import com.spbsu.flamestream.runtime.node.graph.edge.EdgeManager;
-import com.spbsu.flamestream.runtime.node.graph.edge.api.FrontInstance;
-import com.spbsu.flamestream.runtime.node.graph.edge.api.RearInstance;
+import com.spbsu.flamestream.runtime.node.edge.EdgeManager;
+import com.spbsu.flamestream.runtime.node.edge.api.FrontInstance;
+import com.spbsu.flamestream.runtime.node.edge.api.RearInstance;
+import com.spbsu.flamestream.runtime.node.negitioator.Negotiator;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.commons.lang.math.IntRange;
 import org.apache.zookeeper.ZooKeeper;
@@ -29,17 +31,22 @@ public class FlameNode extends LoggingActor {
 
   private final ActorRef edgeManager;
   private final ActorRef graphManager;
+  private final ActorRef negotiator;
+  private final ActorRef barrier;
 
   private FlameNode(String id, ConfigurationClient configurationClient, NodeNotifier notifier) {
     this.id = id;
     this.notifier = notifier;
     this.configurationClient = configurationClient;
 
-    // TODO: 11/27/17 handle configuration changes
+    this.negotiator = context().actorOf(Negotiator.props(), "negotiator");
+    this.barrier = context().actorOf(Barrier.props(), "barrier");
+
     this.config = configurationClient.configuration(configuration -> {});
 
-    this.edgeManager = context().actorOf(EdgeManager.props(), "edge");
     this.graphManager = context().actorOf(LogicGraphManager.props(systems()), "graph");
+
+    this.edgeManager = context().actorOf(EdgeManager.props(), "edge");
   }
 
   public static Props props(String id, ZooKeeper zooKeeper) {

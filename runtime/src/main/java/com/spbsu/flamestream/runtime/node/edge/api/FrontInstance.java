@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.node.graph.edge.api;
+package com.spbsu.flamestream.runtime.node.edge.api;
 
 import com.spbsu.flamestream.core.Front;
 
@@ -16,7 +16,7 @@ public class FrontInstance<T extends Front> {
     this.params = new ArrayList<>(params);
   }
 
-  public String frontId() {
+  public String id() {
     return frontId;
   }
 

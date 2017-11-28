@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.node.graph.edge.front.api;
+package com.spbsu.flamestream.runtime.node.edge.front.api;
 
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;

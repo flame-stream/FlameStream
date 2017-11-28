@@ -11,6 +11,7 @@ import com.spbsu.flamestream.runtime.node.graph.acker.Acker;
 import com.spbsu.flamestream.runtime.node.graph.api.FlameRoutes;
 import com.spbsu.flamestream.runtime.node.graph.api.RangeMaterialization;
 import com.spbsu.flamestream.runtime.node.graph.materialization.GraphMaterialization;
+import com.spbsu.flamestream.runtime.node.negitioator.api.NewMaterialization;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
@@ -41,8 +42,7 @@ public class LogicGraphManager extends LoggingActor {
                             IntRange ackerRange,
                             Map<IntRange, ActorRef> managers,
                             ActorRef negotiator,
-                            ActorRef barrier,
-                            boolean hasAcker) {
+                            ActorRef barrier) {
     this.localRange = localRange;
     this.logicalGraph = logicalGraph;
     this.ackerRange = ackerRange;
@@ -51,7 +51,7 @@ public class LogicGraphManager extends LoggingActor {
     this.managers = managers;
     this.materialization = context().actorOf(GraphMaterialization.props(logicalGraph, barrier));
 
-    if (hasAcker) {
+    if (localRange.equals(ackerRange)) {
       localAcker = context().actorOf(Acker.props((frontId, attachTimestamp) -> {}), "acker");
     } else {
       localAcker = null;
@@ -69,6 +69,7 @@ public class LogicGraphManager extends LoggingActor {
             (ackerRef, router) -> {
               final FlameRoutes flameRoutes = new FlameRoutes(ackerRef, router);
               materialization.tell(flameRoutes, self());
+              negotiator.tell(new NewMaterialization(materialization, ackerRef), self());
               if (localAcker != null) {
                 localAcker.tell(flameRoutes, self());
               }

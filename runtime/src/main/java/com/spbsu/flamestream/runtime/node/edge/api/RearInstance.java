@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.node.graph.edge.api;
+package com.spbsu.flamestream.runtime.node.edge.api;
 
 import com.spbsu.flamestream.core.Rear;
 

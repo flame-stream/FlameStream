@@ -1,12 +1,12 @@
-package com.spbsu.flamestream.runtime.node.graph.edge.negitioator.api;
+package com.spbsu.flamestream.runtime.node.negitioator.api;
 
 import akka.actor.ActorRef;
 
-public class LocalFront {
+public class AttachFront {
   private final String frontId;
   private final ActorRef front;
 
-  public LocalFront(String frontId, ActorRef front) {
+  public AttachFront(String frontId, ActorRef front) {
     this.frontId = frontId;
     this.front = front;
   }

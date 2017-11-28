@@ -1,13 +1,13 @@
 package com.spbsu.flamestream.runtime.node.graph.acker.api;
 
 public class RegisterFront {
-  private final String frontId;
+  private final String id;
 
-  public RegisterFront(String frontId) {
-    this.frontId = frontId;
+  public RegisterFront(String id) {
+    this.id = id;
   }
 
-  public String frontId() {
-    return frontId;
+  public String id() {
+    return id;
   }
 }
