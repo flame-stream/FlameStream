@@ -1,23 +1,25 @@
 package com.spbsu.flamestream.runtime.node.config;
 
-import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
+import akka.actor.ActorPath;
+import akka.actor.Address;
+import com.sun.javafx.sg.prism.NodePath;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 public class NodeConfig {
-  private final DumbInetSocketAddress address;
+  private final ActorPath nodePath;
   private final HashRange range;
 
   @JsonCreator
-  public NodeConfig(@JsonProperty("address") DumbInetSocketAddress address,
+  public NodeConfig(@JsonProperty("node_path") ActorPath nodePath,
                     @JsonProperty("range") HashRange range) {
-    this.address = address;
+    this.nodePath = nodePath;
     this.range = range;
   }
 
-  @JsonProperty("address")
-  public DumbInetSocketAddress address() {
-    return address;
+  @JsonProperty("node_path")
+  public ActorPath nodePath() {
+    return nodePath;
   }
 
   @JsonProperty("range")
@@ -28,7 +30,7 @@ public class NodeConfig {
   @Override
   public String toString() {
     return "NodeConfig{" +
-            "address=" + address +
+            "nodePath=" + nodePath +
             ", range=" + range +
             '}';
   }

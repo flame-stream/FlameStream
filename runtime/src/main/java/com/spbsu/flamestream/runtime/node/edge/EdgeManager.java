@@ -5,8 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.node.edge.api.FrontInstance;
 import com.spbsu.flamestream.runtime.node.edge.front.FrontActor;
-import com.spbsu.flamestream.runtime.node.graph.acker.api.RegisterFront;
-import com.spbsu.flamestream.runtime.node.negitioator.api.AttachFront;
+import com.spbsu.flamestream.runtime.node.acker.api.RegisterFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class EdgeManager extends LoggingActor {
