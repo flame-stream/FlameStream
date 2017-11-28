@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.node.graph.materialization.vertices;
 
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
 import java.util.function.Function;
@@ -11,17 +12,17 @@ import java.util.stream.Stream;
  * Date: 27.11.2017
  */
 public interface VertexMaterialization extends Function<DataItem<?>, Stream<DataItem<?>>> {
-  String vertexId();
+  Graph.Vertex vertex();
 
   void onMinGTimeUpdate(GlobalTime globalTime);
 
   void onCommit();
 
   abstract class Stub implements VertexMaterialization {
-    final String vertexId;
+    protected final Graph.Vertex vertex;
 
-    protected Stub(String vertexId) {
-      this.vertexId = vertexId;
+    protected Stub(Graph.Vertex vertex) {
+      this.vertex = vertex;
     }
 
     @Override
@@ -35,8 +36,8 @@ public interface VertexMaterialization extends Function<DataItem<?>, Stream<Data
     }
 
     @Override
-    public String vertexId() {
-      return vertexId;
+    public Graph.Vertex vertex() {
+      return vertex;
     }
   }
 }

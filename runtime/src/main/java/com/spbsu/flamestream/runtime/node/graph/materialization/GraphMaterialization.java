@@ -12,16 +12,16 @@ import com.spbsu.flamestream.runtime.node.graph.materialization.api.Commit;
 import com.spbsu.flamestream.runtime.node.graph.materialization.vertices.VertexMaterialization;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
 public class GraphMaterialization extends LoggingActor {
   private final Map<String, VertexMaterialization> materialization = new HashMap<>();
+  private final Graph graph;
 
   private GraphMaterialization(Graph graph, GraphRouter router, ActorRef acker, ActorRef barrier) {
-
+    this.graph = graph;
   }
 
   public static Props props(Graph graph, GraphRouter router, ActorRef acker, ActorRef barrier) {
@@ -38,24 +38,17 @@ public class GraphMaterialization extends LoggingActor {
   }
 
   private void onAddressedItem(AddressedItem atomicMessage) {
-    final VertexMaterialization nextVertices = materialization.get(atomicMessage.vertexId());
-    nextVertices.forEach(materialization -> {
-      final Stream<DataItem<?>> out = materialization.apply(atomicMessage.item());
-      out.forEach(dataItem -> onAddressedItem(new AddressedItem(dataItem, materialization.vertexId())));
-    });
+    final VertexMaterialization vertex = materialization.get(atomicMessage.vertexId());
+    final Stream<DataItem<?>> out = vertex.apply(atomicMessage.item());
+
+    graph.adjacent()
   }
 
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
-    materialization.values()
-            .stream()
-            .flatMap(stream -> stream)
-            .forEach(materialization -> materialization.onMinGTimeUpdate(minTimeUpdate.minTime()));
+    materialization.values().forEach(materialization -> materialization.onMinGTimeUpdate(minTimeUpdate.minTime()));
   }
 
   private void onCommit() {
-    materialization.values()
-            .stream()
-            .flatMap(stream -> stream)
-            .forEach(VertexMaterialization::onCommit);
+    materialization.values().forEach(VertexMaterialization::onCommit);
   }
 }

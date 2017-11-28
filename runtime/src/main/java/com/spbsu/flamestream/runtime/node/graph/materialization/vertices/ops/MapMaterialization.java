@@ -11,15 +11,12 @@ import java.util.stream.Stream;
  * Date: 28.11.2017
  */
 public class MapMaterialization extends VertexMaterialization.Stub {
-  private final FlameMap<?, ?> map;
-
   public MapMaterialization(FlameMap<?, ?> map) {
-    super(map.id());
-    this.map = map;
+    super(map);
   }
 
   @Override
   public Stream<DataItem<?>> apply(DataItem<?> dataItem) {
-    return map.operation().apply(dataItem);
+    return ((FlameMap<?, ?>) vertex).operation().apply(dataItem);
   }
 }
