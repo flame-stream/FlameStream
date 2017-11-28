@@ -11,23 +11,21 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class GraphMaterialization extends LoggingActor {
   private final Graph graph;
-  private final ActorRef acker;
   private final ActorRef barrier;
 
-  private GraphMaterialization(Graph graph, ActorRef acker, ActorRef barrier) {
+  private GraphMaterialization(Graph graph, ActorRef barrier) {
     this.graph = graph;
-    this.acker = acker;
     this.barrier = barrier;
   }
 
-  public static Props props(Graph graph, ActorRef acker, ActorRef barrier) {
-    return Props.create(GraphMaterialization.class, graph, acker, barrier);
+  public static Props props(Graph graph, ActorRef barrier) {
+    return Props.create(GraphMaterialization.class, graph, barrier);
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(GraphRouter.class, routes -> {
+            .match(FlameRoutes.class, routes -> {
               unstashAll();
               getContext().become(ranging());
             })

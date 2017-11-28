@@ -12,6 +12,7 @@ import com.spbsu.flamestream.runtime.node.graph.api.RangeMaterialization;
 import com.spbsu.flamestream.runtime.node.graph.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.node.graph.materialization.GraphMaterialization;
 import com.spbsu.flamestream.runtime.node.graph.materialization.GraphRouter;
+import com.spbsu.flamestream.runtime.node.graph.materialization.ops.Materialization;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
@@ -31,6 +32,7 @@ public class GraphManager extends LoggingActor {
   private final Map<IntRange, ActorRef> managers;
 
   private final ActorRef edgeManager;
+  private final ActorRef materialization;
 
   private GraphManager(IntRange localRange,
                        Graph logicalGraph,
@@ -41,6 +43,7 @@ public class GraphManager extends LoggingActor {
     this.logicalGraph = logicalGraph;
     this.managers = managers;
     this.edgeManager = context().actorOf(EdgeManager.props());
+    this.materialization = context().actorOf(GraphMaterialization.props(logicalGraph, ))
     if (ackerLocation.equals(localRange)) {
       context().actorOf(Acker.props((frontId, attachTimestamp) -> {}), "acker");
     }
@@ -118,6 +121,11 @@ public class GraphManager extends LoggingActor {
     @Override
     public void tell(DataItem<?> message, Graph.Vertex destanation, ActorRef sender) {
       // TODO: 11/28/17
+    }
+
+    @Override
+    public void broadcast(Object message, ActorRef sender) {
+      hashRanges.values().forEach(v -> v.tell(message, sender));
     }
   }
 }
