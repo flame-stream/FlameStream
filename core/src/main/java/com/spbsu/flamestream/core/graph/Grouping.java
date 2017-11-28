@@ -27,7 +27,7 @@ public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
     this.equalz = equalz;
   }
 
-  public HashFunction<? super T> inputHash() {
+  public HashFunction<? super T> hash() {
     return hash;
   }
 

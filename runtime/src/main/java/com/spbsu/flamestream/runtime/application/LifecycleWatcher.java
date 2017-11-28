@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime;
+package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;

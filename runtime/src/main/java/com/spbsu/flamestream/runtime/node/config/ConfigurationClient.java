@@ -1,6 +1,4 @@
-package com.spbsu.flamestream.runtime.node;
-
-import com.spbsu.flamestream.runtime.node.config.ClusterConfig;
+package com.spbsu.flamestream.runtime.node.config;
 
 import java.util.function.Consumer;
 

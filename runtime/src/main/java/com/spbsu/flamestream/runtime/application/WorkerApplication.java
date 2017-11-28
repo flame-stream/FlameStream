@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime;
+package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.ActorSystem;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;

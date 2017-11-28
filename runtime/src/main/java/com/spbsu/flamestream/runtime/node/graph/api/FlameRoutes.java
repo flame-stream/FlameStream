@@ -1,6 +1,7 @@
-package com.spbsu.flamestream.runtime.node.graph.materialization;
+package com.spbsu.flamestream.runtime.node.graph.api;
 
 import akka.actor.ActorRef;
+import com.spbsu.flamestream.runtime.node.graph.GraphRouter;
 
 public class FlameRoutes {
   private final ActorRef acker;

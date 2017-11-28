@@ -6,7 +6,10 @@ import akka.actor.Address;
 import akka.actor.Props;
 import akka.actor.RootActorPath;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.runtime.application.ZooKeeperFlameClient;
 import com.spbsu.flamestream.runtime.node.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.node.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.node.graph.GraphManager;
 import com.spbsu.flamestream.runtime.node.graph.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -14,11 +17,12 @@ import org.apache.commons.lang.math.IntRange;
 import org.apache.zookeeper.ZooKeeper;
 
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class FlameNode extends LoggingActor {
   private final String id;
-  private final GraphClient graphClient;
+  private final Notifier notifier;
   private final ConfigurationClient configurationClient;
   private final ClusterConfig config;
 
@@ -27,7 +31,7 @@ public class FlameNode extends LoggingActor {
 
   private FlameNode(String id, ZooKeeper zk) {
     this.id = id;
-    this.graphClient = new ZooKeeperFlameClient(zk);
+    this.notifier = new ZooKeeperFlameClient(zk);
     this.configurationClient = new ZooKeeperFlameClient(zk);
 
     // TODO: 11/27/17 handle configuration changes
@@ -61,5 +65,9 @@ public class FlameNode extends LoggingActor {
               return RootActorPath.apply(system, "watcher").child("node");
             }
     ));
+  }
+
+  public interface Notifier {
+    void setObserver(Consumer<Graph> observer);
   }
 }

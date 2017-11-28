@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.node;
+package com.spbsu.flamestream.runtime.application;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
@@ -6,6 +6,8 @@ import com.esotericsoftware.kryo.io.ByteBufferOutput;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.runtime.node.FlameNode;
+import com.spbsu.flamestream.runtime.node.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.node.config.ClusterConfig;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
@@ -20,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
+public class ZooKeeperFlameClient implements FlameNode.Notifier, ConfigurationClient {
   private final Kryo kryo;
   private final ObjectMapper mapper = new ObjectMapper();
   private final ZooKeeper zooKeeper;
@@ -36,7 +38,7 @@ public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
   public Set<String> graphs(Consumer<Set<String>> watcher) {
     try {
       return new HashSet<>(zooKeeper.getChildren(
-              "/graphs",
+              "/setObserver",
               event -> watcher.accept(graphs(watcher)),
               null
       ));
@@ -48,7 +50,7 @@ public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
   @Override
   public Graph graphBy(String id) {
     try {
-      final byte[] data = zooKeeper.getData("/graphs/" + id, false, null);
+      final byte[] data = zooKeeper.getData("/setObserver/" + id, false, null);
       final ByteBufferInput input = new ByteBufferInput(data);
       return kryo.readObject(input, Graph.class);
     } catch (KeeperException | InterruptedException e) {
@@ -59,7 +61,7 @@ public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
   public List<String> fronts(String graphId, String frontId, Consumer<List<String>> watcher) {
     try {
       return zooKeeper.getChildren(
-              "/graphs/" + graphId + "/fronts/" + frontId,
+              "/setObserver/" + graphId + "/fronts/" + frontId,
               event -> watcher.accept(fronts(graphId, frontId, watcher)),
               null
       );
@@ -70,7 +72,7 @@ public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
 
   public Graph frontById(String graphId, String frontId) {
     try {
-      final byte[] data = zooKeeper.getData("/graphs/" + graphId + "/fronts/" + frontId, false, null);
+      final byte[] data = zooKeeper.getData("/setObserver/" + graphId + "/fronts/" + frontId, false, null);
       final ByteBufferInput input = new ByteBufferInput(data);
       return kryo.readObject(input, Graph.class);
     } catch (KeeperException | InterruptedException e) {
@@ -85,14 +87,14 @@ public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
       kryo.writeObject(o, graph);
 
       zooKeeper.create(
-              "/graphs/" + graphId,
+              "/setObserver/" + graphId,
               o.toBytes(),
               ZKUtil.parseACLs("world:anyone:cr"),
               CreateMode.PERSISTENT
       );
 
       zooKeeper.create(
-              "/graphs/" + graphId + "/fronts",
+              "/setObserver/" + graphId + "/fronts",
               new byte[0],
               ZKUtil.parseACLs("world:anyone:cr"),
               CreateMode.PERSISTENT
@@ -133,7 +135,7 @@ public class ZooKeeperFlameClient implements GraphClient, ConfigurationClient {
   public void createDirectoryStructure() {
     try {
       zooKeeper.create(
-              "/graphs",
+              "/setObserver",
               new byte[0],
               ZKUtil.parseACLs("world:anyone:cr"),
               CreateMode.PERSISTENT

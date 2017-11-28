@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.node.graph.materialization;
+package com.spbsu.flamestream.runtime.node.graph;
 
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;

@@ -7,6 +7,7 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.node.graph.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.node.graph.materialization.api.AddressedItem;
 import com.spbsu.flamestream.runtime.node.graph.materialization.api.Commit;
+import com.spbsu.flamestream.runtime.node.graph.api.FlameRoutes;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class GraphMaterialization extends LoggingActor {

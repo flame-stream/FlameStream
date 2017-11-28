@@ -33,7 +33,7 @@ public final class GroupingTest extends FlameStreamSuite {
     final Map<DataItem, InvalidatingBucket> state = new HashMap<>();
     final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window);
     return input
-            .map(di -> new DataItemForTest<>(di, grouping.inputHash(), grouping.equalz()))
+            .map(di -> new DataItemForTest<>(di, grouping.hash(), grouping.equalz()))
             .flatMap(di -> {
               state.putIfAbsent(di, new ArrayInvalidatingBucket());
               return grouping.operation().apply(di, state.get(di));
