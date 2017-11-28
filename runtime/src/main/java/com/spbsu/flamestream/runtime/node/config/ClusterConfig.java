@@ -1,14 +1,14 @@
 package com.spbsu.flamestream.runtime.node.config;
 
+import akka.actor.ActorPath;
+import org.apache.commons.lang.math.IntRange;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 public class ClusterConfig {
   private final Map<String, NodeConfig> nodeConfigs;
@@ -31,6 +31,11 @@ public class ClusterConfig {
     return ackerLocation;
   }
 
+  @JsonIgnore
+  public Map<IntRange, ActorPath> pathsByRange() {
+    return nodeConfigs.values().stream()
+            .collect(Collectors.toMap(nodeConfig -> nodeConfig.range().asRange(), NodeConfig::nodePath));
+  }
 
   @Override
   public String toString() {

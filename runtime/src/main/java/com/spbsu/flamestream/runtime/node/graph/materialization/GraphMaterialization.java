@@ -5,7 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.node.graph.GraphRouter;
-import com.spbsu.flamestream.runtime.node.graph.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.node.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.node.graph.materialization.api.AddressedItem;
 import com.spbsu.flamestream.runtime.node.graph.materialization.api.Commit;
 import com.spbsu.flamestream.runtime.node.graph.materialization.vertices.VertexMaterialization;
