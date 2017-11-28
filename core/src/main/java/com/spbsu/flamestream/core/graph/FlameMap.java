@@ -15,9 +15,10 @@ public class FlameMap<T, R> extends Graph.Vertex.LocalTimeStub {
     this.function = function;
   }
 
-  public Function<DataItem<? extends T>, Stream<DataItem<R>>> operation() {
+  public Function<DataItem<?>, Stream<DataItem<?>>> operation() {
     return dataItem -> {
-      final Stream<R> result = function.apply(dataItem.payload());
+      //noinspection unchecked
+      final Stream<R> result = function.apply((T) dataItem.payload());
       if (result == null) {
         return null;
       }

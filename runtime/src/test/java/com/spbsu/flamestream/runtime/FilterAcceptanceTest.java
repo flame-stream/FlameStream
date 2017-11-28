@@ -5,7 +5,7 @@
 //import com.spbsu.flamestream.core.graph.Graph;
 //import com.spbsu.flamestream.core.graph.HashFunction;
 //import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
-//import com.spbsu.flamestream.core.graph.ops.StatelessMap;
+//import com.spbsu.flamestream.core.graph.vertices.StatelessMap;
 //import com.spbsu.flamestream.core.graph.source.AbstractSource;
 //import com.spbsu.flamestream.core.graph.source.SimpleSource;
 //import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;

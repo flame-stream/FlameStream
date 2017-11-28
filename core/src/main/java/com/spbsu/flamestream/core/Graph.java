@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 public interface Graph {
   Stream<Vertex> nodes();
 
-  Stream<Vertex> outputs(Vertex vertex);
+  Stream<Vertex> adjacent(Vertex vertex);
 
   Vertex source();
 
@@ -63,7 +63,7 @@ public interface Graph {
         }
 
         @Override
-        public Stream<Vertex> outputs(Vertex vertex) {
+        public Stream<Vertex> adjacent(Vertex vertex) {
           return adjLists.get(vertex).stream();
         }
 
