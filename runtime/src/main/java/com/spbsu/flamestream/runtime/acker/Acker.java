@@ -3,15 +3,15 @@ package com.spbsu.flamestream.runtime.acker;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.graph.FlameRouter;
-import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
+import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
 import com.spbsu.flamestream.runtime.acker.table.AckTable;
 import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
+import com.spbsu.flamestream.runtime.graph.FlameRouter;
+import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.HashMap;
@@ -61,6 +61,7 @@ public class Acker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(FlameRouter.class, routes -> {
               this.router = routes;
+              log().info("Received router, completing constructor");
               unstashAll();
               getContext().become(acking());
             })
@@ -77,9 +78,12 @@ public class Acker extends LoggingActor {
   }
 
   private void handleRegister(String frontId) {
+    log().info("Received front registration request for {}", frontId);
     final GlobalTime min = minAmongTables();
+    log().info("Registering timestamp {} for {}", min, frontId);
     tables.put(frontId, new ArrayAckTable(min.time(), SIZE, WINDOW));
     registry.register(frontId, min.time());
+    log().info("Front {} has been registered, sending ticket", frontId);
     sender().tell(new FrontTicket(frontId, new GlobalTime(min.time(), frontId)), self());
   }
 

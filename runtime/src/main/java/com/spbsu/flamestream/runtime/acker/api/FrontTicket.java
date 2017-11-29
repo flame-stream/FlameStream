@@ -18,4 +18,12 @@ public class FrontTicket {
   public GlobalTime allowedTimestamp() {
     return allowedTimestamp;
   }
+
+  @Override
+  public String toString() {
+    return "FrontTicket{" +
+            "frontId='" + frontId + '\'' +
+            ", allowedTimestamp=" + allowedTimestamp +
+            '}';
+  }
 }

@@ -44,12 +44,12 @@ public interface Graph {
   class Builder {
     private Multimap<Vertex, Vertex> adjLists = HashMultimap.create();
 
-    Builder link(Vertex from, Vertex to) {
+    public Builder link(Vertex from, Vertex to) {
       adjLists.put(from, to);
       return this;
     }
 
-    Graph build(Source source, Sink sink) {
+    public Graph build(Source source, Sink sink) {
       if (adjLists.values().contains(source)) {
         throw new IllegalStateException("Source must not have inputs");
       } else if (adjLists.keySet().contains(sink)) {
