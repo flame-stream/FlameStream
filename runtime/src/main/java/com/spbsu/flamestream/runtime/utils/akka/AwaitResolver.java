@@ -7,9 +7,14 @@ import akka.actor.ActorRef;
 import akka.actor.Identify;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.pattern.PatternsCS;
+import akka.util.Timeout;
 import scala.concurrent.duration.Duration;
 
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class AwaitResolver extends AbstractActor {
   private ActorRef requester;
@@ -17,6 +22,20 @@ public class AwaitResolver extends AbstractActor {
 
   public static Props props() {
     return Props.create(AwaitResolver.class);
+  }
+
+  public static ActorRef syncResolve(ActorPath path, akka.actor.ActorContext context) {
+    try {
+      return resolve(path, context).toCompletableFuture().get(10, TimeUnit.SECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static CompletionStage<ActorRef> resolve(ActorPath path, akka.actor.ActorContext context) {
+    final ActorRef resolver = context.actorOf(AwaitResolver.props());
+    return PatternsCS.ask(resolver, path, Timeout.apply(100, TimeUnit.SECONDS))
+            .thenApply(a -> (ActorRef) a);
   }
 
   @Override

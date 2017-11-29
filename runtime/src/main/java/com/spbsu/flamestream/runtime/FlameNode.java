@@ -1,11 +1,8 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import akka.pattern.PatternsCS;
-import akka.util.Timeout;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.acker.Acker;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
@@ -24,8 +21,6 @@ import org.apache.commons.lang.math.IntRange;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 public class FlameNode extends LoggingActor {
   private final String id;
@@ -72,18 +67,19 @@ public class FlameNode extends LoggingActor {
   }
 
   private ActorRef resolvedAcker() {
-    return syncResolve(
+    return AwaitResolver.syncResolve(
             currentConfig.nodeConfigs()
                     .get(currentConfig.ackerLocation())
                     .nodePath()
-                    .child("acker")
+                    .child("acker"),
+            context()
     );
   }
 
   private BarrierRouter resolvedBarriers() {
     final Map<String, ActorRef> barriers = new HashMap<>();
     currentConfig.nodeConfigs().forEach((id, nodeConfig) -> {
-      final ActorRef b = syncResolve(nodeConfig.nodePath().child("barrier"));
+      final ActorRef b = AwaitResolver.syncResolve(nodeConfig.nodePath().child("barrier"), context());
       barriers.put(id, b);
     });
     return (item, sender) -> barriers.get(item.meta().globalTime().front()).tell(item, sender);
@@ -93,21 +89,10 @@ public class FlameNode extends LoggingActor {
     final Map<IntRange, ActorRef> managers = new HashMap<>();
 
     currentConfig.pathsByRange().forEach((intRange, path) -> {
-      final ActorRef manager = syncResolve(path.child("graph"));
+      final ActorRef manager = AwaitResolver.syncResolve(path.child("graph"), context());
       managers.put(intRange, manager);
     });
 
     return (item, sender) -> {};
-  }
-
-  private ActorRef syncResolve(ActorPath actorPath) {
-    try {
-      final ActorRef resolver = context().actorOf(AwaitResolver.props());
-
-      return (ActorRef) PatternsCS.ask(resolver, actorPath, Timeout.apply(10, TimeUnit.SECONDS))
-              .toCompletableFuture().get();
-    } catch (InterruptedException | ExecutionException e) {
-      throw new RuntimeException(e);
-    }
   }
 }
