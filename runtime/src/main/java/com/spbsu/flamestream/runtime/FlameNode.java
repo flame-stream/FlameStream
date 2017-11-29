@@ -11,13 +11,12 @@ import com.spbsu.flamestream.runtime.barrier.Barrier;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.edge.api.FrontInstance;
+import com.spbsu.flamestream.runtime.edge.api.RearInstance;
+import com.spbsu.flamestream.runtime.graph.BarrierRouter;
 import com.spbsu.flamestream.runtime.graph.FlameRouter;
 import com.spbsu.flamestream.runtime.graph.LogicGraphManager;
-import com.spbsu.flamestream.runtime.graph.materialization.api.AddressedItem;
 import com.spbsu.flamestream.runtime.negitioator.Negotiator;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
-import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
 import org.apache.commons.lang.math.IntRange;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
@@ -43,29 +42,20 @@ public class FlameNode extends LoggingActor {
     this.id = id;
     this.currentConfig = initialConfig;
     this.bootstrapGraph = bootstrapGraph;
-
     if (id.equals(currentConfig.ackerLocation())) {
       this.acker = context().actorOf(Acker.props(attachRegistry), "acker");
     } else {
       this.acker = resolvedAcker();
     }
-    this.barrier = context().actorOf(Barrier.props(), "barrier");
-
+    this.barrier = context().actorOf(Barrier.props(acker), "barrier");
     this.graph = context().actorOf(LogicGraphManager.props(
             bootstrapGraph,
             acker,
-            barrier
+            resolvedBarriers()
     ), "graph");
-
-    final FlameRouter router = resoulvedRouter();
-
-    graph.tell(router, self());
-    if (id.equals(currentConfig.ackerLocation())) {
-      acker.tell(router, self());
-    }
-
+    graph.tell(resolvedRouter(), self());
     this.negotiator = context().actorOf(Negotiator.props(acker, graph), "negotiator");
-    this.edgeManager = context().actorOf(EdgeManager.props(id, negotiator), "edge");
+    this.edgeManager = context().actorOf(EdgeManager.props(id, negotiator, barrier), "edge");
   }
 
   public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, AttachRegistry attachRegistry) {
@@ -76,6 +66,7 @@ public class FlameNode extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(FrontInstance.class, f -> edgeManager.forward(f, context()))
+            .match(RearInstance.class, f -> edgeManager.forward(f, context()))
             .build();
   }
 
@@ -93,7 +84,23 @@ public class FlameNode extends LoggingActor {
     }
   }
 
-  private FlameRouter resoulvedRouter() {
+  private BarrierRouter resolvedBarriers() {
+    final Map<String, ActorRef> barriers = new HashMap<>();
+    currentConfig.nodeConfigs().forEach((id, nodeConfig) -> {
+      try {
+        final ActorRef b = context().actorSelection(nodeConfig.nodePath().child("barrier"))
+                .resolveOneCS(FiniteDuration.apply(10, TimeUnit.SECONDS))
+                .toCompletableFuture()
+                .get();
+        barriers.put(id, b);
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+    });
+    return (item, sender) -> barriers.get(item.meta().globalTime().front()).tell(item, sender);
+  }
+
+  private FlameRouter resolvedRouter() {
     final Map<IntRange, ActorRef> managers = new HashMap<>();
 
     currentConfig.pathsByRange().forEach((intRange, path) -> {
@@ -108,26 +115,6 @@ public class FlameNode extends LoggingActor {
       }
     });
 
-    return new CoarseRouter(bootstrapGraph, new ListIntRangeMap<>(managers));
-  }
-
-  public static class CoarseRouter implements FlameRouter {
-    private final Graph graph;
-    private final IntRangeMap<ActorRef> hashRanges;
-
-    public CoarseRouter(Graph graph, IntRangeMap<ActorRef> routes) {
-      this.graph = graph;
-      this.hashRanges = routes;
-    }
-
-    @Override
-    public void tell(AddressedItem item, ActorRef sender) {
-      // TODO: 11/28/17 Hashing logic
-    }
-
-    @Override
-    public void broadcast(Object message, ActorRef sender) {
-      hashRanges.values().forEach(v -> v.tell(message, sender));
-    }
+    return (item, sender) -> {};
   }
 }

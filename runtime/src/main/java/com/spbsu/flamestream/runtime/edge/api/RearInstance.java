@@ -2,17 +2,15 @@ package com.spbsu.flamestream.runtime.edge.api;
 
 import com.spbsu.flamestream.core.Rear;
 
-import java.util.List;
-
 public class RearInstance<T extends Rear> {
   private final String rearId;
   private final Class<T> rear;
-  private final List<Object> params;
+  private final String[] args;
 
-  public RearInstance(String rearId, Class<T> rear, List<Object> params) {
-    this.rearId = rearId;
+  public RearInstance(String name, Class<T> rear, String[] args) {
+    this.rearId = name;
     this.rear = rear;
-    this.params = params;
+    this.args = args;
   }
 
   public String rearId() {
@@ -23,7 +21,7 @@ public class RearInstance<T extends Rear> {
     return rear;
   }
 
-  public List<Object> params() {
-    return params;
+  public String[] args() {
+    return args;
   }
 }

@@ -4,6 +4,10 @@ import org.apache.commons.lang.math.IntRange;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Stream;
+
 public class HashRange {
   private final int from;
   private final int to;
@@ -34,5 +38,18 @@ public class HashRange {
             "from=" + from +
             ", to=" + to +
             '}';
+  }
+
+  public static Stream<HashRange> covering(int n) {
+    final Set<HashRange> result = new HashSet<>();
+    final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / n);
+    long left = Integer.MIN_VALUE;
+    long right = left + step;
+    for (int i = 0; i < n; ++i) {
+      result.add(new HashRange((int) left, (int) right));
+      left += step;
+      right = Math.min(Integer.MAX_VALUE, right + step);
+    }
+    return result.stream();
   }
 }

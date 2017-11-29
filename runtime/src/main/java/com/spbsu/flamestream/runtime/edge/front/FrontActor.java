@@ -8,6 +8,7 @@ import com.spbsu.flamestream.runtime.edge.front.api.NewHole;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.List;
 
 public class FrontActor<T extends Front> extends LoggingActor {
@@ -18,8 +19,8 @@ public class FrontActor<T extends Front> extends LoggingActor {
                                                                     IllegalAccessException,
                                                                     InvocationTargetException,
                                                                     InstantiationException {
-    this.id = frontInstance.id() + '-' + nodeId;
-    final List<Object> args = frontInstance.params();
+    this.id = frontInstance.name() + '-' + nodeId;
+    final List<String> args = Arrays.asList(frontInstance.args());
     args.add(0, id);
 
     this.front = (T) frontInstance.front().getDeclaredConstructors()[0]

@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime.acker;
 
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
@@ -10,13 +11,14 @@ import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
 import com.spbsu.flamestream.runtime.acker.table.AckTable;
 import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
-import com.spbsu.flamestream.runtime.graph.FlameRouter;
 import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -41,10 +43,11 @@ public class Acker extends LoggingActor {
   private static final long WINDOW = 10;
   private static final int SIZE = 100000;
 
+  private final Set<ActorRef> minTimeSubscribers = new HashSet<>();
+
   private final Map<String, AckTable> tables = new HashMap<>();
   private final AckerStatistics stat = new AckerStatistics();
   private final AttachRegistry registry;
-  private FlameRouter router = null;
 
   private GlobalTime currentMin = GlobalTime.MIN;
 
@@ -58,18 +61,6 @@ public class Acker extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return ReceiveBuilder.create()
-            .match(FlameRouter.class, routes -> {
-              this.router = routes;
-              log().info("Received router, completing constructor");
-              unstashAll();
-              getContext().become(acking());
-            })
-            .matchAny(m -> stash())
-            .build();
-  }
-
-  private Receive acking() {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
@@ -100,6 +91,7 @@ public class Acker extends LoggingActor {
   }
 
   private void handleAck(Ack ack) {
+    minTimeSubscribers.add(sender());
     final GlobalTime globalTime = ack.time();
     final AckTable ackTable = tables.get(globalTime.front());
     final long time = globalTime.time();
@@ -118,7 +110,7 @@ public class Acker extends LoggingActor {
     if (minAmongTables.compareTo(currentMin) > 0) {
       this.currentMin = minAmongTables;
       log().debug("New min time: {}", currentMin);
-      router.broadcast(new MinTimeUpdate(currentMin), self());
+      minTimeSubscribers.forEach(s -> s.tell(new MinTimeUpdate(currentMin), self()));
     }
   }
 

@@ -2,29 +2,26 @@ package com.spbsu.flamestream.runtime.edge.api;
 
 import com.spbsu.flamestream.core.Front;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class FrontInstance<T extends Front> {
-  private final String frontId;
+  private final String name;
   private final Class<T> front;
-  private final List<Object> params;
+  private final String[] args;
 
-  public FrontInstance(String frontId, Class<T> front, List<Object> params) {
+  public FrontInstance(String name, Class<T> front, String[] args) {
     this.front = front;
-    this.frontId = frontId;
-    this.params = new ArrayList<>(params);
+    this.name = name;
+    this.args = args;
   }
 
-  public String id() {
-    return frontId;
+  public String name() {
+    return name;
   }
 
   public Class<T> front() {
     return front;
   }
 
-  public List<Object> params() {
-    return params;
+  public String[] args() {
+    return args;
   }
 }

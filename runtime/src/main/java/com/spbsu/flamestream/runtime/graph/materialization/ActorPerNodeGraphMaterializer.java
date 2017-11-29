@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.runtime.graph.BarrierRouter;
 import com.spbsu.flamestream.runtime.graph.FlameRouter;
 import com.spbsu.flamestream.runtime.graph.materialization.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.materialization.jobas.ActorJoba;
@@ -16,9 +17,9 @@ import java.util.Map;
 public class ActorPerNodeGraphMaterializer implements GraphMaterializer {
   private final FlameRouter flameRouter;
   private final ActorRef acker;
-  private final ActorRef barrier;
+  private final BarrierRouter barrier;
 
-  public ActorPerNodeGraphMaterializer(FlameRouter flameRouter, ActorRef acker, ActorRef barrier) {
+  public ActorPerNodeGraphMaterializer(FlameRouter flameRouter, ActorRef acker, BarrierRouter barrier) {
     this.flameRouter = flameRouter;
     this.acker = acker;
     this.barrier = barrier;

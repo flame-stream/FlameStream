@@ -15,14 +15,14 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 public class LogicGraphManager extends LoggingActor {
   private final Graph logicalGraph;
   private final ActorRef acker;
-  private final ActorRef barrier;
+  private final BarrierRouter barrier;
 
   private GraphMaterializer materializer;
   private GraphMaterialization materialization;
 
   private LogicGraphManager(Graph logicalGraph,
                             ActorRef acker,
-                            ActorRef barrier) {
+                            BarrierRouter barrier) {
     this.logicalGraph = logicalGraph;
     this.acker = acker;
     this.barrier = barrier;
@@ -30,14 +30,14 @@ public class LogicGraphManager extends LoggingActor {
 
   public static Props props(Graph logicalGraph,
                             ActorRef acker,
-                            ActorRef barrier) {
+                            BarrierRouter barrier) {
     return Props.create(LogicGraphManager.class, logicalGraph, acker, barrier);
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(FlameNode.CoarseRouter.class, router -> {
+            .match(FlameRouter.class, router -> {
               log().info("Received range map, completing constructor");
               materializer = new ActorPerNodeGraphMaterializer(router, acker, barrier);
               materialization = materializer.materialize(logicalGraph);
@@ -54,6 +54,4 @@ public class LogicGraphManager extends LoggingActor {
             .match(DataItem.class, item -> materialization.accept(item))
             .build();
   }
-
-
 }
