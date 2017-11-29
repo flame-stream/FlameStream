@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.barrier;
 
 import akka.actor.Props;
+import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class Barrier extends LoggingActor {
@@ -11,6 +12,6 @@ public class Barrier extends LoggingActor {
 
   @Override
   public Receive createReceive() {
-    return null;
+    return ReceiveBuilder.create().build();
   }
 }
