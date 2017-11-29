@@ -2,6 +2,8 @@ package com.spbsu.flamestream.core;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.spbsu.flamestream.core.graph.Sink;
+import com.spbsu.flamestream.core.graph.Source;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,7 +49,7 @@ public interface Graph {
       return this;
     }
 
-    Graph build(Vertex source, Vertex sink) {
+    Graph build(Source source, Sink sink) {
       if (adjLists.values().contains(source)) {
         throw new IllegalStateException("Source must not have inputs");
       } else if (adjLists.keySet().contains(sink)) {
