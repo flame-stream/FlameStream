@@ -55,7 +55,7 @@ public class LifecycleWatcher extends LoggingActor {
       switch (state) {
         case SyncConnected:
           log().info("Connected to ZK");
-          context().actorOf(FlameNode.props(id, zk), "concierge");
+          //context().actorOf(FlameNode.props(id, zk), "concierge");
           break;
         case Expired:
           log().info("Session expired");

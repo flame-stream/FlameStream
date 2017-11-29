@@ -3,16 +3,15 @@ package com.spbsu.flamestream.runtime.acker;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.graph.FlameRouter;
 import com.spbsu.flamestream.runtime.utils.Statistics;
-import com.spbsu.flamestream.runtime.graph.GraphRoutes;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
 import com.spbsu.flamestream.runtime.acker.table.AckTable;
 import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
-import com.spbsu.flamestream.runtime.graph.atomic.source.api.Heartbeat;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.HashMap;
@@ -73,7 +72,7 @@ public class Acker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
-            .match(RegisterFront.class, registerFront -> handleRegister(registerFront.frontId()))
+            .match(RegisterFront.class, registerFront -> handleRegister(registerFront.id()))
             .build();
   }
 

@@ -6,6 +6,7 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.edge.api.FrontInstance;
 import com.spbsu.flamestream.runtime.edge.front.FrontActor;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
+import com.spbsu.flamestream.runtime.negitioator.api.AttachFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class EdgeManager extends LoggingActor {
@@ -24,7 +25,7 @@ public class EdgeManager extends LoggingActor {
     return ReceiveBuilder.create()
             .match(FrontInstance.class, frontInstance -> {
               final ActorRef frontRef = context().actorOf(FrontActor.props(frontInstance), frontInstance.id());
-              negoriator.tell(new RegisterFront(frontInstance.id(), frontRef), self());
+              negoriator.tell(new AttachFront(frontInstance.id(), frontRef), self());
             })
             .build();
   }

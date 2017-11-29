@@ -2,10 +2,10 @@ package com.spbsu.flamestream.runtime.negitioator.api;
 
 import akka.actor.ActorRef;
 
-public class NewMaterialization {
+public class AttachSource {
   private final ActorRef source;
 
-  public NewMaterialization(ActorRef source) {
+  public AttachSource(ActorRef source) {
     this.source = source;
   }
 
