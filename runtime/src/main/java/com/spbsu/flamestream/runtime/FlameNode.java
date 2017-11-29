@@ -4,6 +4,8 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.pattern.PatternsCS;
+import akka.util.Timeout;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.acker.Acker;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
@@ -16,10 +18,9 @@ import com.spbsu.flamestream.runtime.graph.BarrierRouter;
 import com.spbsu.flamestream.runtime.graph.FlameRouter;
 import com.spbsu.flamestream.runtime.graph.LogicGraphManager;
 import com.spbsu.flamestream.runtime.negitioator.Negotiator;
+import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.commons.lang.math.IntRange;
-import scala.concurrent.duration.Duration;
-import scala.concurrent.duration.FiniteDuration;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -71,31 +72,19 @@ public class FlameNode extends LoggingActor {
   }
 
   private ActorRef resolvedAcker() {
-    try {
-      final ActorPath ackerPath = currentConfig.nodeConfigs()
-              .get(currentConfig.ackerLocation())
-              .nodePath()
-              .child("acker");
-      return context().actorSelection(ackerPath)
-              .resolveOneCS(Duration.apply(10, TimeUnit.SECONDS))
-              .toCompletableFuture().get();
-    } catch (InterruptedException | ExecutionException e) {
-      throw new RuntimeException(e);
-    }
+    return syncResolve(
+            currentConfig.nodeConfigs()
+                    .get(currentConfig.ackerLocation())
+                    .nodePath()
+                    .child("acker")
+    );
   }
 
   private BarrierRouter resolvedBarriers() {
     final Map<String, ActorRef> barriers = new HashMap<>();
     currentConfig.nodeConfigs().forEach((id, nodeConfig) -> {
-      try {
-        final ActorRef b = context().actorSelection(nodeConfig.nodePath().child("barrier"))
-                .resolveOneCS(FiniteDuration.apply(10, TimeUnit.SECONDS))
-                .toCompletableFuture()
-                .get();
-        barriers.put(id, b);
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
+      final ActorRef b = syncResolve(nodeConfig.nodePath().child("barrier"));
+      barriers.put(id, b);
     });
     return (item, sender) -> barriers.get(item.meta().globalTime().front()).tell(item, sender);
   }
@@ -104,17 +93,21 @@ public class FlameNode extends LoggingActor {
     final Map<IntRange, ActorRef> managers = new HashMap<>();
 
     currentConfig.pathsByRange().forEach((intRange, path) -> {
-      try {
-        final ActorRef manager = context().actorSelection(path.child("graph"))
-                .resolveOneCS(FiniteDuration.apply(10, TimeUnit.SECONDS))
-                .toCompletableFuture()
-                .get();
-        managers.put(intRange, manager);
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
+      final ActorRef manager = syncResolve(path.child("graph"));
+      managers.put(intRange, manager);
     });
 
     return (item, sender) -> {};
+  }
+
+  private ActorRef syncResolve(ActorPath actorPath) {
+    try {
+      final ActorRef resolver = context().actorOf(AwaitResolver.props());
+
+      return (ActorRef) PatternsCS.ask(resolver, actorPath, Timeout.apply(10, TimeUnit.SECONDS))
+              .toCompletableFuture().get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
