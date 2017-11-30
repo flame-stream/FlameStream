@@ -22,14 +22,15 @@ import java.util.function.Consumer;
 
 public class GraphManager extends LoggingActor {
   private final Map<String, ActorVertexJoba> materialization;
+  private final Graph graph;
 
-  private GraphManager(Graph logicalGraph, ActorRef acker, ClusterConfig config) {
+  private GraphManager(Graph graph, ActorRef acker, ClusterConfig config) {
+    this.graph = graph;
     final Map<String, ActorRef> barriers = new HashMap<>();
     config.nodes().forEach(nodeConfig -> {
       final ActorRef b = AwaitResolver.syncResolve(nodeConfig.nodePath().child("barrier"), context());
       barriers.put(nodeConfig.id(), b);
     });
-
     final Map<IntRange, ActorRef> managers = new HashMap<>();
     config.nodes().forEach(nodeConfig -> {
       final ActorRef manager = AwaitResolver.syncResolve(nodeConfig.nodePath().child("graph"), context());
@@ -55,6 +56,8 @@ public class GraphManager extends LoggingActor {
   }
 
   private void accept(DataItem<?> dataItem) {
+    //noinspection unchecked
+    materialization.get(graph.source().id()).accept(dataItem);
   }
 
   private void inject(AddressedItem addressedItem) {
@@ -77,7 +80,13 @@ public class GraphManager extends LoggingActor {
   private Consumer<DataItem<?>> routerSink(Map<IntRange, ActorRef> managers, HashFunction<DataItem<?>> hashFunction) {
     return dataItem -> {
       final int hash = hashFunction.applyAsInt(dataItem);
-      managers.get(hash).tell(dataItem, self()); // FIXME: 30.11.2017
+      for (Map.Entry<IntRange, ActorRef> entry : managers.entrySet()) {
+        if (entry.getKey().containsInteger(hash)) {
+          entry.getValue().tell(dataItem, self());
+          return;
+        }
+      }
+      throw new IllegalStateException("Hash ranges doesn't cover Integer space");
     };
   }
 }
