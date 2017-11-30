@@ -4,8 +4,6 @@ import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.graph.BarrierRouter;
-import com.spbsu.flamestream.runtime.graph.FlameRouter;
 import com.spbsu.flamestream.runtime.graph.materialization.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.materialization.jobas.ActorJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.jobas.Joba;
@@ -15,13 +13,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ActorPerNodeGraphMaterializer implements GraphMaterializer {
-  private final FlameRouter flameRouter;
   private final ActorRef acker;
+  private final FlameRouter flameRouter;
   private final BarrierRouter barrier;
 
-  public ActorPerNodeGraphMaterializer(FlameRouter flameRouter, ActorRef acker, BarrierRouter barrier) {
-    this.flameRouter = flameRouter;
+  public ActorPerNodeGraphMaterializer(ActorRef acker, FlameRouter flameRouter, BarrierRouter barrier) {
     this.acker = acker;
+    this.flameRouter = flameRouter;
     this.barrier = barrier;
   }
 
@@ -50,7 +48,7 @@ public class ActorPerNodeGraphMaterializer implements GraphMaterializer {
       }
 
       @Override
-      public void close() throws Exception {
+      public void close() {
         materializations.values().forEach(Unchecked.consumer(ActorJoba::close));
       }
     };

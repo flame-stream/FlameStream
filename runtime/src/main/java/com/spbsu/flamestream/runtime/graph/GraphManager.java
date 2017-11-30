@@ -7,6 +7,8 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.graph.materialization.ActorPerNodeGraphMaterializer;
+import com.spbsu.flamestream.runtime.graph.materialization.BarrierRouter;
+import com.spbsu.flamestream.runtime.graph.materialization.FlameRouter;
 import com.spbsu.flamestream.runtime.graph.materialization.GraphMaterialization;
 import com.spbsu.flamestream.runtime.graph.materialization.api.AddressedItem;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
@@ -21,8 +23,8 @@ public class GraphManager extends LoggingActor {
 
   private GraphManager(Graph logicalGraph, ActorRef acker, ClusterConfig config) {
     materialization = new ActorPerNodeGraphMaterializer(
-            resolvedRouter(config),
             acker,
+            resolvedRouter(config),
             resolvedBarriers(config)
     ).materialize(logicalGraph);
   }
@@ -37,6 +39,11 @@ public class GraphManager extends LoggingActor {
             .match(AddressedItem.class, materialization::inject)
             .match(DataItem.class, materialization::accept)
             .build();
+  }
+
+  @Override
+  public void postStop() {
+    materialization.close();
   }
 
   private BarrierRouter resolvedBarriers(ClusterConfig config) {
@@ -55,6 +62,7 @@ public class GraphManager extends LoggingActor {
       managers.put(nodeConfig.range().asRange(), manager);
     });
     return (item, sender) -> {
+
     };
   }
 }

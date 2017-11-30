@@ -18,6 +18,6 @@ public interface GraphMaterialization extends AutoCloseable {
   void onCommit();
 
   @Override
-  default void close() throws Exception {
+  default void close() {
   }
 }
