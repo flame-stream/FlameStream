@@ -1,40 +1,36 @@
 package com.spbsu.flamestream.runtime.config;
 
-import akka.actor.ActorPath;
-import org.apache.commons.lang.math.IntRange;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.stream.Stream;
 
 public class ClusterConfig {
-  private final Map<String, NodeConfig> nodeConfigs;
+  @JsonProperty("node_configs")
+  private final Collection<NodeConfig> nodeConfigs;
+  @JsonProperty("acker_location")
   private final String ackerLocation;
 
   @JsonCreator
-  public ClusterConfig(@JsonProperty("nodes") Map<String, NodeConfig> nodeConfigs,
+  public ClusterConfig(@JsonProperty("node_configs") Collection<NodeConfig> nodeConfigs,
                        @JsonProperty("acker_location") String ackerLocation) {
-    this.nodeConfigs = new HashMap<>(nodeConfigs);
+    this.nodeConfigs = new ArrayList<>(nodeConfigs);
     this.ackerLocation = ackerLocation;
   }
 
-  @JsonProperty("nodes")
-  public Map<String, NodeConfig> nodeConfigs() {
-    return nodeConfigs;
-  }
-
-  @JsonProperty("acker_location")
-  public String ackerLocation() {
-    return ackerLocation;
+  @JsonIgnore
+  public Stream<NodeConfig> nodes() {
+    return nodeConfigs.stream();
   }
 
   @JsonIgnore
-  public Map<IntRange, ActorPath> pathsByRange() {
-    return nodeConfigs.values().stream()
-            .collect(Collectors.toMap(nodeConfig -> nodeConfig.range().asRange(), NodeConfig::nodePath));
+  public NodeConfig ackerNode() {
+    return nodeConfigs.stream()
+            .filter(nodeConfig -> nodeConfig.id().equals(ackerLocation))
+            .findFirst().orElseThrow(() -> new IllegalStateException("Acker location is invalid"));
   }
 
   @Override

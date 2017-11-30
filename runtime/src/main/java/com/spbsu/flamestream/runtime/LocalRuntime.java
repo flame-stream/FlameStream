@@ -15,6 +15,8 @@ import com.spbsu.flamestream.runtime.config.NodeConfig;
 import com.spbsu.flamestream.runtime.edge.api.FrontInstance;
 import com.spbsu.flamestream.runtime.edge.api.RearInstance;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,26 +63,27 @@ public class LocalRuntime implements FlameRuntime {
   }
 
   private Set<ActorRef> nodes(Graph graph) {
-    final Map<String, NodeConfig> nodeConfigs = new HashMap<>();
     final List<HashRange> ranges = HashRange.covering(parallelism).collect(Collectors.toList());
+    final Collection<NodeConfig> nodeConfigs = new ArrayList<>();
     for (int i = 0; i < parallelism; ++i) {
-      final String name = "node-" + i;
+      final String id = "node-" + i;
       final HashRange range = ranges.get(i);
       final NodeConfig config = new NodeConfig(
+              id,
               RootActorPath.apply(Address.apply("akka", system.name()), "/")
                       .child("user")
-                      .child(name),
+                      .child(id),
               range
       );
-      nodeConfigs.put(name, config);
+      nodeConfigs.add(config);
     }
 
     final ClusterConfig clusterConfig = new ClusterConfig(nodeConfigs, "node-0");
     final AttachRegistry registry = new InMemoryRegistry();
     final Set<ActorRef> nodes = new HashSet<>();
-    for (String id : nodeConfigs.keySet()) {
-      nodes.add(system.actorOf(FlameNode.props(id, graph, clusterConfig, registry), id));
-    }
+    nodeConfigs.forEach(nodeConfig -> nodes.add(
+            system.actorOf(FlameNode.props(nodeConfig.id(), graph, clusterConfig, registry), nodeConfig.id()))
+    );
     return nodes;
   }
 

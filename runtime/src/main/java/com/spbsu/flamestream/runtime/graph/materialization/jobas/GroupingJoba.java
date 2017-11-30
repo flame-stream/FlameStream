@@ -32,6 +32,6 @@ public class GroupingJoba<T> implements Joba<T> {
 
   @Override
   public void onCommit() {
-
+    // TODO: 29.11.2017 save state
   }
 }

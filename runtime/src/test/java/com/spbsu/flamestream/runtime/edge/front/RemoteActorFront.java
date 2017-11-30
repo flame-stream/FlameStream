@@ -19,7 +19,7 @@ public class RemoteActorFront implements Front {
 
   @Override
   public void onStart(Consumer<?> consumer) {
-    ((FrontActor.Backdoor) consumer).context().actorOf(InnerActor.props())
+    ((FrontActor.Backdoor) consumer).context().actorOf(InnerActor.props(null, null));
   }
 
   @Override
