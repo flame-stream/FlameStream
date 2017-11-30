@@ -15,17 +15,41 @@ import com.spbsu.flamestream.runtime.graph.vertices.VertexJoba;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.commons.lang.math.IntRange;
+import org.jooq.lambda.Unchecked;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
 public class GraphManager extends LoggingActor {
-  private final Map<String, ActorVertexJoba> materialization;
   private final Graph graph;
+  private final ActorRef acker;
+  private final ClusterConfig config;
+
+  private Map<String, ActorVertexJoba> materialization;
 
   private GraphManager(Graph graph, ActorRef acker, ClusterConfig config) {
     this.graph = graph;
+    this.acker = acker;
+    this.config = config;
+  }
+
+  public static Props props(Graph logicalGraph, ActorRef acker, ClusterConfig config) {
+    return Props.create(GraphManager.class, logicalGraph, acker, config);
+  }
+
+  @Override
+  public Receive createReceive() {
+    return ReceiveBuilder.create()
+            .match(DataItem.class, this::accept)
+            .match(AddressedItem.class, this::inject)
+            .match(MinTimeUpdate.class, this::onMinTimeUpdate)
+            .match(Commit.class, commit -> onCommit())
+            .build();
+  }
+
+  @Override
+  public void preStart() throws Exception {
     final Map<String, ActorRef> barriers = new HashMap<>();
     config.nodes().forEach(nodeConfig -> {
       final ActorRef b = AwaitResolver.syncResolve(nodeConfig.nodePath().child("barrier"), context());
@@ -41,18 +65,9 @@ public class GraphManager extends LoggingActor {
     // TODO: 30.11.2017 build graph
   }
 
-  public static Props props(Graph logicalGraph, ActorRef acker, ClusterConfig config) {
-    return Props.create(GraphManager.class, logicalGraph, acker, config);
-  }
-
   @Override
-  public Receive createReceive() {
-    return ReceiveBuilder.create()
-            .match(DataItem.class, this::accept)
-            .match(AddressedItem.class, this::inject)
-            .match(MinTimeUpdate.class, this::onMinTimeUpdate)
-            .match(Commit.class, commit -> onCommit())
-            .build();
+  public void postStop() {
+    materialization.values().forEach(Unchecked.consumer(ActorVertexJoba::close));
   }
 
   private void accept(DataItem<?> dataItem) {
