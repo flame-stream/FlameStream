@@ -10,6 +10,7 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class FrontActor<T extends Front> extends LoggingActor {
   private final String id;
@@ -35,9 +36,28 @@ public class FrontActor<T extends Front> extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(NewHole.class, hole -> {
-              front.onStart(item -> hole.source().tell(item, self()));
+              front.onStart(new Backdoor(context(), item -> hole.source().tell(item, self())));
               front.onRequestNext(hole.lower());
             })
             .build();
+  }
+
+  public static class Backdoor implements Consumer<Object> {
+    private final akka.actor.ActorContext context;
+    private final Consumer<Object> realConsumer;
+
+    public Backdoor(akka.actor.ActorContext context, Consumer<Object> realConsumer) {
+      this.context = context;
+      this.realConsumer = realConsumer;
+    }
+
+    @Override
+    public void accept(Object o) {
+      realConsumer.accept(o);
+    }
+
+    public akka.actor.ActorContext context() {
+      return context;
+    }
   }
 }
