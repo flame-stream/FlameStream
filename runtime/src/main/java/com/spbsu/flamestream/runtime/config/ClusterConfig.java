@@ -1,43 +1,37 @@
 package com.spbsu.flamestream.runtime.config;
 
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonProperty;
+import akka.actor.ActorPath;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.stream.Stream;
+import java.util.Map;
 
 public class ClusterConfig {
-  @JsonProperty("node_configs")
-  private final Collection<NodeConfig> nodeConfigs;
-  @JsonProperty("acker_location")
+  private final Map<String, ActorPath> paths;
   private final String ackerLocation;
+  private final ComputationLayout layout;
 
   @JsonCreator
-  public ClusterConfig(@JsonProperty("node_configs") Collection<NodeConfig> nodeConfigs,
-                       @JsonProperty("acker_location") String ackerLocation) {
-    this.nodeConfigs = new ArrayList<>(nodeConfigs);
+  public ClusterConfig(@JsonProperty("paths") Map<String, ActorPath> paths,
+                       @JsonProperty("acker_location") String ackerLocation,
+                       @JsonProperty("ranges") ComputationLayout layout) {
+    this.paths = paths;
     this.ackerLocation = ackerLocation;
+    this.layout = layout;
   }
 
-  @JsonIgnore
-  public Stream<NodeConfig> nodes() {
-    return nodeConfigs.stream();
+  @JsonProperty("paths")
+  public Map<String, ActorPath> paths() {
+    return paths;
   }
 
-  @JsonIgnore
-  public NodeConfig ackerNode() {
-    return nodeConfigs.stream()
-            .filter(nodeConfig -> nodeConfig.id().equals(ackerLocation))
-            .findFirst().orElseThrow(() -> new IllegalStateException("Acker location is invalid"));
+  @JsonProperty("acker_location")
+  public String ackerLocation() {
+    return ackerLocation;
   }
 
-  @Override
-  public String toString() {
-    return "ClusterConfig{" +
-            "nodeConfigs=" + nodeConfigs +
-            ", ackerLocation='" + ackerLocation + '\'' +
-            '}';
+  @JsonProperty("ranges")
+  public ComputationLayout layout() {
+    return layout;
   }
 }

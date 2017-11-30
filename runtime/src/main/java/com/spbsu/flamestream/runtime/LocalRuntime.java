@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime;
 
+import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Address;
@@ -10,13 +11,11 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.ComputationLayout;
 import com.spbsu.flamestream.runtime.config.HashRange;
-import com.spbsu.flamestream.runtime.config.NodeConfig;
 import com.spbsu.flamestream.runtime.edge.api.FrontInstance;
 import com.spbsu.flamestream.runtime.edge.api.RearInstance;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,25 +63,25 @@ public class LocalRuntime implements FlameRuntime {
 
   private Set<ActorRef> nodes(Graph graph) {
     final List<HashRange> ranges = HashRange.covering(parallelism).collect(Collectors.toList());
-    final Collection<NodeConfig> nodeConfigs = new ArrayList<>();
+    final Map<String, ActorPath> paths = new HashMap<>();
+    final Map<String, HashRange> rangeMap = new HashMap<>();
     for (int i = 0; i < parallelism; ++i) {
       final String id = "node-" + i;
       final HashRange range = ranges.get(i);
-      final NodeConfig config = new NodeConfig(
+      paths.put(
               id,
               RootActorPath.apply(Address.apply("akka", system.name()), "/")
                       .child("user")
-                      .child(id),
-              range
+                      .child(id)
       );
-      nodeConfigs.add(config);
+      rangeMap.put(id, range);
     }
 
-    final ClusterConfig clusterConfig = new ClusterConfig(nodeConfigs, "node-0");
+    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", new ComputationLayout(rangeMap));
     final AttachRegistry registry = new InMemoryRegistry();
     final Set<ActorRef> nodes = new HashSet<>();
-    nodeConfigs.forEach(nodeConfig -> nodes.add(
-            system.actorOf(FlameNode.props(nodeConfig.id(), graph, clusterConfig, registry), nodeConfig.id()))
+    paths.keySet().forEach(id -> nodes.add(
+            system.actorOf(FlameNode.props(id, graph, clusterConfig, registry), id))
     );
     return nodes;
   }

@@ -1,8 +1,9 @@
 package com.spbsu.flamestream.runtime.config;
 
 import org.apache.commons.lang.math.IntRange;
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,6 +29,7 @@ public class HashRange {
     return to;
   }
 
+  @JsonIgnore
   public IntRange asRange() {
     return new IntRange(from, to);
   }
