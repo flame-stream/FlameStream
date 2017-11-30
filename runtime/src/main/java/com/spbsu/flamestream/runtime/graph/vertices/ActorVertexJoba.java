@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.materialization.jobas;
+package com.spbsu.flamestream.runtime.graph.vertices;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
@@ -7,7 +7,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.graph.materialization.api.Commit;
+import com.spbsu.flamestream.runtime.graph.api.Commit;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.UUID;
@@ -16,11 +16,11 @@ import java.util.UUID;
  * User: Artem
  * Date: 27.11.2017
  */
-public class ActorJoba<T> implements Joba<T> {
+public class ActorVertexJoba<T> implements VertexJoba<T> {
   private final ActorContext context;
   private final ActorRef vertexActor;
 
-  public ActorJoba(Joba<T> joba, ActorContext context) {
+  public ActorVertexJoba(VertexJoba<T> joba, ActorContext context) {
     this.context = context;
     vertexActor = context.actorOf(InnerActor.props(joba), "ActorJoba_" + UUID.randomUUID());
   }
@@ -46,13 +46,13 @@ public class ActorJoba<T> implements Joba<T> {
   }
 
   private static class InnerActor<T> extends LoggingActor {
-    private final Joba<T> joba;
+    private final VertexJoba<T> joba;
 
-    private InnerActor(Joba<T> joba) {
+    private InnerActor(VertexJoba<T> joba) {
       this.joba = joba;
     }
 
-    public static <T> Props props(Joba<T> joba) {
+    public static <T> Props props(VertexJoba<T> joba) {
       return Props.create(InnerActor.class, joba);
     }
 

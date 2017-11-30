@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.materialization.jobas;
+package com.spbsu.flamestream.runtime.graph.vertices;
 
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
@@ -11,7 +11,7 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 28.11.2017
  */
-public class GroupingJoba<T> implements Joba<T> {
+public class GroupingJoba<T> implements VertexJoba<T> {
   private final Grouping<T> grouping;
   private final Consumer<DataItem<List<T>>> sink;
 

@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.materialization.jobas;
+package com.spbsu.flamestream.runtime.graph.vertices;
 
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
@@ -10,7 +10,7 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 28.11.2017
  */
-public class MapJoba<T, R> implements Joba<T> {
+public class MapJoba<T, R> implements VertexJoba<T> {
   private final FlameMap<T, R> map;
   private final Consumer<DataItem<R>> sink;
 

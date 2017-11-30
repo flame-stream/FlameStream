@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.materialization.api;
+package com.spbsu.flamestream.runtime.graph.api;
 
 import com.spbsu.flamestream.core.DataItem;
 

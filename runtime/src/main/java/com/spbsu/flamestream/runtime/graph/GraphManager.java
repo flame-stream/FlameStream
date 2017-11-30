@@ -5,28 +5,39 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.HashFunction;
+import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
-import com.spbsu.flamestream.runtime.graph.materialization.ActorPerNodeGraphMaterializer;
-import com.spbsu.flamestream.runtime.graph.materialization.BarrierRouter;
-import com.spbsu.flamestream.runtime.graph.materialization.FlameRouter;
-import com.spbsu.flamestream.runtime.graph.materialization.GraphMaterialization;
-import com.spbsu.flamestream.runtime.graph.materialization.api.AddressedItem;
+import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
+import com.spbsu.flamestream.runtime.graph.api.Commit;
+import com.spbsu.flamestream.runtime.graph.vertices.ActorVertexJoba;
+import com.spbsu.flamestream.runtime.graph.vertices.VertexJoba;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.commons.lang.math.IntRange;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class GraphManager extends LoggingActor {
-  private final GraphMaterialization materialization;
+  private final Map<String, ActorVertexJoba> materialization;
 
   private GraphManager(Graph logicalGraph, ActorRef acker, ClusterConfig config) {
-    materialization = new ActorPerNodeGraphMaterializer(
-            acker,
-            resolvedRouter(config),
-            resolvedBarriers(config)
-    ).materialize(logicalGraph);
+    final Map<String, ActorRef> barriers = new HashMap<>();
+    config.nodes().forEach(nodeConfig -> {
+      final ActorRef b = AwaitResolver.syncResolve(nodeConfig.nodePath().child("barrier"), context());
+      barriers.put(nodeConfig.id(), b);
+    });
+
+    final Map<IntRange, ActorRef> managers = new HashMap<>();
+    config.nodes().forEach(nodeConfig -> {
+      final ActorRef manager = AwaitResolver.syncResolve(nodeConfig.nodePath().child("graph"), context());
+      managers.put(nodeConfig.range().asRange(), manager);
+    });
+
+    materialization = new HashMap<>();
+    // TODO: 30.11.2017 build graph
   }
 
   public static Props props(Graph logicalGraph, ActorRef acker, ClusterConfig config) {
@@ -36,33 +47,37 @@ public class GraphManager extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(AddressedItem.class, materialization::inject)
-            .match(DataItem.class, materialization::accept)
+            .match(DataItem.class, this::accept)
+            .match(AddressedItem.class, this::inject)
+            .match(MinTimeUpdate.class, this::onMinTimeUpdate)
+            .match(Commit.class, commit -> onCommit())
             .build();
   }
 
-  @Override
-  public void postStop() {
-    materialization.close();
+  private void accept(DataItem<?> dataItem) {
   }
 
-  private BarrierRouter resolvedBarriers(ClusterConfig config) {
-    final Map<String, ActorRef> barriers = new HashMap<>();
-    config.nodes().forEach(nodeConfig -> {
-      final ActorRef b = AwaitResolver.syncResolve(nodeConfig.nodePath().child("barrier"), context());
-      barriers.put(nodeConfig.id(), b);
-    });
-    return (item, sender) -> barriers.get(item.meta().globalTime().front()).tell(item, sender);
+  private void inject(AddressedItem addressedItem) {
+    //noinspection unchecked
+    materialization.get(addressedItem.vertexId()).accept(addressedItem.item());
   }
 
-  private FlameRouter resolvedRouter(ClusterConfig config) {
-    final Map<IntRange, ActorRef> managers = new HashMap<>();
-    config.nodes().forEach(nodeConfig -> {
-      final ActorRef manager = AwaitResolver.syncResolve(nodeConfig.nodePath().child("graph"), context());
-      managers.put(nodeConfig.range().asRange(), manager);
-    });
-    return (item, sender) -> {
+  private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
+    materialization.values().forEach(materialization -> materialization.onMinTime(minTimeUpdate.minTime()));
+  }
 
+  private void onCommit() {
+    materialization.values().forEach(VertexJoba::onCommit);
+  }
+
+  private Consumer<DataItem<?>> barrierSink(Map<String, ActorRef> barriers) {
+    return dataItem -> barriers.get(dataItem.meta().globalTime().front()).tell(dataItem, self());
+  }
+
+  private Consumer<DataItem<?>> routerSink(Map<IntRange, ActorRef> managers, HashFunction<DataItem<?>> hashFunction) {
+    return dataItem -> {
+      final int hash = hashFunction.applyAsInt(dataItem);
+      managers.get(hash).tell(dataItem, self()); // FIXME: 30.11.2017
     };
   }
 }
