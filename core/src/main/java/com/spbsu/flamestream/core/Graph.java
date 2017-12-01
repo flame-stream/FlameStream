@@ -13,11 +13,15 @@ import java.util.stream.Stream;
 public interface Graph {
   Stream<Vertex> nodes();
 
-  Stream<Vertex> adjacent(Vertex vertex);
+  Stream<Vertex> outputs(Vertex vertex);
 
-  Vertex source();
+  Stream<Vertex> inputs(Vertex vertex);
 
-  Vertex sink();
+  boolean isBroadcast(Vertex vertex);
+
+  Source source();
+
+  Sink sink();
 
   interface Vertex {
     String id();
@@ -43,14 +47,16 @@ public interface Graph {
 
   class Builder {
     private Multimap<Vertex, Vertex> adjLists = HashMultimap.create();
+    private Multimap<Vertex, Vertex> invertedAdjLists = HashMultimap.create();
 
     public Builder link(Vertex from, Vertex to) {
       adjLists.put(from, to);
+      invertedAdjLists.put(to, from);
       return this;
     }
 
     public Graph build(Source source, Sink sink) {
-      if (adjLists.values().contains(source)) {
+      if (invertedAdjLists.keySet().contains(source)) {
         throw new IllegalStateException("Source must not have inputs");
       } else if (adjLists.keySet().contains(sink)) {
         throw new IllegalStateException("Source must not have outputs");
@@ -65,17 +71,27 @@ public interface Graph {
         }
 
         @Override
-        public Stream<Vertex> adjacent(Vertex vertex) {
+        public Stream<Vertex> outputs(Vertex vertex) {
           return adjLists.get(vertex).stream();
         }
 
         @Override
-        public Vertex source() {
+        public Stream<Vertex> inputs(Vertex vertex) {
+          return invertedAdjLists.get(vertex).stream();
+        }
+
+        @Override
+        public boolean isBroadcast(Vertex vertex) {
+          return adjLists.get(vertex).size() > 1;
+        }
+
+        @Override
+        public Source source() {
           return source;
         }
 
         @Override
-        public Vertex sink() {
+        public Sink sink() {
           return sink;
         }
       };
