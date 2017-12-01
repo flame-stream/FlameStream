@@ -42,7 +42,7 @@ public class ActorVertexJoba<T> extends VertexJoba.Stub<T> {
 
   @Override
   public void close() {
-    vertexActor.tell(PoisonPill.getInstance(), context.self());
+    context.stop(vertexActor);
   }
 
   private static class InnerActor<T> extends LoggingActor {
