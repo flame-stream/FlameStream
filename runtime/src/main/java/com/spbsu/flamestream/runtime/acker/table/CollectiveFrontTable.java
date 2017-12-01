@@ -37,4 +37,8 @@ public class CollectiveFrontTable {
   public long min() {
     return ackTable.min();
   }
+
+  public boolean containsNode(String nodeId) {
+    return heartbeats.containsKey(nodeId);
+  }
 }

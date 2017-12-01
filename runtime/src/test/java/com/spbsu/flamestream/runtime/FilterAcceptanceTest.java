@@ -39,7 +39,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
 
   @Test
   public void linearFilter() throws InterruptedException {
-    TestRuntime testRuntime = new TestRuntime(4);
+    TestRuntime testRuntime = new TestRuntime(1);
     final TestRuntime.TestFlame flame = testRuntime.run(multiGraph());
 
     final Queue<Integer> result = new ArrayDeque<>();

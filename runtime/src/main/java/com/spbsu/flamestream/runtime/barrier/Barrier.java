@@ -47,7 +47,7 @@ public class Barrier extends LoggingActor {
               });
             })
             .match(AttachRear.class, attach -> {
-              log().info("Attach rear request: {}", rears);
+              log().info("Attach rear request: {}", attach.rear());
               rears.add(attach.rear());
             })
             .build();

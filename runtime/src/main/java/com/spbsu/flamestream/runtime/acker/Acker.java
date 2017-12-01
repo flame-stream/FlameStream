@@ -68,7 +68,7 @@ public class Acker extends LoggingActor {
   }
 
   private void registerFront(String frontId, String nodeId) {
-    log().info("Received frontClass registration request for {}", frontId);
+    log().info("Received front registration request for \"{}\"", frontId);
     final GlobalTime min = minAmongTables();
     log().info("Registering timestamp {} for {}", min, frontId);
     if (tables.containsKey(frontId)) {
@@ -83,6 +83,8 @@ public class Acker extends LoggingActor {
     registry.register(frontId, min.time());
     log().info("Front {} has been registered, sending ticket", frontId);
     sender().tell(new FrontTicket(frontId, nodeId, new GlobalTime(min.time(), frontId)), self());
+
+    unstashAll();
   }
 
   private void handleHeartBeat(Heartbeat heartbeat) {
@@ -122,16 +124,20 @@ public class Acker extends LoggingActor {
   }
 
   private GlobalTime minAmongTables() {
-    final String[] frontMin = {"Hi"};
-    final long[] timeMin = {Long.MAX_VALUE};
-    tables.forEach((f, table) -> {
-      final long tmpMin = table.min();
-      if (tmpMin < timeMin[0] || tmpMin == timeMin[0] && f.compareTo(frontMin[0]) < 0) {
-        frontMin[0] = f;
-        timeMin[0] = tmpMin;
-      }
-    });
-    return new GlobalTime(timeMin[0], frontMin[0]);
+    if (tables.isEmpty()) {
+      return GlobalTime.MIN;
+    } else {
+      final String[] frontMin = {"Hi"};
+      final long[] timeMin = {Long.MAX_VALUE};
+      tables.forEach((f, table) -> {
+        final long tmpMin = table.min();
+        if (tmpMin < timeMin[0] || tmpMin == timeMin[0] && f.compareTo(frontMin[0]) < 0) {
+          frontMin[0] = f;
+          timeMin[0] = tmpMin;
+        }
+      });
+      return new GlobalTime(timeMin[0], frontMin[0]);
+    }
   }
 
   private static final class AckerStatistics implements Statistics {

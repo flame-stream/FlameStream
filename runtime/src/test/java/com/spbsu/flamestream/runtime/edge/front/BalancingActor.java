@@ -25,9 +25,9 @@ public class BalancingActor extends LoggingActor {
 
               getContext().become(ReceiveBuilder.create()
                       .match(ActorRef.class, r -> fronts.add(sender()))
-                      .match(
-                              RemoteActorFront.RawData.class,
-                              r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size())).tell(r, self())
+                      .matchAny(
+                              r -> fronts.get(ThreadLocalRandom.current().nextInt(fronts.size()))
+                                      .tell(new RemoteActorFront.RawData<>(r), self())
                       )
                       .build()
               );

@@ -39,14 +39,14 @@ public class TestRuntime implements FlameRuntime {
     public Consumer<Object> attachBalancingFront() {
       final ActorRef ref = runtime.system().actorOf(BalancingActor.props(), "balancer");
       final String path = "akka://" + runtime.system().name() + "/user/balancer";
-      superFlame.attachFront("actor-front", RemoteActorFront.class, "balancing-actor", path);
+      superFlame.attachFront("actor-front", RemoteActorFront.class, "actor-front", path);
       return o -> ref.tell(o, ActorRef.noSender());
     }
 
     public <T> void attachWrappedConsumer(Consumer<T> consumer) {
       final ActorRef ref = runtime.system().actorOf(ConsumerActor.props(consumer), "consumer");
       final String path = "akka://" + runtime.system().name() + "/user/consumer";
-      superFlame.attachRear("actor-rearClass", ActorRear.class, path);
+      superFlame.attachRear("actor-rear", ActorRear.class, path);
     }
 
     @Override

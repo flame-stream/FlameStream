@@ -36,6 +36,7 @@ public class FlameNode extends LoggingActor {
 
     final ActorRef barrier = context().actorOf(Barrier.props(acker), "barrier");
     final ActorRef graph = context().actorOf(GraphManager.props(
+            id,
             bootstrapGraph,
             acker,
             config.layout(),
