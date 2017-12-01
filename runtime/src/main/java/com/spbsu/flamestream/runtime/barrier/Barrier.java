@@ -6,6 +6,7 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
+import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.barrier.api.AttachRear;
 import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -39,7 +40,8 @@ public class Barrier extends LoggingActor {
               acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
               collector.enqueue(item);
             })
-            .match(GlobalTime.class, globalTime -> {
+            .match(MinTimeUpdate.class, minTimeUpdate -> {
+              final GlobalTime globalTime = minTimeUpdate.minTime();
               collector.releaseFrom(globalTime, di -> {
                 final Object data = di.payload();
                 rears.forEach(rear -> rear.tell(data, self()));
