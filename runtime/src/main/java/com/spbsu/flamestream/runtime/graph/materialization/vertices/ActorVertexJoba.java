@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.vertices;
+package com.spbsu.flamestream.runtime.graph.materialization.vertices;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;

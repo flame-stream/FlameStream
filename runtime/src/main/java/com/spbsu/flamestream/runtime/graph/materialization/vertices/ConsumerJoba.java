@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.vertices;
+package com.spbsu.flamestream.runtime.graph.materialization.vertices;
 
 import com.spbsu.flamestream.core.DataItem;
 

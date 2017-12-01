@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.vertices;
+package com.spbsu.flamestream.runtime.graph.materialization.vertices;
 
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
