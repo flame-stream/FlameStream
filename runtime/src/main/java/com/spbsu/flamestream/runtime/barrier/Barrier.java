@@ -43,7 +43,7 @@ public class Barrier extends LoggingActor {
               collector.releaseFrom(globalTime, di -> {
                 final Object data = di.payload();
                 rears.forEach(rear -> rear.tell(data, self()));
-                //barrierStatistics.release(di.meta().globalTime());
+                //barrierStatistics.release(di.meta().time());
               });
             })
             .match(AttachRear.class, attach -> {

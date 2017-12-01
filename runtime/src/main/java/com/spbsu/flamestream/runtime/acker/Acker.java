@@ -9,8 +9,7 @@ import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
-import com.spbsu.flamestream.runtime.acker.table.AckTable;
-import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
+import com.spbsu.flamestream.runtime.acker.table.CollectiveFrontTable;
 import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -25,13 +24,13 @@ import java.util.Set;
  * <h3>Actor Contract</h3>
  * <h4>Inbound Messages</h4>
  * <ol>
- * <li>{@link RegisterFront} requests to add front to the supervision</li>
+ * <li>{@link RegisterFront} requests to add frontClass to the supervision</li>
  * <li>{@link Ack} acks</li>
  * <li>{@link Heartbeat} heartbeats</li>
  * </ol>
  * <h4>Outbound Messages</h4>
  * <ol>
- * <li>{@link FrontTicket} - reply to the front registration request. Sets the lowest allowed timestamp</li>
+ * <li>{@link FrontTicket} - reply to the frontClass registration request. Sets the lowest allowed timestamp</li>
  * <li>{@link MinTimeUpdate} mintime</li>
  * </ol>
  * <h4>Failure Modes</h4>
@@ -45,7 +44,7 @@ public class Acker extends LoggingActor {
 
   private final Set<ActorRef> minTimeSubscribers = new HashSet<>();
 
-  private final Map<String, AckTable> tables = new HashMap<>();
+  private final Map<String, CollectiveFrontTable> tables = new HashMap<>();
   private final AckerStatistics stat = new AckerStatistics();
   private final AttachRegistry registry;
 
@@ -64,23 +63,31 @@ public class Acker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
-            .match(RegisterFront.class, registerFront -> handleRegister(registerFront.id()))
+            .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId(), registerFront.nodeId()))
             .build();
   }
 
-  private void handleRegister(String frontId) {
-    log().info("Received front registration request for {}", frontId);
+  private void registerFront(String frontId, String nodeId) {
+    log().info("Received frontClass registration request for {}", frontId);
     final GlobalTime min = minAmongTables();
     log().info("Registering timestamp {} for {}", min, frontId);
-    tables.put(frontId, new ArrayAckTable(min.time(), SIZE, WINDOW));
+    if (tables.containsKey(frontId)) {
+      log().info("New front instance for frontId {}", frontId);
+      tables.get(frontId).addNode(nodeId, min.time());
+    } else {
+      log().info("Haven't seen frontId: {}, creating new table", frontId);
+      final CollectiveFrontTable frontTable = new CollectiveFrontTable(min.time(), SIZE, WINDOW);
+      frontTable.addNode(nodeId, min.time());
+      tables.put(frontId, frontTable);
+    }
     registry.register(frontId, min.time());
     log().info("Front {} has been registered, sending ticket", frontId);
-    sender().tell(new FrontTicket(frontId, new GlobalTime(min.time(), frontId)), self());
+    sender().tell(new FrontTicket(frontId, nodeId, new GlobalTime(min.time(), frontId)), self());
   }
 
   private void handleHeartBeat(Heartbeat heartbeat) {
     final GlobalTime time = heartbeat.time();
-    tables.get(time.front()).heartbeat(time.time());
+    tables.get(time.front()).heartbeat(heartbeat.nodeId(), time.time());
     checkMinTime();
   }
 
@@ -93,11 +100,11 @@ public class Acker extends LoggingActor {
   private void handleAck(Ack ack) {
     minTimeSubscribers.add(sender());
     final GlobalTime globalTime = ack.time();
-    final AckTable ackTable = tables.get(globalTime.front());
+    final CollectiveFrontTable table = tables.get(globalTime.front());
     final long time = globalTime.time();
 
     final long start = System.nanoTime();
-    if (ackTable.ack(time, ack.xor())) {
+    if (table.ack(time, ack.xor())) {
       checkMinTime();
       stat.recordReleasingAck(System.nanoTime() - start);
     } else {

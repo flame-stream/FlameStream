@@ -15,7 +15,7 @@ public class RearActor<T extends Rear> extends LoggingActor {
                                                   IllegalAccessException,
                                                   InvocationTargetException,
                                                   InstantiationException {
-    this.rear = (T) rearInstance.rear().getDeclaredConstructors()[0]
+    this.rear = (T) rearInstance.rearClass().getDeclaredConstructors()[0]
             .newInstance(rearInstance.args());
   }
 

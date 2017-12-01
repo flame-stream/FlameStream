@@ -9,7 +9,7 @@ import java.util.function.Consumer;
  * Date: 15.11.2017
  */
 public interface Front {
-  void onStart(Consumer<?> consumer);
+  void onStart(Consumer<Object> consumer);
 
   void onRequestNext(GlobalTime from);
 

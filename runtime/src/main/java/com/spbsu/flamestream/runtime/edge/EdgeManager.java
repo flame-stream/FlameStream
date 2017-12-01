@@ -30,11 +30,27 @@ public class EdgeManager extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(FrontInstance.class, frontInstance -> {
-              final ActorRef frontRef = context().actorOf(FrontActor.props(nodeId, frontInstance), frontInstance.name());
-              negotiator.tell(new AttachFront(frontInstance.name(), frontRef), self());
+              final ActorRef frontRef;
+              if (LoggingActor.class.isAssignableFrom(frontInstance.frontClass())) {
+                frontRef = context().actorOf(
+                        Props.create(frontInstance.frontClass(), frontInstance.args()),
+                        frontInstance.id()
+                );
+              } else {
+                frontRef = context().actorOf(FrontActor.props(frontInstance), frontInstance.id());
+              }
+              negotiator.tell(new AttachFront(frontInstance.id(), frontRef), self());
             })
             .match(RearInstance.class, rearInstance -> {
-              final ActorRef rearRef = context().actorOf(RearActor.props(rearInstance), rearInstance.rearId());
+              final ActorRef rearRef;
+              if (LoggingActor.class.isAssignableFrom(rearInstance.rearClass())) {
+                rearRef = context().actorOf(
+                        Props.create(rearInstance.rearClass(), rearInstance.args()),
+                        rearInstance.id()
+                );
+              } else {
+                rearRef = context().actorOf(RearActor.props(rearInstance), rearInstance.id());
+              }
               barrier.tell(new AttachRear(rearRef), self());
             })
             .build();

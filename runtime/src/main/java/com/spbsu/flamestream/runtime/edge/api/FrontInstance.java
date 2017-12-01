@@ -3,21 +3,21 @@ package com.spbsu.flamestream.runtime.edge.api;
 import com.spbsu.flamestream.core.Front;
 
 public class FrontInstance<T extends Front> {
-  private final String name;
+  private final String id;
   private final Class<T> front;
   private final String[] args;
 
-  public FrontInstance(String name, Class<T> front, String[] args) {
+  public FrontInstance(String id, Class<T> front, String[] args) {
     this.front = front;
-    this.name = name;
+    this.id = id;
     this.args = args;
   }
 
-  public String name() {
-    return name;
+  public String id() {
+    return id;
   }
 
-  public Class<T> front() {
+  public Class<T> frontClass() {
     return front;
   }
 

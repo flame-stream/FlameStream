@@ -5,10 +5,16 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
 public class Heartbeat {
   private final GlobalTime time;
   private final String frontId;
+  private final String nodeId;
 
-  public Heartbeat(GlobalTime time, String frontId) {
+  public Heartbeat(GlobalTime time, String frontId, String nodeId) {
     this.time = time;
     this.frontId = frontId;
+    this.nodeId = nodeId;
+  }
+
+  public String nodeId() {
+    return nodeId;
   }
 
   public GlobalTime time() {

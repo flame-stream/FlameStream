@@ -1,61 +1,124 @@
 package com.spbsu.flamestream.runtime.edge.front;
 
+import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
+import com.spbsu.flamestream.runtime.edge.front.api.OnStart;
+import com.spbsu.flamestream.runtime.edge.front.api.RequestNext;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import org.jetbrains.annotations.Nullable;
+import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
 
+import java.util.NavigableMap;
+import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class RemoteActorFront implements Front {
-  private final String id;
+public class RemoteActorFront<T> extends LoggingActor implements Front {
+  private final String frontId;
   private final String path;
 
-  public RemoteActorFront(String id, String path) {
-    this.id = id;
+  @Nullable
+  private Cancellable ping;
+
+  private final NavigableMap<GlobalTime, T> history = new TreeMap<>();
+
+  @Nullable
+  private Consumer<Object> hole = null;
+
+  @Nullable
+  private GlobalTime unsatisfiedRequest = null;
+  private long prevGlobalTs = 0;
+
+  private RemoteActorFront(String frontId, String path) {
+    this.frontId = frontId;
     this.path = path;
   }
 
+  public static Props props(String frontId, String path) {
+    return Props.create(RemoteActorFront.class, frontId, path);
+  }
+
   @Override
-  public void onStart(Consumer<?> consumer) {
-    ((FrontActor.Backdoor) consumer).context().actorOf(InnerActor.props(null, null));
+  public void preStart() throws Exception {
+    super.preStart();
+    context().actorSelection(path).tell(self(), self());
+
+    this.ping = context().system().scheduler().schedule(
+            Duration.Zero(),
+            FiniteDuration.apply(100, TimeUnit.MILLISECONDS),
+            self(),
+            "ping",
+            context().system().dispatcher(),
+            self()
+    );
+  }
+
+  @Override
+  public void postStop() {
+    if (ping != null) {
+      ping.cancel();
+    }
+  }
+
+  @Override
+  public Receive createReceive() {
+    return ReceiveBuilder.create()
+            .match(RawData.class, this::onRaw)
+            .match(OnStart.class, start -> onStart(di -> start.consumer().tell(di, sender())))
+            .match(RequestNext.class, requestNext -> onRequestNext(requestNext.time()))
+            .match(String.class, s -> s.equals("ping"), p -> emmitHeartbeat())
+            .build();
+  }
+
+  @Override
+  public void onStart(Consumer<Object> consumer) {
+    this.hole = consumer;
   }
 
   @Override
   public void onRequestNext(GlobalTime from) {
-
+    final GlobalTime globalTime = history.ceilingKey(from);
+    if (globalTime == null) {
+      unsatisfiedRequest = from;
+    } else {
+      assert hole != null;
+      hole.accept(new PayloadDataItem<>(Meta.meta(globalTime), history.get(globalTime)));
+      unsatisfiedRequest = null;
+    }
   }
 
   @Override
   public void onCheckpoint(GlobalTime to) {
-
+    history.headMap(to).clear();
   }
 
-  private static class InnerActor extends LoggingActor {
-    private final String remoteActor;
-    private final Consumer<Object> consumer;
-
-    private InnerActor(String remoteActor, Consumer<Object> consumer) {
-      this.remoteActor = remoteActor;
-      this.consumer = consumer;
+  private void onRaw(RawData<T> data) {
+    history.put(currentTime(), data.data());
+    if (unsatisfiedRequest != null) {
+      onRequestNext(unsatisfiedRequest);
     }
+  }
 
-    public static Props props(String remoteActor, Consumer<Object> consumer) {
-      return Props.create(InnerActor.class, remoteActor, consumer);
+  private void emmitHeartbeat() {
+    if (hole != null) {
+      hole.accept(currentTime());
     }
+  }
 
-    @Override
-    public void preStart() throws Exception {
-      context().actorSelection(remoteActor).tell(self(), self());
-      super.preStart();
+  private GlobalTime currentTime() {
+    long globalTs = System.currentTimeMillis();
+    if (globalTs <= prevGlobalTs) {
+      globalTs = prevGlobalTs + 1;
     }
+    prevGlobalTs = globalTs;
 
-    @Override
-    public Receive createReceive() {
-      return ReceiveBuilder.create()
-              .build();
-    }
+    return new GlobalTime(globalTs, frontId);
   }
 
   public static class RawData<T> {

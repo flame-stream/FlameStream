@@ -26,12 +26,24 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class LocalRuntime implements FlameRuntime {
-  private final ActorSystem system;
   private final int parallelism;
+  private final ActorSystem system;
 
   public LocalRuntime(int parallelism) {
+    this(ActorSystem.create(), parallelism);
+  }
+
+  private LocalRuntime(ActorSystem system, int parallelism) {
     this.parallelism = parallelism;
-    system = ActorSystem.create();
+    this.system = system;
+  }
+
+  public int parallelism() {
+    return parallelism;
+  }
+
+  public ActorSystem system() {
+    return system;
   }
 
   @Override
@@ -44,18 +56,18 @@ public class LocalRuntime implements FlameRuntime {
       }
 
       @Override
-      public <T extends Front, H extends FrontHandle> Stream<H> attachFront(String name,
+      public <T extends Front, H extends FrontHandle> Stream<H> attachFront(String id,
                                                                             Class<T> front,
                                                                             String... args) {
-        nodes.forEach(n -> n.tell(new FrontInstance<>(name, front, args), ActorRef.noSender()));
+        nodes.forEach(n -> n.tell(new FrontInstance<>(id, front, args), ActorRef.noSender()));
         return Stream.empty();
       }
 
       @Override
-      public <T extends Rear, H extends RearHandle> Stream<H> attachRear(String name,
+      public <T extends Rear, H extends RearHandle> Stream<H> attachRear(String id,
                                                                          Class<T> rear,
                                                                          String... args) {
-        nodes.forEach(n -> n.tell(new RearInstance<>(name, rear, args), ActorRef.noSender()));
+        nodes.forEach(n -> n.tell(new RearInstance<>(id, rear, args), ActorRef.noSender()));
         return Stream.empty();
       }
     };
