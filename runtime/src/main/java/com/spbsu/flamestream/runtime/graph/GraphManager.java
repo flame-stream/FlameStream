@@ -89,7 +89,6 @@ public class GraphManager extends LoggingActor {
   private void accept(DataItem<?> dataItem) {
     //noinspection unchecked
     materialization.get(graph.source().id()).accept(dataItem);
-    ack(dataItem);
   }
 
   private void inject(AddressedItem addressedItem) {

@@ -83,7 +83,7 @@ public class FlameNode extends LoggingActor {
       acker.tell(new Ack(item.meta().globalTime(), item.xor()), sender);
       // FIXME: 12/1/17 Possible error prone location
       final int hash = HashFunction.UNIFORM_OBJECT_HASH.applyAsInt(item.meta().globalTime().time());
-      barriers.get(hash % barriers.size()).tell(item, sender);
+      barriers.get(Math.abs(hash) % barriers.size()).tell(item, sender);
     };
   }
 }

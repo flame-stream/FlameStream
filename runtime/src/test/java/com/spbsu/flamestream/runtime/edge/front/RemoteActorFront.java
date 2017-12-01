@@ -83,6 +83,7 @@ public class RemoteActorFront<T> extends LoggingActor implements Front {
 
   @Override
   public void onRequestNext(GlobalTime from) {
+    unstashAll();
     //final GlobalTime globalTime = history.ceilingKey(from);
     //if (globalTime == null) {
     //  unsatisfiedRequest = from;
@@ -99,7 +100,11 @@ public class RemoteActorFront<T> extends LoggingActor implements Front {
   }
 
   private void onRaw(RawData<T> data) {
-    hole.accept(new PayloadDataItem<>(Meta.meta(currentTime()), data.data()));
+    if (hole == null) {
+      stash();
+    } else {
+      hole.accept(new PayloadDataItem<>(Meta.meta(currentTime()), data.data()));
+    }
     //history.put(currentTime(), data.data());
     //
     //if (unsatisfiedRequest != null) {

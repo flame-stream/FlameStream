@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.node.acker;
+package com.spbsu.flamestream.runtime.acker;
 
 import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.runtime.acker.table.AckTable;
