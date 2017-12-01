@@ -5,6 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.runtime.acker.Acker;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.barrier.Barrier;
@@ -17,7 +18,9 @@ import com.spbsu.flamestream.runtime.negitioator.Negotiator;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -70,13 +73,15 @@ public class FlameNode extends LoggingActor {
   }
 
   private BiConsumer<DataItem<?>, ActorRef> resolvedBarriers() {
-    final Map<String, ActorRef> barriers = new HashMap<>();
-    config.paths().forEach((id, path) -> {
+    final List<ActorRef> barriers = new ArrayList<>();
+    config.paths().values().forEach(path -> {
       final ActorRef b = AwaitResolver.syncResolve(path.child("barrier"), context());
-      barriers.put(id, b);
+      barriers.add(b);
     });
     return (item, actorRef) -> {
-      // TODO: 11/30/17 after we understand how many fronts there are on single node and what are their ids
+      // FIXME: 12/1/17 Possible error prone location
+      final int hash = HashFunction.UNIFORM_OBJECT_HASH.applyAsInt(item.meta().globalTime().time());
+      barriers.get(hash % barriers.size()).tell(item, actorRef);
     };
   }
 }
