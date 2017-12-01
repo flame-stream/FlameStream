@@ -41,6 +41,7 @@ import java.util.Set;
 public class Acker extends LoggingActor {
   private static final long WINDOW = 10;
   private static final int SIZE = 100000;
+  private final long defaultMinimalTime;
 
   private final Set<ActorRef> minTimeSubscribers = new HashSet<>();
 
@@ -50,12 +51,13 @@ public class Acker extends LoggingActor {
 
   private GlobalTime currentMin = GlobalTime.MIN;
 
-  private Acker(AttachRegistry registry) {
+  private Acker(long defaultMinimalTime, AttachRegistry registry) {
+    this.defaultMinimalTime = defaultMinimalTime;
     this.registry = registry;
   }
 
-  public static Props props(AttachRegistry registry) {
-    return Props.create(Acker.class, registry);
+  public static Props props(long defaultMinimalTime, AttachRegistry registry) {
+    return Props.create(Acker.class, defaultMinimalTime, registry);
   }
 
   @Override
@@ -68,23 +70,22 @@ public class Acker extends LoggingActor {
   }
 
   private void registerFront(String frontId, String nodeId) {
-    log().info("Received front registration request for \"{}\"", frontId);
     final GlobalTime min = minAmongTables();
+
     log().info("Registering timestamp {} for {}", min, frontId);
     if (tables.containsKey(frontId)) {
-      log().info("New front instance for frontId {}", frontId);
+      log().debug("New front instance for frontId {}", frontId);
       tables.get(frontId).addNode(nodeId, min.time());
     } else {
-      log().info("Haven't seen frontId: {}, creating new table", frontId);
+      log().debug("Haven't seen frontId: {}, creating new table", frontId);
       final CollectiveFrontTable frontTable = new CollectiveFrontTable(min.time(), SIZE, WINDOW);
       frontTable.addNode(nodeId, min.time());
       tables.put(frontId, frontTable);
     }
+
     registry.register(frontId, min.time());
     log().info("Front {} has been registered, sending ticket", frontId);
     sender().tell(new FrontTicket(frontId, nodeId, new GlobalTime(min.time(), frontId)), self());
-
-    unstashAll();
   }
 
   private void handleHeartBeat(Heartbeat heartbeat) {
@@ -125,7 +126,7 @@ public class Acker extends LoggingActor {
 
   private GlobalTime minAmongTables() {
     if (tables.isEmpty()) {
-      return GlobalTime.MIN;
+      return new GlobalTime(defaultMinimalTime, "default-minimal-time");
     } else {
       final String[] frontMin = {"Hi"};
       final long[] timeMin = {Long.MAX_VALUE};
