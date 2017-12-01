@@ -8,6 +8,7 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.runtime.acker.Acker;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
+import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.barrier.Barrier;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.EdgeManager;
@@ -26,15 +27,15 @@ import java.util.function.BiConsumer;
 
 public class FlameNode extends LoggingActor {
   private final ActorRef edgeManager;
+  private final ActorRef acker;
   private final ClusterConfig config;
 
   private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, AttachRegistry attachRegistry) {
     this.config = config;
-    final ActorRef acker;
     if (id.equals(config.ackerLocation())) {
-      acker = context().actorOf(Acker.props(System.currentTimeMillis(), attachRegistry), "acker");
+      this.acker = context().actorOf(Acker.props(System.currentTimeMillis(), attachRegistry), "acker");
     } else {
-      acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
+      this.acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
     }
 
     final ActorRef barrier = context().actorOf(Barrier.props(acker), "barrier");
@@ -78,10 +79,11 @@ public class FlameNode extends LoggingActor {
       final ActorRef b = AwaitResolver.syncResolve(path.child("barrier"), context());
       barriers.add(b);
     });
-    return (item, actorRef) -> {
+    return (item, sender) -> {
+      acker.tell(new Ack(item.meta().globalTime(), item.xor()), sender);
       // FIXME: 12/1/17 Possible error prone location
       final int hash = HashFunction.UNIFORM_OBJECT_HASH.applyAsInt(item.meta().globalTime().time());
-      barriers.get(hash % barriers.size()).tell(item, actorRef);
+      barriers.get(hash % barriers.size()).tell(item, sender);
     };
   }
 }
