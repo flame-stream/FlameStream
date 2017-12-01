@@ -14,7 +14,17 @@ public interface VertexJoba<T> extends Consumer<DataItem<T>>, AutoCloseable {
 
   void onCommit();
 
-  @Override
-  default void close() throws Exception {
+  abstract class Stub<T> implements VertexJoba<T> {
+    @Override
+    public void onMinTime(GlobalTime globalTime) {
+    }
+
+    @Override
+    public void onCommit() {
+    }
+
+    @Override
+    public void close() {
+    }
   }
 }

@@ -16,7 +16,7 @@ import java.util.UUID;
  * User: Artem
  * Date: 27.11.2017
  */
-public class ActorVertexJoba<T> implements VertexJoba<T> {
+public class ActorVertexJoba<T> extends VertexJoba.Stub<T> {
   private final ActorContext context;
   private final ActorRef vertexActor;
 
@@ -41,7 +41,7 @@ public class ActorVertexJoba<T> implements VertexJoba<T> {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     vertexActor.tell(PoisonPill.getInstance(), context.self());
   }
 

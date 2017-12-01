@@ -35,6 +35,10 @@ public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
     return this.equalz;
   }
 
+  public int window() {
+    return window;
+  }
+
   public BiFunction<DataItem<? extends T>, InvalidatingBucket, Stream<DataItem<List<T>>>> operation() {
     return (dataItem, bucket) -> {
       final int position = bucket.insert(dataItem);

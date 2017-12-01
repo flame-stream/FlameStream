@@ -8,12 +8,12 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.config.ComputationLayout;
+import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.Commit;
 import com.spbsu.flamestream.runtime.graph.vertices.ActorVertexJoba;
 import com.spbsu.flamestream.runtime.graph.vertices.VertexJoba;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import org.apache.commons.lang.math.IntRange;
 import org.jooq.lambda.Unchecked;
 
 import java.util.HashMap;
@@ -24,11 +24,11 @@ import java.util.function.Consumer;
 public class GraphManager extends LoggingActor {
   private final Graph graph;
   private final ActorRef acker;
-
-  private final Map<String, ActorVertexJoba> materialization = new HashMap<>();
-  private final BiConsumer<DataItem<?>, ActorRef> barrier;
-  private final Map<String, ActorRef> managers = new HashMap<>();
   private final ComputationLayout layout;
+  private final BiConsumer<DataItem<?>, ActorRef> barrier;
+
+  private final Map<String, ActorRef> managerRefs = new HashMap<>();
+  private final Map<String, ActorVertexJoba> materialization = new HashMap<>();
 
   private GraphManager(Graph graph,
                        ActorRef acker,
@@ -52,7 +52,9 @@ public class GraphManager extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Map.class, managers -> {
               log().info("Finishing constructor");
-              managers.putAll(managers);
+              //noinspection unchecked
+              managerRefs.putAll(managers);
+              buildMaterialization();
               unstashAll();
               getContext().become(managing());
             })
@@ -92,16 +94,16 @@ public class GraphManager extends LoggingActor {
     materialization.values().forEach(VertexJoba::onCommit);
   }
 
-  private Consumer<DataItem<?>> barrierSink(Map<String, ActorRef> barriers) {
-    return dataItem -> barriers.get(dataItem.meta().globalTime().front()).tell(dataItem, self());
+  private void buildMaterialization() {
+    
   }
 
-  private Consumer<DataItem<?>> routerSink(Map<IntRange, ActorRef> managers, HashFunction<DataItem<?>> hashFunction) {
+  private Consumer<DataItem<?>> routerSink(HashFunction<DataItem<?>> hashFunction) {
     return dataItem -> {
       final int hash = hashFunction.applyAsInt(dataItem);
-      for (Map.Entry<IntRange, ActorRef> entry : managers.entrySet()) {
-        if (entry.getKey().containsInteger(hash)) {
-          entry.getValue().tell(dataItem, self());
+      for (Map.Entry<String, HashRange> entry : layout.ranges().entrySet()) {
+        if (entry.getValue().from() <= hash && hash < entry.getValue().to()) {
+          managerRefs.get(entry.getKey()).tell(dataItem, self());
           return;
         }
       }
