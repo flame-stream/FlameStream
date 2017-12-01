@@ -83,14 +83,14 @@ public class RemoteActorFront<T> extends LoggingActor implements Front {
 
   @Override
   public void onRequestNext(GlobalTime from) {
-    final GlobalTime globalTime = history.ceilingKey(from);
-    if (globalTime == null) {
-      unsatisfiedRequest = from;
-    } else {
-      assert hole != null;
-      hole.accept(new PayloadDataItem<>(Meta.meta(globalTime), history.get(globalTime)));
-      unsatisfiedRequest = null;
-    }
+    //final GlobalTime globalTime = history.ceilingKey(from);
+    //if (globalTime == null) {
+    //  unsatisfiedRequest = from;
+    //} else {
+    //  assert hole != null;
+    //  hole.accept(new PayloadDataItem<>(Meta.meta(globalTime), history.get(globalTime)));
+    //  unsatisfiedRequest = null;
+    //}
   }
 
   @Override
@@ -99,10 +99,12 @@ public class RemoteActorFront<T> extends LoggingActor implements Front {
   }
 
   private void onRaw(RawData<T> data) {
-    history.put(currentTime(), data.data());
-    if (unsatisfiedRequest != null) {
-      onRequestNext(unsatisfiedRequest);
-    }
+    hole.accept(new PayloadDataItem<>(Meta.meta(currentTime()), data.data()));
+    //history.put(currentTime(), data.data());
+    //
+    //if (unsatisfiedRequest != null) {
+    //  onRequestNext(unsatisfiedRequest);
+    //}
   }
 
   private void emmitHeartbeat() {
