@@ -15,6 +15,7 @@ import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.Commit;
 import com.spbsu.flamestream.runtime.graph.materialization.ActorPerNodeMaterializer;
+import com.spbsu.flamestream.runtime.graph.materialization.GraphMaterialization;
 import com.spbsu.flamestream.runtime.graph.materialization.vertices.VertexJoba;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.jooq.lambda.Unchecked;
@@ -29,7 +30,7 @@ public class GraphManager extends LoggingActor {
   private final ComputationLayout layout;
   private final BiConsumer<DataItem<?>, ActorRef> barrier;
 
-  private Map<String, VertexJoba> materialization = null;
+  private GraphMaterialization materialization = null;
 
   private GraphManager(String nodeId,
                        Graph graph,
@@ -83,26 +84,26 @@ public class GraphManager extends LoggingActor {
 
   @Override
   public void postStop() {
-    materialization.values().forEach(Unchecked.consumer(AutoCloseable::close));
+    materialization.forEachJoba(Unchecked.consumer(AutoCloseable::close));
   }
 
   private void accept(DataItem<?> dataItem) {
     //noinspection unchecked
-    materialization.get(graph.source().id()).accept(dataItem);
+    materialization.jobaForVertex(graph.source().id()).accept(dataItem);
   }
 
   private void inject(AddressedItem addressedItem) {
     //noinspection unchecked
-    materialization.get(addressedItem.vertexId()).accept(addressedItem.item());
+    materialization.jobaForVertex(addressedItem.vertexId()).accept(addressedItem.item());
     ack(addressedItem.item());
   }
 
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
-    materialization.values().forEach(materialization -> materialization.onMinTime(minTimeUpdate.minTime()));
+    materialization.forEachJoba(joba -> joba.onMinTime(minTimeUpdate.minTime()));
   }
 
   private void onCommit() {
-    materialization.values().forEach(VertexJoba::onCommit);
+    materialization.forEachJoba(VertexJoba::onCommit);
   }
 
   private BiConsumer<DataItem<?>, HashFunction<DataItem<?>>> routerSink(Map<String, ActorRef> managerRefs) {

@@ -42,6 +42,25 @@ public class ActorPerNodeMaterializer implements GraphMaterializer {
     this.context = context;
   }
 
+  @Override
+  public GraphMaterialization materialize() {
+    if (!materialization.isEmpty()) {
+      materialization.clear();
+    }
+    buildMaterialization(graph.sink(), null);
+    return new GraphMaterialization() {
+      @Override
+      public VertexJoba jobaForVertex(String vertexId) {
+        return materialization.get(vertexId);
+      }
+
+      @Override
+      public void forEachJoba(Consumer<VertexJoba> consumer) {
+        materialization.values().forEach(consumer);
+      }
+    };
+  }
+
   @SuppressWarnings("unchecked")
   private void buildMaterialization(Graph.Vertex currentVertex, VertexJoba outputJoba) {
     if (materialization.containsKey(currentVertex.id())) {
@@ -81,14 +100,5 @@ public class ActorPerNodeMaterializer implements GraphMaterializer {
       }
       graph.inputs(currentVertex).forEach(vertex -> buildMaterialization(vertex, currentAsNext));
     }
-  }
-
-  @Override
-  public Map<String, VertexJoba> materialize() {
-    if (!materialization.isEmpty()) {
-      materialization.clear();
-    }
-    buildMaterialization(graph.sink(), null);
-    return materialization;
   }
 }
