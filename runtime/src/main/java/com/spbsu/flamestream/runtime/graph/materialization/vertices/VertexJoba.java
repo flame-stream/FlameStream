@@ -9,22 +9,15 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 27.11.2017
  */
+@FunctionalInterface
 public interface VertexJoba<T> extends Consumer<DataItem<T>>, AutoCloseable {
-  void onMinTime(GlobalTime globalTime);
+  default void onMinTime(GlobalTime globalTime) {
+  }
 
-  void onCommit();
+  default void onCommit() {
+  }
 
-  abstract class Stub<T> implements VertexJoba<T> {
-    @Override
-    public void onMinTime(GlobalTime globalTime) {
-    }
-
-    @Override
-    public void onCommit() {
-    }
-
-    @Override
-    public void close() {
-    }
+  @Override
+  default void close() {
   }
 }

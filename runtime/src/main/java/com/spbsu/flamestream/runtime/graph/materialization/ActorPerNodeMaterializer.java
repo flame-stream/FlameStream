@@ -10,7 +10,6 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.graph.materialization.vertices.ActorVertexJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.vertices.BroadcastJoba;
-import com.spbsu.flamestream.runtime.graph.materialization.vertices.ConsumerJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.vertices.GroupingJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.vertices.MapJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.vertices.SourceJoba;
@@ -61,15 +60,15 @@ public class ActorPerNodeMaterializer implements GraphMaterializer {
     };
   }
 
-  @SuppressWarnings("unchecked")
+  //@SuppressWarnings("unchecked")
   private void buildMaterialization(Graph.Vertex currentVertex, VertexJoba outputJoba) {
     if (materialization.containsKey(currentVertex.id())) {
       final BroadcastJoba<?> broadcastJoba = (BroadcastJoba<?>) currentVertex;
       broadcastJoba.addSink(outputJoba);
     } else {
-      final VertexJoba currentJoba;
+      final VertexJoba<?> currentJoba;
       if (currentVertex instanceof Sink) {
-        currentJoba = new ConsumerJoba(dataItem -> barrier.accept((DataItem<?>) dataItem));
+        currentJoba = barrier::accept;
       } else if (currentVertex instanceof FlameMap) {
         currentJoba = new MapJoba((FlameMap) currentVertex, outputJoba);
       } else if (currentVertex instanceof Grouping) {
@@ -91,10 +90,7 @@ public class ActorPerNodeMaterializer implements GraphMaterializer {
 
       final VertexJoba currentAsNext;
       if (currentVertex instanceof Grouping) {
-        currentAsNext = new ConsumerJoba(dataItem -> router.accept(
-                (DataItem<?>) dataItem,
-                ((Grouping) currentVertex).hash())
-        );
+        currentAsNext = dataItem -> router.accept((DataItem<?>) dataItem, ((Grouping) currentVertex).hash());
       } else {
         currentAsNext = actorJoba;
       }

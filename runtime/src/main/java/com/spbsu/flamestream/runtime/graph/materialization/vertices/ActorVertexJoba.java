@@ -2,7 +2,6 @@ package com.spbsu.flamestream.runtime.graph.materialization.vertices;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
@@ -16,7 +15,7 @@ import java.util.UUID;
  * User: Artem
  * Date: 27.11.2017
  */
-public class ActorVertexJoba<T> extends VertexJoba.Stub<T> {
+public class ActorVertexJoba<T> implements VertexJoba<T> {
   private final ActorContext context;
   private final ActorRef vertexActor;
 

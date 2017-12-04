@@ -8,7 +8,7 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 01.12.2017
  */
-public class SourceJoba<T> extends VertexJoba.Stub<T> {
+public class SourceJoba<T> implements VertexJoba<T> {
   private final Consumer<DataItem<T>> sink;
 
   public SourceJoba(Consumer<DataItem<T>> sink) {
