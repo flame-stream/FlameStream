@@ -1,13 +1,13 @@
 package com.spbsu.flamestream.runtime.graph.api;
 
 import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.runtime.graph.materialization.GraphMaterializer;
+import com.spbsu.flamestream.runtime.graph.materialization.Materializer;
 
 public class AddressedItem {
   private final DataItem<?> item;
-  private final GraphMaterializer.Destination destination;
+  private final Materializer.Destination destination;
 
-  public AddressedItem(DataItem<?> item, GraphMaterializer.Destination destination) {
+  public AddressedItem(DataItem<?> item, Materializer.Destination destination) {
     this.item = item;
     this.destination = destination;
   }
@@ -16,7 +16,7 @@ public class AddressedItem {
     return item;
   }
 
-  public GraphMaterializer.Destination destination() {
+  public Materializer.Destination destination() {
     return this.destination;
   }
 

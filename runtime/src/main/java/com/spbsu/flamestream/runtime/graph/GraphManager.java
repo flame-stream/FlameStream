@@ -14,7 +14,7 @@ import com.spbsu.flamestream.runtime.config.ComputationLayout;
 import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.Commit;
-import com.spbsu.flamestream.runtime.graph.materialization.GraphMaterializer;
+import com.spbsu.flamestream.runtime.graph.materialization.Materializer;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.Map;
@@ -27,7 +27,7 @@ public class GraphManager extends LoggingActor {
   private final ComputationLayout layout;
   private final BiConsumer<DataItem<?>, ActorRef> barrier;
 
-  private GraphMaterializer materializer = null;
+  private Materializer materializer = null;
 
   private GraphManager(String nodeId,
                        Graph graph,
@@ -55,10 +55,11 @@ public class GraphManager extends LoggingActor {
             .match(Map.class, managers -> {
               log().info("Finishing constructor");
               //noinspection unchecked
-              materializer = new GraphMaterializer(
+              materializer = new Materializer(
                       graph,
                       routerSink(managers),
                       dataItem -> barrier.accept(dataItem, self()),
+                      globalTime -> acker.tell(new Heartbeat(globalTime, globalTime.front(), nodeId), self()),
                       context()
               );
 
@@ -85,20 +86,20 @@ public class GraphManager extends LoggingActor {
   }
 
   private void accept(DataItem<?> dataItem) {
-    materializer.materialization().sourceInput().accept(dataItem);
+    materializer.materialization().input(dataItem, sender());
   }
 
   private void inject(AddressedItem addressedItem) {
-    materializer.materialization().destinationInput().accept(addressedItem.destination(), addressedItem.item());
+    materializer.materialization().inject(addressedItem.destination(), addressedItem.item());
     ack(addressedItem.item());
   }
 
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
-    materializer.materialization().minTimeInput().accept(minTimeUpdate.minTime());
+    materializer.materialization().minTime(minTimeUpdate.minTime());
   }
 
   private void onCommit() {
-    materializer.materialization().commitInput().run();
+    materializer.materialization().commit();
   }
 
   private BiConsumer<DataItem<?>, HashFunction<DataItem<?>>> routerSink(Map<String, ActorRef> managerRefs) {

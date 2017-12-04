@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.graph.materialization;
 
 import akka.actor.ActorContext;
+import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
@@ -25,51 +26,56 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 01.12.2017
  */
-public class GraphMaterializer implements AutoCloseable {
+public class Materializer implements AutoCloseable {
   private final Graph graph;
   private final BiConsumer<DataItem<?>, HashFunction<DataItem<?>>> router;
   private final Consumer<DataItem<?>> barrier;
+  private final Consumer<GlobalTime> heartBeater;
   private final ActorContext context;
 
   private final Map<String, VertexJoba> jobMapping = new HashMap<>();
-  private final GraphMaterialization materialization;
+  private final Materialization materialization;
 
-  public GraphMaterializer(Graph graph,
-                           BiConsumer<DataItem<?>, HashFunction<DataItem<?>>> router,
-                           Consumer<DataItem<?>> barrier,
-                           ActorContext context) {
+  public Materializer(Graph graph,
+                      BiConsumer<DataItem<?>, HashFunction<DataItem<?>>> router,
+                      Consumer<DataItem<?>> barrier,
+                      Consumer<GlobalTime> heartBeater,
+                      ActorContext context) {
     this.graph = graph;
     this.router = router;
     this.barrier = barrier;
+    this.heartBeater = heartBeater;
     this.context = context;
 
     buildJobMapping(graph.sink(), null);
-    materialization = new GraphMaterialization() {
+    materialization = new Materialization() {
       @Override
-      public Consumer<DataItem<?>> sourceInput() {
+      public void input(DataItem<?> dataItem, ActorRef front) {
+        final SourceJoba sourceJoba = (SourceJoba) jobMapping.get(graph.source().id());
+        sourceJoba.addFront(dataItem.meta().globalTime().front(), front);
         //noinspection unchecked
-        return jobMapping.get(graph.source().id());
+        sourceJoba.accept(dataItem);
       }
 
       @Override
-      public BiConsumer<Destination, DataItem<?>> destinationInput() {
+      public void inject(Destination destination, DataItem<?> dataItem) {
         //noinspection unchecked
-        return (destination, dataItem) -> jobMapping.get(destination.vertexId).accept(dataItem);
+        jobMapping.get(destination.vertexId).accept(dataItem);
       }
 
       @Override
-      public Consumer<GlobalTime> minTimeInput() {
-        return globalTime -> jobMapping.values().forEach(vertexJoba -> vertexJoba.onMinTime(globalTime));
+      public void minTime(GlobalTime minTime) {
+        jobMapping.values().forEach(vertexJoba -> vertexJoba.onMinTime(minTime));
       }
 
       @Override
-      public Runnable commitInput() {
-        return () -> jobMapping.values().forEach(VertexJoba::onCommit);
+      public void commit() {
+        jobMapping.values().forEach(VertexJoba::onCommit);
       }
     };
   }
 
-  public GraphMaterialization materialization() {
+  public Materialization materialization() {
     return materialization;
   }
 
@@ -84,33 +90,34 @@ public class GraphMaterializer implements AutoCloseable {
       final BroadcastJoba<?> broadcastJoba = (BroadcastJoba<?>) currentVertex;
       broadcastJoba.addSink(outputJoba);
     } else {
-      final VertexJoba<?> currentJoba;
+      boolean isGrouping = false;
+      final VertexJoba currentJoba;
       if (currentVertex instanceof Sink) {
-        currentJoba = barrier::accept;
+        currentJoba = new ActorVertexJoba<>(barrier::accept, context);
       } else if (currentVertex instanceof FlameMap) {
-        currentJoba = new MapJoba((FlameMap) currentVertex, outputJoba);
+        currentJoba = new ActorVertexJoba<>(new MapJoba((FlameMap) currentVertex, outputJoba), context);
       } else if (currentVertex instanceof Grouping) {
-        currentJoba = new GroupingJoba((Grouping) currentVertex, outputJoba);
+        currentJoba = new ActorVertexJoba<>(new GroupingJoba((Grouping) currentVertex, outputJoba), context);
+        isGrouping = true;
       } else if (currentVertex instanceof Source) {
-        currentJoba = new SourceJoba(outputJoba);
+        currentJoba = new SourceJoba(10, context, heartBeater, outputJoba); // TODO: 04.12.2017 choose number depends on statistics
       } else {
         throw new RuntimeException("Invalid vertex type");
       }
 
-      final VertexJoba actorJoba = new ActorVertexJoba(currentJoba, context);
       if (graph.isBroadcast(currentVertex)) {
         final BroadcastJoba<?> broadcastJoba = new BroadcastJoba<>();
-        broadcastJoba.addSink(actorJoba);
+        broadcastJoba.addSink(currentJoba);
         jobMapping.put(currentVertex.id(), broadcastJoba);
       } else {
-        jobMapping.put(currentVertex.id(), actorJoba);
+        jobMapping.put(currentVertex.id(), currentJoba);
       }
 
       final VertexJoba currentAsNext;
-      if (currentVertex instanceof Grouping) {
+      if (isGrouping) {
         currentAsNext = dataItem -> router.accept((DataItem<?>) dataItem, ((Grouping) currentVertex).hash());
       } else {
-        currentAsNext = actorJoba;
+        currentAsNext = currentJoba;
       }
       graph.inputs(currentVertex).forEach(vertex -> buildJobMapping(vertex, currentAsNext));
     }
