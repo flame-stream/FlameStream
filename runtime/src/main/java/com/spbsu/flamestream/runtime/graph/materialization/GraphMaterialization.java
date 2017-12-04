@@ -1,7 +1,9 @@
 package com.spbsu.flamestream.runtime.graph.materialization;
 
-import com.spbsu.flamestream.runtime.graph.materialization.vertices.VertexJoba;
+import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -9,7 +11,11 @@ import java.util.function.Consumer;
  * Date: 01.12.2017
  */
 public interface GraphMaterialization {
-  VertexJoba jobaForVertex(String vertexId);
+  Consumer<DataItem<?>> sourceInput();
 
-  void forEachJoba(Consumer<VertexJoba> consumer);
+  BiConsumer<GraphMaterializer.Destination, DataItem<?>> destinationInput();
+
+  Consumer<GlobalTime> minTimeInput();
+
+  Runnable commitInput();
 }

@@ -1,29 +1,30 @@
 package com.spbsu.flamestream.runtime.graph.api;
 
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.runtime.graph.materialization.GraphMaterializer;
 
 public class AddressedItem {
   private final DataItem<?> item;
-  private final String vertexId;
+  private final GraphMaterializer.Destination destination;
 
-  public AddressedItem(DataItem<?> item, String vertexId) {
+  public AddressedItem(DataItem<?> item, GraphMaterializer.Destination destination) {
     this.item = item;
-    this.vertexId = vertexId;
+    this.destination = destination;
   }
 
   public DataItem<?> item() {
     return item;
   }
 
-  public String vertexId() {
-    return this.vertexId;
+  public GraphMaterializer.Destination destination() {
+    return this.destination;
   }
 
   @Override
   public String toString() {
     return "AddressedItem{" +
             "item=" + item +
-            ", vertexId='" + vertexId + '\'' +
+            ", destination='" + destination + '\'' +
             '}';
   }
 }
