@@ -12,15 +12,15 @@ import java.util.stream.Stream;
  * Date: 01.11.2017
  */
 public class ArrayInvalidatingBucket implements InvalidatingBucket {
-  private final List<DataItem<?>> innerList = new ArrayList<>();
+  private final List<DataItem> innerList = new ArrayList<>();
 
   @Override
-  public int insert(DataItem<?> insertee) {
+  public int insert(DataItem insertee) {
     int position = innerList.size() - 1;
     int endPosition = -1;
     { //find position
       while (position >= 0) {
-        final DataItem<?> currentItem = innerList.get(position);
+        final DataItem currentItem = innerList.get(position);
         final int compareTo = currentItem.meta().compareTo(insertee.meta());
 
         if (compareTo > 0) {
@@ -60,17 +60,17 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
   }
 
   @Override
-  public DataItem<?> get(int index) {
+  public DataItem get(int index) {
     return innerList.get(index);
   }
 
   @Override
-  public Stream<DataItem<?>> stream() {
+  public Stream<DataItem> stream() {
     return innerList.stream();
   }
 
   @Override
-  public Stream<DataItem<?>> rangeStream(int fromIndex, int toIndex) {
+  public Stream<DataItem> rangeStream(int fromIndex, int toIndex) {
     return innerList.subList(fromIndex, toIndex).stream();
   }
 
@@ -93,7 +93,6 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
   public int floor(Meta meta) {
     int left = 0;
     int right = innerList.size();
-
     while (right - left > 1) {
       final int middle = left + (right - left) / 2;
       if (meta.compareTo(innerList.get(middle).meta()) < 0) {
@@ -102,7 +101,6 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
         left = middle;
       }
     }
-
     return left;
   }
 }

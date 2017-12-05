@@ -12,19 +12,19 @@ public interface InvalidatingBucket {
    *
    * @return position of inserted item within list
    */
-  int insert(DataItem<?> dataItem);
+  int insert(DataItem dataItem);
 
   /**
    * @param index within bucket
    * @return DataItem that located on the index position
    * @throws IndexOutOfBoundsException if the index is out of range
    */
-  DataItem<?> get(int index);
+  DataItem get(int index);
 
   /**
    * @return stream consists of elements in this bucket
    */
-  Stream<DataItem<?>> stream();
+  Stream<DataItem> stream();
 
   /**
    * @param fromIndex low endpoint (inclusive) of the range
@@ -32,7 +32,7 @@ public interface InvalidatingBucket {
    * @return a stream of the specified range within this bucket
    * @throws IndexOutOfBoundsException if at least one index is out of range
    */
-  Stream<DataItem<?>> rangeStream(int fromIndex, int toIndex);
+  Stream<DataItem> rangeStream(int fromIndex, int toIndex);
 
   /**
    * Removes the elements of bucket between fromIndex and toIndex

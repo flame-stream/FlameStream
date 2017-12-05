@@ -18,13 +18,15 @@ import java.util.stream.Stream;
 public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
   private final HashFunction<? super T> hash;
   private final BiPredicate<? super T, ? super T> equalz;
+  private final Class<T> clazz;
   private final int window;
 
 
-  public Grouping(HashFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, int window) {
+  public Grouping(HashFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, int window, Class<T> clazz) {
     this.window = window;
     this.hash = hash;
     this.equalz = equalz;
+    this.clazz = clazz;
   }
 
   public HashFunction<? super T> hash() {
@@ -39,19 +41,17 @@ public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
     return window;
   }
 
-  public BiFunction<DataItem<? extends T>, InvalidatingBucket, Stream<DataItem<List<T>>>> operation() {
+  public BiFunction<DataItem, InvalidatingBucket, Stream<DataItem>> operation() {
     return (dataItem, bucket) -> {
       final int position = bucket.insert(dataItem);
-      final Collection<DataItem<List<T>>> items = new ArrayList<>();
+      final Collection<DataItem> items = new ArrayList<>();
       for (int right = position + 1; right <= Math.min(position + window, bucket.size()); ++right) {
         final int left = Math.max(right - window, 0);
         final Meta meta = bucket.get(right - 1).meta().advanced(incrementLocalTimeAndGet());
-        //noinspection unchecked
         final List<T> groupingResult = bucket.rangeStream(left, right)
-                .map(DataItem::payload)
-                .map(o -> (T) o)
+                .map(item -> item.payload(clazz))
                 .collect(Collectors.toList());
-        items.add(new PayloadDataItem<>(meta, groupingResult));
+        items.add(new PayloadDataItem(meta, groupingResult));
       }
       return items.stream();
     };

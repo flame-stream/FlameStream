@@ -6,14 +6,14 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class PayloadDataItem<T> implements DataItem<T> {
+public class PayloadDataItem implements DataItem {
   private final Meta meta;
 
-  private final T payload;
+  private final Object payload;
 
   private final long ackHashCode;
 
-  public PayloadDataItem(Meta meta, T payload) {
+  public PayloadDataItem(Meta meta, Object payload) {
     this.payload = payload;
     this.meta = meta;
     this.ackHashCode = ThreadLocalRandom.current().nextLong();
@@ -25,8 +25,8 @@ public class PayloadDataItem<T> implements DataItem<T> {
   }
 
   @Override
-  public T payload() {
-    return payload;
+  public <T> T payload(Class<T> clazz) {
+    return clazz.cast(payload);
   }
 
   @Override
@@ -47,7 +47,7 @@ public class PayloadDataItem<T> implements DataItem<T> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final PayloadDataItem<?> that = (PayloadDataItem<?>) o;
+    final PayloadDataItem that = (PayloadDataItem) o;
     return ackHashCode == that.ackHashCode && Objects.equals(meta, that.meta) && Objects.equals(payload, that.payload);
   }
 

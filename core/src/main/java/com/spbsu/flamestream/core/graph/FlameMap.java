@@ -10,14 +10,16 @@ import java.util.stream.Stream;
 
 public class FlameMap<T, R> extends Graph.Vertex.LocalTimeStub {
   private final Function<T, Stream<R>> function;
+  private final Class<T> clazz;
 
-  public FlameMap(Function<T, Stream<R>> function) {
+  public FlameMap(Function<T, Stream<R>> function, Class<T> clazz) {
     this.function = function;
+    this.clazz = clazz;
   }
 
-  public Function<DataItem<? extends T>, Stream<DataItem<R>>> operation() {
+  public Function<DataItem, Stream<DataItem>> operation() {
     return dataItem -> {
-      final Stream<R> result = function.apply(dataItem.payload());
+      final Stream<R> result = function.apply(dataItem.payload(clazz));
       if (result == null) {
         return null;
       }
@@ -26,7 +28,7 @@ public class FlameMap<T, R> extends Graph.Vertex.LocalTimeStub {
       final int[] childId = {0};
       return result.map(r -> {
         final Meta newMeta = dataItem.meta().advanced(newLocalTime, childId[0]++);
-        return new PayloadDataItem<>(newMeta, r);
+        return new PayloadDataItem(newMeta, r);
       });
     };
   }
