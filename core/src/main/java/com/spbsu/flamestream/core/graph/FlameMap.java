@@ -33,6 +33,10 @@ public class FlameMap<T, R> extends Graph.Vertex.LocalTimeStub {
     };
   }
 
+  public Class<T> clazz() {
+    return this.clazz;
+  }
+
   @Override
   public String toString() {
     return "FlameMap{" +

@@ -29,31 +29,31 @@ import java.util.stream.Stream;
 @SuppressWarnings("unchecked")
 public final class GroupingTest extends FlameStreamSuite {
 
-  private static <T> List<List<T>> groupMe(Stream<DataItem> input, int window) {
+  private static List<List<String>> groupMe(Stream<DataItem> input, int window) {
     final Map<DataItem, InvalidatingBucket> state = new HashMap<>();
-    final Grouping<T> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window);
+    final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window, String.class);
     return input
-            .map(di -> new DataItemForTest<>(di, grouping.hash(), grouping.equalz()))
+            .map(di -> new DataItemForTest<>(di, grouping.hash(), grouping.equalz(), String.class))
             .flatMap(di -> {
               state.putIfAbsent(di, new ArrayInvalidatingBucket());
               return grouping.operation().apply(di, state.get(di));
             })
-            .map(DataItem::payload)
+            .map(dataItem -> dataItem.payload(String.class))
             .collect(Collectors.toList());
   }
 
   @Test
   public void withoutReordering() {
-    final DataItem<String> x1 = new PayloadDataItem<>(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
-    final DataItem<String> x2 = new PayloadDataItem<>(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
-    final DataItem<String> x3 = new PayloadDataItem<>(Meta.meta(new GlobalTime(3, "1", "1")), "v3");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
+    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, "1", "1")), "v3");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x1, x2, x3), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
 
-    final List<String> y1 = Collections.singletonList(x1.payload());
-    final List<String> y2 = Arrays.asList(x1.payload(), x2.payload());
-    final List<String> y3 = Arrays.asList(x2.payload(), x3.payload());
+    final List<String> y1 = Collections.singletonList(x1.payload(String.class));
+    final List<String> y2 = Arrays.asList(x1.payload(String.class), x2.payload(String.class));
+    final List<String> y3 = Arrays.asList(x2.payload(String.class), x3.payload(String.class));
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -66,22 +66,22 @@ public final class GroupingTest extends FlameStreamSuite {
     final Meta x5Global = Meta.meta(new GlobalTime(2, "1", "1"));
     final Meta x0Global = Meta.meta(new GlobalTime(1, "1", "1"));
 
-    final DataItem<String> x5 = new PayloadDataItem<>(x5Global, "v5");
-    final DataItem<String> x5State = new PayloadDataItem<>(x5Global.advanced(1), "v5State");
-    final DataItem<String> x0 = new PayloadDataItem<>(x0Global, "x0");
-    final DataItem<String> x0State = new PayloadDataItem<>(x0Global.advanced(2), "x0State");
-    final DataItem<String> theState = new PayloadDataItem<>(x5Global.advanced(3), "theState");
+    final DataItem x5 = new PayloadDataItem(x5Global, "v5");
+    final DataItem x5State = new PayloadDataItem(x5Global.advanced(1), "v5State");
+    final DataItem x0 = new PayloadDataItem(x0Global, "x0");
+    final DataItem x0State = new PayloadDataItem(x0Global.advanced(2), "x0State");
+    final DataItem theState = new PayloadDataItem(x5Global.advanced(3), "theState");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x5, x5State, x0, x0State, theState), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
 
-    final List<String> y1 = Collections.singletonList(x5.payload());
-    final List<String> y2 = Arrays.asList(x5.payload(), x5State.payload());
-    final List<String> y3 = Collections.singletonList(x0.payload());
-    final List<String> y4 = Arrays.asList(x0.payload(), x5.payload());
-    final List<String> y5 = Arrays.asList(x0.payload(), x0State.payload());
-    final List<String> y6 = Arrays.asList(x0State.payload(), x5.payload());
-    final List<String> y7 = Arrays.asList(x5.payload(), theState.payload());
+    final List<String> y1 = Collections.singletonList(x5.payload(String.class));
+    final List<String> y2 = Arrays.asList(x5.payload(String.class), x5State.payload(String.class));
+    final List<String> y3 = Collections.singletonList(x0.payload(String.class));
+    final List<String> y4 = Arrays.asList(x0.payload(String.class), x5.payload(String.class));
+    final List<String> y5 = Arrays.asList(x0.payload(String.class), x0State.payload(String.class));
+    final List<String> y6 = Arrays.asList(x0State.payload(String.class), x5.payload(String.class));
+    final List<String> y7 = Arrays.asList(x5.payload(String.class), theState.payload(String.class));
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -98,17 +98,17 @@ public final class GroupingTest extends FlameStreamSuite {
   public void cycleSimulation() {
     final Meta x1Meta = Meta.meta(new GlobalTime(1, "1", "1"));
 
-    final DataItem<String> x1 = new PayloadDataItem<>(x1Meta, "v1");
-    final DataItem<String> x2 = new PayloadDataItem<>(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
-    final DataItem<String> x1Prime = new PayloadDataItem<>(x1Meta.advanced(2), "state");
+    final DataItem x1 = new PayloadDataItem(x1Meta, "v1");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
+    final DataItem x1Prime = new PayloadDataItem(x1Meta.advanced(2), "state");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x1, x2, x1Prime), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
 
-    final List<String> y1 = Collections.singletonList(x1.payload());
-    final List<String> y2 = Arrays.asList(x1.payload(), x2.payload());
-    final List<String> y3 = Arrays.asList(x1.payload(), x1Prime.payload());
-    final List<String> y4 = Arrays.asList(x1Prime.payload(), x2.payload());
+    final List<String> y1 = Collections.singletonList(x1.payload(String.class));
+    final List<String> y2 = Arrays.asList(x1.payload(String.class), x2.payload(String.class));
+    final List<String> y3 = Arrays.asList(x1.payload(String.class), x1Prime.payload(String.class));
+    final List<String> y4 = Arrays.asList(x1Prime.payload(String.class), x2.payload(String.class));
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -120,17 +120,17 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void headReordering() {
-    final DataItem<String> x2 = new PayloadDataItem<>(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
-    final DataItem<String> x1 = new PayloadDataItem<>(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
-    final DataItem<String> x3 = new PayloadDataItem<>(Meta.meta(new GlobalTime(3, "1", "1")), "v3");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
+    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, "1", "1")), "v3");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x2, x1, x3), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
 
-    final List<String> y1 = Collections.singletonList(x2.payload());
-    final List<String> y2 = Collections.singletonList(x1.payload());
-    final List<String> y3 = Arrays.asList(x1.payload(), x2.payload());
-    final List<String> y4 = Arrays.asList(x2.payload(), x3.payload());
+    final List<String> y1 = Collections.singletonList(x2.payload(String.class));
+    final List<String> y2 = Collections.singletonList(x1.payload(String.class));
+    final List<String> y3 = Arrays.asList(x1.payload(String.class), x2.payload(String.class));
+    final List<String> y4 = Arrays.asList(x2.payload(String.class), x3.payload(String.class));
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -142,17 +142,17 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void tailReordering() {
-    final DataItem<String> x1 = new PayloadDataItem<>(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
-    final DataItem<String> x3 = new PayloadDataItem<>(Meta.meta(new GlobalTime(3, "1", "1")), "v3");
-    final DataItem<String> x2 = new PayloadDataItem<>(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
+    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, "1", "1")), "v3");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x1, x3, x2), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
 
-    final List<String> y1 = Collections.singletonList(x1.payload());
-    final List<String> y2 = Arrays.asList(x1.payload(), x3.payload());
-    final List<String> y3 = Arrays.asList(x1.payload(), x2.payload());
-    final List<String> y4 = Arrays.asList(x2.payload(), x3.payload());
+    final List<String> y1 = Collections.singletonList(x1.payload(String.class));
+    final List<String> y2 = Arrays.asList(x1.payload(String.class), x3.payload(String.class));
+    final List<String> y3 = Arrays.asList(x1.payload(String.class), x2.payload(String.class));
+    final List<String> y4 = Arrays.asList(x2.payload(String.class), x3.payload(String.class));
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -164,20 +164,20 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void reverseReordering() {
-    final DataItem<String> x3 = new PayloadDataItem<>(Meta.meta(new GlobalTime(3, "1", "1")), "v3");
-    final DataItem<String> x2 = new PayloadDataItem<>(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
-    final DataItem<String> x1 = new PayloadDataItem<>(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
+    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, "1", "1")), "v3");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x3, x2, x1), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
 
-    final List<String> y1 = Collections.singletonList(x3.payload());
-    final List<String> y2 = Collections.singletonList(x2.payload());
-    final List<String> y3 = Arrays.asList(x2.payload(), x3.payload());
-    final List<String> y4 = Collections.singletonList(x1.payload());
-    final List<String> y5 = Arrays.asList(x1.payload(), x2.payload());
+    final List<String> y1 = Collections.singletonList(x3.payload(String.class));
+    final List<String> y2 = Collections.singletonList(x2.payload(String.class));
+    final List<String> y3 = Arrays.asList(x2.payload(String.class), x3.payload(String.class));
+    final List<String> y4 = Collections.singletonList(x1.payload(String.class));
+    final List<String> y5 = Arrays.asList(x1.payload(String.class), x2.payload(String.class));
     //This pair shouldn't be replayed. Crucial optimization
-    //final List<String> y6 = new List<>(Arrays.asList(x2.payload(), x3.payload()), 1);
+    //final List<String> y6 = new List<>(Arrays.asList(x2.payload(String.class), x3.payload(String.class)), 1);
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -191,23 +191,23 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void reorderingWithInvalidating() {
-    final DataItem<String> x1 = new PayloadDataItem<>(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
-    final DataItem<String> x2 = new PayloadDataItem<>(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, "1", "1")), "v1");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, "1", "1")), "v2");
 
     final Meta x3Meta = Meta.meta(new GlobalTime(3, "1", "1"));
-    final DataItem<String> x3 = new PayloadDataItem<>(x3Meta.advanced(1), "v3");
-    final DataItem<String> x3Prime = new PayloadDataItem<>(x3Meta.advanced(2), "v3Prime");
+    final DataItem x3 = new PayloadDataItem(x3Meta.advanced(1), "v3");
+    final DataItem x3Prime = new PayloadDataItem(x3Meta.advanced(2), "v3Prime");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x1, x2, x3, x3Prime), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
 
-    final List<String> y1 = Collections.singletonList(x1.payload());
-    final List<String> y2 = Arrays.asList(x1.payload(), x2.payload());
-    final List<String> y3 = Arrays.asList(x2.payload(), x3.payload());
-    final List<String> y4 = Arrays.asList(x2.payload(), x3Prime.payload());
+    final List<String> y1 = Collections.singletonList(x1.payload(String.class));
+    final List<String> y2 = Arrays.asList(x1.payload(String.class), x2.payload(String.class));
+    final List<String> y3 = Arrays.asList(x2.payload(String.class), x3.payload(String.class));
+    final List<String> y4 = Arrays.asList(x2.payload(String.class), x3Prime.payload(String.class));
     //Invalidation element should replace invalid
     // {@link com.spbsu.flamestream.core.TraceImpl#isInvalidatedBy method}
-    //final List<String> y5 = new List<>(Arrays.asList(x3Prime.payload(), x3.payload()), 1);
+    //final List<String> y5 = new List<>(Arrays.asList(x3Prime.payload(String.class), x3.payload(String.class)), 1);
 
     expectedResult.add(y1);
     expectedResult.add(y2);
@@ -221,16 +221,16 @@ public final class GroupingTest extends FlameStreamSuite {
   @Test
   public void shuffleReordering() {
 
-    final List<DataItem<String>> input = IntStream.range(0, 1000)
-            .mapToObj(i -> new PayloadDataItem<>(Meta.meta(new GlobalTime(i, "1", "1")), "v" + i))
+    final List<DataItem> input = IntStream.range(0, 1000)
+            .mapToObj(i -> new PayloadDataItem(Meta.meta(new GlobalTime(i, "1", "1")), "v" + i))
             .collect(Collectors.toList());
 
-    final List<DataItem<String>> shuffledInput = new ArrayList<>(input);
+    final List<DataItem> shuffledInput = new ArrayList<>(input);
     Collections.shuffle(shuffledInput, new Random(2));
 
     final int window = 6;
     final Set<List<String>> mustHave = Seq.seq(input)
-            .map(DataItem::payload)
+            .map(dataItem -> dataItem.payload(String.class))
             .sliding(window)
             .map(Collectable::toList)
             .toSet();
@@ -246,15 +246,15 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test(enabled = false)
   public void brothersInvalidation() {
-    final DataItem<String> father = new PayloadDataItem<>(Meta.meta(new GlobalTime(1, "1", "1")), "father");
+    final DataItem father = new PayloadDataItem(Meta.meta(new GlobalTime(1, "1", "1")), "father");
 
-    final DataItem<String> son1 = new PayloadDataItem<>(father.meta().advanced(1, 0), "son1");
-    final DataItem<String> son2 = new PayloadDataItem<>(father.meta().advanced(1, 1), "son2");
-    final DataItem<String> son3 = new PayloadDataItem<>(father.meta().advanced(1, 2), "son3");
+    final DataItem son1 = new PayloadDataItem(father.meta().advanced(1, 0), "son1");
+    final DataItem son2 = new PayloadDataItem(father.meta().advanced(1, 1), "son2");
+    final DataItem son3 = new PayloadDataItem(father.meta().advanced(1, 2), "son3");
 
-    final DataItem<String> son1Prime = new PayloadDataItem<>(father.meta().advanced(2, 0), "son1Prime");
-    final DataItem<String> son2Prime = new PayloadDataItem<>(father.meta().advanced(2, 1), "son2Prime");
-    final DataItem<String> son3Prime = new PayloadDataItem<>(father.meta().advanced(2, 2), "son3Prime");
+    final DataItem son1Prime = new PayloadDataItem(father.meta().advanced(2, 0), "son1Prime");
+    final DataItem son2Prime = new PayloadDataItem(father.meta().advanced(2, 1), "son2Prime");
+    final DataItem son3Prime = new PayloadDataItem(father.meta().advanced(2, 2), "son3Prime");
 
     { //without reordering
       final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(
@@ -266,12 +266,12 @@ public final class GroupingTest extends FlameStreamSuite {
               son3Prime
       ), 2);
       final List<List<String>> expectedResult = Arrays.asList(
-              Collections.singletonList(son1.payload()),
-              Arrays.asList(son1.payload(), son2.payload()),
-              Arrays.asList(son2.payload(), son3.payload()),
-              Collections.singletonList(son1Prime.payload()),
-              Arrays.asList(son1Prime.payload(), son2Prime.payload()),
-              Arrays.asList(son2Prime.payload(), son3Prime.payload())
+              Collections.singletonList(son1.payload(String.class)),
+              Arrays.asList(son1.payload(String.class), son2.payload(String.class)),
+              Arrays.asList(son2.payload(String.class), son3.payload(String.class)),
+              Collections.singletonList(son1Prime.payload(String.class)),
+              Arrays.asList(son1Prime.payload(String.class), son2Prime.payload(String.class)),
+              Arrays.asList(son2Prime.payload(String.class), son3Prime.payload(String.class))
       );
       Assert.assertEquals(actualResult, expectedResult, "Brothers invalidation without reordering");
     }
@@ -285,11 +285,11 @@ public final class GroupingTest extends FlameStreamSuite {
               son3Prime
       ), 2);
       final List<List<String>> expectedResult = Arrays.asList(
-              Collections.singletonList(son1.payload()),
-              Arrays.asList(son1.payload(), son2.payload()),
-              Collections.singletonList(son1Prime.payload()),
-              Arrays.asList(son1Prime.payload(), son2Prime.payload()),
-              Arrays.asList(son2Prime.payload(), son3Prime.payload())
+              Collections.singletonList(son1.payload(String.class)),
+              Arrays.asList(son1.payload(String.class), son2.payload(String.class)),
+              Collections.singletonList(son1Prime.payload(String.class)),
+              Arrays.asList(son1Prime.payload(String.class), son2Prime.payload(String.class)),
+              Arrays.asList(son2Prime.payload(String.class), son3Prime.payload(String.class))
       );
       Assert.assertEquals(actualResult, expectedResult, "Brothers invalidation with reordering #1");
     }
@@ -303,9 +303,9 @@ public final class GroupingTest extends FlameStreamSuite {
               son3Prime
       ), 2);
       final List<List<String>> expectedResult = Arrays.asList(
-              Collections.singletonList(son1Prime.payload()),
-              Arrays.asList(son1Prime.payload(), son2Prime.payload()),
-              Arrays.asList(son2Prime.payload(), son3Prime.payload())
+              Collections.singletonList(son1Prime.payload(String.class)),
+              Arrays.asList(son1Prime.payload(String.class), son2Prime.payload(String.class)),
+              Arrays.asList(son2Prime.payload(String.class), son3Prime.payload(String.class))
       );
       Assert.assertEquals(actualResult, expectedResult, "Brothers invalidation with reordering #2");
     }

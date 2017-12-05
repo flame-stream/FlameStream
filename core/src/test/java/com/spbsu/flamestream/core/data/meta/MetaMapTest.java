@@ -22,20 +22,20 @@ public class MetaMapTest extends FlameStreamSuite {
   public void testFlatFilterLogic() {
     final int flatNumber = 10;
     final Function<Integer, Stream<Integer>> function = integer -> Stream.generate(() -> integer).limit(flatNumber);
-    final FlameMap<Integer, Integer> map = new FlameMap<>(function);
+    final FlameMap<Integer, Integer> map = new FlameMap<>(function, Integer.class);
 
     final int inputSize = 10;
-    final List<DataItem<Integer>> input = IntStream.range(0, inputSize)
-            .mapToObj(i -> new PayloadDataItem<>(Meta.meta(new GlobalTime(i, "1", "1")), i))
+    final List<DataItem> input = IntStream.range(0, inputSize)
+            .mapToObj(i -> new PayloadDataItem(Meta.meta(new GlobalTime(i, "1", "1")), i))
             .collect(Collectors.toList());
     //noinspection ConstantConditions
-    final List<DataItem<Integer>> out = input.stream()
+    final List<DataItem> out = input.stream()
             .flatMap(map.operation()::apply)
             .collect(Collectors.toList());
 
     for (int i = 0; i < inputSize; i++) {
       for (int j = 0; j < flatNumber; j++) {
-        Assert.assertEquals(i, out.get(i * flatNumber + j).payload().intValue());
+        Assert.assertEquals(i, out.get(i * flatNumber + j).payload(Integer.class).intValue());
         final MetaImpl meta = (MetaImpl) out.get(i * flatNumber + j).meta();
         final TraceImpl trace = (TraceImpl) meta.trace();
         Assert.assertEquals(i + 1, LocalEvent.localTimeOf(trace.trace[0]));

@@ -10,16 +10,18 @@ import java.util.function.BiPredicate;
  * User: Artem
  * Date: 27.11.2017
  */
-public class DataItemForTest<T> implements DataItem<T> {
-  private final DataItem<T> inner;
+public class DataItemForTest<T> implements DataItem {
+  private final DataItem inner;
   private final HashFunction<? super T> hash;
   private final BiPredicate<? super T, ? super T> equalz;
+  private final Class<T> clazz;
 
 
-  DataItemForTest(DataItem<T> inner, HashFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz) {
+  DataItemForTest(DataItem inner, HashFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, Class<T> clazz) {
     this.inner = inner;
     this.hash = hash;
     this.equalz = equalz;
+    this.clazz = clazz;
   }
 
   @Override
@@ -28,8 +30,8 @@ public class DataItemForTest<T> implements DataItem<T> {
   }
 
   @Override
-  public T payload() {
-    return inner.payload();
+  public <R> R payload(Class<R> expectedClass) {
+    return inner.payload(expectedClass);
   }
 
   @Override
@@ -39,7 +41,7 @@ public class DataItemForTest<T> implements DataItem<T> {
 
   @Override
   public int hashCode() {
-    return hash.applyAsInt(payload());
+    return hash.applyAsInt(payload(clazz));
   }
 
   @Override
@@ -52,7 +54,7 @@ public class DataItemForTest<T> implements DataItem<T> {
     }
 
     //noinspection unchecked
-    final DataItem<T> that = (DataItem<T>) o;
-    return equalz.test(payload(), that.payload());
+    final DataItem that = (DataItem) o;
+    return equalz.test(payload(clazz), that.payload(clazz));
   }
 }
