@@ -23,7 +23,7 @@ public class AckTableTest extends FlameStreamSuite {
   @Test
   public void emptyTableTest() {
     final AckTable table = new ArrayAckTable(0, 10, 10);
-    Assert.assertEquals(table.min(), Long.MIN_VALUE);
+    Assert.assertEquals(table.min(), 0);
   }
 
   @Test

@@ -7,7 +7,7 @@ public final class ArrayAckTable implements AckTable {
   private int headPosition;
   private long headValue;
 
-  private long maxHeartbeat = Long.MIN_VALUE;
+  private long maxHeartbeat = headValue;
 
   public ArrayAckTable(long headValue, int capacity, long window) {
     this.window = window;
@@ -54,9 +54,9 @@ public final class ArrayAckTable implements AckTable {
       headValue += window;
       steps++;
 
-      if (steps > xors.length) {
-        headValue = Long.MAX_VALUE;
-        break;
+      if (steps == xors.length) {
+        headValue = maxHeartbeat;
+        headPosition = 0;
       }
     }
   }
