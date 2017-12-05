@@ -21,7 +21,6 @@ public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
   private final Class<T> clazz;
   private final int window;
 
-
   public Grouping(HashFunction hash, BiPredicate<DataItem, DataItem> equalz, int window, Class<T> clazz) {
     this.window = window;
     this.hash = hash;

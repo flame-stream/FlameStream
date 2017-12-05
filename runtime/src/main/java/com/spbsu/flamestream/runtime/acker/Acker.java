@@ -100,7 +100,7 @@ public class Acker extends LoggingActor {
   }
 
   private void handleAck(Ack ack) {
-    log().debug("ACKING {}", ack);
+    log().info("ACKING {}", ack);
 
     minTimeSubscribers.add(sender());
     final GlobalTime globalTime = ack.time();
@@ -132,6 +132,7 @@ public class Acker extends LoggingActor {
       final GlobalTime[] min = {GlobalTime.MAX};
       tables.forEach((frontId, nodeTables) ->
               nodeTables.forEach((nodeId, ackTable) -> {
+                // FIXME: 12/5/17 PERFORMANCE
                 final GlobalTime tmp = new GlobalTime(ackTable.min(), frontId, nodeId);
                 min[0] = tmp.compareTo(min[0]) < 0 ? tmp : min[0];
               })

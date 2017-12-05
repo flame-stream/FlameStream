@@ -25,6 +25,15 @@ public interface HashFunction extends ToIntFunction<DataItem> {
     };
   }
 
+  static <T> HashFunction wrapped(ToIntFunction<T> hash, Class<T> clazz) {
+    return new HashFunction() {
+      @Override
+      public int hash(DataItem item) {
+        return hash.applyAsInt(item.payload(clazz));
+      }
+    };
+  }
+
   static HashFunction constantHash(int hash) {
     return new HashFunction() {
       @Override

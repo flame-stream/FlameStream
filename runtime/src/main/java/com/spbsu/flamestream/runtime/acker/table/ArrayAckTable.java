@@ -1,5 +1,8 @@
 package com.spbsu.flamestream.runtime.acker.table;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class ArrayAckTable implements AckTable {
   private final long[] xors;
   private final long window;
@@ -8,6 +11,8 @@ public final class ArrayAckTable implements AckTable {
   private long headValue;
 
   private long maxHeartbeat;
+
+  private final List<Long> acks = new ArrayList<>();
 
   public ArrayAckTable(long headValue, int capacity, long window) {
     this.window = window;
