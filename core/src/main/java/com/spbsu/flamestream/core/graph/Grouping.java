@@ -16,25 +16,25 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
-  private final HashFunction<? super T> hash;
-  private final BiPredicate<? super T, ? super T> equalz;
+  private final HashFunction hash;
+  private final BiPredicate<DataItem, DataItem> equalz;
   private final Class<T> clazz;
   private final int window;
 
 
-  public Grouping(HashFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, int window, Class<T> clazz) {
+  public Grouping(HashFunction hash, BiPredicate equalz, int window, Class<T> clazz) {
     this.window = window;
     this.hash = hash;
     this.equalz = equalz;
     this.clazz = clazz;
   }
 
-  public HashFunction<? super T> hash() {
+  public HashFunction hash() {
     return hash;
   }
 
-  public BiPredicate<? super T, ? super T> equalz() {
-    return this.equalz;
+  public BiPredicate<DataItem, DataItem> equalz() {
+    return equalz;
   }
 
   public int window() {
@@ -42,7 +42,7 @@ public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
   }
 
   public Class<T> clazz() {
-    return this.clazz;
+    return clazz;
   }
 
   public BiFunction<DataItem, InvalidatingBucket, Stream<DataItem>> operation() {

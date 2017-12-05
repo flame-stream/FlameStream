@@ -12,12 +12,12 @@ import java.util.function.BiPredicate;
  */
 public class DataItemForTest<T> implements DataItem {
   private final DataItem inner;
-  private final HashFunction<? super T> hash;
+  private final HashFunction hash;
   private final BiPredicate<? super T, ? super T> equalz;
   private final Class<T> clazz;
 
 
-  DataItemForTest(DataItem inner, HashFunction<? super T> hash, BiPredicate<? super T, ? super T> equalz, Class<T> clazz) {
+  DataItemForTest(DataItem inner, HashFunction hash, BiPredicate<> equalz, Class<T> clazz) {
     this.inner = inner;
     this.hash = hash;
     this.equalz = equalz;
