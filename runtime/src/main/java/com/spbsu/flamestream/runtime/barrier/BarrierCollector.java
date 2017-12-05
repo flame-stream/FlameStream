@@ -21,7 +21,6 @@ class BarrierCollector {
   }
 
   public void enqueue(DataItem item) {
-    //noinspection unchecked
     final DataItem dataItem = item;
     invalidationPool.compute(item.meta().globalTime(), (globalTime, dataItems) -> {
       final InvalidatingBucket items = dataItems == null ? new ArrayInvalidatingBucket() : dataItems;

@@ -26,12 +26,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-@SuppressWarnings("unchecked")
 public final class GroupingTest extends FlameStreamSuite {
 
   private static List<List<String>> groupMe(Stream<DataItem> input, int window) {
     final Map<DataItem, InvalidatingBucket> state = new HashMap<>();
     final Grouping<String> grouping = new Grouping<>(HashFunction.constantHash(1), (t, t2) -> true, window, String.class);
+    //noinspection unchecked
     return input
             .map(di -> new DataItemForTest(di, grouping.hash(), grouping.equalz()))
             .flatMap(di -> {

@@ -51,7 +51,6 @@ public class DataItemForTest implements DataItem {
       return false;
     }
 
-    //noinspection unchecked
     final DataItem that = (DataItem) o;
     return equalz.test(inner, that);
   }

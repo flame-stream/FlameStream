@@ -44,7 +44,6 @@ public class GroupingJoba extends VertexJoba.SyncStub {
     currentMinTime = globalTime;
   }
 
-  @SuppressWarnings("unchecked")
   private InvalidatingBucket bucketFor(DataItem item) {
     final int hashValue = grouping.hash().applyAsInt(item);
     final Object obj = buffers.get(hashValue);
@@ -54,6 +53,7 @@ public class GroupingJoba extends VertexJoba.SyncStub {
       return newBucket;
     } else {
       if (obj instanceof List) {
+        //noinspection unchecked
         final List<InvalidatingBucket> container = (List<InvalidatingBucket>) obj;
         final InvalidatingBucket result = container.stream()
                 .filter(bucket -> grouping.equalz()

@@ -57,14 +57,12 @@ public class Materializer implements AutoCloseable {
       public void input(DataItem dataItem, ActorRef front) {
         final SourceJoba sourceJoba = (SourceJoba) jobMapping.get(graph.source().id());
         sourceJoba.addFront(dataItem.meta().globalTime().frontId(), front);
-        //noinspection unchecked
         sourceJoba.accept(dataItem);
       }
 
       @Override
       public void inject(Destination destination, DataItem dataItem) {
         final VertexJoba vertexJoba = jobMapping.get(destination.vertexId);
-        //noinspection unchecked
         vertexJoba.accept(dataItem);
         if (!vertexJoba.isAsync()) {
           acker.accept(dataItem);
@@ -93,7 +91,6 @@ public class Materializer implements AutoCloseable {
     jobMapping.values().forEach(VertexJoba::close);
   }
 
-  @SuppressWarnings("unchecked")
   private void buildJobMapping(Graph.Vertex currentVertex, VertexJoba outputJoba) {
     if (jobMapping.containsKey(currentVertex.id())) {
       final BroadcastJoba broadcastJoba = (BroadcastJoba) currentVertex;
