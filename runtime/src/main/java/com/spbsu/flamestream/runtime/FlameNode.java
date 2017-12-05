@@ -3,9 +3,10 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.runtime.acker.Acker;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
@@ -81,8 +82,7 @@ public class FlameNode extends LoggingActor {
     });
     return (item, sender) -> {
       acker.tell(new Ack(item.meta().globalTime(), item.xor()), sender);
-      // FIXME: 12/1/17 Possible error prone location
-      final int hash = HashFunction.UNIFORM_OBJECT_HASH.applyAsInt(item.meta().globalTime().time());
+      final int hash = Hashing.murmur3_32().hashLong(item.meta().globalTime().time()).asInt();
       barriers.get(Math.abs(hash) % barriers.size()).tell(item, sender);
     };
   }

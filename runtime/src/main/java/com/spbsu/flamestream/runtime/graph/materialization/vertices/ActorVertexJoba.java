@@ -74,7 +74,6 @@ public class ActorVertexJoba implements VertexJoba {
 
     private void onDataItem(DataItem dataItem) {
       joba.accept(dataItem);
-      System.out.println("Acking for acc from " + toString() + " with " + dataItem.xor());
       acker.accept(dataItem);
     }
 

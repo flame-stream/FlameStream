@@ -6,5 +6,5 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 27.11.2017
  */
-public interface Rear extends Consumer<Object> {
+public interface Rear extends Consumer<DataItem> {
 }

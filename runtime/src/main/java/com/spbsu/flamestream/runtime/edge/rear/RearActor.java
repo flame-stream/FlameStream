@@ -2,6 +2,7 @@ package com.spbsu.flamestream.runtime.edge.rear;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.RearInstance;
@@ -27,7 +28,7 @@ public class RearActor extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(Object.class, rear::accept)
+            .match(DataItem.class, rear::accept)
             .build();
   }
 }

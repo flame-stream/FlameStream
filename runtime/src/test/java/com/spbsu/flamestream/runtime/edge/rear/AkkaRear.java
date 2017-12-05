@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime.edge.rear;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.runtime.edge.RawData;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
@@ -19,8 +20,8 @@ public class AkkaRear implements Rear {
   }
 
   @Override
-  public void accept(Object o) {
-    innerActor.tell(o, ActorRef.noSender());
+  public void accept(DataItem item) {
+    innerActor.tell(item, ActorRef.noSender());
   }
 
   private static class InnerActor extends LoggingActor {

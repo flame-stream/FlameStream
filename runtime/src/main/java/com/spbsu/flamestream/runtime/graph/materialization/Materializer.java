@@ -66,7 +66,6 @@ public class Materializer implements AutoCloseable {
         vertexJoba.accept(dataItem);
         if (!vertexJoba.isAsync()) {
           acker.accept(dataItem);
-          System.out.println("WTF " + toString() + " with " + dataItem.xor());
         }
       }
 
@@ -145,7 +144,6 @@ public class Materializer implements AutoCloseable {
         public void accept(DataItem dataItem) {
           routers.get(0).route(dataItem, new Destination(currentVertex.id()));
           acker.accept(dataItem);
-          System.out.println("Acking for sending to net from " + toString() + " with " + dataItem.xor());
         }
       };
       /*final VertexJoba currentAsNext;
