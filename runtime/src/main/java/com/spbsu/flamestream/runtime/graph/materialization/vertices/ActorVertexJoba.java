@@ -16,14 +16,12 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 27.11.2017
  */
-public class ActorVertexJoba<T> implements VertexJoba<T> {
+public class ActorVertexJoba implements VertexJoba {
   private final ActorContext context;
   private final ActorRef vertexActor;
-  private final Consumer<DataItem<?>> acker;
 
-  public ActorVertexJoba(VertexJoba<T> joba, Consumer<DataItem<?>> acker, ActorContext context) {
+  public ActorVertexJoba(VertexJoba joba, Consumer<DataItem> acker, ActorContext context) {
     this.context = context;
-    this.acker = acker;
     vertexActor = context.actorOf(InnerActor.props(joba, acker), "ActorJoba_" + UUID.randomUUID());
   }
 
@@ -43,9 +41,7 @@ public class ActorVertexJoba<T> implements VertexJoba<T> {
   }
 
   @Override
-  public void accept(DataItem<T> dataItem) {
-    //acker.accept(dataItem);
-    //System.out.println("Acking for sebding from " + toString() + " with " + dataItem.xor());
+  public void accept(DataItem dataItem) {
     vertexActor.tell(dataItem, context.self());
   }
 
@@ -54,16 +50,16 @@ public class ActorVertexJoba<T> implements VertexJoba<T> {
     context.stop(vertexActor);
   }
 
-  private static class InnerActor<T> extends LoggingActor {
-    private final VertexJoba<T> joba;
-    private final Consumer<DataItem<?>> acker;
+  private static class InnerActor extends LoggingActor {
+    private final VertexJoba joba;
+    private final Consumer<DataItem> acker;
 
-    private InnerActor(VertexJoba<T> joba, Consumer<DataItem<?>> acker) {
+    private InnerActor(VertexJoba joba, Consumer<DataItem> acker) {
       this.joba = joba;
       this.acker = acker;
     }
 
-    public static <T> Props props(VertexJoba<T> joba, Consumer<DataItem<?>> acker) {
+    public static <T> Props props(VertexJoba joba, Consumer<DataItem> acker) {
       return Props.create(InnerActor.class, joba, acker);
     }
 
@@ -76,7 +72,7 @@ public class ActorVertexJoba<T> implements VertexJoba<T> {
               .build();
     }
 
-    private void onDataItem(DataItem<T> dataItem) {
+    private void onDataItem(DataItem dataItem) {
       joba.accept(dataItem);
       System.out.println("Acking for acc from " + toString() + " with " + dataItem.xor());
       acker.accept(dataItem);

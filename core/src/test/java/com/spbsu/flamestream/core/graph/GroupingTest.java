@@ -8,6 +8,7 @@ import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
+import com.sun.org.apache.xerces.internal.xs.StringList;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.testng.Assert;
@@ -38,7 +39,8 @@ public final class GroupingTest extends FlameStreamSuite {
               state.putIfAbsent(di, new ArrayInvalidatingBucket());
               return grouping.operation().apply(di, state.get(di));
             })
-            .map(dataItem -> dataItem.payload(String.class))
+            .map(dataItem -> dataItem.payload(List.class))
+            .map(element -> (List<String>) element)
             .collect(Collectors.toList());
   }
 

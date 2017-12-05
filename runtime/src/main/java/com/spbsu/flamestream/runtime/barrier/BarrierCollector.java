@@ -12,17 +12,17 @@ import java.util.function.Consumer;
 class BarrierCollector {
   private final SortedMap<GlobalTime, InvalidatingBucket> invalidationPool = new TreeMap<>();
 
-  public void releaseFrom(GlobalTime minTime, Consumer<DataItem<?>> consumer) {
+  public void releaseFrom(GlobalTime minTime, Consumer<DataItem> consumer) {
     if (!invalidationPool.isEmpty()) {
       final SortedMap<GlobalTime, InvalidatingBucket> headMap = invalidationPool.headMap(minTime);
-      headMap.values().stream().flatMap(InvalidatingBucket::stream).forEach(consumer::accept);
+      headMap.values().stream().flatMap(InvalidatingBucket::stream).forEach(consumer);
       headMap.clear();
     }
   }
 
-  public void enqueue(DataItem<?> item) {
+  public void enqueue(DataItem item) {
     //noinspection unchecked
-    final DataItem<Object> dataItem = (DataItem<Object>) item;
+    final DataItem dataItem = item;
     invalidationPool.compute(item.meta().globalTime(), (globalTime, dataItems) -> {
       final InvalidatingBucket items = dataItems == null ? new ArrayInvalidatingBucket() : dataItems;
       items.insert(dataItem);

@@ -4,15 +4,15 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.runtime.graph.materialization.Materializer;
 
 public class AddressedItem {
-  private final DataItem<?> item;
+  private final DataItem item;
   private final Materializer.Destination destination;
 
-  public AddressedItem(DataItem<?> item, Materializer.Destination destination) {
+  public AddressedItem(DataItem item, Materializer.Destination destination) {
     this.item = item;
     this.destination = destination;
   }
 
-  public DataItem<?> item() {
+  public DataItem item() {
     return item;
   }
 

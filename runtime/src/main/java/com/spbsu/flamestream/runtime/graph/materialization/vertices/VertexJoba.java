@@ -9,7 +9,7 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 27.11.2017
  */
-public interface VertexJoba<T> extends Consumer<DataItem<T>>, AutoCloseable {
+public interface VertexJoba extends Consumer<DataItem>, AutoCloseable {
   boolean isAsync();
 
   default void onMinTime(GlobalTime globalTime) {
@@ -22,7 +22,7 @@ public interface VertexJoba<T> extends Consumer<DataItem<T>>, AutoCloseable {
   default void close() {
   }
 
-  abstract class SyncStub<T> implements VertexJoba<T> {
+  abstract class SyncStub implements VertexJoba {
     @Override
     public boolean isAsync() {
       return false;

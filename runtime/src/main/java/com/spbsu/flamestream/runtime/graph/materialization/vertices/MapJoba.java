@@ -9,17 +9,17 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 28.11.2017
  */
-public class MapJoba<T, R> extends VertexJoba.SyncStub<T> {
-  private final FlameMap<T, R> map;
-  private final Consumer<DataItem<R>> sink;
+public class MapJoba extends VertexJoba.SyncStub {
+  private final FlameMap<?, ?> map;
+  private final Consumer<DataItem> sink;
 
-  public MapJoba(FlameMap<T, R> map, Consumer<DataItem<R>> sink) {
+  public MapJoba(FlameMap<?, ?> map, Consumer<DataItem> sink) {
     this.map = map;
     this.sink = sink;
   }
 
   @Override
-  public void accept(DataItem<T> dataItem) {
+  public void accept(DataItem dataItem) {
     map.operation().apply(dataItem).forEach(sink);
   }
 }

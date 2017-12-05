@@ -9,9 +9,9 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
  * Date: 01.12.2017
  */
 public interface Materialization {
-  void input(DataItem<?> dataItem, ActorRef front);
+  void input(DataItem dataItem, ActorRef front);
 
-  void inject(Materializer.Destination destination, DataItem<?> dataItem);
+  void inject(Materializer.Destination destination, DataItem dataItem);
 
   void minTime(GlobalTime minTime);
 

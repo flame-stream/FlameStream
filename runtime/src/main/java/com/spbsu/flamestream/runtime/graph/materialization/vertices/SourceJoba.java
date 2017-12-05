@@ -15,16 +15,16 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 01.12.2017
  */
-public class SourceJoba<T> extends VertexJoba.SyncStub<T> {
+public class SourceJoba extends VertexJoba.SyncStub {
   private final Collection<InFlightTime> inFlight = new ArrayList<>();
   private final Map<String, ActorRef> fronts = new HashMap<>();
 
   private final int maxInFlightItems;
   private final ActorContext context;
   private final Consumer<GlobalTime> heartBeater;
-  private final Consumer<DataItem<T>> sink;
+  private final Consumer<DataItem> sink;
 
-  public SourceJoba(int maxInFlightItems, ActorContext context, Consumer<GlobalTime> heartBeater, Consumer<DataItem<T>> sink) {
+  public SourceJoba(int maxInFlightItems, ActorContext context, Consumer<GlobalTime> heartBeater, Consumer<DataItem> sink) {
     this.maxInFlightItems = maxInFlightItems;
     this.context = context;
     this.heartBeater = heartBeater;
@@ -51,7 +51,7 @@ public class SourceJoba<T> extends VertexJoba.SyncStub<T> {
   }
 
   @Override
-  public void accept(DataItem<T> dataItem) {
+  public void accept(DataItem dataItem) {
     sink.accept(dataItem);
     /*{ //back-pressure logic
       final GlobalTime globalTime = dataItem.meta().globalTime();

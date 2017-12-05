@@ -73,7 +73,7 @@ public class FlameNode extends LoggingActor {
     return managers;
   }
 
-  private BiConsumer<DataItem<?>, ActorRef> resolvedBarriers() {
+  private BiConsumer<DataItem, ActorRef> resolvedBarriers() {
     final List<ActorRef> barriers = new ArrayList<>();
     config.paths().values().forEach(path -> {
       final ActorRef b = AwaitResolver.syncResolve(path.child("barrier"), context());

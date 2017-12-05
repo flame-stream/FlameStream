@@ -17,20 +17,20 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 28.11.2017
  */
-public class GroupingJoba<T> extends VertexJoba.SyncStub<T> {
-  private final Grouping<T> grouping;
-  private final Consumer<DataItem<List<T>>> sink;
+public class GroupingJoba extends VertexJoba.SyncStub {
+  private final Grouping<?> grouping;
+  private final Consumer<DataItem> sink;
   private final TIntObjectMap<Object> buffers = new TIntObjectHashMap<>();
 
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
-  public GroupingJoba(Grouping<T> grouping, Consumer<DataItem<List<T>>> sink) {
+  public GroupingJoba(Grouping<?> grouping, Consumer<DataItem> sink) {
     this.grouping = grouping;
     this.sink = sink;
   }
 
   @Override
-  public void accept(DataItem<T> dataItem) {
+  public void accept(DataItem dataItem) {
     final InvalidatingBucket bucket = bucketFor(dataItem);
     grouping.operation().apply(dataItem, bucket).forEach(sink);
     { //clear outdated
@@ -45,8 +45,8 @@ public class GroupingJoba<T> extends VertexJoba.SyncStub<T> {
   }
 
   @SuppressWarnings("unchecked")
-  private InvalidatingBucket bucketFor(DataItem<T> item) {
-    final int hashValue = grouping.hash().applyAsInt(item.payload());
+  private InvalidatingBucket bucketFor(DataItem item) {
+    final int hashValue = grouping.hash().applyAsInt(item.payload(grouping.clazz()));
     final Object obj = buffers.get(hashValue);
     if (obj == null) {
       final InvalidatingBucket newBucket = new ArrayInvalidatingBucket();
@@ -56,7 +56,7 @@ public class GroupingJoba<T> extends VertexJoba.SyncStub<T> {
       if (obj instanceof List) {
         final List<InvalidatingBucket> container = (List<InvalidatingBucket>) obj;
         final InvalidatingBucket result = container.stream()
-                .filter(bucket -> grouping.equalz().test((T) bucket.get(0).payload(), item.payload()))
+                .filter(bucket -> grouping.equalz().test(bucket.get(0).payload(grouping.clazz()), item.payload(grouping.clazz())))
                 .findAny()
                 .orElse(new ArrayInvalidatingBucket());
 
@@ -66,14 +66,14 @@ public class GroupingJoba<T> extends VertexJoba.SyncStub<T> {
         return result;
       } else {
         final InvalidatingBucket bucket = (InvalidatingBucket) obj;
-        if (grouping.equalz().test((T) bucket.get(0).payload(), item.payload())) {
+        if (grouping.equalz().test(bucket.get(0).payload(grouping.clazz()), item.payload(grouping.clazz()))) {
           return bucket;
         } else {
           final List<InvalidatingBucket> container = new ArrayList<>();
           container.add(bucket);
           final InvalidatingBucket newList = new ArrayInvalidatingBucket();
           container.add(newList);
-          buffers.put(grouping.hash().applyAsInt(item.payload()), container);
+          buffers.put(grouping.hash().applyAsInt(item.payload(grouping.clazz())), container);
           return newList;
         }
       }

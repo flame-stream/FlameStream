@@ -4,8 +4,8 @@ import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
@@ -20,6 +20,7 @@ import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 /**
@@ -29,8 +30,8 @@ import java.util.function.Consumer;
 public class Materializer implements AutoCloseable {
   private final Graph graph;
   private final IntRangeMap<Router> routers;
-  private final Consumer<DataItem<?>> barrier;
-  private final Consumer<DataItem<?>> acker;
+  private final Consumer<DataItem> barrier;
+  private final Consumer<DataItem> acker;
   private final Consumer<GlobalTime> heartBeater;
   private final ActorContext context;
 
@@ -39,8 +40,8 @@ public class Materializer implements AutoCloseable {
 
   public Materializer(Graph graph,
                       IntRangeMap<Router> routers,
-                      Consumer<DataItem<?>> barrier,
-                      Consumer<DataItem<?>> acker,
+                      Consumer<DataItem> barrier,
+                      Consumer<DataItem> acker,
                       Consumer<GlobalTime> heartBeater,
                       ActorContext context) {
     this.graph = graph;
@@ -53,7 +54,7 @@ public class Materializer implements AutoCloseable {
     buildJobMapping(graph.sink(), null);
     materialization = new Materialization() {
       @Override
-      public void input(DataItem<?> dataItem, ActorRef front) {
+      public void input(DataItem dataItem, ActorRef front) {
         final SourceJoba sourceJoba = (SourceJoba) jobMapping.get(graph.source().id());
         sourceJoba.addFront(dataItem.meta().globalTime().frontId(), front);
         //noinspection unchecked
@@ -61,7 +62,7 @@ public class Materializer implements AutoCloseable {
       }
 
       @Override
-      public void inject(Destination destination, DataItem<?> dataItem) {
+      public void inject(Destination destination, DataItem dataItem) {
         final VertexJoba vertexJoba = jobMapping.get(destination.vertexId);
         //noinspection unchecked
         vertexJoba.accept(dataItem);
@@ -95,7 +96,7 @@ public class Materializer implements AutoCloseable {
   @SuppressWarnings("unchecked")
   private void buildJobMapping(Graph.Vertex currentVertex, VertexJoba outputJoba) {
     if (jobMapping.containsKey(currentVertex.id())) {
-      final BroadcastJoba<?> broadcastJoba = (BroadcastJoba<?>) currentVertex;
+      final BroadcastJoba broadcastJoba = (BroadcastJoba) currentVertex;
       broadcastJoba.addSink(outputJoba);
     } else {
       boolean isGrouping = false;
@@ -103,15 +104,29 @@ public class Materializer implements AutoCloseable {
       if (currentVertex instanceof Sink) {
         currentJoba = new VertexJoba.SyncStub() {
           @Override
-          public void accept(Object o) {
-            final DataItem<?> dataItem = (DataItem<?>) o;
-            barrier.accept(new PayloadDataItem<>(dataItem.meta(), dataItem.payload()));
+          public void accept(DataItem o) {
+            barrier.accept(new DataItem() {
+              @Override
+              public Meta meta() {
+                return o.meta();
+              }
+
+              @Override
+              public <T> T payload(Class<T> expectedClass) {
+                return o.payload(expectedClass);
+              }
+
+              @Override
+              public long xor() {
+                return ThreadLocalRandom.current().nextLong();
+              }
+            });
           }
         };
       } else if (currentVertex instanceof FlameMap) {
-        currentJoba = new ActorVertexJoba<>(new MapJoba((FlameMap) currentVertex, outputJoba), acker, context);
+        currentJoba = new ActorVertexJoba(new MapJoba((FlameMap<?, ?>) currentVertex, outputJoba), acker, context);
       } else if (currentVertex instanceof Grouping) {
-        currentJoba = new ActorVertexJoba<>(new GroupingJoba((Grouping) currentVertex, outputJoba), acker, context);
+        currentJoba = new ActorVertexJoba(new GroupingJoba((Grouping) currentVertex, outputJoba), acker, context);
         isGrouping = true;
       } else if (currentVertex instanceof Source) {
         // TODO: 04.12.2017 choose number depends on statistics
@@ -121,7 +136,7 @@ public class Materializer implements AutoCloseable {
       }
 
       if (graph.isBroadcast(currentVertex)) {
-        final BroadcastJoba<?> broadcastJoba = new BroadcastJoba<>();
+        final BroadcastJoba broadcastJoba = new BroadcastJoba();
         broadcastJoba.addSink(currentJoba);
         jobMapping.put(currentVertex.id(), broadcastJoba);
       } else {
@@ -130,8 +145,7 @@ public class Materializer implements AutoCloseable {
 
       final VertexJoba currentAsNext = new VertexJoba.SyncStub() {
         @Override
-        public void accept(Object o) {
-          final DataItem<?> dataItem = (DataItem<?>) o;
+        public void accept(DataItem dataItem) {
           routers.get(0).route(dataItem, new Destination(currentVertex.id()));
           acker.accept(dataItem);
           System.out.println("Acking for sending to net from " + toString() + " with " + dataItem.xor());

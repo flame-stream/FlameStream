@@ -27,7 +27,7 @@ public class GraphManager extends LoggingActor {
   private final Graph graph;
   private final ActorRef acker;
   private final ComputationLayout layout;
-  private final BiConsumer<DataItem<?>, ActorRef> barrier;
+  private final BiConsumer<DataItem, ActorRef> barrier;
 
   private Materializer materializer = null;
 
@@ -35,7 +35,7 @@ public class GraphManager extends LoggingActor {
                        Graph graph,
                        ActorRef acker,
                        ComputationLayout layout,
-                       BiConsumer<DataItem<?>, ActorRef> barrier) {
+                       BiConsumer<DataItem, ActorRef> barrier) {
     this.nodeId = nodeId;
     this.layout = layout;
     this.graph = graph;
@@ -47,7 +47,7 @@ public class GraphManager extends LoggingActor {
                             Graph graph,
                             ActorRef acker,
                             ComputationLayout layout,
-                            BiConsumer<DataItem<?>, ActorRef> barrier) {
+                            BiConsumer<DataItem, ActorRef> barrier) {
     return Props.create(GraphManager.class, nodeId, graph, acker, layout, barrier);
   }
 
@@ -88,7 +88,7 @@ public class GraphManager extends LoggingActor {
     materializer.close();
   }
 
-  private void accept(DataItem<?> dataItem) {
+  private void accept(DataItem dataItem) {
     materializer.materialization().input(dataItem, sender());
   }
 
@@ -108,11 +108,8 @@ public class GraphManager extends LoggingActor {
     final Map<IntRange, Router> routerMap = new HashMap<>();
     layout.ranges().forEach((key, value) -> routerMap.put(
             value.asRange(),
-            (dataItem, destination) -> {
-              managerRefs.get(key).tell(new AddressedItem(dataItem, destination), self());
-            }
-            )
-    );
+            (dataItem, destination) -> managerRefs.get(key).tell(new AddressedItem(dataItem, destination), self())
+    ));
     return new ListIntRangeMap<>(routerMap);
   }
 }

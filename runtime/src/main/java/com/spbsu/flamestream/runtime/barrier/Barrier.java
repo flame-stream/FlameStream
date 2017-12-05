@@ -44,7 +44,7 @@ public class Barrier extends LoggingActor {
             .match(MinTimeUpdate.class, minTimeUpdate -> {
               final GlobalTime globalTime = minTimeUpdate.minTime();
               collector.releaseFrom(globalTime, di -> {
-                final Object data = di.payload();
+                final Object data = di.payload(Object.class);
                 rears.forEach(rear -> {
                   rear.tell(data, self());
                 });

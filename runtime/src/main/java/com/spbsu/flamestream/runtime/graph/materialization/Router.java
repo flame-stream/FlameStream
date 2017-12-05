@@ -7,5 +7,5 @@ import com.spbsu.flamestream.core.DataItem;
  * Date: 05.12.2017
  */
 public interface Router {
-  void route(DataItem<?> dataItem, Materializer.Destination destination);
+  void route(DataItem dataItem, Materializer.Destination destination);
 }
