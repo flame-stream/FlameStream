@@ -22,7 +22,7 @@ public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
   private final int window;
 
 
-  public Grouping(HashFunction hash, BiPredicate equalz, int window, Class<T> clazz) {
+  public Grouping(HashFunction hash, BiPredicate<DataItem, DataItem> equalz, int window, Class<T> clazz) {
     this.window = window;
     this.hash = hash;
     this.equalz = equalz;
@@ -39,10 +39,6 @@ public class Grouping<T> extends Graph.Vertex.LocalTimeStub {
 
   public int window() {
     return window;
-  }
-
-  public Class<T> clazz() {
-    return clazz;
   }
 
   public BiFunction<DataItem, InvalidatingBucket, Stream<DataItem>> operation() {
