@@ -7,12 +7,13 @@ public final class ArrayAckTable implements AckTable {
   private int headPosition;
   private long headValue;
 
-  private long maxHeartbeat = headValue;
+  private long maxHeartbeat;
 
   public ArrayAckTable(long headValue, int capacity, long window) {
     this.window = window;
     this.xors = new long[capacity];
     this.headValue = headValue;
+    this.maxHeartbeat = headValue;
     this.headPosition = 0;
   }
 
