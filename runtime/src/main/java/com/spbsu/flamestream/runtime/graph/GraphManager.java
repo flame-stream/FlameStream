@@ -5,18 +5,21 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
+import com.spbsu.flamestream.runtime.acker.api.Commit;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.config.ComputationLayout;
-import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
-import com.spbsu.flamestream.runtime.graph.api.Commit;
 import com.spbsu.flamestream.runtime.graph.materialization.Materializer;
+import com.spbsu.flamestream.runtime.graph.materialization.Router;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
+import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
+import org.apache.commons.lang.math.IntRange;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -57,8 +60,9 @@ public class GraphManager extends LoggingActor {
               //noinspection unchecked
               materializer = new Materializer(
                       graph,
-                      routerSink(managers),
+                      routers(managers),
                       dataItem -> barrier.accept(dataItem, self()),
+                      dataItem -> acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), self()),
                       globalTime -> acker.tell(new Heartbeat(globalTime, globalTime.front(), nodeId), self()),
                       context()
               );
@@ -91,7 +95,6 @@ public class GraphManager extends LoggingActor {
 
   private void inject(AddressedItem addressedItem) {
     materializer.materialization().inject(addressedItem.destination(), addressedItem.item());
-    ack(addressedItem.item());
   }
 
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
@@ -102,22 +105,14 @@ public class GraphManager extends LoggingActor {
     materializer.materialization().commit();
   }
 
-  private BiConsumer<DataItem<?>, HashFunction<DataItem<?>>> routerSink(Map<String, ActorRef> managerRefs) {
-    // TODO: 01.12.2017 we lost optimization (acking once flatmap results)
-    return (dataItem, hashFunction) -> {
-      final int hash = hashFunction.applyAsInt(dataItem);
-      for (Map.Entry<String, HashRange> entry : layout.ranges().entrySet()) {
-        if (entry.getValue().from() <= hash && hash < entry.getValue().to()) {
-          managerRefs.get(entry.getKey()).tell(dataItem, self());
-          ack(dataItem);
-          return;
-        }
-      }
-      throw new IllegalStateException("Hash ranges doesn't cover Integer space");
-    };
-  }
-
-  private void ack(DataItem<?> dataItem) {
-    acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), self());
+  private IntRangeMap<Router> routers(Map<String, ActorRef> managerRefs) {
+    final Map<IntRange, Router> routerMap = new HashMap<>();
+    layout.ranges().forEach((key, value) -> routerMap.put(
+            value.asRange(),
+            (dataItem, destination) -> {
+              managerRefs.get(key).tell(new AddressedItem(dataItem, destination), self());
+            })
+    );
+    return new ListIntRangeMap<>(routerMap);
   }
 }

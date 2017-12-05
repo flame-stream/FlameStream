@@ -103,7 +103,9 @@ public class RemoteActorFront<T> extends LoggingActor implements Front {
     if (hole == null) {
       stash();
     } else {
-      hole.accept(new PayloadDataItem<>(Meta.meta(currentTime()), data.data()));
+      final PayloadDataItem<T> t = new PayloadDataItem<>(Meta.meta(currentTime()), data.data());
+      log().info("Ama front {}", t);
+      hole.accept(t);
     }
     //history.put(currentTime(), data.data());
     //

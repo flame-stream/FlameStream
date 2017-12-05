@@ -9,7 +9,7 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 28.11.2017
  */
-public class MapJoba<T, R> implements VertexJoba<T> {
+public class MapJoba<T, R> extends VertexJoba.SyncStub<T> {
   private final FlameMap<T, R> map;
   private final Consumer<DataItem<R>> sink;
 

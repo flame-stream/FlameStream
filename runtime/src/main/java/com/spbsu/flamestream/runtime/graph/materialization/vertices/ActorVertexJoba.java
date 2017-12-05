@@ -6,10 +6,11 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.graph.api.Commit;
+import com.spbsu.flamestream.runtime.acker.api.Commit;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * User: Artem
@@ -18,10 +19,17 @@ import java.util.UUID;
 public class ActorVertexJoba<T> implements VertexJoba<T> {
   private final ActorContext context;
   private final ActorRef vertexActor;
+  private final Consumer<DataItem<?>> acker;
 
-  public ActorVertexJoba(VertexJoba<T> joba, ActorContext context) {
+  public ActorVertexJoba(VertexJoba<T> joba, Consumer<DataItem<?>> acker, ActorContext context) {
     this.context = context;
-    vertexActor = context.actorOf(InnerActor.props(joba), "ActorJoba_" + UUID.randomUUID());
+    this.acker = acker;
+    vertexActor = context.actorOf(InnerActor.props(joba, acker), "ActorJoba_" + UUID.randomUUID());
+  }
+
+  @Override
+  public boolean isAsync() {
+    return true;
   }
 
   @Override
@@ -36,6 +44,8 @@ public class ActorVertexJoba<T> implements VertexJoba<T> {
 
   @Override
   public void accept(DataItem<T> dataItem) {
+    //acker.accept(dataItem);
+    //System.out.println("Acking for sebding from " + toString() + " with " + dataItem.xor());
     vertexActor.tell(dataItem, context.self());
   }
 
@@ -46,13 +56,15 @@ public class ActorVertexJoba<T> implements VertexJoba<T> {
 
   private static class InnerActor<T> extends LoggingActor {
     private final VertexJoba<T> joba;
+    private final Consumer<DataItem<?>> acker;
 
-    private InnerActor(VertexJoba<T> joba) {
+    private InnerActor(VertexJoba<T> joba, Consumer<DataItem<?>> acker) {
       this.joba = joba;
+      this.acker = acker;
     }
 
-    public static <T> Props props(VertexJoba<T> joba) {
-      return Props.create(InnerActor.class, joba);
+    public static <T> Props props(VertexJoba<T> joba, Consumer<DataItem<?>> acker) {
+      return Props.create(InnerActor.class, joba, acker);
     }
 
     @Override
@@ -66,6 +78,8 @@ public class ActorVertexJoba<T> implements VertexJoba<T> {
 
     private void onDataItem(DataItem<T> dataItem) {
       joba.accept(dataItem);
+      System.out.println("Acking for acc from " + toString() + " with " + dataItem.xor());
+      acker.accept(dataItem);
     }
 
     private void onGlobalTime(GlobalTime globalTime) {
