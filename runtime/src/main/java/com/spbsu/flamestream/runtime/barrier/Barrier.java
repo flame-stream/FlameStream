@@ -38,15 +38,14 @@ public class Barrier extends LoggingActor {
     return ReceiveBuilder.create()
             .match(DataItem.class, item -> {
               acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-              log().info("At barrier {}" , item);
+              log().info("At barrier {}", item);
               collector.enqueue(item);
             })
             .match(MinTimeUpdate.class, minTimeUpdate -> {
               final GlobalTime globalTime = minTimeUpdate.minTime();
               collector.releaseFrom(globalTime, di -> {
-                final Object data = di.payload(Object.class);
                 rears.forEach(rear -> {
-                  rear.tell(data, self());
+                  rear.tell(di, self());
                 });
                 //barrierStatistics.release(di.meta().time());
               });

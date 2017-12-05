@@ -5,48 +5,41 @@ import com.google.common.hash.Hashing;
 import java.util.function.ToIntFunction;
 
 @FunctionalInterface
-public interface HashFunction<T> extends ToIntFunction<T> {
-  @SuppressWarnings( {"Convert2Lambda", "Anonymous2MethodRef"})
-  HashFunction<Object> OBJECT_HASH = new HashFunction<Object>() {
-    @Override
-    public int hash(Object value) {
-      return value.hashCode();
-    }
-  };
-  @SuppressWarnings("Convert2Lambda")
-  HashFunction<Object> UNIFORM_OBJECT_HASH = new HashFunction<Object>() {
-    @Override
-    public int hash(Object value) {
-      return Hashing.murmur3_32().hashInt(value.hashCode()).asInt();
-    }
-  };
-
-  static <T> HashFunction<T> uniformLimitedHash(int buckets) {
-    return new HashFunction<T>() {
-      private final int n = buckets;
-
+public interface HashFunction extends ToIntFunction<DataItem> {
+  @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
+  static <T> HashFunction objectHash(Class<T> clazz) {
+    return new HashFunction() {
       @Override
-      public int hash(T value) {
-        return HashFunction.UNIFORM_OBJECT_HASH.applyAsInt(OBJECT_HASH.applyAsInt(value) % n);
+      public int hash(DataItem item) {
+        return item.payload(clazz).hashCode();
       }
     };
   }
 
   @SuppressWarnings("Convert2Lambda")
-  static <T> HashFunction<T> constantHash(int hash) {
-    //noinspection Convert2Lambda
-    return new HashFunction<T>() {
+  static <T> HashFunction uniformObjectHash(Class<T> clazz) {
+    return new HashFunction() {
       @Override
-      public int hash(T value) {
+      public int hash(DataItem item) {
+        return Hashing.murmur3_32().hashInt(item.payload(clazz).hashCode()).asInt();
+      }
+    };
+  }
+
+  @SuppressWarnings("Convert2Lambda")
+  static HashFunction constantHash(int hash) {
+    return new HashFunction() {
+      @Override
+      public int hash(DataItem item) {
         return hash;
       }
     };
   }
 
-  int hash(T value);
+  int hash(DataItem dataItem);
 
   @Override
-  default int applyAsInt(T value) {
-    return hash(value);
+  default int applyAsInt(DataItem dataItem) {
+    return hash(dataItem);
   }
 }
