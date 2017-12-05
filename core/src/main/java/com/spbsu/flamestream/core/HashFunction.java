@@ -5,8 +5,8 @@ import com.google.common.hash.Hashing;
 import java.util.function.ToIntFunction;
 
 @FunctionalInterface
+@SuppressWarnings("Convert2Lambda")
 public interface HashFunction extends ToIntFunction<DataItem> {
-  @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
   static <T> HashFunction objectHash(Class<T> clazz) {
     return new HashFunction() {
       @Override
@@ -16,7 +16,6 @@ public interface HashFunction extends ToIntFunction<DataItem> {
     };
   }
 
-  @SuppressWarnings("Convert2Lambda")
   static <T> HashFunction uniformObjectHash(Class<T> clazz) {
     return new HashFunction() {
       @Override
@@ -26,7 +25,6 @@ public interface HashFunction extends ToIntFunction<DataItem> {
     };
   }
 
-  @SuppressWarnings("Convert2Lambda")
   static HashFunction constantHash(int hash) {
     return new HashFunction() {
       @Override
