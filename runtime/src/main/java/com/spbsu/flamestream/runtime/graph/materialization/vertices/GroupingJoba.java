@@ -17,7 +17,7 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 28.11.2017
  */
-public class GroupingJoba extends VertexJoba.SyncStub {
+public class GroupingJoba implements VertexJoba {
   private final Grouping<?> grouping;
   private final Consumer<DataItem> sink;
   private final TIntObjectMap<Object> buffers = new TIntObjectHashMap<>();

@@ -11,7 +11,7 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 01.12.2017
  */
-public class BroadcastJoba extends VertexJoba.SyncStub {
+public class BroadcastJoba implements VertexJoba {
   private static final int BROADCAST_LOCAL_TIME = Integer.MAX_VALUE;
   private final List<Consumer<DataItem>> sinks = new ArrayList<>();
 

@@ -88,6 +88,7 @@ public class Materializer implements AutoCloseable {
     jobMapping.values().forEach(VertexJoba::close);
   }
 
+  //DFS
   private void buildJobMapping(Graph.Vertex currentVertex, VertexJoba outputJoba) {
     if (jobMapping.containsKey(currentVertex.id())) {
       final BroadcastJoba broadcastJoba = (BroadcastJoba) currentVertex;
@@ -96,12 +97,7 @@ public class Materializer implements AutoCloseable {
       boolean isGrouping = false;
       final VertexJoba currentJoba;
       if (currentVertex instanceof Sink) {
-        currentJoba = new VertexJoba.SyncStub() {
-          @Override
-          public void accept(DataItem dataItem) {
-            barrier.accept(dataItem);
-          }
-        };
+        currentJoba = barrier::accept;
       } else if (currentVertex instanceof FlameMap) {
         currentJoba = new ActorVertexJoba(new MapJoba((FlameMap<?, ?>) currentVertex, outputJoba), acker, context);
       } else if (currentVertex instanceof Grouping) {
@@ -122,22 +118,21 @@ public class Materializer implements AutoCloseable {
         jobMapping.put(currentVertex.id(), currentJoba);
       }
 
-      final VertexJoba currentAsNext = new VertexJoba.SyncStub() {
-        @Override
-        public void accept(DataItem dataItem) {
-          routers.get(0).route(dataItem, new Destination(currentVertex.id()));
-          acker.accept(dataItem);
-        }
-      };
-      /*final VertexJoba currentAsNext;
+      final VertexJoba currentAsNext;
       if (isGrouping) {
         currentAsNext = dataItem -> {
           final int hash = ((Grouping) currentVertex).hash().applyAsInt(dataItem);
-          routers.get(hash).route((DataItem<?>) dataItem, new Destination(currentVertex.id()));
+          routers.get(hash).route(dataItem, new Destination(currentVertex.id()));
+          acker.accept(dataItem);
+        };
+      } else if (currentJoba.isAsync()) {
+        currentAsNext = dataItem -> {
+          currentJoba.accept(dataItem);
+          acker.accept(dataItem);
         };
       } else {
         currentAsNext = currentJoba;
-      }*/
+      }
       graph.inputs(currentVertex).forEach(vertex -> buildJobMapping(vertex, currentAsNext));
     }
   }

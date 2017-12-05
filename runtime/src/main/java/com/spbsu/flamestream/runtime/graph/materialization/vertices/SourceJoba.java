@@ -15,7 +15,7 @@ import java.util.function.Consumer;
  * User: Artem
  * Date: 01.12.2017
  */
-public class SourceJoba extends VertexJoba.SyncStub {
+public class SourceJoba implements VertexJoba {
   private final Collection<InFlightTime> inFlight = new ArrayList<>();
   private final Map<String, ActorRef> fronts = new HashMap<>();
 

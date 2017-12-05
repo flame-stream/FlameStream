@@ -41,7 +41,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
 
   @Test
   public void linearFilter() throws InterruptedException {
-    final LocalRuntime runtime = new LocalRuntime(1);
+    final LocalRuntime runtime = new LocalRuntime(4);
     final FlameRuntime.Flame flame = runtime.run(multiGraph());
 
     final Consumer<Object> randomConsumer = randomConsumer(
@@ -53,7 +53,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
     flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
             .forEach(f -> f.addListener(result::add));
 
-    final List<Integer> source = new Random().ints(1).boxed().collect(Collectors.toList());
+    final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
     source.forEach(randomConsumer);
 
     TimeUnit.SECONDS.sleep(20);

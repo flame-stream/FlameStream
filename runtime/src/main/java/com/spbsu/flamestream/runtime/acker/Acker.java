@@ -100,7 +100,7 @@ public class Acker extends LoggingActor {
   }
 
   private void handleAck(Ack ack) {
-    log().info("ACKING {}", ack);
+    log().debug("ACKING {}", ack);
 
     minTimeSubscribers.add(sender());
     final GlobalTime globalTime = ack.time();
