@@ -5,7 +5,6 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.Commit;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
@@ -63,7 +62,7 @@ public class GraphManager extends LoggingActor {
                       routers(managers),
                       dataItem -> barrier.accept(dataItem, self()),
                       dataItem -> acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), self()),
-                      globalTime -> acker.tell(new Heartbeat(globalTime, globalTime.front(), nodeId), self()),
+                      globalTime -> acker.tell(new Heartbeat(globalTime), self()),
                       context()
               );
 
@@ -80,7 +79,7 @@ public class GraphManager extends LoggingActor {
             .match(AddressedItem.class, this::inject)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
             .match(Commit.class, commit -> onCommit())
-            .match(GlobalTime.class, gt -> acker.tell(new Heartbeat(gt, gt.front(), nodeId), self()))
+            .match(Heartbeat.class, gt -> acker.forward(gt, context()))
             .build();
   }
 
@@ -111,7 +110,8 @@ public class GraphManager extends LoggingActor {
             value.asRange(),
             (dataItem, destination) -> {
               managerRefs.get(key).tell(new AddressedItem(dataItem, destination), self());
-            })
+            }
+            )
     );
     return new ListIntRangeMap<>(routerMap);
   }

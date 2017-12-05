@@ -5,14 +5,17 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import com.spbsu.flamestream.runtime.edge.front.AkkaFrontType;
+import com.spbsu.flamestream.runtime.edge.rear.AkkaRearType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -39,15 +42,23 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
 
   @Test
   public void linearFilter() throws InterruptedException {
-    TestRuntime testRuntime = new TestRuntime(4);
-    final TestRuntime.TestFlame flame = testRuntime.run(multiGraph());
+    final LocalRuntime runtime = new LocalRuntime(4);
+    final FlameRuntime.Flame flame = runtime.run(multiGraph());
 
-    final Queue<Integer> result = new ArrayDeque<>();
-    flame.attachWrappedConsumer(result::add);
+    final Consumer<Object> randomConsumer = randomConsumer(
+            flame.attachFront("linearFilterFront", new AkkaFrontType(runtime.system()))
+                    .collect(Collectors.toList())
+    );
+
+    final Set<Object> result = Collections.synchronizedSet(new HashSet<>());
+
+    final List<AkkaRearType.Handle> handles = new ArrayList<>();
+    flame.attachRear("linerFilterRear", new AkkaRearType(runtime.system()))
+            .peek(handles::add)
+            .forEach(f -> f.addListener(result::add));
 
     final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
-    final Consumer<Object> front = flame.attachBalancingFront();
-    source.forEach(front);
+    source.forEach(randomConsumer);
 
     TimeUnit.SECONDS.sleep(20);
 

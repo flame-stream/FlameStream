@@ -7,7 +7,7 @@ public class InMemoryRegistry implements AttachRegistry {
   public final Map<String, Long> registry = new HashMap<>();
 
   @Override
-  public void register(String frontId, long attachTimestamp) {
-    registry.put(frontId, attachTimestamp);
+  public void register(String frontId, String nodeId, long attachTimestamp) {
+    registry.put(frontId + nodeId, attachTimestamp);
   }
 }

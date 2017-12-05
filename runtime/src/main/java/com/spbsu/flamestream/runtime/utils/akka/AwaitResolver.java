@@ -4,6 +4,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorIdentity;
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
+import akka.actor.ActorRefFactory;
 import akka.actor.Identify;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
@@ -24,7 +25,7 @@ public class AwaitResolver extends AbstractActor {
     return Props.create(AwaitResolver.class);
   }
 
-  public static ActorRef syncResolve(ActorPath path, akka.actor.ActorContext context) {
+  public static ActorRef syncResolve(ActorPath path, ActorRefFactory context) {
     try {
       return resolve(path, context).toCompletableFuture().get(10, TimeUnit.SECONDS);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -32,7 +33,7 @@ public class AwaitResolver extends AbstractActor {
     }
   }
 
-  public static CompletionStage<ActorRef> resolve(ActorPath path, akka.actor.ActorContext context) {
+  public static CompletionStage<ActorRef> resolve(ActorPath path, ActorRefFactory context) {
     final ActorRef resolver = context.actorOf(AwaitResolver.props());
     return PatternsCS.ask(resolver, path, Timeout.apply(100, TimeUnit.SECONDS))
             .thenApply(a -> (ActorRef) a);
@@ -64,7 +65,7 @@ public class AwaitResolver extends AbstractActor {
                     ActorIdentity.class,
                     id -> !id.getActorRef().isPresent(),
                     id -> context().system().scheduler().scheduleOnce(
-                            Duration.create(10, TimeUnit.MILLISECONDS),
+                            Duration.create(100, TimeUnit.MILLISECONDS),
                             () -> context().actorSelection(request).tell(new Identify(request), self()),
                             context().dispatcher()
                     )

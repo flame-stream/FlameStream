@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime.edge;
 
+import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
@@ -12,45 +13,37 @@ import com.spbsu.flamestream.runtime.negitioator.api.AttachFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class EdgeManager extends LoggingActor {
+  private final ActorPath nodePath;
   private final String nodeId;
   private final ActorRef negotiator;
   private final ActorRef barrier;
 
-  private EdgeManager(String nodeId, ActorRef localNegotiator, ActorRef localBarrier) {
+  private EdgeManager(ActorPath nodePath, String nodeId, ActorRef localNegotiator, ActorRef localBarrier) {
     this.nodeId = nodeId;
+    this.nodePath = nodePath;
     this.negotiator = localNegotiator;
     this.barrier = localBarrier;
   }
 
-  public static Props props(String nodeId, ActorRef localNegotiator, ActorRef localBarrier) {
-    return Props.create(EdgeManager.class, nodeId, localNegotiator, localBarrier);
+  public static Props props(ActorPath nodePath, String nodeId, ActorRef localNegotiator, ActorRef localBarrier) {
+    return Props.create(EdgeManager.class, nodePath, nodeId, localNegotiator, localBarrier);
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(FrontInstance.class, frontInstance -> {
-              final ActorRef frontRef;
-              if (LoggingActor.class.isAssignableFrom(frontInstance.frontClass())) {
-                frontRef = context().actorOf(
-                        Props.create(frontInstance.frontClass(), frontInstance.args()),
-                        frontInstance.id()
-                );
-              } else {
-                frontRef = context().actorOf(FrontActor.props(frontInstance), frontInstance.id());
-              }
+              final ActorRef frontRef = context().actorOf(FrontActor.props(
+                      new SystemEdgeContext(nodePath, nodeId, frontInstance.id(), context()),
+                      frontInstance
+              ), frontInstance.id());
               negotiator.tell(new AttachFront(frontInstance.id(), frontRef), self());
             })
             .match(RearInstance.class, rearInstance -> {
-              final ActorRef rearRef;
-              if (LoggingActor.class.isAssignableFrom(rearInstance.rearClass())) {
-                rearRef = context().actorOf(
-                        Props.create(rearInstance.rearClass(), rearInstance.args()),
-                        rearInstance.id()
-                );
-              } else {
-                rearRef = context().actorOf(RearActor.props(rearInstance), rearInstance.id());
-              }
+              final ActorRef rearRef = context().actorOf(RearActor.props(
+                      new SystemEdgeContext(nodePath, nodeId, rearInstance.id(), context()),
+                      rearInstance
+              ), rearInstance.id());
               barrier.tell(new AttachRear(rearRef), self());
             })
             .build();

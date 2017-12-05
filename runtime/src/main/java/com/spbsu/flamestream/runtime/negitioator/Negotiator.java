@@ -7,7 +7,7 @@ import akka.pattern.PatternsCS;
 import akka.util.Timeout;
 import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
-import com.spbsu.flamestream.runtime.edge.front.api.OnStart;
+import com.spbsu.flamestream.runtime.edge.front.api.Start;
 import com.spbsu.flamestream.runtime.edge.front.api.RequestNext;
 import com.spbsu.flamestream.runtime.negitioator.api.AttachFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -49,7 +49,7 @@ public class Negotiator extends LoggingActor {
             .thenApply(ticket -> (FrontTicket) ticket)
             .thenAccept(ticket -> {
               log().info("Ticket for the frontClass received: {}", ticket);
-              localFronts.get(frontId).tell(new OnStart(source), self());
+              localFronts.get(frontId).tell(new Start(source), self());
               localFronts.get(frontId).tell(new RequestNext(ticket.allowedTimestamp()), self());
             });
   }

@@ -13,15 +13,14 @@ import com.spbsu.flamestream.runtime.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationLayout;
 import com.spbsu.flamestream.runtime.config.HashRange;
+import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.FrontInstance;
 import com.spbsu.flamestream.runtime.edge.api.RearInstance;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,7 +47,28 @@ public class LocalRuntime implements FlameRuntime {
 
   @Override
   public Flame run(Graph g) {
-    final Set<ActorRef> nodes = nodes(g);
+    final List<HashRange> ra = HashRange.covering(parallelism).collect(Collectors.toList());
+    final Map<String, ActorPath> paths = new HashMap<>();
+    final Map<String, HashRange> ranges = new HashMap<>();
+    for (int i = 0; i < parallelism; ++i) {
+      final String id = "node-" + i;
+      final HashRange range = ra.get(i);
+      paths.put(
+              id,
+              RootActorPath.apply(Address.apply("akka", system.name()), "/")
+                      .child("user")
+                      .child(id)
+      );
+      ranges.put(id, range);
+    }
+
+    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", new ComputationLayout(ranges));
+    final AttachRegistry registry = new InMemoryRegistry();
+
+    final List<ActorRef> nodes = paths.keySet().stream()
+            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry), id))
+            .collect(Collectors.toList());
+
     return new Flame() {
       @Override
       public void extinguish() {
@@ -56,54 +76,27 @@ public class LocalRuntime implements FlameRuntime {
       }
 
       @Override
-      public <T extends Front, H extends FrontHandle> Stream<H> attachFront(String id,
-                                                                            Class<T> front,
-                                                                            String... args) {
-        nodes.forEach(n -> n.tell(new FrontInstance<>(id, front, args), ActorRef.noSender()));
-        return Stream.empty();
+      public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type, String... args) {
+        nodes.forEach(n -> n.tell(new FrontInstance<>(id, type.frontClass(), args), ActorRef.noSender()));
+        return paths.entrySet().stream()
+                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
       }
 
       @Override
-      public <T extends Rear, H extends RearHandle> Stream<H> attachRear(String id,
-                                                                         Class<T> rear,
-                                                                         String... args) {
-        nodes.forEach(n -> n.tell(new RearInstance<>(id, rear, args), ActorRef.noSender()));
-        return Stream.empty();
+      public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type, String... args) {
+        nodes.forEach(n -> n.tell(new RearInstance<>(id, type.rearClass(), args), ActorRef.noSender()));
+        return paths.entrySet().stream()
+                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
       }
     };
-  }
-
-  private Set<ActorRef> nodes(Graph graph) {
-    final List<HashRange> ranges = HashRange.covering(parallelism).collect(Collectors.toList());
-    final Map<String, ActorPath> paths = new HashMap<>();
-    final Map<String, HashRange> rangeMap = new HashMap<>();
-    for (int i = 0; i < parallelism; ++i) {
-      final String id = "node-" + i;
-      final HashRange range = ranges.get(i);
-      paths.put(
-              id,
-              RootActorPath.apply(Address.apply("akka", system.name()), "/")
-                      .child("user")
-                      .child(id)
-      );
-      rangeMap.put(id, range);
-    }
-
-    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", new ComputationLayout(rangeMap));
-    final AttachRegistry registry = new InMemoryRegistry();
-    final Set<ActorRef> nodes = new HashSet<>();
-    paths.keySet().forEach(id -> nodes.add(
-            system.actorOf(FlameNode.props(id, graph, clusterConfig, registry), id))
-    );
-    return nodes;
   }
 
   private static class InMemoryRegistry implements AttachRegistry {
     private final Map<String, Long> linearizableCollection = Collections.synchronizedMap(new HashMap<>());
 
     @Override
-    public void register(String frontId, long attachTimestamp) {
-      linearizableCollection.put(frontId, attachTimestamp);
+    public void register(String frontId, String nodeId, long attachTimestamp) {
+      linearizableCollection.put(frontId + nodeId, attachTimestamp);
     }
   }
 }

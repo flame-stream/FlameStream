@@ -1,11 +1,11 @@
-package com.spbsu.flamestream.runtime.acker.api;
+package com.spbsu.flamestream.runtime.edge.front.api;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
-public class Heartbeat {
+public class Checkpoint {
   private final GlobalTime time;
 
-  public Heartbeat(GlobalTime time) {
+  public Checkpoint(GlobalTime time) {
     this.time = time;
   }
 
@@ -13,4 +13,3 @@ public class Heartbeat {
     return time;
   }
 }
-

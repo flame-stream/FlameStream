@@ -3,24 +3,25 @@ package com.spbsu.flamestream.runtime.edge.rear;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Rear;
+import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.RearInstance;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class RearActor<T extends Rear> extends LoggingActor {
-  private final T rear;
+public class RearActor extends LoggingActor {
+  private final Rear rear;
 
-  private RearActor(RearInstance<T> rearInstance) throws
-                                                  IllegalAccessException,
-                                                  InvocationTargetException,
-                                                  InstantiationException {
-    this.rear = (T) rearInstance.rearClass().getDeclaredConstructors()[0]
-            .newInstance(rearInstance.args());
+  private RearActor(EdgeContext context, RearInstance<?> rearInstance) throws
+                                                                       IllegalAccessException,
+                                                                       InvocationTargetException,
+                                                                       InstantiationException {
+    this.rear = (Rear) rearInstance.clazz().getDeclaredConstructors()[0]
+            .newInstance(context);
   }
 
-  public static <T extends Rear> Props props(RearInstance<T> rearInstance) {
-    return Props.create(RearActor.class, rearInstance);
+  public static Props props(EdgeContext context, RearInstance<?> rearInstance) {
+    return Props.create(RearActor.class, context, rearInstance);
   }
 
   @Override

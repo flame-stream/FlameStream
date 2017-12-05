@@ -2,10 +2,10 @@ package com.spbsu.flamestream.runtime.edge.front.api;
 
 import akka.actor.ActorRef;
 
-public class OnStart {
+public class Start {
   private final ActorRef consumer;
 
-  public OnStart(ActorRef consumer) {
+  public Start(ActorRef consumer) {
     this.consumer = consumer;
   }
 

@@ -44,7 +44,7 @@ public class SourceJoba<T> extends VertexJoba.SyncStub<T> {
       if (nextTime.compareTo(minTime) <= 0) {
         iterator.remove();
         if (!next.accepted) {
-          fronts.get(nextTime.front()).tell(new RequestNext(nextTime), context.self());
+          fronts.get(nextTime.frontId()).tell(new RequestNext(nextTime), context.self());
         }
       }
     }*/
@@ -56,7 +56,7 @@ public class SourceJoba<T> extends VertexJoba.SyncStub<T> {
     /*{ //back-pressure logic
       final GlobalTime globalTime = dataItem.meta().globalTime();
       if (inFlight.size() < maxInFlightItems) {
-        fronts.get(globalTime.front()).tell(new RequestNext(globalTime), context.self());
+        fronts.get(globalTime.frontId()).tell(new RequestNext(globalTime), context.self());
         inFlight.add(new InFlightTime(globalTime, true));
       } else {
         heartBeater.accept(globalTime);

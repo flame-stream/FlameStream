@@ -49,7 +49,7 @@ public class FlameNode extends LoggingActor {
     graph.tell(resolvedManagers(), self());
 
     final ActorRef negotiator = context().actorOf(Negotiator.props(id, acker, graph), "negotiator");
-    this.edgeManager = context().actorOf(EdgeManager.props(id, negotiator, barrier), "edge");
+    this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, barrier), "edge");
   }
 
   public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, AttachRegistry attachRegistry) {

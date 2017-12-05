@@ -9,7 +9,8 @@ import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
-import com.spbsu.flamestream.runtime.acker.table.CollectiveFrontTable;
+import com.spbsu.flamestream.runtime.acker.table.AckTable;
+import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
 import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -45,7 +46,7 @@ public class Acker extends LoggingActor {
 
   private final Set<ActorRef> minTimeSubscribers = new HashSet<>();
 
-  private final Map<String, CollectiveFrontTable> tables = new HashMap<>();
+  private final Map<String, Map<String, AckTable>> tables = new HashMap<>();
   private final AckerStatistics stat = new AckerStatistics();
   private final AttachRegistry registry;
 
@@ -73,24 +74,22 @@ public class Acker extends LoggingActor {
     final GlobalTime min = minAmongTables();
 
     log().info("Registering timestamp {} for {}", min, frontId);
-    if (tables.containsKey(frontId)) {
-      log().debug("New front instance for frontId {}", frontId);
-      tables.get(frontId).addNode(nodeId, min.time());
-    } else {
-      log().debug("Haven't seen frontId: {}, creating new table", frontId);
-      final CollectiveFrontTable frontTable = new CollectiveFrontTable(min.time(), SIZE, WINDOW);
-      frontTable.addNode(nodeId, min.time());
-      tables.put(frontId, frontTable);
-    }
+    log().debug("Haven't seen frontId: {}, creating new table", frontId);
+    final AckTable table = new ArrayAckTable(min.time(), SIZE, WINDOW);
 
-    registry.register(frontId, min.time());
-    log().info("Front {} has been registered, sending ticket", frontId);
-    sender().tell(new FrontTicket(frontId, nodeId, new GlobalTime(min.time(), frontId)), self());
+    final Map<String, AckTable> nodeTable = tables.getOrDefault(frontId, new HashMap<>());
+    nodeTable.put(nodeId, table);
+    tables.put(frontId, nodeTable);
+
+    registry.register(frontId, nodeId, min.time());
+    log().info("Front \"{}\" on node \"{}\" has been registered, sending ticket", frontId, nodeId);
+
+    sender().tell(new FrontTicket(new GlobalTime(min.time(), frontId, nodeId)), self());
   }
 
   private void handleHeartBeat(Heartbeat heartbeat) {
     final GlobalTime time = heartbeat.time();
-    tables.get(time.front()).heartbeat(heartbeat.nodeId(), time.time());
+    tables.get(time.frontId()).get(time.nodeId()).heartbeat(time.time());
     checkMinTime();
   }
 
@@ -104,7 +103,7 @@ public class Acker extends LoggingActor {
     log().info("ACKING {} {}", ack, sender());
     minTimeSubscribers.add(sender());
     final GlobalTime globalTime = ack.time();
-    final CollectiveFrontTable table = tables.get(globalTime.front());
+    final AckTable table = tables.get(globalTime.frontId()).get(globalTime.nodeId());
     final long time = globalTime.time();
 
     final long start = System.nanoTime();
@@ -127,18 +126,16 @@ public class Acker extends LoggingActor {
 
   private GlobalTime minAmongTables() {
     if (tables.isEmpty()) {
-      return new GlobalTime(defaultMinimalTime, "default-minimal-time");
+      return new GlobalTime(defaultMinimalTime, "default-minimal-time", "default-minimal-time");
     } else {
-      final String[] frontMin = {"Hi"};
-      final long[] timeMin = {Long.MAX_VALUE};
-      tables.forEach((f, table) -> {
-        final long tmpMin = table.min();
-        if (tmpMin < timeMin[0] || tmpMin == timeMin[0] && f.compareTo(frontMin[0]) < 0) {
-          frontMin[0] = f;
-          timeMin[0] = tmpMin;
-        }
-      });
-      return new GlobalTime(timeMin[0], frontMin[0]);
+      final GlobalTime[] min = {GlobalTime.MAX};
+      tables.forEach((frontId, nodeTables) ->
+              nodeTables.forEach((nodeId, ackTable) -> {
+                final GlobalTime tmp = new GlobalTime(ackTable.min(), frontId, nodeId);
+                min[0] = tmp.compareTo(min[0]) < 0 ? tmp : min[0];
+              })
+      );
+      return min[0];
     }
   }
 
