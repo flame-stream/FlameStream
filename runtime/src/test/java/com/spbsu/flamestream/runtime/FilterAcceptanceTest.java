@@ -10,7 +10,6 @@ import com.spbsu.flamestream.runtime.edge.rear.AkkaRearType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +41,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
 
   @Test
   public void linearFilter() throws InterruptedException {
-    final LocalRuntime runtime = new LocalRuntime(4);
+    final LocalRuntime runtime = new LocalRuntime(1);
     final FlameRuntime.Flame flame = runtime.run(multiGraph());
 
     final Consumer<Object> randomConsumer = randomConsumer(
@@ -50,14 +49,11 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
                     .collect(Collectors.toList())
     );
 
-    final Set<Object> result = Collections.synchronizedSet(new HashSet<>());
-
-    final List<AkkaRearType.Handle> handles = new ArrayList<>();
-    flame.attachRear("linerFilterRear", new AkkaRearType(runtime.system()))
-            .peek(handles::add)
+    final Set<Integer> result = Collections.synchronizedSet(new HashSet<>());
+    flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
             .forEach(f -> f.addListener(result::add));
 
-    final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
+    final List<Integer> source = new Random().ints(1).boxed().collect(Collectors.toList());
     source.forEach(randomConsumer);
 
     TimeUnit.SECONDS.sleep(20);

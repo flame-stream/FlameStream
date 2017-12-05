@@ -4,19 +4,21 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import com.spbsu.flamestream.runtime.edge.RawData;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.function.Consumer;
 
-public class AkkaRearType implements FlameRuntime.RearType<AkkaRear, AkkaRearType.Handle> {
+public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRearType<T>.Handle> {
   private final ActorSystem system;
+  private final Class<T> clazz;
 
-  public AkkaRearType(ActorSystem system) {
+  public AkkaRearType(ActorSystem system, Class<T> clazz) {
     this.system = system;
+    this.clazz = clazz;
   }
 
   @Override
@@ -32,33 +34,35 @@ public class AkkaRearType implements FlameRuntime.RearType<AkkaRear, AkkaRearTyp
   public class Handle {
     private final ActorRef rear;
 
-    public Handle(EdgeContext context) {
+    Handle(EdgeContext context) {
       this.rear = AwaitResolver.syncResolve(context.nodePath()
               .child("edge")
               .child(context.edgeId() + "-inner"), system);
     }
 
-    public void addListener(Consumer<Object> consumer) {
-      final ActorRef rearConsumer = system.actorOf(InnerActor.props(consumer));
+    public void addListener(Consumer<T> consumer) {
+      final ActorRef rearConsumer = system.actorOf(InnerActor.props(consumer, clazz));
       rear.tell(rearConsumer, ActorRef.noSender());
     }
   }
 
-  private static class InnerActor extends LoggingActor {
-    private final Consumer<Object> consumer;
+  private static class InnerActor<T> extends LoggingActor {
+    private final Consumer<T> consumer;
+    private final Class<T> clazz;
 
-    private InnerActor(Consumer<Object> consumer) {
+    private InnerActor(Consumer<T> consumer, Class<T> clazz) {
       this.consumer = consumer;
+      this.clazz = clazz;
     }
 
-    public static Props props(Consumer<Object> consumer) {
-      return Props.create(InnerActor.class, consumer);
+    static <T> Props props(Consumer<T> consumer, Class<T> clazz) {
+      return Props.create(InnerActor.class, consumer, clazz);
     }
 
     @Override
     public Receive createReceive() {
       return ReceiveBuilder.create()
-              .match(RawData.class, d -> consumer.accept(d.data()))
+              .match(DataItem.class, dataItem -> consumer.accept(dataItem.payload(clazz)))
               .build();
     }
   }

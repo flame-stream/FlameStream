@@ -5,7 +5,6 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Rear;
-import com.spbsu.flamestream.runtime.edge.RawData;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -44,7 +43,7 @@ public class AkkaRear implements Rear {
                 if (subscribers.isEmpty()) {
                   stash();
                 } else {
-                  subscribers.forEach(c -> c.forward(new RawData<>(d), context()));
+                  subscribers.forEach(c -> c.forward(d, context()));
                 }
               })
               .build();

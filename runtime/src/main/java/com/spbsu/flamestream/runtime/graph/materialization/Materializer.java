@@ -5,7 +5,6 @@ import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
@@ -20,7 +19,6 @@ import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 /**
@@ -100,23 +98,8 @@ public class Materializer implements AutoCloseable {
       if (currentVertex instanceof Sink) {
         currentJoba = new VertexJoba.SyncStub() {
           @Override
-          public void accept(DataItem o) {
-            barrier.accept(new DataItem() {
-              @Override
-              public Meta meta() {
-                return o.meta();
-              }
-
-              @Override
-              public <T> T payload(Class<T> expectedClass) {
-                return o.payload(expectedClass);
-              }
-
-              @Override
-              public long xor() {
-                return ThreadLocalRandom.current().nextLong();
-              }
-            });
+          public void accept(DataItem dataItem) {
+            barrier.accept(dataItem);
           }
         };
       } else if (currentVertex instanceof FlameMap) {
