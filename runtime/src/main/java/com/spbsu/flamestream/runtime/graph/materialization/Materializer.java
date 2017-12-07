@@ -19,6 +19,7 @@ import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -31,9 +32,10 @@ public class Materializer implements AutoCloseable {
   private final Consumer<DataItem> barrier;
   private final Consumer<DataItem> acker;
   private final Consumer<GlobalTime> heartBeater;
+  private final Map<Destination, VertexJoba> broadcasts;
   private final ActorContext context;
 
-  private final Map<String, VertexJoba> jobMapping = new HashMap<>();
+  private final Map<Destination, VertexJoba> jobMapping = new HashMap<>();
   private final Materialization materialization;
 
   public Materializer(Graph graph,
@@ -48,19 +50,21 @@ public class Materializer implements AutoCloseable {
     this.acker = acker;
     this.heartBeater = heartBeater;
     this.context = context;
+    broadcasts = new HashMap<>();
 
     buildJobMapping(graph.sink(), null);
     materialization = new Materialization() {
       @Override
       public void input(DataItem dataItem, ActorRef front) {
-        final SourceJoba sourceJoba = (SourceJoba) jobMapping.get(graph.source().id());
+        // FIXME: 07.12.2017 PERFORMANCE
+        final SourceJoba sourceJoba = (SourceJoba) jobMapping.get(new Destination(graph.source().id()));
         sourceJoba.addFront(dataItem.meta().globalTime().frontId(), front);
         sourceJoba.accept(dataItem);
       }
 
       @Override
       public void inject(Destination destination, DataItem dataItem) {
-        final VertexJoba vertexJoba = jobMapping.get(destination.vertexId);
+        final VertexJoba vertexJoba = jobMapping.get(destination);
         vertexJoba.accept(dataItem);
         if (!vertexJoba.isAsync()) {
           acker.accept(dataItem);
@@ -90,10 +94,20 @@ public class Materializer implements AutoCloseable {
 
   //DFS
   private void buildJobMapping(Graph.Vertex currentVertex, VertexJoba outputJoba) {
-    if (jobMapping.containsKey(currentVertex.id())) {
-      final BroadcastJoba broadcastJoba = (BroadcastJoba) jobMapping.get(currentVertex.id());
-      broadcastJoba.addSink(outputJoba);
+    if (broadcasts.containsKey(new Destination(currentVertex.id()))) {
+      ((BroadcastJoba) broadcasts.get(new Destination(currentVertex.id()))).addSink(outputJoba);
     } else {
+      final VertexJoba realOutputJoba;
+      if (graph.isBroadcast(currentVertex)) {
+        final BroadcastJoba broadcastJoba = new BroadcastJoba();
+        final Destination broadcastDest = new Destination(UUID.randomUUID().toString());
+        broadcastJoba.addSink(outputJoba);
+        broadcasts.put(new Destination(currentVertex.id()), broadcastJoba);
+        realOutputJoba = broadcastJoba;
+      } else {
+        realOutputJoba = outputJoba;
+      }
+
       boolean isGrouping = false;
       final VertexJoba currentJoba;
       if (currentVertex instanceof Sink) {
@@ -109,24 +123,17 @@ public class Materializer implements AutoCloseable {
           }
         };
       } else if (currentVertex instanceof FlameMap) {
-        currentJoba = new ActorVertexJoba(new MapJoba((FlameMap<?, ?>) currentVertex, outputJoba), acker, context);
+        currentJoba = new ActorVertexJoba(new MapJoba((FlameMap<?, ?>) currentVertex, realOutputJoba), acker, context);
       } else if (currentVertex instanceof Grouping) {
-        currentJoba = new ActorVertexJoba(new GroupingJoba((Grouping) currentVertex, outputJoba), acker, context);
+        currentJoba = new ActorVertexJoba(new GroupingJoba((Grouping) currentVertex, realOutputJoba), acker, context);
         isGrouping = true;
       } else if (currentVertex instanceof Source) {
         // TODO: 04.12.2017 choose number depends on statistics
-        currentJoba = new SourceJoba(10, context, heartBeater, outputJoba);
+        currentJoba = new SourceJoba(10, context, heartBeater, realOutputJoba);
       } else {
         throw new RuntimeException("Invalid vertex type");
       }
-
-      if (graph.isBroadcast(currentVertex)) {
-        final BroadcastJoba broadcastJoba = new BroadcastJoba();
-        broadcastJoba.addSink(currentJoba);
-        jobMapping.put(currentVertex.id(), broadcastJoba);
-      } else {
-        jobMapping.put(currentVertex.id(), currentJoba);
-      }
+      jobMapping.put(new Destination(currentVertex.id()), currentJoba);
 
       final VertexJoba currentAsNext;
       if (isGrouping) {
@@ -169,6 +176,13 @@ public class Materializer implements AutoCloseable {
     @Override
     public int hashCode() {
       return vertexId.hashCode();
+    }
+
+    @Override
+    public String toString() {
+      return "Destination{" +
+              "vertexId='" + vertexId + '\'' +
+              '}';
     }
   }
 }

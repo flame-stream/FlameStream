@@ -62,7 +62,7 @@ public final class SumTest extends FlameStreamSuite {
             .build(source, sink);
   }
 
-  @Test
+  @Test(invocationCount = 10)
   public void sumTest() throws InterruptedException {
     final LocalRuntime runtime = new LocalRuntime(4);
     final FlameRuntime.Flame flame = runtime.run(sumGraph());
@@ -76,13 +76,12 @@ public final class SumTest extends FlameStreamSuite {
       );
       final List<LongNumb> source = new Random()
               .ints(1000, 0, 100)
-              .map(Math::abs)
               .mapToObj(LongNumb::new)
               .collect(Collectors.toList());
       final long expected = source.stream().map(LongNumb::value).reduce(Long::sum).orElse(0L);
 
       source.forEach(sink);
-      TimeUnit.SECONDS.sleep(10);
+      TimeUnit.SECONDS.sleep(5);
 
       final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
       Assert.assertEquals(actual, expected);
