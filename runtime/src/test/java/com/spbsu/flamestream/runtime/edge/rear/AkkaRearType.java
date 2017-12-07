@@ -37,7 +37,7 @@ public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear
     Handle(EdgeContext context) {
       this.rear = AwaitResolver.syncResolve(context.nodePath()
               .child("edge")
-              .child(context.edgeId() + "-inner"), system);
+              .child(context.edgeInstance() + "-inner"), system);
     }
 
     public void addListener(Consumer<T> consumer) {

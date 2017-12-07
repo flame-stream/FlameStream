@@ -3,18 +3,16 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.acker.Acker;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
-import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.barrier.Barrier;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.EdgeManager;
-import com.spbsu.flamestream.runtime.edge.api.FrontInstance;
-import com.spbsu.flamestream.runtime.edge.api.RearInstance;
+import com.spbsu.flamestream.runtime.edge.api.AttachFront;
+import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.graph.GraphManager;
 import com.spbsu.flamestream.runtime.negitioator.Negotiator;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
@@ -60,8 +58,8 @@ public class FlameNode extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(FrontInstance.class, f -> edgeManager.forward(f, context()))
-            .match(RearInstance.class, f -> edgeManager.forward(f, context()))
+            .match(AttachFront.class, f -> edgeManager.forward(f, context()))
+            .match(AttachRear.class, f -> edgeManager.forward(f, context()))
             .build();
   }
 
@@ -81,7 +79,6 @@ public class FlameNode extends LoggingActor {
       barriers.add(b);
     });
     return (item, sender) -> {
-      acker.tell(new Ack(item.meta().globalTime(), item.xor()), sender);
       final int hash = Hashing.murmur3_32().hashLong(item.meta().globalTime().time()).asInt();
       barriers.get(Math.abs(hash) % barriers.size()).tell(item, sender);
     };

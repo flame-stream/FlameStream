@@ -12,5 +12,12 @@ public class Heartbeat {
   public GlobalTime time() {
     return time;
   }
+
+  @Override
+  public String toString() {
+    return "Heartbeat{" +
+            "time=" + time +
+            '}';
+  }
 }
 

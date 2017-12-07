@@ -1,15 +1,15 @@
 package com.spbsu.flamestream.runtime.edge.api;
 
-import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.core.Rear;
 
-public class FrontInstance<F extends Front> {
+public class AttachRear<R extends Rear> {
   private final String id;
-  private final Class<F> clazz;
+  private final Class<R> clazz;
   private final String[] args;
 
-  public FrontInstance(String id, Class<F> clazz, String[] args) {
-    this.clazz = clazz;
+  public AttachRear(String id, Class<R> clazz, String[] args) {
     this.id = id;
+    this.clazz = clazz;
     this.args = args;
   }
 
@@ -17,7 +17,7 @@ public class FrontInstance<F extends Front> {
     return id;
   }
 
-  public Class<F> clazz() {
+  public Class<R> clazz() {
     return clazz;
   }
 

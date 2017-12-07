@@ -4,7 +4,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import com.spbsu.flamestream.runtime.edge.api.FrontInstance;
+import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.front.api.RequestNext;
 import com.spbsu.flamestream.runtime.edge.front.api.Start;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -14,16 +14,16 @@ import java.lang.reflect.InvocationTargetException;
 public class FrontActor extends LoggingActor {
   private final Front front;
 
-  private FrontActor(EdgeContext context, FrontInstance<?> frontInstance) throws
+  private FrontActor(EdgeContext context, AttachFront<?> attachFront) throws
                                                                           IllegalAccessException,
                                                                           InvocationTargetException,
                                                                           InstantiationException {
-    this.front = (Front) frontInstance.clazz().getDeclaredConstructors()[0]
+    this.front = (Front) attachFront.clazz().getDeclaredConstructors()[0]
             .newInstance(context);
   }
 
-  public static Props props(EdgeContext context, FrontInstance<?> frontInstance) {
-    return Props.create(FrontActor.class, context, frontInstance);
+  public static Props props(EdgeContext context, AttachFront<?> attachFront) {
+    return Props.create(FrontActor.class, context, attachFront);
   }
 
   @Override

@@ -1,13 +1,16 @@
 package com.spbsu.flamestream.runtime.acker;
 
+import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class InMemoryRegistry implements AttachRegistry {
-  public final Map<String, Long> registry = new HashMap<>();
+  public final Map<EdgeInstance, Long> registry = new HashMap<>();
 
   @Override
-  public void register(String frontId, String nodeId, long attachTimestamp) {
-    registry.put(frontId + nodeId, attachTimestamp);
+  public void register(EdgeInstance frontInstance, long attachTimestamp) {
+    registry.put(frontInstance, attachTimestamp);
+
   }
 }

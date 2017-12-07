@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public final class GroupingAcceptanceTest extends FlameStreamSuite {
   @Test
   public void reorderingMultipleHash() throws InterruptedException {
-    final int window = 7;
+    final int window = 2;
     final LocalRuntime runtime = new LocalRuntime(10);
 
     final Graph graph = groupGraph(
@@ -48,7 +48,7 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
       flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
               .forEach(r -> r.addListener(result::add));
 
-      final List<Long> source = new Random().longs(10000, 0, 100)
+      final List<Long> source = new Random().longs(1000, 0, 1)
               .boxed()
               .collect(Collectors.toList());
       final Consumer<Object> front = randomConsumer(

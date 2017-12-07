@@ -1,19 +1,15 @@
 package com.spbsu.flamestream.runtime.acker.api;
 
+import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+
 public class RegisterFront {
-  private final String frontId;
-  private final String nodeId;
+  private final EdgeInstance frontInstance;
 
-  public RegisterFront(String frontId, String nodeId) {
-    this.frontId = frontId;
-    this.nodeId = nodeId;
+  public RegisterFront(EdgeInstance frontInstance) {
+    this.frontInstance = frontInstance;
   }
 
-  public String frontId() {
-    return frontId;
-  }
-
-  public String nodeId() {
-    return nodeId;
+  public EdgeInstance frontInstance() {
+    return frontInstance;
   }
 }

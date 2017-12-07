@@ -4,12 +4,12 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.barrier.api.AttachRear;
-import com.spbsu.flamestream.runtime.edge.api.FrontInstance;
-import com.spbsu.flamestream.runtime.edge.api.RearInstance;
+import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+import com.spbsu.flamestream.runtime.edge.api.AttachFront;
+import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.edge.front.FrontActor;
 import com.spbsu.flamestream.runtime.edge.rear.RearActor;
-import com.spbsu.flamestream.runtime.negitioator.api.AttachFront;
+import com.spbsu.flamestream.runtime.negitioator.api.NewFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class EdgeManager extends LoggingActor {
@@ -32,19 +32,19 @@ public class EdgeManager extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(FrontInstance.class, frontInstance -> {
+            .match(AttachFront.class, attachFront -> {
               final ActorRef frontRef = context().actorOf(FrontActor.props(
-                      new SystemEdgeContext(nodePath, nodeId, frontInstance.id(), context()),
-                      frontInstance
-              ), frontInstance.id());
-              negotiator.tell(new AttachFront(frontInstance.id(), frontRef), self());
+                      new SystemEdgeContext(nodePath, nodeId, attachFront.id(), context()),
+                      attachFront
+              ), attachFront.id());
+              negotiator.tell(new NewFront(new EdgeInstance(attachFront.id(), nodeId), frontRef), self());
             })
-            .match(RearInstance.class, rearInstance -> {
+            .match(AttachRear.class, attachRear -> {
               final ActorRef rearRef = context().actorOf(RearActor.props(
-                      new SystemEdgeContext(nodePath, nodeId, rearInstance.id(), context()),
-                      rearInstance
-              ), rearInstance.id());
-              barrier.tell(new AttachRear(rearRef), self());
+                      new SystemEdgeContext(nodePath, nodeId, attachRear.id(), context()),
+                      attachRear
+              ), attachRear.id());
+              barrier.tell(new com.spbsu.flamestream.runtime.barrier.api.AttachRear(rearRef), self());
             })
             .build();
   }

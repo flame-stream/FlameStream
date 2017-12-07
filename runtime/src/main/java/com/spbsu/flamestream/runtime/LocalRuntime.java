@@ -9,13 +9,14 @@ import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Rear;
+import com.spbsu.flamestream.core.data.meta.EdgeInstance;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationLayout;
 import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
-import com.spbsu.flamestream.runtime.edge.api.FrontInstance;
-import com.spbsu.flamestream.runtime.edge.api.RearInstance;
+import com.spbsu.flamestream.runtime.edge.api.AttachFront;
+import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -77,14 +78,14 @@ public class LocalRuntime implements FlameRuntime {
 
       @Override
       public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type, String... args) {
-        nodes.forEach(n -> n.tell(new FrontInstance<>(id, type.frontClass(), args), ActorRef.noSender()));
+        nodes.forEach(n -> n.tell(new AttachFront<>(id, type.frontClass(), args), ActorRef.noSender()));
         return paths.entrySet().stream()
                 .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
       }
 
       @Override
       public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type, String... args) {
-        nodes.forEach(n -> n.tell(new RearInstance<>(id, type.rearClass(), args), ActorRef.noSender()));
+        nodes.forEach(n -> n.tell(new AttachRear<>(id, type.rearClass(), args), ActorRef.noSender()));
         return paths.entrySet().stream()
                 .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
       }
@@ -92,11 +93,11 @@ public class LocalRuntime implements FlameRuntime {
   }
 
   private static class InMemoryRegistry implements AttachRegistry {
-    private final Map<String, Long> linearizableCollection = Collections.synchronizedMap(new HashMap<>());
+    private final Map<EdgeInstance, Long> linearizableCollection = Collections.synchronizedMap(new HashMap<>());
 
     @Override
-    public void register(String frontId, String nodeId, long attachTimestamp) {
-      linearizableCollection.put(frontId + nodeId, attachTimestamp);
+    public void register(EdgeInstance frontInstance, long attachTimestamp) {
+      linearizableCollection.put(frontInstance, attachTimestamp);
     }
   }
 }

@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime.acker;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.core.data.meta.EdgeInstance;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
@@ -46,7 +47,7 @@ public class Acker extends LoggingActor {
 
   private final Set<ActorRef> minTimeSubscribers = new HashSet<>();
 
-  private final Map<String, Map<String, AckTable>> tables = new HashMap<>();
+  private final Map<EdgeInstance, AckTable> tables = new HashMap<>();
   private final AckerStatistics stat = new AckerStatistics();
   private final AttachRegistry registry;
 
@@ -66,30 +67,29 @@ public class Acker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
-            .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId(), registerFront.nodeId()))
+            .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontInstance()))
             .build();
   }
 
-  private void registerFront(String frontId, String nodeId) {
+  private void registerFront(EdgeInstance frontInstance) {
     final GlobalTime min = minAmongTables();
 
-    log().info("Registering timestamp {} for {}", min, frontId);
-    log().debug("Haven't seen frontId: {}, creating new table", frontId);
+    log().info("Registering timestamp {} for {}", min, frontInstance);
+
     final AckTable table = new ArrayAckTable(min.time(), SIZE, WINDOW);
+    tables.put(frontInstance, table);
+    registry.register(frontInstance, min.time());
+    log().info("Front instance \"{}\" has been registered, sending ticket", frontInstance);
 
-    final Map<String, AckTable> nodeTable = tables.getOrDefault(frontId, new HashMap<>());
-    nodeTable.put(nodeId, table);
-    tables.put(frontId, nodeTable);
-
-    registry.register(frontId, nodeId, min.time());
-    log().info("Front \"{}\" on node \"{}\" has been registered, sending ticket", frontId, nodeId);
-
-    sender().tell(new FrontTicket(new GlobalTime(min.time(), frontId, nodeId)), self());
+    sender().tell(new FrontTicket(new GlobalTime(min.time(), frontInstance)), self());
   }
 
   private void handleHeartBeat(Heartbeat heartbeat) {
     final GlobalTime time = heartbeat.time();
-    tables.get(time.frontId()).get(time.nodeId()).heartbeat(time.time());
+    if (!tables.containsKey(time.frontInstance())) {
+      throw new IllegalStateException("Heartbeat for not registered front received " + heartbeat);
+    }
+    tables.get(time.frontInstance()).heartbeat(time.time());
     checkMinTime();
   }
 
@@ -104,7 +104,7 @@ public class Acker extends LoggingActor {
 
     minTimeSubscribers.add(sender());
     final GlobalTime globalTime = ack.time();
-    final AckTable table = tables.get(globalTime.frontId()).get(globalTime.nodeId());
+    final AckTable table = tables.get(ack.time().frontInstance());
     final long time = globalTime.time();
 
     final long start = System.nanoTime();
@@ -127,15 +127,14 @@ public class Acker extends LoggingActor {
 
   private GlobalTime minAmongTables() {
     if (tables.isEmpty()) {
-      return new GlobalTime(defaultMinimalTime, "default-minimal-time", "default-minimal-time");
+      return new GlobalTime(defaultMinimalTime, EdgeInstance.MIN);
     } else {
       final GlobalTime[] min = {GlobalTime.MAX};
-      tables.forEach((frontId, nodeTables) ->
-              nodeTables.forEach((nodeId, ackTable) -> {
+      tables.forEach((frontInstance, table) -> {
                 // FIXME: 12/5/17 PERFORMANCE
-                final GlobalTime tmp = new GlobalTime(ackTable.min(), frontId, nodeId);
+                final GlobalTime tmp = new GlobalTime(table.min(), frontInstance);
                 min[0] = tmp.compareTo(min[0]) < 0 ? tmp : min[0];
-              })
+              }
       );
       return min[0];
     }

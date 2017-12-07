@@ -54,7 +54,7 @@ public class Materializer implements AutoCloseable {
       @Override
       public void input(DataItem dataItem, ActorRef front) {
         final SourceJoba sourceJoba = (SourceJoba) jobMapping.get(graph.source().id());
-        sourceJoba.addFront(dataItem.meta().globalTime().frontId(), front);
+        sourceJoba.addFront(dataItem.meta().globalTime().frontInstance(), front);
         sourceJoba.accept(dataItem);
       }
 
@@ -97,7 +97,17 @@ public class Materializer implements AutoCloseable {
       boolean isGrouping = false;
       final VertexJoba currentJoba;
       if (currentVertex instanceof Sink) {
-        currentJoba = barrier::accept;
+        currentJoba = new VertexJoba() {
+          @Override
+          public boolean isAsync() {
+            return true;
+          }
+
+          @Override
+          public void accept(DataItem dataItem) {
+            barrier.accept(dataItem);
+          }
+        };
       } else if (currentVertex instanceof FlameMap) {
         currentJoba = new ActorVertexJoba(new MapJoba((FlameMap<?, ?>) currentVertex, outputJoba), acker, context);
       } else if (currentVertex instanceof Grouping) {
