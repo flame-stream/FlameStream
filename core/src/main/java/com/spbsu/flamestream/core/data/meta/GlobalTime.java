@@ -4,28 +4,28 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public final class GlobalTime implements Comparable<GlobalTime> {
-  public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, EdgeInstance.MIN);
-  public static final GlobalTime MAX = new GlobalTime(Long.MAX_VALUE, EdgeInstance.MAX);
+  public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, EdgeId.MIN);
+  public static final GlobalTime MAX = new GlobalTime(Long.MAX_VALUE, EdgeId.MAX);
   //Inner representation is a subject for a discussion and/or an optimization
 
   private static final Comparator<GlobalTime> NATURAL_ORDER = Comparator
           .comparingLong(GlobalTime::time)
-          .thenComparing(GlobalTime::frontInstance);
+          .thenComparing(GlobalTime::frontId);
 
   private final long time;
-  private final EdgeInstance frontInstance;
+  private final EdgeId frontId;
 
-  public GlobalTime(long time, EdgeInstance frontInstance) {
+  public GlobalTime(long time, EdgeId frontId) {
     this.time = time;
-    this.frontInstance = frontInstance;
+    this.frontId = frontId;
   }
 
   public long time() {
     return time;
   }
 
-  public EdgeInstance frontInstance() {
-    return frontInstance;
+  public EdgeId frontId() {
+    return frontId;
   }
 
   @Override
@@ -43,16 +43,16 @@ public final class GlobalTime implements Comparable<GlobalTime> {
     }
     final GlobalTime that = (GlobalTime) o;
     return time == that.time &&
-            Objects.equals(frontInstance, that.frontInstance);
+            Objects.equals(frontId, that.frontId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(time, frontInstance);
+    return Objects.hash(time, frontId);
   }
 
   @Override
   public String toString() {
-    return "(" + time + ", " + frontInstance + ')';
+    return "(" + time + ", " + frontId + ')';
   }
 }

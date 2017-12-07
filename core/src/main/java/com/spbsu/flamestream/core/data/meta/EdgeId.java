@@ -2,10 +2,10 @@ package com.spbsu.flamestream.core.data.meta;
 
 import java.util.Objects;
 
-public class EdgeInstance implements Comparable<EdgeInstance> {
-  public static final EdgeInstance MAX = new EdgeInstance("", "") {
+public class EdgeId implements Comparable<EdgeId> {
+  public static final EdgeId MAX = new EdgeId("", "") {
     @Override
-    public int compareTo(EdgeInstance o) {
+    public int compareTo(EdgeId o) {
       return 1;
     }
 
@@ -15,9 +15,9 @@ public class EdgeInstance implements Comparable<EdgeInstance> {
     }
   };
 
-  public static final EdgeInstance MIN = new EdgeInstance("", "") {
+  public static final EdgeId MIN = new EdgeId("", "") {
     @Override
-    public int compareTo(EdgeInstance o) {
+    public int compareTo(EdgeId o) {
       return -1;
     }
 
@@ -27,11 +27,11 @@ public class EdgeInstance implements Comparable<EdgeInstance> {
     }
   };
 
-  private final String edgeId;
+  private final String edgeName;
   private final String nodeId;
 
-  public EdgeInstance(String edgeId, String nodeId) {
-    this.edgeId = edgeId;
+  public EdgeId(String edgeName, String nodeId) {
+    this.edgeName = edgeName;
     this.nodeId = nodeId;
   }
 
@@ -43,21 +43,21 @@ public class EdgeInstance implements Comparable<EdgeInstance> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final EdgeInstance that = (EdgeInstance) o;
-    return Objects.equals(edgeId, that.edgeId) &&
+    final EdgeId that = (EdgeId) o;
+    return Objects.equals(edgeName, that.edgeName) &&
             Objects.equals(nodeId, that.nodeId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(edgeId, nodeId);
+    return Objects.hash(edgeName, nodeId);
   }
 
   @Override
-  public int compareTo(EdgeInstance o) {
-    if (edgeId.compareTo(o.edgeId) < 0) {
+  public int compareTo(EdgeId o) {
+    if (edgeName.compareTo(o.edgeName) < 0) {
       return -1;
-    } else if (edgeId.compareTo(o.edgeId) > 0) {
+    } else if (edgeName.compareTo(o.edgeName) > 0) {
       return 1;
     } else {
       return nodeId.compareTo(o.nodeId);
@@ -66,6 +66,6 @@ public class EdgeInstance implements Comparable<EdgeInstance> {
 
   @Override
   public String toString() {
-    return edgeId + '@' + nodeId;
+    return edgeName + '@' + nodeId;
   }
 }

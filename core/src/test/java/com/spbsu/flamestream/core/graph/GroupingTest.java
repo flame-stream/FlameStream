@@ -6,7 +6,7 @@ import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
-import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import org.jooq.lambda.Collectable;
@@ -51,9 +51,9 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void withoutReordering() {
-    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeInstance.MIN)), "v1");
-    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeInstance.MIN)), "v2");
-    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, EdgeInstance.MIN)), "v3");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeId.MIN)), "v1");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeId.MIN)), "v2");
+    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, EdgeId.MIN)), "v3");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x1, x2, x3), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
@@ -70,8 +70,8 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void groupWithSuccessor() {
-    final Meta x5Global = Meta.meta(new GlobalTime(2, EdgeInstance.MIN));
-    final Meta x0Global = Meta.meta(new GlobalTime(1, EdgeInstance.MIN));
+    final Meta x5Global = Meta.meta(new GlobalTime(2, EdgeId.MIN));
+    final Meta x0Global = Meta.meta(new GlobalTime(1, EdgeId.MIN));
 
     final DataItem x5 = new PayloadDataItem(x5Global, "v5");
     final DataItem x5State = new PayloadDataItem(x5Global.advanced(1), "v5State");
@@ -103,10 +103,10 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void cycleSimulation() {
-    final Meta x1Meta = Meta.meta(new GlobalTime(1, EdgeInstance.MIN));
+    final Meta x1Meta = Meta.meta(new GlobalTime(1, EdgeId.MIN));
 
     final DataItem x1 = new PayloadDataItem(x1Meta, "v1");
-    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeInstance.MIN)), "v2");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeId.MIN)), "v2");
     final DataItem x1Prime = new PayloadDataItem(x1Meta.advanced(2), "state");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x1, x2, x1Prime), 2);
@@ -127,9 +127,9 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void headReordering() {
-    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeInstance.MIN)), "v2");
-    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeInstance.MIN)), "v1");
-    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, EdgeInstance.MIN)), "v3");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeId.MIN)), "v2");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeId.MIN)), "v1");
+    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, EdgeId.MIN)), "v3");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x2, x1, x3), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
@@ -149,9 +149,9 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void tailReordering() {
-    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeInstance.MIN)), "v1");
-    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, EdgeInstance.MIN)), "v3");
-    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeInstance.MIN)), "v2");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeId.MIN)), "v1");
+    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, EdgeId.MIN)), "v3");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeId.MIN)), "v2");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x1, x3, x2), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
@@ -171,9 +171,9 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void reverseReordering() {
-    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, EdgeInstance.MIN)), "v3");
-    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeInstance.MIN)), "v2");
-    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeInstance.MIN)), "v1");
+    final DataItem x3 = new PayloadDataItem(Meta.meta(new GlobalTime(3, EdgeId.MIN)), "v3");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeId.MIN)), "v2");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeId.MIN)), "v1");
 
     final List<List<String>> actualResult = GroupingTest.groupMe(Stream.of(x3, x2, x1), 2);
     final List<List<String>> expectedResult = new ArrayList<>();
@@ -198,10 +198,10 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test
   public void reorderingWithInvalidating() {
-    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeInstance.MIN)), "v1");
-    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeInstance.MIN)), "v2");
+    final DataItem x1 = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeId.MIN)), "v1");
+    final DataItem x2 = new PayloadDataItem(Meta.meta(new GlobalTime(2, EdgeId.MIN)), "v2");
 
-    final Meta x3Meta = Meta.meta(new GlobalTime(3, EdgeInstance.MIN));
+    final Meta x3Meta = Meta.meta(new GlobalTime(3, EdgeId.MIN));
     final DataItem x3 = new PayloadDataItem(x3Meta.advanced(1), "v3");
     final DataItem x3Prime = new PayloadDataItem(x3Meta.advanced(2), "v3Prime");
 
@@ -229,7 +229,7 @@ public final class GroupingTest extends FlameStreamSuite {
   public void shuffleReordering() {
 
     final List<DataItem> input = IntStream.range(0, 1000)
-            .mapToObj(i -> new PayloadDataItem(Meta.meta(new GlobalTime(i, EdgeInstance.MIN)), "v" + i))
+            .mapToObj(i -> new PayloadDataItem(Meta.meta(new GlobalTime(i, EdgeId.MIN)), "v" + i))
             .collect(Collectors.toList());
 
     final List<DataItem> shuffledInput = new ArrayList<>(input);
@@ -253,7 +253,7 @@ public final class GroupingTest extends FlameStreamSuite {
 
   @Test(enabled = false)
   public void brothersInvalidation() {
-    final DataItem father = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeInstance.MIN)), "father");
+    final DataItem father = new PayloadDataItem(Meta.meta(new GlobalTime(1, EdgeId.MIN)), "father");
 
     final DataItem son1 = new PayloadDataItem(father.meta().advanced(1, 0), "son1");
     final DataItem son2 = new PayloadDataItem(father.meta().advanced(1, 1), "son2");

@@ -54,7 +54,7 @@ public class Materializer implements AutoCloseable {
       @Override
       public void input(DataItem dataItem, ActorRef front) {
         final SourceJoba sourceJoba = (SourceJoba) jobMapping.get(graph.source().id());
-        sourceJoba.addFront(dataItem.meta().globalTime().frontInstance(), front);
+        sourceJoba.addFront(dataItem.meta().globalTime().frontId(), front);
         sourceJoba.accept(dataItem);
       }
 

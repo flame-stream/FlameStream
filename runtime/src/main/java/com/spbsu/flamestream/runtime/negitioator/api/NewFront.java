@@ -1,19 +1,19 @@
 package com.spbsu.flamestream.runtime.negitioator.api;
 
 import akka.actor.ActorRef;
-import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 
 public class NewFront {
-  private final EdgeInstance frontInstance;
+  private final EdgeId frontId;
   private final ActorRef front;
 
-  public NewFront(EdgeInstance frontInstance, ActorRef front) {
-    this.frontInstance = frontInstance;
+  public NewFront(EdgeId frontId, ActorRef front) {
+    this.frontId = frontId;
     this.front = front;
   }
 
-  public EdgeInstance frontInstance() {
-    return frontInstance;
+  public EdgeId frontId() {
+    return frontId;
   }
 
   public ActorRef front() {

@@ -9,7 +9,7 @@ import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Rear;
-import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationLayout;
@@ -93,11 +93,11 @@ public class LocalRuntime implements FlameRuntime {
   }
 
   private static class InMemoryRegistry implements AttachRegistry {
-    private final Map<EdgeInstance, Long> linearizableCollection = Collections.synchronizedMap(new HashMap<>());
+    private final Map<EdgeId, Long> linearizableCollection = Collections.synchronizedMap(new HashMap<>());
 
     @Override
-    public void register(EdgeInstance frontInstance, long attachTimestamp) {
-      linearizableCollection.put(frontInstance, attachTimestamp);
+    public void register(EdgeId frontId, long attachTimestamp) {
+      linearizableCollection.put(frontId, attachTimestamp);
     }
   }
 }

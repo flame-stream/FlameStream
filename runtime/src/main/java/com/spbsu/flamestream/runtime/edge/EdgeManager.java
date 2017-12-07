@@ -4,7 +4,7 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.edge.front.FrontActor;
@@ -37,7 +37,7 @@ public class EdgeManager extends LoggingActor {
                       new SystemEdgeContext(nodePath, nodeId, attachFront.id(), context()),
                       attachFront
               ), attachFront.id());
-              negotiator.tell(new NewFront(new EdgeInstance(attachFront.id(), nodeId), frontRef), self());
+              negotiator.tell(new NewFront(new EdgeId(attachFront.id(), nodeId), frontRef), self());
             })
             .match(AttachRear.class, attachRear -> {
               final ActorRef rearRef = context().actorOf(RearActor.props(

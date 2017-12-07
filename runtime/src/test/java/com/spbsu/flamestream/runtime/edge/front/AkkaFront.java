@@ -6,7 +6,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
-import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
@@ -29,7 +29,7 @@ public class AkkaFront implements Front {
 
   public AkkaFront(SystemEdgeContext context) {
     this.innerActor = context.refFactory()
-            .actorOf(InnerActor.props(context.edgeInstance()), context.edgeInstance() + "-inner");
+            .actorOf(InnerActor.props(context.edgeId()), context.edgeId() + "-inner");
   }
 
   @Override
@@ -48,7 +48,7 @@ public class AkkaFront implements Front {
   }
 
   private static class InnerActor extends LoggingActor {
-    private final EdgeInstance frontInstance;
+    private final EdgeId frontId;
 
     @Nullable
     private Cancellable ping;
@@ -60,12 +60,12 @@ public class AkkaFront implements Front {
 
     private long prevGlobalTs = 0;
 
-    private InnerActor(EdgeInstance frontInstance) {
-      this.frontInstance = frontInstance;
+    private InnerActor(EdgeId frontId) {
+      this.frontId = frontId;
     }
 
-    public static Props props(EdgeInstance frontInstance) {
-      return Props.create(InnerActor.class, frontInstance);
+    public static Props props(EdgeId frontId) {
+      return Props.create(InnerActor.class, frontId);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class AkkaFront implements Front {
       prevGlobalTs = globalTs;
 
 
-      return new GlobalTime(globalTs, frontInstance);
+      return new GlobalTime(globalTs, frontId);
     }
   }
 }

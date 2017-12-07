@@ -24,7 +24,7 @@ public class AkkaFrontType implements FlameRuntime.FrontType<AkkaFront, AkkaFron
   @Override
   public Handle handle(EdgeContext context) {
     final ActorRef ref = AwaitResolver.syncResolve(
-            context.nodePath().child("edge").child(context.edgeInstance() + "-inner"),
+            context.nodePath().child("edge").child(context.edgeId() + "-inner"),
             system
     );
     return new Handle(ref);

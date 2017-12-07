@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.acker;
 
-import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 
 public interface AttachRegistry {
-  void register(EdgeInstance frontInstance, long attachTimestamp);
+  void register(EdgeId frontId, long attachTimestamp);
 }

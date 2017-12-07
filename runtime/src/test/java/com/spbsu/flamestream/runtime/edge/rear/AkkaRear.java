@@ -15,7 +15,7 @@ public class AkkaRear implements Rear {
   private final ActorRef innerActor;
 
   public AkkaRear(SystemEdgeContext context) {
-    this.innerActor = context.refFactory().actorOf(InnerActor.props(), context.edgeInstance() + "-inner");
+    this.innerActor = context.refFactory().actorOf(InnerActor.props(), context.edgeId() + "-inner");
   }
 
   @Override

@@ -3,7 +3,7 @@ package com.spbsu.flamestream.runtime.graph.materialization.vertices;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import java.util.function.Consumer;
  */
 public class SourceJoba implements VertexJoba {
   private final Collection<InFlightTime> inFlight = new ArrayList<>();
-  private final Map<EdgeInstance, ActorRef> fronts = new HashMap<>();
+  private final Map<EdgeId, ActorRef> fronts = new HashMap<>();
 
   private final int maxInFlightItems;
   private final ActorContext context;
@@ -32,7 +32,7 @@ public class SourceJoba implements VertexJoba {
     this.sink = sink;
   }
 
-  public void addFront(EdgeInstance front, ActorRef actorRef) {
+  public void addFront(EdgeId front, ActorRef actorRef) {
     fronts.putIfAbsent(front, actorRef);
   }
 

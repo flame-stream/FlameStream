@@ -2,7 +2,7 @@ package com.spbsu.flamestream.runtime.edge;
 
 import akka.actor.ActorPath;
 import akka.actor.ActorRefFactory;
-import com.spbsu.flamestream.core.data.meta.EdgeInstance;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 
 public class SystemEdgeContext implements EdgeContext {
   private final ActorPath nodePath;
@@ -23,8 +23,8 @@ public class SystemEdgeContext implements EdgeContext {
   }
 
   @Override
-  public EdgeInstance edgeInstance() {
-    return new EdgeInstance(edgeId, nodeId);
+  public EdgeId edgeId() {
+    return new EdgeId(edgeId, nodeId);
   }
 
   public ActorRefFactory refFactory() {
