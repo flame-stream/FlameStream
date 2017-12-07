@@ -11,7 +11,9 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * User: Artem
@@ -21,18 +23,20 @@ public class GroupingJoba implements VertexJoba {
   private final Grouping<?> grouping;
   private final Consumer<DataItem> sink;
   private final TIntObjectMap<Object> buffers = new TIntObjectHashMap<>();
+  private final BiFunction<DataItem, InvalidatingBucket, Stream<DataItem>> operation;
 
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
   public GroupingJoba(Grouping<?> grouping, Consumer<DataItem> sink) {
     this.grouping = grouping;
+    this.operation = grouping.operation();
     this.sink = sink;
   }
 
   @Override
   public void accept(DataItem dataItem) {
     final InvalidatingBucket bucket = bucketFor(dataItem);
-    grouping.operation().apply(dataItem, bucket).forEach(sink);
+    operation.apply(dataItem, bucket).forEach(sink);
     { //clear outdated
       final int position = Math.max(bucket.floor(Meta.meta(currentMinTime)) - grouping.window(), 0);
       bucket.clearRange(0, position);

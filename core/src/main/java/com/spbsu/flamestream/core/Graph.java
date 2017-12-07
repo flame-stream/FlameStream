@@ -34,15 +34,6 @@ public interface Graph {
         return toString() + "{id=" + id + "}";
       }
     }
-
-    abstract class LocalTimeStub extends Stub {
-      private int localTime = 0;
-
-      protected final int incrementLocalTimeAndGet() {
-        this.localTime += 1;
-        return localTime;
-      }
-    }
   }
 
   class Builder {

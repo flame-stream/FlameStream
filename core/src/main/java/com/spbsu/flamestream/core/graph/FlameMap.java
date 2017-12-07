@@ -8,7 +8,7 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class FlameMap<T, R> extends Graph.Vertex.LocalTimeStub {
+public class FlameMap<T, R> extends Graph.Vertex.Stub {
   private final Function<T, Stream<R>> function;
   private final Class<T> clazz;
 
@@ -18,18 +18,19 @@ public class FlameMap<T, R> extends Graph.Vertex.LocalTimeStub {
   }
 
   public Function<DataItem, Stream<DataItem>> operation() {
-    return dataItem -> {
-      final Stream<R> result = function.apply(dataItem.payload(clazz));
-      if (result == null) {
-        return null;
-      }
+    return new Function<DataItem, Stream<DataItem>>() {
+      private int localTime = 0;
 
-      final int newLocalTime = incrementLocalTimeAndGet();
-      final int[] childId = {0};
-      return result.map(r -> {
-        final Meta newMeta = dataItem.meta().advanced(newLocalTime, childId[0]++);
-        return new PayloadDataItem(newMeta, r);
-      });
+      @Override
+      public Stream<DataItem> apply(DataItem dataItem) {
+        final Stream<R> result = function.apply(dataItem.payload(clazz));
+        final int newLocalTime = localTime++;
+        final int[] childId = {0};
+        return result.map(r -> {
+          final Meta newMeta = dataItem.meta().advanced(newLocalTime, childId[0]++);
+          return new PayloadDataItem(newMeta, r);
+        });
+      }
     };
   }
 
