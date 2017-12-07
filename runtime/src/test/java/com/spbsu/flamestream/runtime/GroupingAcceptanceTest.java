@@ -52,7 +52,7 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
               .boxed()
               .collect(Collectors.toList());
       final Consumer<Object> front = randomConsumer(
-              flame.attachFront("groupingAcceptanceFront", new AkkaFrontType(runtime.system()))
+              flame.attachFront("groupingAcceptanceFront", new AkkaFrontType<>(runtime.system()))
                       .collect(Collectors.toList())
       );
       source.forEach(front);

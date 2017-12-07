@@ -45,7 +45,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
     final FlameRuntime.Flame flame = runtime.run(multiGraph());
 
     final Consumer<Object> randomConsumer = randomConsumer(
-            flame.attachFront("linearFilterFront", new AkkaFrontType(runtime.system()))
+            flame.attachFront("linearFilterFront", new AkkaFrontType<>(runtime.system()))
                     .collect(Collectors.toList())
     );
 

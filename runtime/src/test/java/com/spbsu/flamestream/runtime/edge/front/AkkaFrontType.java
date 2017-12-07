@@ -9,7 +9,7 @@ import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 
 import java.util.function.Consumer;
 
-public class AkkaFrontType implements FlameRuntime.FrontType<AkkaFront, AkkaFrontType.Handle> {
+public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaFrontType.Handle<T>> {
   private final ActorSystem system;
 
   public AkkaFrontType(ActorSystem system) {
@@ -22,15 +22,15 @@ public class AkkaFrontType implements FlameRuntime.FrontType<AkkaFront, AkkaFron
   }
 
   @Override
-  public Handle handle(EdgeContext context) {
+  public Handle<T> handle(EdgeContext context) {
     final ActorRef ref = AwaitResolver.syncResolve(
             context.nodePath().child("edge").child(context.edgeId() + "-inner"),
             system
     );
-    return new Handle(ref);
+    return new Handle<T>(ref);
   }
 
-  public static class Handle implements Consumer<Object> {
+  public static class Handle<T> implements Consumer<T> {
     private final ActorRef ref;
 
     public Handle(ActorRef ref) {
@@ -38,7 +38,7 @@ public class AkkaFrontType implements FlameRuntime.FrontType<AkkaFront, AkkaFron
     }
 
     @Override
-    public void accept(Object o) {
+    public void accept(T o) {
       ref.tell(new RawData<>(o), ActorRef.noSender());
     }
   }
