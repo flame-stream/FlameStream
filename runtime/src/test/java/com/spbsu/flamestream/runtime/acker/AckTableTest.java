@@ -37,7 +37,7 @@ public class AckTableTest extends FlameStreamSuite {
   @Test
   public void singleAckTest() {
     final long ack = 70;
-    final AckTable table = new ArrayAckTable(0, 10, 10);
+    final AckTable table = new ArrayAckTable(0, 14, 10);
     table.ack(ack, 1);
     table.heartbeat(Long.MAX_VALUE);
     Assert.assertEquals(table.min(), ack);
@@ -56,7 +56,7 @@ public class AckTableTest extends FlameStreamSuite {
     table.heartbeat(1);
   }
 
-  @Test(expectedExceptions = IllegalArgumentException.class)
+  @Test(expectedExceptions = ArithmeticException.class)
   public void ackAfterCollapseTest() {
     final AckTable table = new ArrayAckTable(0, 10, 10);
     table.heartbeat(Long.MAX_VALUE);
@@ -66,16 +66,15 @@ public class AckTableTest extends FlameStreamSuite {
   @Test
   public void logicTest() {
     final Random rd = new Random(1);
-    final long head = 1;
+    final long head = 0;
     final int capacity = 100;
     final int window = 10;
     final long width = capacity * window;
 
     final AckTable table = new ArrayAckTable(head, capacity, window);
-
     for (long epoch = 0; epoch < 10000; ++epoch) {
-      final long epochFloor = head + epoch * width;
-      final long epochCeil = head + (epoch + 1) * width;
+      final long epochFloor = head + epoch * width / 2;
+      final long epochCeil = epochFloor + width / 2;
 
       final Map<Long, Long> xors = rd
               .longs(epochFloor, epochCeil)

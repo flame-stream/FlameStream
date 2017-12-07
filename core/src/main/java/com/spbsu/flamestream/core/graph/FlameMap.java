@@ -12,26 +12,15 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
   private final Function<T, Stream<R>> function;
   private final Class<T> clazz;
 
+  private final FlameMapOperation flameMapOperation = new FlameMapOperation();
+
   public FlameMap(Function<T, Stream<R>> function, Class<T> clazz) {
     this.function = function;
     this.clazz = clazz;
   }
 
-  public Function<DataItem, Stream<DataItem>> operation() {
-    return new Function<DataItem, Stream<DataItem>>() {
-      private int localTime = 0;
-
-      @Override
-      public Stream<DataItem> apply(DataItem dataItem) {
-        final Stream<R> result = function.apply(dataItem.payload(clazz));
-        final int newLocalTime = localTime++;
-        final int[] childId = {0};
-        return result.map(r -> {
-          final Meta newMeta = dataItem.meta().advanced(newLocalTime, childId[0]++);
-          return new PayloadDataItem(newMeta, r);
-        });
-      }
-    };
+  public FlameMapOperation operation() {
+    return flameMapOperation;
   }
 
   @Override
@@ -39,5 +28,16 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
     return "FlameMap{" +
             "function=" + function +
             '}';
+  }
+
+  public class FlameMapOperation {
+    public Stream<DataItem> apply(DataItem dataItem, int localTime) {
+      final Stream<R> result = function.apply(dataItem.payload(clazz));
+      final int[] childId = {0};
+      return result.map(r -> {
+        final Meta newMeta = dataItem.meta().advanced(localTime, childId[0]++);
+        return new PayloadDataItem(newMeta, r);
+      });
+    }
   }
 }
