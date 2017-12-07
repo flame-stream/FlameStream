@@ -68,7 +68,7 @@ public class AckTableTest extends FlameStreamSuite {
     final Random rd = new Random(1);
     final long head = 1;
     final int capacity = 100;
-    final long window = 10;
+    final int window = 10;
     final long width = capacity * window;
 
     final AckTable table = new ArrayAckTable(head, capacity, window);

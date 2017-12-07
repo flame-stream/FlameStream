@@ -41,7 +41,7 @@ import java.util.Set;
  * </ol>
  */
 public class Acker extends LoggingActor {
-  private static final long WINDOW = 10;
+  private static final int WINDOW = 10;
   private static final int SIZE = 100000;
   private final long defaultMinimalTime;
 
@@ -100,7 +100,7 @@ public class Acker extends LoggingActor {
   }
 
   private void handleAck(Ack ack) {
-    log().info("ACKING {}", ack);
+    //log().info("ACKING {}", ack);
 
     minTimeSubscribers.add(sender());
     final GlobalTime globalTime = ack.time();
