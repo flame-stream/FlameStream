@@ -5,7 +5,7 @@ import java.util.List;
 
 public final class ArrayAckTable implements AckTable {
   private final long[] xors;
-  private final long window;
+  private final int window;
 
   private int headPosition;
   private long headValue;
@@ -14,7 +14,7 @@ public final class ArrayAckTable implements AckTable {
 
   private final List<Long> acks = new ArrayList<>();
 
-  public ArrayAckTable(long headValue, int capacity, long window) {
+  public ArrayAckTable(long headValue, int capacity, int window) {
     this.window = window;
     this.xors = new long[capacity];
     this.headValue = headValue;
@@ -24,19 +24,20 @@ public final class ArrayAckTable implements AckTable {
 
   @Override
   public boolean ack(long timestamp, long xor) {
-    if (timestamp < headValue) {
+    final int headOffset = Math.floorDiv(Math.toIntExact(timestamp - headValue), window);
+    if (headOffset < 0) {
       throw new IllegalArgumentException("Acking back in time");
-    }
-
-    final int headOffset = Math.toIntExact((timestamp - headValue) / window);
-    if (headOffset > xors.length) {
+    } else if (headOffset > xors.length) {
       throw new IllegalArgumentException("Ring buffer overflow");
     } else {
       xors[(headPosition + headOffset) % xors.length] ^= xor;
-      updateHead();
+      if (xors[(headPosition + headOffset) % xors.length] == 0) {
+        updateHead();
+        return true;
+      } else {
+        return false;
+      }
     }
-
-    return xors[(headPosition + headOffset) % xors.length] == 0;
   }
 
   @Override
@@ -50,12 +51,12 @@ public final class ArrayAckTable implements AckTable {
 
   @Override
   public long min() {
-    return Math.min(headValue, maxHeartbeat);
+    return headValue;
   }
 
   private void updateHead() {
     int steps = 0;
-    while (xors[headPosition] == 0 && headValue < maxHeartbeat) {
+    while (xors[headPosition] == 0 && headValue <= (maxHeartbeat - window)) {
       headPosition = (headPosition + 1) % xors.length;
       headValue += window;
       steps++;
