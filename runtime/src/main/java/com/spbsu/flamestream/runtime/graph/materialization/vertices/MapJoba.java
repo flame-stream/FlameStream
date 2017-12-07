@@ -4,8 +4,6 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.graph.FlameMap;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * User: Artem
@@ -13,15 +11,17 @@ import java.util.stream.Stream;
  */
 public class MapJoba implements VertexJoba {
   private final Consumer<DataItem> sink;
-  private final Function<DataItem, Stream<DataItem>> operation;
+  private final FlameMap<?, ?> flameMap;
 
-  public MapJoba(FlameMap<?, ?> map, Consumer<DataItem> sink) {
+  private int localTime = 0;
+
+  public MapJoba(FlameMap<?, ?> flameMap, Consumer<DataItem> sink) {
     this.sink = sink;
-    this.operation = map.operation();
+    this.flameMap = flameMap;
   }
 
   @Override
   public void accept(DataItem dataItem) {
-    operation.apply(dataItem).forEach(sink);
+    flameMap.operation().apply(dataItem, localTime++).forEach(sink);
   }
 }

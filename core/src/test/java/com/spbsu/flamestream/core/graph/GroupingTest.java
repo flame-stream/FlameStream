@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -38,14 +37,13 @@ public final class GroupingTest extends FlameStreamSuite {
             window,
             String.class
     );
-    final BiFunction<DataItem, InvalidatingBucket, Stream<DataItem>> operation = grouping.operation();
-
+    final int[] localTime = {0};
     //noinspection unchecked
     return input
             .map(di -> new DataItemForTest(di, grouping.hash(), grouping.equalz()))
             .flatMap(di -> {
               state.putIfAbsent(di, new ArrayInvalidatingBucket());
-              return operation.apply(di, state.get(di));
+              return grouping.operation().apply(di, state.get(di), localTime[0]++);
             })
             .map(dataItem -> dataItem.payload(List.class))
             .map(element -> (List<String>) element)
