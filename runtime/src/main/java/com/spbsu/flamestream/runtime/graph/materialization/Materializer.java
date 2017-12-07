@@ -91,7 +91,7 @@ public class Materializer implements AutoCloseable {
   //DFS
   private void buildJobMapping(Graph.Vertex currentVertex, VertexJoba outputJoba) {
     if (jobMapping.containsKey(currentVertex.id())) {
-      final BroadcastJoba broadcastJoba = (BroadcastJoba) currentVertex;
+      final BroadcastJoba broadcastJoba = (BroadcastJoba) jobMapping.get(currentVertex.id());
       broadcastJoba.addSink(outputJoba);
     } else {
       boolean isGrouping = false;
