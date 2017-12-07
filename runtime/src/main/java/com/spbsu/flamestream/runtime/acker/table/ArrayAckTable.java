@@ -25,9 +25,7 @@ public final class ArrayAckTable implements AckTable {
   @Override
   public boolean ack(long timestamp, long xor) {
     final int headOffset = Math.floorDiv(Math.toIntExact(timestamp - headValue), window);
-    if (headOffset < 0) {
-      throw new IllegalArgumentException("Acking back in time");
-    } else if (headOffset > xors.length) {
+    if (Math.abs(headOffset) > xors.length / 2) {
       throw new IllegalArgumentException("Ring buffer overflow");
     } else {
       xors[(headPosition + headOffset) % xors.length] ^= xor;

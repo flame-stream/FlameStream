@@ -29,7 +29,7 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
   @Test
   public void reorderingMultipleHash() throws InterruptedException {
     final int window = 2;
-    final LocalRuntime runtime = new LocalRuntime(10);
+    final LocalRuntime runtime = new LocalRuntime(4);
 
     final Graph graph = groupGraph(
             window,
@@ -48,18 +48,15 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
       flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
               .forEach(r -> r.addListener(result::add));
 
-      final List<Long> source = new Random().longs(1000, 0, 1)
+      final List<Long> source = new Random().longs(10000, 0, 10)
               .boxed()
               .collect(Collectors.toList());
       final Consumer<Object> front = randomConsumer(
               flame.attachFront("groupingAcceptanceFront", new AkkaFrontType(runtime.system()))
                       .collect(Collectors.toList())
       );
-      //final Consumer<Object> front = flame.attachFront("groupingAcceptanceFront", new AkkaFrontType(runtime.system()))
-      //                .collect(Collectors.toList()).get(0);
       source.forEach(front);
-
-      TimeUnit.SECONDS.sleep(20);
+      TimeUnit.SECONDS.sleep(5);
 
       Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, window));
     }
