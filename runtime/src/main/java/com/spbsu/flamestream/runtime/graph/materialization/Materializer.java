@@ -19,7 +19,6 @@ import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -100,7 +99,6 @@ public class Materializer implements AutoCloseable {
       final VertexJoba realOutputJoba;
       if (graph.isBroadcast(currentVertex)) {
         final BroadcastJoba broadcastJoba = new BroadcastJoba();
-        final Destination broadcastDest = new Destination(UUID.randomUUID().toString());
         broadcastJoba.addSink(outputJoba);
         broadcasts.put(new Destination(currentVertex.id()), broadcastJoba);
         realOutputJoba = broadcastJoba;

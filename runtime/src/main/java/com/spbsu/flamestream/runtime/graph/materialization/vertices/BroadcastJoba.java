@@ -5,6 +5,7 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 /**
@@ -24,13 +25,15 @@ public class BroadcastJoba implements VertexJoba {
     }
   }
 
-  private static class BroadcastDataItem implements DataItem {
+  public static class BroadcastDataItem implements DataItem {
     private final DataItem inner;
     private final Meta newMeta;
+    private final long ackHashCode;
 
     private BroadcastDataItem(DataItem inner, Meta newMeta) {
       this.inner = inner;
       this.newMeta = newMeta;
+      ackHashCode = ThreadLocalRandom.current().nextLong();
     }
 
     @Override
@@ -45,7 +48,7 @@ public class BroadcastJoba implements VertexJoba {
 
     @Override
     public long xor() {
-      return inner.xor();
+      return ackHashCode;
     }
   }
 
