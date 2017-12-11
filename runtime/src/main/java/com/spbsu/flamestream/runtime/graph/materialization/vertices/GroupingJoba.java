@@ -31,6 +31,10 @@ public class GroupingJoba implements VertexJoba {
 
   @Override
   public void accept(DataItem dataItem) {
+    if (dataItem.meta().globalTime().compareTo(currentMinTime) < 0) {
+      System.out.println("WTF!?: " + dataItem);
+    }
+
     final InvalidatingBucket bucket = bucketFor(dataItem);
     grouping.operation().apply(dataItem, bucket, localTime++).forEach(sink);
     /*{ //clear outdated
