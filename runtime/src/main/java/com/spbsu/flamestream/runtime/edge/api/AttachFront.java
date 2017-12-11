@@ -1,27 +1,22 @@
 package com.spbsu.flamestream.runtime.edge.api;
 
 import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.runtime.FlameRuntime;
 
 public class AttachFront<F extends Front> {
   private final String id;
-  private final Class<F> clazz;
-  private final String[] args;
+  private final FlameRuntime.FrontInstance<F> instance;
 
-  public AttachFront(String id, Class<F> clazz, String[] args) {
-    this.clazz = clazz;
+  public AttachFront(String id, FlameRuntime.FrontInstance<F> instance) {
     this.id = id;
-    this.args = args;
+    this.instance = instance;
   }
 
   public String id() {
     return id;
   }
 
-  public Class<F> clazz() {
-    return clazz;
-  }
-
-  public String[] args() {
-    return args;
+  public FlameRuntime.FrontInstance<F> instance() {
+    return instance;
   }
 }

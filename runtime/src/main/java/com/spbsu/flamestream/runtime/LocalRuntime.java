@@ -77,15 +77,15 @@ public class LocalRuntime implements FlameRuntime {
       }
 
       @Override
-      public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type, String... args) {
-        nodes.forEach(n -> n.tell(new AttachFront<>(id, type.frontClass(), args), ActorRef.noSender()));
+      public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type) {
+        nodes.forEach(n -> n.tell(new AttachFront<>(id, type.instance()), ActorRef.noSender()));
         return paths.entrySet().stream()
                 .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
       }
 
       @Override
-      public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type, String... args) {
-        nodes.forEach(n -> n.tell(new AttachRear<>(id, type.rearClass(), args), ActorRef.noSender()));
+      public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
+        nodes.forEach(n -> n.tell(new AttachRear<>(id, type.instance()), ActorRef.noSender()));
         return paths.entrySet().stream()
                 .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
       }

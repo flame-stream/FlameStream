@@ -22,8 +22,18 @@ public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear
   }
 
   @Override
-  public Class<AkkaRear> rearClass() {
-    return AkkaRear.class;
+  public FlameRuntime.RearInstance<AkkaRear> instance() {
+    return new FlameRuntime.RearInstance<AkkaRear>() {
+      @Override
+      public Class<AkkaRear> clazz() {
+        return AkkaRear.class;
+      }
+
+      @Override
+      public String[] params() {
+        return new String[0];
+      }
+    };
   }
 
   @Override

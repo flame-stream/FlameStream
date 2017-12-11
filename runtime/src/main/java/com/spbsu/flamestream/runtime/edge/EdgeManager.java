@@ -35,14 +35,14 @@ public class EdgeManager extends LoggingActor {
             .match(AttachFront.class, attachFront -> {
               final ActorRef frontRef = context().actorOf(FrontActor.props(
                       new SystemEdgeContext(nodePath, nodeId, attachFront.id(), context()),
-                      attachFront
+                      attachFront.instance()
               ), attachFront.id());
               negotiator.tell(new NewFront(new EdgeId(attachFront.id(), nodeId), frontRef), self());
             })
             .match(AttachRear.class, attachRear -> {
               final ActorRef rearRef = context().actorOf(RearActor.props(
                       new SystemEdgeContext(nodePath, nodeId, attachRear.id(), context()),
-                      attachRear
+                      attachRear.instance()
               ), attachRear.id());
               barrier.tell(new com.spbsu.flamestream.runtime.barrier.api.AttachRear(rearRef), self());
             })

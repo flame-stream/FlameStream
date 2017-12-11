@@ -1,27 +1,22 @@
 package com.spbsu.flamestream.runtime.edge.api;
 
 import com.spbsu.flamestream.core.Rear;
+import com.spbsu.flamestream.runtime.FlameRuntime;
 
 public class AttachRear<R extends Rear> {
   private final String id;
-  private final Class<R> clazz;
-  private final String[] args;
+  private final FlameRuntime.RearInstance<R> rearInstance;
 
-  public AttachRear(String id, Class<R> clazz, String[] args) {
+  public AttachRear(String id, FlameRuntime.RearInstance<R> rearInstance) {
     this.id = id;
-    this.clazz = clazz;
-    this.args = args;
+    this.rearInstance = rearInstance;
   }
 
   public String id() {
     return id;
   }
 
-  public Class<R> clazz() {
-    return clazz;
-  }
-
-  public String[] args() {
-    return args;
+  public FlameRuntime.RearInstance<R> instance() {
+    return rearInstance;
   }
 }

@@ -17,8 +17,18 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaF
   }
 
   @Override
-  public Class<AkkaFront> frontClass() {
-    return AkkaFront.class;
+  public FlameRuntime.FrontInstance<AkkaFront> instance() {
+    return new FlameRuntime.FrontInstance<AkkaFront>() {
+      @Override
+      public Class<AkkaFront> clazz() {
+        return AkkaFront.class;
+      }
+
+      @Override
+      public String[] params() {
+        return new String[0];
+      }
+    };
   }
 
   @Override
