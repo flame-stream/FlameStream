@@ -13,12 +13,7 @@ public interface AckTable {
   boolean ack(long timestamp, long xor);
 
   /**
-   * @param timestamp indicates that xor value for this timestamp can be nullified
-   */
-  void heartbeat(long timestamp);
-
-  /**
    * @return current min timestamp within this table
    */
-  long min();
+  long tryPromote(long upTo);
 }

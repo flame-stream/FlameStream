@@ -23,15 +23,14 @@ public class AckTableTest extends FlameStreamSuite {
   @Test
   public void emptyTableTest() {
     final AckTable table = new ArrayAckTable(0, 10, 10);
-    Assert.assertEquals(table.min(), 0);
+    Assert.assertEquals(table.tryPromote(0), 0);
   }
 
   @Test
   public void singleHeartbeatTest() {
     final long heartbeat = (long) 1e7;
     final AckTable table = new ArrayAckTable(0, 10, 10);
-    table.heartbeat(heartbeat);
-    Assert.assertEquals(table.min(), heartbeat);
+    Assert.assertEquals(table.tryPromote(heartbeat), heartbeat);
   }
 
   @Test
@@ -39,28 +38,13 @@ public class AckTableTest extends FlameStreamSuite {
     final long ack = 70;
     final AckTable table = new ArrayAckTable(0, 14, 10);
     table.ack(ack, 1);
-    table.heartbeat(Long.MAX_VALUE);
-    Assert.assertEquals(table.min(), ack);
+    Assert.assertEquals(table.tryPromote(Long.MAX_VALUE), ack);
   }
 
   @Test(expectedExceptions = IllegalArgumentException.class)
   public void overflowTest() {
     final AckTable table = new ArrayAckTable(0, 10, 10);
     table.ack((long) 1e9, 1);
-  }
-
-  @Test(expectedExceptions = IllegalArgumentException.class)
-  public void notMonotonicHeartbeatsTest() {
-    final AckTable table = new ArrayAckTable(0, 10, 10);
-    table.heartbeat(2);
-    table.heartbeat(1);
-  }
-
-  @Test(expectedExceptions = ArithmeticException.class)
-  public void ackAfterCollapseTest() {
-    final AckTable table = new ArrayAckTable(0, 10, 10);
-    table.heartbeat(Long.MAX_VALUE);
-    table.ack(4, 1);
   }
 
   @Test
@@ -84,13 +68,10 @@ public class AckTableTest extends FlameStreamSuite {
               .collect(Collectors.toMap(Function.identity(), e -> rd.nextLong()));
 
       xors.forEach(table::ack);
-      table.heartbeat(epochCeil);
-      xors.forEach((ts, xor) -> {
-        table.ack(ts, xor);
-        Assert.assertTrue(table.min() <= epochCeil);
-      });
+      table.tryPromote(epochCeil);
+      xors.forEach(table::ack);
 
-      Assert.assertEquals(table.min(), epochCeil);
+      Assert.assertEquals(table.tryPromote(epochCeil), epochCeil);
     }
   }
 }

@@ -15,6 +15,7 @@ import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
 import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LongSummaryStatistics;
@@ -45,15 +46,18 @@ public class Acker extends LoggingActor {
   private static final int SIZE = 100000;
   private final long defaultMinimalTime;
 
+
   private final Set<ActorRef> minTimeSubscribers = new HashSet<>();
 
-  private final Map<EdgeId, AckTable> tables = new HashMap<>();
+  private final AckTable table;
+  private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
   private final AckerStatistics stat = new AckerStatistics();
   private final AttachRegistry registry;
 
   private GlobalTime currentMin = GlobalTime.MIN;
 
   private Acker(long defaultMinimalTime, AttachRegistry registry) {
+    this.table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW);
     this.defaultMinimalTime = defaultMinimalTime;
     this.registry = registry;
   }
@@ -75,9 +79,7 @@ public class Acker extends LoggingActor {
     final GlobalTime min = minAmongTables();
 
     log().info("Registering timestamp {} for {}", min, frontId);
-
-    final AckTable table = new ArrayAckTable(min.time(), SIZE, WINDOW);
-    tables.put(frontId, table);
+    maxHeartbeats.put(frontId, min);
     registry.register(frontId, min.time());
     log().info("Front instance \"{}\" has been registered, sending ticket", frontId);
 
@@ -86,10 +88,11 @@ public class Acker extends LoggingActor {
 
   private void handleHeartBeat(Heartbeat heartbeat) {
     final GlobalTime time = heartbeat.time();
-    if (!tables.containsKey(time.frontId())) {
-      throw new IllegalStateException("Heartbeat for not registered front received " + heartbeat);
+    final GlobalTime previousHeartbeat = maxHeartbeats.get(heartbeat.time().frontId());
+    if (heartbeat.time().compareTo(previousHeartbeat) <= 0) {
+      throw new IllegalStateException("Non monotonic heartbeats");
     }
-    tables.get(time.frontId()).heartbeat(time.time());
+    maxHeartbeats.put(time.frontId(), heartbeat.time());
     checkMinTime();
   }
 
@@ -101,14 +104,9 @@ public class Acker extends LoggingActor {
 
   private void handleAck(Ack ack) {
     //log().info("ACKING {}", ack);
-
     minTimeSubscribers.add(sender());
-    final GlobalTime globalTime = ack.time();
-    final AckTable table = tables.get(ack.time().frontId());
-    final long time = globalTime.time();
-
     final long start = System.nanoTime();
-    if (table.ack(time, ack.xor())) {
+    if (table.ack(ack.time().time(), ack.xor())) {
       checkMinTime();
       stat.recordReleasingAck(System.nanoTime() - start);
     } else {
@@ -126,18 +124,12 @@ public class Acker extends LoggingActor {
   }
 
   private GlobalTime minAmongTables() {
-    if (tables.isEmpty()) {
+    if (maxHeartbeats.isEmpty()) {
       return new GlobalTime(defaultMinimalTime, EdgeId.MIN);
-    } else {
-      final GlobalTime[] min = {GlobalTime.MAX};
-      tables.forEach((frontId, table) -> {
-                // FIXME: 12/5/17 PERFORMANCE
-                final GlobalTime tmp = new GlobalTime(table.min(), frontId);
-                min[0] = tmp.compareTo(min[0]) < 0 ? tmp : min[0];
-              }
-      );
-      return min[0];
     }
+    final GlobalTime minHeartbeat = Collections.min(maxHeartbeats.values());
+    final long minTime = table.tryPromote(minHeartbeat.time());
+    return new GlobalTime(minTime, minHeartbeat.frontId());
   }
 
   private static final class AckerStatistics implements Statistics {
