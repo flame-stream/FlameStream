@@ -121,9 +121,9 @@ public class Materializer implements AutoCloseable {
           }
         };
       } else if (currentVertex instanceof FlameMap) {
-        currentJoba = new ActorVertexJoba(new MapJoba((FlameMap<?, ?>) currentVertex, realOutputJoba), acker, context);
+        currentJoba = new MapJoba((FlameMap<?, ?>) currentVertex, realOutputJoba);
       } else if (currentVertex instanceof Grouping) {
-        currentJoba = new ActorVertexJoba(new GroupingJoba((Grouping) currentVertex, realOutputJoba), acker, context);
+        currentJoba = new GroupingJoba((Grouping) currentVertex, realOutputJoba);
         isGrouping = true;
       } else if (currentVertex instanceof Source) {
         // TODO: 04.12.2017 choose number depends on statistics
