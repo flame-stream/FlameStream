@@ -4,6 +4,7 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.Grouping;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -31,16 +32,12 @@ public class GroupingJoba implements VertexJoba {
 
   @Override
   public void accept(DataItem dataItem) {
-    if (dataItem.meta().globalTime().compareTo(currentMinTime) < 0) {
-      System.out.println("WTF!?: " + dataItem);
-    }
-
     final InvalidatingBucket bucket = bucketFor(dataItem);
     grouping.operation().apply(dataItem, bucket, localTime++).forEach(sink);
-    /*{ //clear outdated
+    { //clear outdated
       final int position = Math.max(bucket.floor(Meta.meta(currentMinTime)) - grouping.window(), 0);
       bucket.clearRange(0, position);
-    }*/
+    }
   }
 
   @Override
