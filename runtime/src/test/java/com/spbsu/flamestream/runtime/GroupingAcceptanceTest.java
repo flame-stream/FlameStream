@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime;
 
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
@@ -21,10 +22,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("Convert2Lambda")
 public final class GroupingAcceptanceTest extends FlameStreamSuite {
   @Test
   public void reorderingMultipleHash() throws InterruptedException {
@@ -34,7 +35,7 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
     final Graph graph = groupGraph(
             window,
             HashFunction.uniformObjectHash(Long.class),
-            new BiPredicate<DataItem, DataItem>() {
+            new Equalz() {
               @Override
               public boolean test(DataItem dataItem, DataItem dataItem2) {
                 return dataItem.payload(Long.class).equals(dataItem2.payload(Long.class));
@@ -74,7 +75,7 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
     return mustHave;
   }
 
-  private static Graph groupGraph(int window, HashFunction groupHash, BiPredicate<DataItem, DataItem> equalz) {
+  private static Graph groupGraph(int window, HashFunction groupHash, Equalz equalz) {
     final Source source = new Source();
     final Grouping<Long> grouping = new Grouping<>(groupHash, equalz, window, Long.class);
     final Sink sink = new Sink();

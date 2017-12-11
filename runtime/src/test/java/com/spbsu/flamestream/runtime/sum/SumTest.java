@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.sum;
 
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
@@ -23,7 +24,6 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -34,7 +34,7 @@ public final class SumTest extends FlameStreamSuite {
     final HashFunction groupIdentity = HashFunction.constantHash(1);
 
     //noinspection Convert2Lambda
-    final BiPredicate<DataItem, DataItem> predicate = new BiPredicate<DataItem, DataItem>() {
+    final Equalz predicate = new Equalz() {
       @Override
       public boolean test(DataItem dataItem, DataItem dataItem2) {
         return true;
@@ -43,15 +43,15 @@ public final class SumTest extends FlameStreamSuite {
 
     final Source source = new Source();
     final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2, Numb.class);
-    final FlameMap enricher = new FlameMap(
+    final FlameMap<List<Numb>, List<Numb>> enricher = new FlameMap<>(
             new IdentityEnricher(),
             List.class
     );
-    final FlameMap junkFilter = new FlameMap(
+    final FlameMap<List<Numb>, List<Numb>> junkFilter = new FlameMap<>(
             new WrongOrderingFilter(),
             List.class
     );
-    final FlameMap reducer = new FlameMap(new Reduce(), List.class);
+    final FlameMap<List<Numb>, Sum> reducer = new FlameMap<>(new Reduce(), List.class);
     final Sink sink = new Sink();
 
     return new Graph.Builder()

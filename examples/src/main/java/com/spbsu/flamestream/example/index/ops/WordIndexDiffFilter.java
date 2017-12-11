@@ -4,15 +4,20 @@ import com.spbsu.flamestream.example.index.model.WordBase;
 import com.spbsu.flamestream.example.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.index.model.WordIndexRemove;
 
-import java.util.function.Predicate;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * User: Artem
  * Date: 10.07.2017
  */
-public class WordIndexDiffFilter implements Predicate<WordBase> {
+public class WordIndexDiffFilter implements Function<WordBase, Stream<WordBase>> {
   @Override
-  public boolean test(WordBase wordBase) {
-    return !(wordBase instanceof WordIndexAdd || wordBase instanceof WordIndexRemove);
+  public Stream<WordBase> apply(WordBase wordBase) {
+    if (!(wordBase instanceof WordIndexAdd || wordBase instanceof WordIndexRemove)) {
+      return Stream.of(wordBase);
+    } else {
+      return Stream.empty();
+    }
   }
 }

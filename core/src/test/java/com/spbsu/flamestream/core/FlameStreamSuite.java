@@ -15,6 +15,7 @@ public abstract class FlameStreamSuite {
     System.out.println("Method name:" + method.getName());
   }
 
+  // FIXME: 12/11/17 consume Stream rather than collection
   public <T> Consumer<T> randomConsumer(Collection<Consumer<T>> consumers) {
     final List<Consumer<T>> li = new ArrayList<>(consumers);
     return o -> li.get(ThreadLocalRandom.current().nextInt(li.size())).accept(o);

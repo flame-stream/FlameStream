@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.core.graph;
 
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
@@ -16,13 +17,13 @@ import java.util.stream.Stream;
 
 public class Grouping<T> extends Graph.Vertex.Stub {
   private final HashFunction hash;
-  private final BiPredicate<DataItem, DataItem> equalz;
+  private final Equalz equalz;
   private final int window;
   private final Class<T> clazz;
 
   private final GroupingOperation groupingOperation = new GroupingOperation();
 
-  public Grouping(HashFunction hash, BiPredicate<DataItem, DataItem> equalz, int window, Class<T> clazz) {
+  public Grouping(HashFunction hash, Equalz equalz, int window, Class<T> clazz) {
     this.window = window;
     this.hash = hash;
     this.equalz = equalz;

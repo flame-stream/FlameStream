@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 28.09.2017
  */
-public enum InvertedIndexCheckers implements ExampleChecker<WikipediaPage> {
+public enum InvertedIndexCheckers implements ExampleChecker<WikipediaPage, WordBase> {
   CHECK_INDEX_WITH_SMALL_DUMP {
     @Override
     public Stream<WikipediaPage> input() {
@@ -33,9 +33,9 @@ public enum InvertedIndexCheckers implements ExampleChecker<WikipediaPage> {
     }
 
     @Override
-    public void assertCorrect(Stream<Object> output) {
+    public void assertCorrect(Stream<WordBase> output) {
       final List<WordBase> outputList = new ArrayList<>();
-      output.forEach(o -> outputList.add((WordBase) o));
+      output.forEach(outputList::add);
       Assert.assertEquals(outputList.size(), 3481);
       { //assertions for word "isbn"
         final String isbn = stem("isbn");
@@ -100,7 +100,7 @@ public enum InvertedIndexCheckers implements ExampleChecker<WikipediaPage> {
     }
 
     @Override
-    public void assertCorrect(Stream<Object> output) {
+    public void assertCorrect(Stream<WordBase> output) {
       final RankingStorage rankingStorage = rankingStorage(output);
 
       final Document litvaDoc = new Document(7, 2);
@@ -147,7 +147,7 @@ public enum InvertedIndexCheckers implements ExampleChecker<WikipediaPage> {
     }
 
     @Override
-    public void assertCorrect(Stream<Object> output) {
+    public void assertCorrect(Stream<WordBase> output) {
       final RankingStorage rankingStorage = rankingStorage(output);
       final RankingFunction rankingFunction = new BM25(rankingStorage);
       {
@@ -177,7 +177,7 @@ public enum InvertedIndexCheckers implements ExampleChecker<WikipediaPage> {
     return stemmer.stem(term).toString();
   }
 
-  private static RankingStorage rankingStorage(Stream<Object> output) {
+  private static RankingStorage rankingStorage(Stream<WordBase> output) {
     final RankingStorage rankingStorage = new InMemRankingStorage();
     output.forEach(container -> {
       if (container instanceof WordIndexAdd) {

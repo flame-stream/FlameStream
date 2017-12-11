@@ -21,9 +21,10 @@ import static java.util.stream.Collectors.toMap;
  * User: Artem
  * Date: 28.09.2017
  */
-public enum WordCountCheckers implements ExampleChecker<String> {
+public enum WordCountCheckers implements ExampleChecker<String, WordCounter> {
   CHECK_COUNT {
-    private final List<String> input = Stream.generate(() -> text(100)).limit(10).collect(Collectors.toList());
+    private final List<String> input = Stream.generate(() -> text(1000))
+            .limit(10).collect(Collectors.toList());
 
     @Override
     public Stream<String> input() {
@@ -31,10 +32,10 @@ public enum WordCountCheckers implements ExampleChecker<String> {
     }
 
     @Override
-    public void assertCorrect(Stream<Object> output) {
+    public void assertCorrect(Stream<WordCounter> output) {
       final Map<String, Integer> actual = new HashMap<>();
       output.forEach(o -> {
-        final WordCounter wordContainer = (WordCounter) o;
+        final WordCounter wordContainer = o;
         actual.putIfAbsent(wordContainer.word(), 0);
         actual.computeIfPresent(wordContainer.word(), (uid, old) -> Math.max(wordContainer.count(), old));
       });
@@ -46,10 +47,10 @@ public enum WordCountCheckers implements ExampleChecker<String> {
               .collect(toMap(Function.identity(), o -> 1, Integer::sum));
       Assert.assertEquals(actual, expected);
     }
-  };
 
-  private static String text(@SuppressWarnings("SameParameterValue") int size) {
-    final String[] words = {"repka", "dedka", "babka", "zhuchka", "vnuchka"};
-    return new Random().ints(size, 0, words.length).mapToObj(i -> words[i]).collect(joining(" "));
+    private String text(int size) {
+      final String[] words = {"repka", "dedka", "babka", "zhuchka", "vnuchka"};
+      return new Random().ints(size, 0, words.length).mapToObj(i -> words[i]).collect(joining(" "));
+    }
   }
 }

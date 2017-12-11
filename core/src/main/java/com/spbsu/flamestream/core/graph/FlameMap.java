@@ -10,11 +10,11 @@ import java.util.stream.Stream;
 
 public class FlameMap<T, R> extends Graph.Vertex.Stub {
   private final Function<T, Stream<R>> function;
-  private final Class<T> clazz;
+  private final Class<?> clazz;
 
   private final FlameMapOperation flameMapOperation = new FlameMapOperation();
 
-  public FlameMap(Function<T, Stream<R>> function, Class<T> clazz) {
+  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz) {
     this.function = function;
     this.clazz = clazz;
   }
@@ -32,7 +32,7 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
 
   public class FlameMapOperation {
     public Stream<DataItem> apply(DataItem dataItem, int localTime) {
-      final Stream<R> result = function.apply(dataItem.payload(clazz));
+      final Stream<R> result = function.apply(dataItem.payload((Class<T>) clazz));
       final int[] childId = {0};
       return result.map(r -> {
         final Meta newMeta = dataItem.meta().advanced(localTime, childId[0]++);
