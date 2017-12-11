@@ -10,16 +10,18 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
-import com.spbsu.flamestream.runtime.edge.front.AkkaFrontType;
-import com.spbsu.flamestream.runtime.edge.rear.AkkaRearType;
+import com.spbsu.flamestream.runtime.edge.front.akka.AkkaFrontType;
+import com.spbsu.flamestream.runtime.edge.rear.akka.AkkaRearType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -85,6 +87,39 @@ public final class SumTest extends FlameStreamSuite {
 
       final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
       Assert.assertEquals(actual, expected);
+      Assert.assertEquals(result.size(), source.size());
+    }
+  }
+
+  @Test(invocationCount = 10)
+  public void totalOrderTest() throws InterruptedException {
+    final LocalRuntime runtime = new LocalRuntime(4);
+    final FlameRuntime.Flame flame = runtime.run(sumGraph());
+    {
+      final Set<Sum> result = Collections.synchronizedSet(new HashSet<>());
+      flame.attachRear("totalOrderRear", new AkkaRearType<>(runtime.system(), Sum.class))
+              .forEach(r -> r.addListener(result::add));
+
+      final List<LongNumb> source = new Random()
+              .ints(1000)
+              .mapToObj(LongNumb::new)
+              .collect(Collectors.toList());
+      final Consumer<LongNumb> sink = flame.attachFront(
+              "totalOrderFront",
+              new AkkaFrontType<LongNumb>(runtime.system())
+      ).findFirst().orElseThrow(IllegalStateException::new);
+
+      final Set<Sum> expected = new HashSet<>();
+      long currentSum = 0;
+      for (LongNumb longNumb : source) {
+        currentSum += longNumb.value();
+        expected.add(new Sum(currentSum));
+      }
+
+      source.forEach(sink);
+      TimeUnit.SECONDS.sleep(5);
+
+      Assert.assertEquals(result, expected);
     }
   }
 }
