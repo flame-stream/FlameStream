@@ -129,7 +129,7 @@ public class Acker extends LoggingActor {
     }
     final GlobalTime minHeartbeat = Collections.min(maxHeartbeats.values());
     final long minTime = table.tryPromote(minHeartbeat.time());
-    return new GlobalTime(minTime, minHeartbeat.frontId());
+    return new GlobalTime(minTime, EdgeId.MIN);
   }
 
   private static final class AckerStatistics implements Statistics {
