@@ -5,8 +5,8 @@ import java.util.Objects;
 
 public class Meta implements Comparable<Meta> {
   private static final Comparator<Meta> NATURAL_ORDER = Comparator
-          .comparing(Meta::globalTime)
-          .thenComparing(Meta::trace);
+          .comparing(Meta::globalTime).thenComparing(Meta::trace);
+
   private final GlobalTime globalTime;
   private final Trace trace;
 
