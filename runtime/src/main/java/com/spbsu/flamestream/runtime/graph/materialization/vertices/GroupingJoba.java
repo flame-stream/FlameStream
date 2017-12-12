@@ -35,7 +35,7 @@ public class GroupingJoba implements VertexJoba {
     final InvalidatingBucket bucket = bucketFor(dataItem);
     grouping.operation().apply(dataItem, bucket, localTime++).forEach(sink);
     { //clear outdated
-      final int position = Math.max(bucket.floor(Meta.meta(currentMinTime)) - grouping.window(), 0);
+      final int position = Math.max(bucket.floor(new Meta(currentMinTime)) - grouping.window(), 0);
       bucket.clearRange(0, position);
     }
   }

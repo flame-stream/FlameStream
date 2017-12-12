@@ -116,7 +116,7 @@ public class AkkaFront implements Front {
       if (hole == null) {
         stash();
       } else {
-        final PayloadDataItem t = new PayloadDataItem(Meta.meta(currentTime()), data.data());
+        final PayloadDataItem t = new PayloadDataItem(new Meta(currentTime()), data.data());
         hole.accept(t);
       }
     }

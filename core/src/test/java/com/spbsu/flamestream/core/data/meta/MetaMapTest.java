@@ -26,7 +26,7 @@ public class MetaMapTest extends FlameStreamSuite {
 
     final int inputSize = 10;
     final List<DataItem> input = IntStream.range(0, inputSize)
-            .mapToObj(i -> new PayloadDataItem(Meta.meta(new GlobalTime(i, EdgeId.MIN)), i))
+            .mapToObj(i -> new PayloadDataItem(new Meta(new GlobalTime(i, EdgeId.MIN)), i))
             .collect(Collectors.toList());
 
     final int[] localTime = {0};
@@ -38,8 +38,8 @@ public class MetaMapTest extends FlameStreamSuite {
     for (int i = 0; i < inputSize; i++) {
       for (int j = 0; j < flatNumber; j++) {
         Assert.assertEquals(out.get(i * flatNumber + j).payload(Integer.class).intValue(), i);
-        final MetaImpl meta = (MetaImpl) out.get(i * flatNumber + j).meta();
-        final TraceImpl trace = (TraceImpl) meta.trace();
+        final Meta meta = out.get(i * flatNumber + j).meta();
+        final Trace trace = meta.trace();
         Assert.assertEquals(LocalEvent.localTimeOf(trace.trace[0]), i);
         Assert.assertEquals(LocalEvent.childIdOf(trace.trace[0]), j);
       }

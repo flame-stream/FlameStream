@@ -19,7 +19,7 @@ public class BroadcastJoba implements VertexJoba {
   @Override
   public void accept(DataItem dataItem) {
     for (int i = 0; i < sinks.size(); ++i) {
-      final Meta newMeta = Meta.advanced(dataItem.meta(), BROADCAST_LOCAL_TIME, i);
+      final Meta newMeta = new Meta(dataItem.meta(), BROADCAST_LOCAL_TIME, i);
       final DataItem newItem = new BroadcastDataItem(dataItem, newMeta);
       sinks.get(i).accept(newItem);
     }

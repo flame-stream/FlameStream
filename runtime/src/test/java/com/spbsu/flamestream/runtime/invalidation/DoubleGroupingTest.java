@@ -168,14 +168,14 @@ public class DoubleGroupingTest extends FlameStreamSuite {
       }
       final Wrapper<?> wrapper = (Wrapper<?>) o;
       return EQUALZ.test(
-              new PayloadDataItem(Meta.meta(GlobalTime.MAX), value),
-              new PayloadDataItem(Meta.meta(GlobalTime.MAX), wrapper.value)
+              new PayloadDataItem(new Meta(GlobalTime.MAX), value),
+              new PayloadDataItem(new Meta(GlobalTime.MAX), wrapper.value)
       );
     }
 
     @Override
     public int hashCode() {
-      return HASH_FUNCTION.hash(new PayloadDataItem(Meta.meta(GlobalTime.MAX), value));
+      return HASH_FUNCTION.hash(new PayloadDataItem(new Meta(GlobalTime.MAX), value));
     }
   }
 }
