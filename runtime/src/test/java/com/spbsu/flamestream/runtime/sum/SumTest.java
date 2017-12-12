@@ -83,7 +83,7 @@ public final class SumTest extends FlameStreamSuite {
       final long expected = source.stream().map(LongNumb::value).reduce(Long::sum).orElse(0L);
 
       source.forEach(sink);
-      TimeUnit.SECONDS.sleep(5);
+      TimeUnit.SECONDS.sleep(7);
 
       final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
       Assert.assertEquals(actual, expected);
@@ -117,7 +117,7 @@ public final class SumTest extends FlameStreamSuite {
       }
 
       source.forEach(sink);
-      TimeUnit.SECONDS.sleep(5);
+      TimeUnit.SECONDS.sleep(7);
 
       Assert.assertEquals(result, expected);
     }
