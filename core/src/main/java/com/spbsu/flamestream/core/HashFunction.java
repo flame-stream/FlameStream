@@ -16,20 +16,11 @@ public interface HashFunction extends ToIntFunction<DataItem> {
     };
   }
 
-  static <T> HashFunction uniformObjectHash(Class<T> clazz) {
+  static HashFunction uniformHash(HashFunction hashFunction) {
     return new HashFunction() {
       @Override
       public int hash(DataItem item) {
-        return Hashing.murmur3_32().hashInt(item.payload(clazz).hashCode()).asInt();
-      }
-    };
-  }
-
-  static <T> HashFunction wrapped(ToIntFunction<T> hash, Class<T> clazz) {
-    return new HashFunction() {
-      @Override
-      public int hash(DataItem item) {
-        return hash.applyAsInt(item.payload(clazz));
+        return Hashing.murmur3_32().hashInt(hashFunction.applyAsInt(item)).asInt();
       }
     };
   }
@@ -39,6 +30,15 @@ public interface HashFunction extends ToIntFunction<DataItem> {
       @Override
       public int hash(DataItem item) {
         return hash;
+      }
+    };
+  }
+
+  static HashFunction bucketedHash(HashFunction hash, int buckets) {
+    return new HashFunction() {
+      @Override
+      public int hash(DataItem item) {
+        return hash.applyAsInt(item) % buckets;
       }
     };
   }

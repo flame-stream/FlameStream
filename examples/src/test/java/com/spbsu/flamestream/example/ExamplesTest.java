@@ -32,14 +32,14 @@ public class ExamplesTest extends FlameStreamSuite {
                     WordCountCheckers.CHECK_COUNT,
                     new WordCountGraph().get(),
                     WordCounter.class,
-                    5
+                    10
             },
             {
                     "SmallDump",
                     InvertedIndexCheckers.CHECK_INDEX_WITH_SMALL_DUMP,
                     new InvertedIndexGraph().get(),
                     WordBase.class,
-                    5
+                    10
             },
             {
 
@@ -47,14 +47,14 @@ public class ExamplesTest extends FlameStreamSuite {
                     InvertedIndexCheckers.CHECK_INDEX_AND_RANKING_STORAGE_WITH_SMALL_DUMP,
                     new InvertedIndexGraph().get(),
                     WordBase.class,
-                    5
+                    10
             },
             {
                     "IndexWithRanking",
                     InvertedIndexCheckers.CHECK_INDEX_WITH_RANKING,
                     new InvertedIndexGraph().get(),
                     WordBase.class,
-                    60
+                    90
             }
 
     };

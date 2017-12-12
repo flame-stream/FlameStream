@@ -34,7 +34,7 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
 
     final Graph graph = groupGraph(
             window,
-            HashFunction.uniformObjectHash(Long.class),
+            HashFunction.uniformHash(HashFunction.objectHash(Long.class)),
             new Equalz() {
               @Override
               public boolean test(DataItem dataItem, DataItem dataItem2) {

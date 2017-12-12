@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class WordCountGraph implements Supplier<Graph> {
-  private final HashFunction wordHash = HashFunction.uniformObjectHash(WordContainer.class);
+  private final HashFunction wordHash = HashFunction.uniformHash(HashFunction.objectHash(WordContainer.class));
 
   @SuppressWarnings("Convert2Lambda")
   private final Equalz equalz = new Equalz() {

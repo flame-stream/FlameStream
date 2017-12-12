@@ -19,11 +19,11 @@ public class Grouping<T> extends Graph.Vertex.Stub {
   private final HashFunction hash;
   private final Equalz equalz;
   private final int window;
-  private final Class<T> clazz;
+  private final Class<?> clazz;
 
   private final GroupingOperation groupingOperation = new GroupingOperation();
 
-  public Grouping(HashFunction hash, Equalz equalz, int window, Class<T> clazz) {
+  public Grouping(HashFunction hash, Equalz equalz, int window, Class<?> clazz) {
     this.window = window;
     this.hash = hash;
     this.equalz = equalz;
@@ -63,7 +63,7 @@ public class Grouping<T> extends Graph.Vertex.Stub {
         final int left = Math.max(right - window, 0);
         final Meta meta = bucket.get(right - 1).meta().advanced(localTime);
         final List<T> groupingResult = bucket.rangeStream(left, right)
-                .map(item -> item.payload(clazz))
+                .map(item -> item.payload((Class<T>) clazz))
                 .collect(Collectors.toList());
         items.add(new PayloadDataItem(meta, groupingResult));
       }

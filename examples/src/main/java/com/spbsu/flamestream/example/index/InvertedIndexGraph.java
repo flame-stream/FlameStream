@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class InvertedIndexGraph implements Supplier<Graph> {
-  private final HashFunction wordHash = HashFunction.uniformObjectHash(WordBase.class);
+  private final HashFunction wordHash = HashFunction.uniformHash(HashFunction.objectHash(WordBase.class));
 
   private final Equalz wordEqualz = new Equalz() {
     @Override
