@@ -35,7 +35,7 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
       final Stream<R> result = function.apply(dataItem.payload((Class<T>) clazz));
       final int[] childId = {0};
       return result.map(r -> {
-        final Meta newMeta = dataItem.meta().advanced(localTime, childId[0]++);
+        final Meta newMeta = Meta.advanced(dataItem.meta(), localTime, childId[0]++);
         return new PayloadDataItem(newMeta, r);
       });
     }

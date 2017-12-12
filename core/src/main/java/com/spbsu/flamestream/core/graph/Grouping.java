@@ -61,7 +61,7 @@ public class Grouping<T> extends Graph.Vertex.Stub {
       final Collection<DataItem> items = new ArrayList<>();
       for (int right = position + 1; right <= Math.min(position + window, bucket.size()); ++right) {
         final int left = Math.max(right - window, 0);
-        final Meta meta = bucket.get(right - 1).meta().advanced(localTime);
+        final Meta meta = Meta.advanced(bucket.get(right - 1).meta(), localTime);
         final List<T> groupingResult = bucket.rangeStream(left, right)
                 .map(item -> item.payload((Class<T>) clazz))
                 .collect(Collectors.toList());

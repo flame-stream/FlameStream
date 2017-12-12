@@ -4,7 +4,8 @@ import java.util.Comparator;
 import java.util.Objects;
 
 class MetaImpl implements Meta {
-  private static final Comparator<Meta> NATURAL_ORDER = Comparator.comparing(Meta::globalTime)
+  private static final Comparator<Meta> NATURAL_ORDER = Comparator
+          .comparing(Meta::globalTime)
           .thenComparing(Meta::trace);
   private final GlobalTime globalTime;
   private final Trace trace;
@@ -14,19 +15,9 @@ class MetaImpl implements Meta {
     this.trace = Trace.EMPTY_TRACE;
   }
 
-  private MetaImpl(GlobalTime globalTime, Trace trace) {
+  MetaImpl(GlobalTime globalTime, Trace trace) {
     this.globalTime = globalTime;
     this.trace = trace;
-  }
-
-  @Override
-  public Meta advanced(int newLocalTime) {
-    return new MetaImpl(globalTime, trace.advanced(newLocalTime, 0));
-  }
-
-  @Override
-  public Meta advanced(int newLocalTime, int childId) {
-    return new MetaImpl(globalTime, trace.advanced(newLocalTime, childId));
   }
 
   @Override

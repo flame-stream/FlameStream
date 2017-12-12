@@ -5,13 +5,17 @@ public interface Meta extends Comparable<Meta> {
     return new MetaImpl(time);
   }
 
+  static Meta advanced(Meta meta, int newLocalTime) {
+    return advanced(meta, newLocalTime, 0);
+  }
+
+  static Meta advanced(Meta meta, int newLocalTime, int childId) {
+    return new MetaImpl(meta.globalTime(), meta.trace().advanced(newLocalTime, childId));
+  }
+
   GlobalTime globalTime();
 
   Trace trace();
-
-  Meta advanced(int newLocalTime);
-
-  Meta advanced(int newLocalTime, int childId);
 
   boolean isInvalidatedBy(Meta that);
 }
