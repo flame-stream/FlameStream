@@ -125,7 +125,7 @@ public class GraphManager extends LoggingActor {
 
       final Joba joba;
       if (vertex instanceof Sink) {
-        joba = new SinkJoba(barrier, output, acker, context());
+        joba = new SinkJoba(barrier, acker, context());
       } else if (vertex instanceof FlameMap) {
         joba = new MapJoba((FlameMap<?, ?>) vertex, output, acker, context());
       } else if (vertex instanceof Grouping) {

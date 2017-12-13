@@ -14,8 +14,8 @@ import java.util.stream.Stream;
 public class SinkJoba extends Joba.Stub {
   private final BiConsumer<DataItem, ActorRef> barrier;
 
-  public SinkJoba(BiConsumer<DataItem, ActorRef> barrier, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
-    super(outJobas, acker, context);
+  public SinkJoba(BiConsumer<DataItem, ActorRef> barrier, ActorRef acker, ActorContext context) {
+    super(Stream.empty(), acker, context);
     this.barrier = barrier;
   }
 
