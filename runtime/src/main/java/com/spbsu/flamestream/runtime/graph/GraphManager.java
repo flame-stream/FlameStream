@@ -38,7 +38,7 @@ public class GraphManager extends LoggingActor {
   private final BiConsumer<DataItem, ActorRef> barrier;
 
   private final Map<String, ActorRef> managerRefs = new HashMap<>();
-  private final Map<String, Joba> materialization = new HashMap<>();
+  private final Map<Destination, Joba> materialization = new HashMap<>();
   private final Collection<MinTimeHandler> minTimeHandlers = new ArrayList<>();
 
   private GraphManager(String nodeId,
@@ -68,9 +68,11 @@ public class GraphManager extends LoggingActor {
               log().info("Finishing constructor");
               //noinspection unchecked
               managerRefs.putAll(managers);
-              graph.vertices().forEach(this::buildMaterialization);
+
+              final Map<String, Joba> allJobas = new HashMap<>();
+              graph.vertices().forEach(vertex -> buildMaterialization(vertex, allJobas));
               minTimeHandlers.addAll(
-                      materialization.values()
+                      allJobas.values()
                               .stream()
                               .filter(joba -> joba instanceof MinTimeHandler)
                               .map(joba -> (MinTimeHandler) joba)
@@ -94,11 +96,11 @@ public class GraphManager extends LoggingActor {
   }
 
   private void accept(DataItem dataItem) {
-    materialization.get(graph.source().id()).accept(dataItem, false);
+    materialization.get(Destination.fromVertexId(graph.source().id())).accept(dataItem, false);
   }
 
   private void inject(AddressedItem addressedItem) {
-    materialization.get(addressedItem.destination().vertexId).accept(addressedItem.item(), true);
+    materialization.get(addressedItem.destination()).accept(addressedItem.item(), true);
   }
 
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
@@ -106,9 +108,9 @@ public class GraphManager extends LoggingActor {
   }
 
   //DFS
-  private Joba buildMaterialization(Graph.Vertex vertex) {
-    if (materialization.containsKey(vertex.id())) {
-      return materialization.get(vertex.id());
+  private Joba buildMaterialization(Graph.Vertex vertex, Map<String, Joba> allJobas) {
+    if (allJobas.containsKey(vertex.id())) {
+      return allJobas.get(vertex.id());
     } else {
       final Stream<Joba> output = graph.adjacent(vertex)
               .map(outVertex -> {
@@ -117,10 +119,10 @@ public class GraphManager extends LoggingActor {
                           layout,
                           managerRefs,
                           ((Grouping) outVertex).hash(),
-                          new Destination(outVertex.id()),
+                          Destination.fromVertexId(outVertex.id()),
                           context());
                 }
-                return buildMaterialization(outVertex);
+                return buildMaterialization(outVertex, allJobas);
               });
 
       final Joba joba;
@@ -136,17 +138,18 @@ public class GraphManager extends LoggingActor {
       } else {
         throw new RuntimeException("Invalid vertex type");
       }
-      materialization.put(vertex.id(), joba);
+
+      if (vertex instanceof Source || vertex instanceof Grouping) {
+        materialization.put(Destination.fromVertexId(vertex.id()), joba);
+      }
+      allJobas.put(vertex.id(), joba);
       return joba;
     }
   }
 
   public static class Destination {
+    private final static Map<String, Destination> cache = new HashMap<>();
     private final String vertexId;
-
-    Destination(String vertexId) {
-      this.vertexId = vertexId;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -170,6 +173,19 @@ public class GraphManager extends LoggingActor {
       return "Destination{" +
               "vertexId='" + vertexId + '\'' +
               '}';
+    }
+
+    private Destination(String vertexId) {
+      this.vertexId = vertexId;
+    }
+
+    private static Destination fromVertexId(String vertexId) {
+      return cache.compute(vertexId, (s, destination) -> {
+        if (destination == null) {
+          return new Destination(s);
+        }
+        return destination;
+      });
     }
   }
 }
