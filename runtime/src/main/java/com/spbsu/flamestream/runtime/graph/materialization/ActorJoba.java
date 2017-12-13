@@ -19,8 +19,8 @@ public class ActorJoba implements Joba, MinTimeHandler {
   private final ActorRef vertexActor;
   private final boolean minTimeHandler;
 
-  public ActorJoba(Joba joba, ActorContext context) {
-    this.context = context;
+  public ActorJoba(Joba joba) {
+    context = ((Joba.Stub) joba).context;
     minTimeHandler = joba instanceof MinTimeHandler;
     vertexActor = context.actorOf(InnerActor.props(joba), "ActorJoba_" + UUID.randomUUID());
   }
