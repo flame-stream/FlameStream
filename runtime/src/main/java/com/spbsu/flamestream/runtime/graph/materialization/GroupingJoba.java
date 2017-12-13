@@ -19,7 +19,7 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 28.11.2017
  */
-public class GroupingJoba extends Joba.Stub {
+public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
   private final Grouping<?> grouping;
   private final TIntObjectMap<Object> buffers = new TIntObjectHashMap<>();
 
@@ -47,6 +47,7 @@ public class GroupingJoba extends Joba.Stub {
     }
   }
 
+  @Override
   public void onMinTime(GlobalTime globalTime) {
     currentMinTime = globalTime;
   }

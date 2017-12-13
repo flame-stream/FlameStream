@@ -9,7 +9,6 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.runtime.acker.api.Commit;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.config.ComputationLayout;
@@ -17,14 +16,18 @@ import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.materialization.GroupingJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.Joba;
 import com.spbsu.flamestream.runtime.graph.materialization.MapJoba;
+import com.spbsu.flamestream.runtime.graph.materialization.MinTimeHandler;
 import com.spbsu.flamestream.runtime.graph.materialization.RouterJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.SinkJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.SourceJoba;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class GraphManager extends LoggingActor {
@@ -33,10 +36,10 @@ public class GraphManager extends LoggingActor {
   private final ActorRef acker;
   private final ComputationLayout layout;
   private final BiConsumer<DataItem, ActorRef> barrier;
-  private final Map<String, Joba> materialization = new HashMap<>();
 
-  //effectively final
-  private Map<String, ActorRef> managerRefs;
+  private final Map<String, ActorRef> managerRefs = new HashMap<>();
+  private final Map<String, Joba> materialization = new HashMap<>();
+  private final Collection<MinTimeHandler> minTimeHandlers = new ArrayList<>();
 
   private GraphManager(String nodeId,
                        Graph graph,
@@ -64,8 +67,15 @@ public class GraphManager extends LoggingActor {
             .match(Map.class, managers -> {
               log().info("Finishing constructor");
               //noinspection unchecked
-              managerRefs = managers;
+              managerRefs.putAll(managers);
               graph.vertices().forEach(this::buildMaterialization);
+              minTimeHandlers.addAll(
+                      materialization.values()
+                              .stream()
+                              .filter(joba -> joba instanceof MinTimeHandler)
+                              .map(joba -> (MinTimeHandler) joba)
+                              .collect(Collectors.toList())
+              );
 
               unstashAll();
               getContext().become(managing());
@@ -79,7 +89,6 @@ public class GraphManager extends LoggingActor {
             .match(DataItem.class, this::accept)
             .match(AddressedItem.class, this::inject)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
-            .match(Commit.class, commit -> onCommit())
             .match(Heartbeat.class, gt -> acker.forward(gt, context()))
             .build();
   }
@@ -93,9 +102,7 @@ public class GraphManager extends LoggingActor {
   }
 
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
-  }
-
-  private void onCommit() {
+    minTimeHandlers.forEach(minTimeHandler -> minTimeHandler.onMinTime(minTimeUpdate.minTime()));
   }
 
   //DFS
