@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.materialization.vertices;
+package com.spbsu.flamestream.runtime.graph.materialization;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
@@ -17,7 +17,7 @@ public class ActorJoba implements Joba {
   private final ActorContext context;
   private final ActorRef vertexActor;
 
-  ActorJoba(Joba joba, ActorContext context) {
+  public ActorJoba(Joba joba, ActorContext context) {
     this.context = context;
     vertexActor = context.actorOf(InnerActor.props(joba), "ActorJoba_" + UUID.randomUUID());
   }

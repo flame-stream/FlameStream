@@ -1,5 +1,7 @@
-package com.spbsu.flamestream.runtime.graph.materialization.vertices;
+package com.spbsu.flamestream.runtime.graph.materialization;
 
+import akka.actor.ActorContext;
+import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
@@ -11,7 +13,6 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -25,8 +26,8 @@ public class GroupingJoba extends Joba.Stub {
   private GlobalTime currentMinTime = GlobalTime.MIN;
   private int localTime = 0;
 
-  GroupingJoba(Joba[] outJobas, Consumer<DataItem> acker, Grouping<?> grouping) {
-    super(outJobas, acker);
+  public GroupingJoba(Grouping<?> grouping, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
+    super(outJobas, acker, context);
     this.grouping = grouping;
   }
 

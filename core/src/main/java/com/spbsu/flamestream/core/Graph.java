@@ -11,13 +11,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public interface Graph {
-  Stream<Vertex> nodes();
+  Stream<Vertex> vertices();
 
-  Stream<Vertex> outputs(Vertex vertex);
-
-  Stream<Vertex> inputs(Vertex vertex);
-
-  boolean isBroadcast(Vertex vertex);
+  Stream<Vertex> adjacent(Vertex vertex);
 
   Source source();
 
@@ -57,23 +53,13 @@ public interface Graph {
       allVertices.add(sink);
       return new Graph() {
         @Override
-        public Stream<Vertex> nodes() {
+        public Stream<Vertex> vertices() {
           return allVertices.stream();
         }
 
         @Override
-        public Stream<Vertex> outputs(Vertex vertex) {
+        public Stream<Vertex> adjacent(Vertex vertex) {
           return adjLists.get(vertex).stream();
-        }
-
-        @Override
-        public Stream<Vertex> inputs(Vertex vertex) {
-          return invertedAdjLists.get(vertex).stream();
-        }
-
-        @Override
-        public boolean isBroadcast(Vertex vertex) {
-          return adjLists.get(vertex).size() > 1;
         }
 
         @Override

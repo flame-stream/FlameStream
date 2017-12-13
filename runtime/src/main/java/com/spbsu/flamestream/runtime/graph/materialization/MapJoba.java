@@ -1,9 +1,10 @@
-package com.spbsu.flamestream.runtime.graph.materialization.vertices;
+package com.spbsu.flamestream.runtime.graph.materialization;
 
+import akka.actor.ActorContext;
+import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.graph.FlameMap;
 
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -14,8 +15,8 @@ public class MapJoba extends Joba.Stub {
   private final FlameMap<?, ?> flameMap;
   private int localTime = 0;
 
-  MapJoba(Joba[] outJobas, Consumer<DataItem> acker, FlameMap<?, ?> flameMap) {
-    super(outJobas, acker);
+  public MapJoba(FlameMap<?, ?> flameMap, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
+    super(outJobas, acker, context);
     this.flameMap = flameMap;
   }
 

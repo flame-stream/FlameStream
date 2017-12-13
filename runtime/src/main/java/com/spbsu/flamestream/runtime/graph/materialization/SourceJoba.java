@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.materialization.vertices;
+package com.spbsu.flamestream.runtime.graph.materialization;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
@@ -6,11 +6,6 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -18,26 +13,17 @@ import java.util.stream.Stream;
  * Date: 01.12.2017
  */
 public class SourceJoba extends Joba.Stub {
-  private final Collection<InFlightTime> inFlight = new ArrayList<>();
+  /*private final Collection<InFlightTime> inFlight = new ArrayList<>();
   private final Map<EdgeId, ActorRef> fronts = new HashMap<>();
+  private final int maxInFlightItems;*/
 
-  private final int maxInFlightItems;
-  private final ActorContext context;
-  private final Consumer<GlobalTime> heartBeater;
-
-  SourceJoba(Joba[] outJobas,
-             Consumer<DataItem> acker,
-             int maxInFlightItems,
-             ActorContext context,
-             Consumer<GlobalTime> heartBeater) {
-    super(outJobas, acker);
-    this.maxInFlightItems = maxInFlightItems;
-    this.context = context;
-    this.heartBeater = heartBeater;
+  public SourceJoba(int maxInFlightItems, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
+    super(outJobas, acker, context);
+    //this.maxInFlightItems = maxInFlightItems;
   }
 
   public void addFront(EdgeId front, ActorRef actorRef) {
-    fronts.putIfAbsent(front, actorRef);
+    //fronts.putIfAbsent(front, actorRef);
   }
 
   public void onMinTime(GlobalTime minTime) {
@@ -74,7 +60,7 @@ public class SourceJoba extends Joba.Stub {
     return false;
   }
 
-  private static class InFlightTime {
+  /*private static class InFlightTime {
     private final GlobalTime globalTime;
     private final boolean accepted;
 
@@ -82,5 +68,5 @@ public class SourceJoba extends Joba.Stub {
       this.globalTime = globalTime;
       this.accepted = accepted;
     }
-  }
+  }*/
 }
