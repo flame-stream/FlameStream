@@ -83,11 +83,6 @@ public class GraphManager extends LoggingActor {
             .build();
   }
 
-  @Override
-  public void postStop() {
-    materializer.close();
-  }
-
   private void accept(DataItem dataItem) {
     materializer.materialization().input(dataItem, sender());
   }

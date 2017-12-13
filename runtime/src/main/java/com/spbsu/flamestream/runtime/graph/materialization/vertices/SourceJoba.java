@@ -11,32 +11,35 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * User: Artem
  * Date: 01.12.2017
  */
-public class SourceJoba implements VertexJoba {
+public class SourceJoba extends Joba.Stub {
   private final Collection<InFlightTime> inFlight = new ArrayList<>();
   private final Map<EdgeId, ActorRef> fronts = new HashMap<>();
 
   private final int maxInFlightItems;
   private final ActorContext context;
   private final Consumer<GlobalTime> heartBeater;
-  private final Consumer<DataItem> sink;
 
-  public SourceJoba(int maxInFlightItems, ActorContext context, Consumer<GlobalTime> heartBeater, Consumer<DataItem> sink) {
+  SourceJoba(Joba[] outJobas,
+             Consumer<DataItem> acker,
+             int maxInFlightItems,
+             ActorContext context,
+             Consumer<GlobalTime> heartBeater) {
+    super(outJobas, acker);
     this.maxInFlightItems = maxInFlightItems;
     this.context = context;
     this.heartBeater = heartBeater;
-    this.sink = sink;
   }
 
   public void addFront(EdgeId front, ActorRef actorRef) {
     fronts.putIfAbsent(front, actorRef);
   }
 
-  @Override
   public void onMinTime(GlobalTime minTime) {
     /*final Iterator<InFlightTime> iterator = inFlight.iterator();
     while (iterator.hasNext()) {
@@ -52,8 +55,8 @@ public class SourceJoba implements VertexJoba {
   }
 
   @Override
-  public void accept(DataItem dataItem) {
-    sink.accept(dataItem);
+  public void accept(DataItem dataItem, boolean fromAsync) {
+    process(dataItem, Stream.of(dataItem), fromAsync);
     /*{ //back-pressure logic
       final GlobalTime globalTime = dataItem.meta().globalTime();
       if (inFlight.size() < maxInFlightItems) {
@@ -64,6 +67,11 @@ public class SourceJoba implements VertexJoba {
         inFlight.add(new InFlightTime(globalTime, false));
       }
     }*/
+  }
+
+  @Override
+  public boolean isAsync() {
+    return false;
   }
 
   private static class InFlightTime {

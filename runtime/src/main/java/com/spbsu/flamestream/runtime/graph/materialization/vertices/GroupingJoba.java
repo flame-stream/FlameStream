@@ -12,35 +12,40 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * User: Artem
  * Date: 28.11.2017
  */
-public class GroupingJoba implements VertexJoba {
+public class GroupingJoba extends Joba.Stub {
   private final Grouping<?> grouping;
-  private final Consumer<DataItem> sink;
   private final TIntObjectMap<Object> buffers = new TIntObjectHashMap<>();
 
   private GlobalTime currentMinTime = GlobalTime.MIN;
   private int localTime = 0;
 
-  public GroupingJoba(Grouping<?> grouping, Consumer<DataItem> sink) {
+  GroupingJoba(Joba[] outJobas, Consumer<DataItem> acker, Grouping<?> grouping) {
+    super(outJobas, acker);
     this.grouping = grouping;
-    this.sink = sink;
   }
 
   @Override
-  public void accept(DataItem dataItem) {
+  public boolean isAsync() {
+    return false;
+  }
+
+  @Override
+  public void accept(DataItem dataItem, boolean fromAsync) {
     final InvalidatingBucket bucket = bucketFor(dataItem);
-    grouping.operation().apply(dataItem, bucket, localTime++).forEach(sink);
+    final Stream<DataItem> output = grouping.operation().apply(dataItem, bucket, localTime++);
+    process(dataItem, output, fromAsync);
     { //clear outdated
       final int position = Math.max(bucket.floor(Meta.meta(currentMinTime)) - grouping.window(), 0);
       bucket.clearRange(0, position);
     }
   }
 
-  @Override
   public void onMinTime(GlobalTime globalTime) {
     currentMinTime = globalTime;
   }
