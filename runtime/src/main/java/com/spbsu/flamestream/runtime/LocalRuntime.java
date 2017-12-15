@@ -36,7 +36,7 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
     this(ActorSystem.create(), parallelism);
   }
 
-  private LocalRuntime(ActorSystem system, int parallelism) {
+  public LocalRuntime(ActorSystem system, int parallelism) {
     this.parallelism = parallelism;
     this.system = system;
   }

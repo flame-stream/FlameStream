@@ -15,13 +15,12 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.util.AwaitConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -108,10 +107,6 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     final LocalRuntime runtime = new LocalRuntime(nodes);
     final FlameRuntime.Flame flame = runtime.run(graph());
     {
-      final Set<Integer> result = Collections.synchronizedSet(new HashSet<>());
-      flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
-              .forEach(r -> r.addListener(result::add));
-
       final Consumer<Integer> sink = flame.attachFront(
               "doubleGroupingFront",
               new AkkaFrontType<Integer>(runtime.system())
@@ -130,10 +125,14 @@ public class DoubleGroupingTest extends FlameStreamSuite {
               ).stream().map(List::hashCode).collect(Collectors.toList())
       ).stream().map(List::hashCode).collect(Collectors.toSet());
 
-      source.forEach(sink);
-      TimeUnit.SECONDS.sleep(10);
+      final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(expected.size());
+      flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
+              .forEach(r -> r.addListener(consumer));
 
-      Assert.assertEquals(result, expected);
+      source.forEach(sink);
+      consumer.await(10, TimeUnit.MINUTES);
+
+      Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
     }
   }
 
