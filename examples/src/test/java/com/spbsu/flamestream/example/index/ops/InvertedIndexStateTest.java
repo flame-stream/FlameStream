@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.index.ops;
 
-import com.spbsu.flamestream.FlameStreamSuite;
+import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.example.index.utils.IndexItemInLong;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;

@@ -2,7 +2,6 @@ package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.ActorSystem;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
-import com.spbsu.flamestream.runtime.node.LifecycleWatcher;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.slf4j.Logger;
@@ -45,15 +44,15 @@ public class WorkerApplication {
       config = ConfigFactory.load("fs");
     }
 
-    final int port = config.getInt("port");
+    final int port = config.getInt("destanation");
     final String host = config.getString("host");
     final DumbInetSocketAddress socketAddress = new DumbInetSocketAddress(host, port);
 
-    new WorkerApplication(config.getString("id"), socketAddress, config.getString("zk_string")).run();
+    new WorkerApplication(config.getString("frontId"), socketAddress, config.getString("zk_string")).run();
   }
 
   public void run() {
-    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + host.port())
+    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.destanation=" + host.port())
             .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.hostname=" + host.host()))
             .withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);

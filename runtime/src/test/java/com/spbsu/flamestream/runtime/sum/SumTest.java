@@ -1,116 +1,128 @@
 package com.spbsu.flamestream.runtime.sum;
 
-import com.spbsu.flamestream.core.graph.AtomicGraph;
-import com.spbsu.flamestream.core.graph.Graph;
-import com.spbsu.flamestream.core.graph.HashFunction;
-import com.spbsu.flamestream.core.graph.barrier.BarrierSuite;
-import com.spbsu.flamestream.core.graph.ops.Broadcast;
-import com.spbsu.flamestream.core.graph.ops.Filter;
-import com.spbsu.flamestream.core.graph.ops.Grouping;
-import com.spbsu.flamestream.core.graph.ops.Merge;
-import com.spbsu.flamestream.core.graph.ops.StatelessMap;
-import com.spbsu.flamestream.core.graph.source.AbstractSource;
-import com.spbsu.flamestream.core.graph.source.SimpleSource;
-import com.spbsu.flamestream.runtime.TestEnvironment;
-import com.spbsu.flamestream.runtime.environment.local.LocalClusterEnvironment;
+import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.Equalz;
+import com.spbsu.flamestream.core.FlameStreamSuite;
+import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.HashFunction;
+import com.spbsu.flamestream.core.graph.FlameMap;
+import com.spbsu.flamestream.core.graph.Grouping;
+import com.spbsu.flamestream.core.graph.Sink;
+import com.spbsu.flamestream.core.graph.Source;
+import com.spbsu.flamestream.runtime.FlameRuntime;
+import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.util.AwaitConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Random;
-import java.util.function.BiPredicate;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public final class SumTest {
+public final class SumTest extends FlameStreamSuite {
 
-  private static Graph sumGraph(AtomicGraph sink) {
-    final HashFunction<Numb> identity = HashFunction.constantHash(1);
-    final HashFunction<List<Numb>> groupIdentity = HashFunction.constantHash(1);
+  private static Graph sumGraph() {
+    final HashFunction identity = HashFunction.constantHash(1);
+    final HashFunction groupIdentity = HashFunction.constantHash(1);
+
     //noinspection Convert2Lambda
-    @SuppressWarnings("Convert2Lambda") final BiPredicate<Numb, Numb> predicate = new BiPredicate<Numb, Numb>() {
+    final Equalz predicate = new Equalz() {
       @Override
-      public boolean test(Numb o, Numb o2) {
+      public boolean test(DataItem dataItem, DataItem dataItem2) {
         return true;
       }
     };
 
-    final AbstractSource source = new SimpleSource();
-    final Merge merge = new Merge(Arrays.asList(identity, identity));
-    final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2);
-    final StatelessMap<List<Numb>, List<Numb>> enricher = new StatelessMap<>(new IdentityEnricher(), groupIdentity);
-    final Filter<List<Numb>> junkFilter = new Filter<>(new WrongOrderingFilter(), groupIdentity);
-    final StatelessMap<List<Numb>, Sum> reducer = new StatelessMap<>(new Reduce(), groupIdentity);
-    final Broadcast<Sum> broadcast = new Broadcast<>(identity, 2);
+    final Source source = new Source();
+    final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2, Numb.class);
+    final FlameMap<List<Numb>, List<Numb>> enricher = new FlameMap<>(
+            new IdentityEnricher(),
+            List.class
+    );
+    final FlameMap<List<Numb>, List<Numb>> junkFilter = new FlameMap<>(
+            new WrongOrderingFilter(),
+            List.class
+    );
+    final FlameMap<List<Numb>, Sum> reducer = new FlameMap<>(new Reduce(), List.class);
+    final Sink sink = new Sink();
 
-    final BarrierSuite<Sum> barrier = new BarrierSuite<>(sink);
-
-    return source.fuse(merge, source.outPort(), merge.inPorts().get(0))
-            .fuse(grouping, merge.outPort(), grouping.inPort())
-            .fuse(enricher, grouping.outPort(), enricher.inPort())
-            .fuse(junkFilter, enricher.outPort(), junkFilter.inPort())
-            .fuse(reducer, junkFilter.outPort(), reducer.inPort())
-            .fuse(broadcast, reducer.outPort(), broadcast.inPort())
-            .fuse(barrier, broadcast.outPorts().get(0), barrier.inPort())
-            .wire(broadcast.outPorts().get(1), merge.inPorts().get(1));
+    return new Graph.Builder()
+            .link(source, grouping)
+            .link(grouping, enricher)
+            .link(enricher, junkFilter)
+            .link(junkFilter, reducer)
+            .link(reducer, sink)
+            .link(reducer, grouping)
+            .build(source, sink);
   }
 
-  @Test
-  public void testSingleFront() throws Exception {
-    test(20, 1000, 1);
-  }
+  @Test(invocationCount = 10)
+  public void sumTest() throws InterruptedException {
+    final LocalRuntime runtime = new LocalRuntime(4);
+    final FlameRuntime.Flame flame = runtime.run(sumGraph());
+    {
+      final Consumer<LongNumb> sink = randomConsumer(
+              flame.attachFront("sumFront", new AkkaFrontType<LongNumb>(runtime.system())).collect(Collectors.toList())
+      );
+      final List<LongNumb> source = new Random()
+              .ints(1000, 0, 100)
+              .mapToObj(LongNumb::new)
+              .collect(Collectors.toList());
+      final long expected = source.stream().map(LongNumb::value).reduce(Long::sum).orElse(0L);
 
-  @Test
-  public void testMultipleFronts() throws Exception {
-    test(30, 1000, 4);
-  }
+      final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.size());
+      flame.attachRear("sumRear", new AkkaRearType<>(runtime.system(), Sum.class))
+              .forEach(r -> r.addListener(consumer));
 
-  @Test
-  public void shortRepeatedTests() throws Exception {
-    for (int i = 0; i < 10; ++i) {
-      test(5, 10, 4);
+      source.forEach(sink);
+      consumer.await(10, TimeUnit.MINUTES);
+
+      final long actual = consumer.result()
+              .mapToLong(Sum::value)
+              .max()
+              .orElseThrow(NoSuchElementException::new);
+      Assert.assertEquals(actual, expected);
+      Assert.assertEquals(consumer.result().count(), source.size());
     }
   }
 
-  private void test(int tickLength, int inputSize, int fronts) {
-    try (LocalClusterEnvironment lce = new LocalClusterEnvironment(4);
-            TestEnvironment environment = new TestEnvironment(lce)) {
-
-      final Deque<Sum> result = new ArrayDeque<>();
-
-      final Consumer<Object> sink = environment.deploy(SumTest.sumGraph(
-              environment.wrapInSink(HashFunction.constantHash(1), k -> result.add((Sum) k))
-      ), tickLength, 1, fronts);
-
-      final List<LongNumb> source = new Random().ints(inputSize)
-              .map(i -> i % 100)
-              .map(Math::abs)
+  @Test(invocationCount = 10)
+  public void totalOrderTest() throws InterruptedException {
+    final LocalRuntime runtime = new LocalRuntime(4);
+    final FlameRuntime.Flame flame = runtime.run(sumGraph());
+    {
+      final List<LongNumb> source = new Random()
+              .ints(1000)
               .mapToObj(LongNumb::new)
               .collect(Collectors.toList());
+      final Consumer<LongNumb> sink = flame.attachFront(
+              "totalOrderFront",
+              new AkkaFrontType<LongNumb>(runtime.system())
+      ).findFirst().orElseThrow(IllegalStateException::new);
 
-      source.forEach(longNumb -> {
-        sink.accept(longNumb);
-        try {
-          Thread.sleep(5);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      });
+      final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.size());
+      flame.attachRear("totalOrderRear", new AkkaRearType<>(runtime.system(), Sum.class))
+              .forEach(r -> r.addListener(consumer));
 
-      environment.awaitTicks();
 
-      final long expected = source.stream()
-              .reduce(new LongNumb(0L), (a, b) -> new LongNumb(a.value() + b.value()))
-              .value();
-      final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
+      final Set<Sum> expected = new HashSet<>();
+      long currentSum = 0;
+      for (LongNumb longNumb : source) {
+        currentSum += longNumb.value();
+        expected.add(new Sum(currentSum));
+      }
 
-      Assert.assertEquals(actual, expected);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+      source.forEach(sink);
+      consumer.await(10, TimeUnit.MINUTES);
+
+      Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
     }
   }
 }

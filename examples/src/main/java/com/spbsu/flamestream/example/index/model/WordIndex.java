@@ -2,6 +2,8 @@ package com.spbsu.flamestream.example.index.model;
 
 import com.spbsu.flamestream.example.index.ops.InvertedIndexState;
 
+import java.util.Objects;
+
 /**
  * User: Artem
  * Date: 10.07.2017
@@ -22,5 +24,23 @@ public class WordIndex implements WordBase {
 
   public InvertedIndexState state() {
     return state;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final WordIndex wordIndex = (WordIndex) o;
+    return Objects.equals(word, wordIndex.word) &&
+            Objects.equals(state, wordIndex.state);
+  }
+
+  @Override
+  public int hashCode() {
+    return word.hashCode();
   }
 }

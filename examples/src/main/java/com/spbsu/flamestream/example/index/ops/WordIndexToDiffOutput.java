@@ -49,3 +49,4 @@ public class WordIndexToDiffOutput implements Function<List<WordBase>, Stream<Wo
     return Stream.of(newWordIndex, wordRemoveOutput, wordAddOutput).filter(Objects::nonNull);
   }
 }
+

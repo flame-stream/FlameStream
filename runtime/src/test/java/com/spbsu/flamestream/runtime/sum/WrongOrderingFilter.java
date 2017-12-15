@@ -1,18 +1,21 @@
 package com.spbsu.flamestream.runtime.sum;
 
-
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
-final class WrongOrderingFilter implements Predicate<List<Numb>> {
+final class WrongOrderingFilter implements Function<List<Numb>, Stream<List<Numb>>> {
 
   @Override
-  public boolean test(List<Numb> numberGroupingResult) {
-    if (numberGroupingResult.size() != 2) {
+  public Stream<List<Numb>> apply(List<Numb> numbs) {
+    if (numbs.size() != 2) {
       throw new IllegalStateException("Group size should equal 2");
     }
 
-    return numberGroupingResult.get(0) instanceof Sum && numberGroupingResult.get(1) instanceof LongNumb;
-
+    if (numbs.get(0) instanceof Sum && numbs.get(1) instanceof LongNumb) {
+      return Stream.of(numbs);
+    } else {
+      return Stream.empty();
+    }
   }
 }

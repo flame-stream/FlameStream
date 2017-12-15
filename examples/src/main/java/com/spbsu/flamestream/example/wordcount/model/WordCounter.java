@@ -37,9 +37,7 @@ public class WordCounter implements WordContainer {
 
   @Override
   public int hashCode() {
-    int result = word.hashCode();
-    result = 31 * result + count;
-    return result;
+    return word.hashCode();
   }
 
   @Override

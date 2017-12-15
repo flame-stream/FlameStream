@@ -19,6 +19,11 @@
             <artifactId>flamestream-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.spbsu.flamestream</groupId>
+            <artifactId>flamestream-runtime</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!--Needed for checkers-->
         <dependency>
             <groupId>org.testng</groupId>
@@ -29,8 +34,9 @@
         <!--Tests-->
         <dependency>
             <groupId>com.spbsu.flamestream</groupId>
-            <artifactId>flamestream-runtime</artifactId>
+            <artifactId>flamestream-core</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -43,10 +49,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
         </dependency>
     </dependencies>
 

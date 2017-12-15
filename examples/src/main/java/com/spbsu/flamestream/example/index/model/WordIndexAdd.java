@@ -1,9 +1,7 @@
 package com.spbsu.flamestream.example.index.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * User: Artem
@@ -13,19 +11,16 @@ public class WordIndexAdd implements WordBase {
   private final String word;
   private final long[] positions;
 
-  @JsonCreator
-  public WordIndexAdd(@JsonProperty("word") String word, @JsonProperty("positions") long[] positions) {
+  public WordIndexAdd(String word, long[] positions) {
     this.word = word;
     this.positions = positions;
   }
 
   @Override
-  @JsonProperty("word")
   public String word() {
     return word;
   }
 
-  @JsonProperty("positions")
   public long[] positions() {
     return positions;
   }
@@ -33,5 +28,23 @@ public class WordIndexAdd implements WordBase {
   @Override
   public String toString() {
     return "ADD " + word + " : " + Arrays.toString(positions);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final WordIndexAdd that = (WordIndexAdd) o;
+    return Objects.equals(word, that.word) &&
+            Arrays.equals(positions, that.positions);
+  }
+
+  @Override
+  public int hashCode() {
+    return word.hashCode();
   }
 }

@@ -1,21 +1,17 @@
 package com.spbsu.flamestream.runtime.acker;
 
-import com.spbsu.commons.util.Pair;
 import com.spbsu.flamestream.core.FlameStreamSuite;
+import com.spbsu.flamestream.runtime.acker.table.AckTable;
+import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Map;
+import java.util.Random;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 /**
  * User: Artem
@@ -24,82 +20,58 @@ import java.util.stream.Stream;
 public class AckTableTest extends FlameStreamSuite {
   private static final Logger LOG = LoggerFactory.getLogger(AckTableTest.class);
 
-  @DataProvider
-  public Object[][] logicTestProvider() {
-    final long startTs = 0;
-    final long window = 10;
-    final long windowsCount = 40 * 1000;
-    final long items = 100 * 1000;
-    return new Object[][]{
-            {new ArrayAckTable(startTs, window * windowsCount, window), window, windowsCount, items},
-            {new TreeAckTable(startTs, window), window, windowsCount, items}
-    };
+  @Test
+  public void emptyTableTest() {
+    final AckTable table = new ArrayAckTable(0, 10, 10);
+    Assert.assertEquals(table.tryPromote(0), 0);
   }
 
-  @Test(dataProvider = "logicTestProvider")
-  public void logicTest(AckTable ackTable, long window, long windowsCount, long items) {
-    final List<Pair<Long, Long>> xors = Stream.generate(() -> ThreadLocalRandom.current()
-            .nextLong(1, window * windowsCount))
-            .distinct()
-            .limit(items)
-            .map(ts -> new Pair<>(ts, ThreadLocalRandom.current().nextLong()))
-            .collect(Collectors.toList());
-
-    LongStream.range(0, windowsCount).forEach(value -> ackTable.heartbeat(window * value));
-    final SortedSet<Long> sortedSet = new TreeSet<>();
-    xors.forEach(pair -> {
-      ackTable.ack(pair.first, pair.second);
-      sortedSet.add(pair.first);
-      Assert.assertEquals(ackTable.min(), window * (sortedSet.first() / window));
-    });
-    Collections.shuffle(xors);
-    xors.forEach(pair -> {
-      Assert.assertEquals(ackTable.min(), window * (sortedSet.first() / window));
-      ackTable.ack(pair.first, pair.second);
-      sortedSet.remove(pair.first);
-    });
+  @Test
+  public void singleHeartbeatTest() {
+    final long heartbeat = (long) 1e7;
+    final AckTable table = new ArrayAckTable(0, 10, 10);
+    Assert.assertEquals(table.tryPromote(heartbeat), heartbeat);
   }
 
-  @DataProvider
-  public Object[][] performanceTestProvider() {
-    final long startTs = 0;
-    final long window = 10;
-    final long windowsCount = 4 * 1000;
-    final long items = 10 * 1000;
-    return new Object[][]{
-            {
-                    startTs,
-                    window,
-                    windowsCount,
-                    Stream.generate(() -> ThreadLocalRandom.current().nextLong(1, window * windowsCount))
-                            .distinct()
-                            .limit(items)
-                            .map(ts -> new Pair<>(
-                                    ts,
-                                    ThreadLocalRandom.current().nextLong()
-                            )).collect(Collectors.toList())
-            }
-    };
+  @Test
+  public void singleAckTest() {
+    final long ack = 70;
+    final AckTable table = new ArrayAckTable(0, 14, 10);
+    table.ack(ack, 1);
+    Assert.assertEquals(table.tryPromote(Long.MAX_VALUE), ack);
   }
 
-  @Test(dataProvider = "performanceTestProvider", invocationCount = 100, enabled = false)
-  public void arrayAckTablePerformanceTest(long startTs, long window, long windowsCount, List<Pair<Long, Long>> xors) {
-    final AckTable ackTable = new ArrayAckTable(startTs, window * windowsCount, window);
-    performanceTest(ackTable, window, windowsCount, xors);
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void overflowTest() {
+    final AckTable table = new ArrayAckTable(0, 10, 10);
+    table.ack((long) 1e9, 1);
   }
 
-  @Test(dataProvider = "performanceTestProvider", invocationCount = 100, enabled = false)
-  public void treeAckTablePerformanceTest(long startTs, long window, long windowsCount, List<Pair<Long, Long>> xors) {
-    final AckTable ackTable = new TreeAckTable(startTs, window);
-    performanceTest(ackTable, window, windowsCount, xors);
-  }
+  @Test
+  public void logicTest() {
+    final Random rd = new Random(1);
+    final long head = 0;
+    final int capacity = 100;
+    final int window = 10;
+    final long width = capacity * window;
 
-  private void performanceTest(AckTable ackTable, long window, long windowsCount, List<Pair<Long, Long>> xors) {
-    final long start = System.nanoTime();
-    LongStream.range(0, windowsCount).forEach(value -> ackTable.heartbeat(window * value));
-    xors.forEach(pair -> ackTable.ack(pair.first, pair.second));
-    Collections.shuffle(xors);
-    xors.forEach(pair -> ackTable.ack(pair.first, pair.second));
-    LOG.info("Delay: {}", System.nanoTime() - start);
+    final AckTable table = new ArrayAckTable(head, capacity, window);
+    for (long epoch = 0; epoch < 10000; ++epoch) {
+      final long epochFloor = head + epoch * width / 2;
+      final long epochCeil = epochFloor + width / 2;
+
+      final Map<Long, Long> xors = rd
+              .longs(epochFloor, epochCeil)
+              .limit(width)
+              .distinct()
+              .boxed()
+              .collect(Collectors.toMap(Function.identity(), e -> rd.nextLong()));
+
+      xors.forEach(table::ack);
+      table.tryPromote(epochCeil);
+      xors.forEach(table::ack);
+
+      Assert.assertEquals(table.tryPromote(epochCeil), epochCeil);
+    }
   }
 }
