@@ -114,6 +114,7 @@ public class GraphManager extends LoggingActor {
     } else {
       final Stream<Joba> output = graph.adjacent(vertex)
               .map(outVertex -> {
+                // TODO: 15.12.2017 add circuit breaker
                 if (outVertex instanceof Grouping) {
                   return new RouterJoba(
                           layout,

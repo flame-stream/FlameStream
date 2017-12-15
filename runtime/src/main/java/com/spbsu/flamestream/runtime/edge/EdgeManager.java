@@ -7,8 +7,6 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
-import com.spbsu.flamestream.runtime.edge.front.FrontActor;
-import com.spbsu.flamestream.runtime.edge.rear.RearActor;
 import com.spbsu.flamestream.runtime.negitioator.api.NewFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 

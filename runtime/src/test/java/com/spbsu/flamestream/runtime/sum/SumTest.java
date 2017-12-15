@@ -11,8 +11,8 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
-import com.spbsu.flamestream.runtime.edge.front.akka.AkkaFrontType;
-import com.spbsu.flamestream.runtime.edge.rear.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

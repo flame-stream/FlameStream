@@ -8,8 +8,8 @@ import akka.util.Timeout;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
-import com.spbsu.flamestream.runtime.edge.front.api.RequestNext;
-import com.spbsu.flamestream.runtime.edge.front.api.Start;
+import com.spbsu.flamestream.runtime.edge.api.RequestNext;
+import com.spbsu.flamestream.runtime.edge.api.Start;
 import com.spbsu.flamestream.runtime.negitioator.api.NewFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
