@@ -7,14 +7,12 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.edge.front.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.rear.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.util.AwaitConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -49,17 +47,18 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
                     .collect(Collectors.toList())
     );
 
-    final Set<Integer> result = Collections.synchronizedSet(new HashSet<>());
-    flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
-            .forEach(f -> f.addListener(result::add));
-
     final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
+
+    final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(source.size());
+    flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
+            .forEach(f -> f.addListener(consumer));
+
     source.forEach(randomConsumer);
 
-    TimeUnit.SECONDS.sleep(20);
+    consumer.await(10, TimeUnit.MINUTES);
 
     Assert.assertEquals(
-            new HashSet<>(result),
+            consumer.result().collect(Collectors.toSet()),
             source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
     );
   }

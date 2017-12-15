@@ -10,12 +10,12 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.edge.front.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.rear.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.util.AwaitConsumer;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,9 +45,6 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
 
     final FlameRuntime.Flame flame = runtime.run(graph);
     {
-      final Set<List<Long>> result = Collections.synchronizedSet(new HashSet<>());
-      flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
-              .forEach(r -> r.addListener(result::add));
 
       final List<Long> source = new Random().longs(10000, 0, 10)
               .boxed()
@@ -56,10 +53,16 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
               flame.attachFront("groupingAcceptanceFront", new AkkaFrontType<>(runtime.system()))
                       .collect(Collectors.toList())
       );
+      final Set<List<Long>> expected = GroupingAcceptanceTest.expected(source, window);
+
+      final AwaitConsumer<List<Long>> consumer = new AwaitConsumer<>(expected.size());
+      flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
+              .forEach(r -> r.addListener(consumer::accept));
+
       source.forEach(front);
       TimeUnit.SECONDS.sleep(5);
 
-      Assert.assertEquals(new HashSet<>(result), GroupingAcceptanceTest.expected(source, window));
+      Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
     }
   }
 
