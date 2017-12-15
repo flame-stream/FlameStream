@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -95,8 +96,12 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
   }
 
   @Override
-  public void close() throws Exception {
-    Await.ready(system.terminate(), Duration.Inf());
+  public void close() {
+    try {
+      Await.ready(system.terminate(), Duration.Inf());
+    } catch (InterruptedException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static class InMemoryRegistry implements AttachRegistry {
