@@ -17,6 +17,7 @@ import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.typesafe.config.ConfigFactory;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
@@ -33,10 +34,10 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
   private final ActorSystem system;
 
   public LocalRuntime(int parallelism) {
-    this(ActorSystem.create(), parallelism);
+    this(ActorSystem.create("local-runtime", ConfigFactory.load("local")), parallelism);
   }
 
-  public LocalRuntime(ActorSystem system, int parallelism) {
+  private LocalRuntime(ActorSystem system, int parallelism) {
     this.parallelism = parallelism;
     this.system = system;
   }
@@ -70,7 +71,7 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
     final AttachRegistry registry = new InMemoryRegistry();
 
     final List<ActorRef> nodes = paths.keySet().stream()
-            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry), id))
+            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry).withDispatcher("resolver-dispatcher"), id))
             .collect(Collectors.toList());
 
     return new Flame() {
