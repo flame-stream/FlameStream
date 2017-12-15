@@ -42,7 +42,7 @@ import java.util.Set;
  * </ol>
  */
 public class Acker extends LoggingActor {
-  private static final int WINDOW = 10;
+  private static final int WINDOW = 1;
   private static final int SIZE = 100000;
   private final long defaultMinimalTime;
 

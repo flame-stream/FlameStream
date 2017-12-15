@@ -29,7 +29,7 @@ public class InvertedIndexBenchmark {
     try (LocalRuntime runtime = new LocalRuntime(1)) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       {
-        final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(0, 0);
+        final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(50, 0);
 
         flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordBase.class))
                 .forEach(r -> r.addListener(wordBase -> {
