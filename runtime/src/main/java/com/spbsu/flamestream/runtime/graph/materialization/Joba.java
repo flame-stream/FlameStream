@@ -38,7 +38,7 @@ public interface Joba {
           sendToNext(outJobas[0], dataItem);
         } else if (outJobas.length > 1) { //broadcast
           for (int i = 0; i < outJobas.length; i++) {
-            final Meta newMeta = dataItem.meta().advanced(BROADCAST_LOCAL_TIME, i);
+            final Meta newMeta = new Meta(dataItem.meta(), BROADCAST_LOCAL_TIME, i);
             final DataItem newItem = new BroadcastDataItem(dataItem, newMeta);
             sendToNext(outJobas[i], newItem);
           }
