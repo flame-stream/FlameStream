@@ -1,12 +1,10 @@
-package com.spbsu.flamestream.runtime.edge.rear;
+package com.spbsu.flamestream.runtime.edge;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.lang.reflect.InvocationTargetException;

@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.edge;
+package com.spbsu.flamestream.runtime.edge.akka;
 
 public class RawData<T> {
   private final T data;

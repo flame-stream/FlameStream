@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.edge.front.akka;
+package com.spbsu.flamestream.runtime.edge.akka;
 
 import akka.actor.ActorRef;
 import akka.actor.Cancellable;
@@ -10,10 +10,9 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.edge.RawData;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
-import com.spbsu.flamestream.runtime.edge.front.api.Checkpoint;
-import com.spbsu.flamestream.runtime.edge.front.api.RequestNext;
+import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
+import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.jetbrains.annotations.Nullable;
 import scala.concurrent.duration.Duration;

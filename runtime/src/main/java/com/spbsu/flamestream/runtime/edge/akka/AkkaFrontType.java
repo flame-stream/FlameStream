@@ -1,10 +1,9 @@
-package com.spbsu.flamestream.runtime.edge.front.akka;
+package com.spbsu.flamestream.runtime.edge.akka;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import com.spbsu.flamestream.runtime.edge.RawData;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 
 import java.util.function.Consumer;

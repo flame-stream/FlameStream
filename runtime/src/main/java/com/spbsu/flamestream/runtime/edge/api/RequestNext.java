@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.edge.front.api;
+package com.spbsu.flamestream.runtime.edge.api;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 

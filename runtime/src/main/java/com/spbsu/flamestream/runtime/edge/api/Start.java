@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.edge.front.api;
+package com.spbsu.flamestream.runtime.edge.api;
 
 import akka.actor.ActorRef;
 

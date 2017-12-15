@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.edge.rear.akka;
+package com.spbsu.flamestream.runtime.edge.akka;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;

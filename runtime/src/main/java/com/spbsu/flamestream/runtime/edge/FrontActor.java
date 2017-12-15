@@ -1,13 +1,11 @@
-package com.spbsu.flamestream.runtime.edge.front;
+package com.spbsu.flamestream.runtime.edge;
 
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import com.spbsu.flamestream.runtime.edge.api.AttachFront;
-import com.spbsu.flamestream.runtime.edge.front.api.RequestNext;
-import com.spbsu.flamestream.runtime.edge.front.api.Start;
+import com.spbsu.flamestream.runtime.edge.api.RequestNext;
+import com.spbsu.flamestream.runtime.edge.api.Start;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.lang.reflect.InvocationTargetException;

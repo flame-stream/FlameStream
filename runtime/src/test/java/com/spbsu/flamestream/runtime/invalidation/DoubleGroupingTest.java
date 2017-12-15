@@ -13,14 +13,15 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
-import com.spbsu.flamestream.runtime.edge.front.akka.AkkaFrontType;
-import com.spbsu.flamestream.runtime.edge.rear.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.util.AwaitConsumer;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -107,6 +108,10 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     final LocalRuntime runtime = new LocalRuntime(nodes);
     final FlameRuntime.Flame flame = runtime.run(graph());
     {
+      final Set<Integer> result = Collections.synchronizedSet(new HashSet<>());
+      flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
+              .forEach(r -> r.addListener(result::add));
+
       final Consumer<Integer> sink = flame.attachFront(
               "doubleGroupingFront",
               new AkkaFrontType<Integer>(runtime.system())
@@ -125,14 +130,10 @@ public class DoubleGroupingTest extends FlameStreamSuite {
               ).stream().map(List::hashCode).collect(Collectors.toList())
       ).stream().map(List::hashCode).collect(Collectors.toSet());
 
-      final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(expected.size());
-      flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
-              .forEach(r -> r.addListener(consumer));
-
       source.forEach(sink);
-      consumer.await(10, TimeUnit.MINUTES);
+      TimeUnit.SECONDS.sleep(10);
 
-      Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+      Assert.assertEquals(result, expected);
     }
   }
 
@@ -167,14 +168,14 @@ public class DoubleGroupingTest extends FlameStreamSuite {
       }
       final Wrapper<?> wrapper = (Wrapper<?>) o;
       return EQUALZ.test(
-              new PayloadDataItem(new Meta(GlobalTime.MAX), value),
-              new PayloadDataItem(new Meta(GlobalTime.MAX), wrapper.value)
+              new PayloadDataItem(Meta.meta(GlobalTime.MAX), value),
+              new PayloadDataItem(Meta.meta(GlobalTime.MAX), wrapper.value)
       );
     }
 
     @Override
     public int hashCode() {
-      return HASH_FUNCTION.hash(new PayloadDataItem(new Meta(GlobalTime.MAX), value));
+      return HASH_FUNCTION.hash(new PayloadDataItem(Meta.meta(GlobalTime.MAX), value));
     }
   }
 }

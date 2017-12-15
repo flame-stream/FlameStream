@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.materialization.vertices;
+package com.spbsu.flamestream.runtime.graph.materialization;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
@@ -6,37 +6,26 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * User: Artem
  * Date: 01.12.2017
  */
-public class SourceJoba implements VertexJoba {
-  private final Collection<InFlightTime> inFlight = new ArrayList<>();
+public class SourceJoba extends Joba.Stub {
+  /*private final Collection<InFlightTime> inFlight = new ArrayList<>();
   private final Map<EdgeId, ActorRef> fronts = new HashMap<>();
+  private final int maxInFlightItems;*/
 
-  private final int maxInFlightItems;
-  private final ActorContext context;
-  private final Consumer<GlobalTime> heartBeater;
-  private final Consumer<DataItem> sink;
-
-  public SourceJoba(int maxInFlightItems, ActorContext context, Consumer<GlobalTime> heartBeater, Consumer<DataItem> sink) {
-    this.maxInFlightItems = maxInFlightItems;
-    this.context = context;
-    this.heartBeater = heartBeater;
-    this.sink = sink;
+  public SourceJoba(int maxInFlightItems, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
+    super(outJobas, acker, context);
+    //this.maxInFlightItems = maxInFlightItems;
   }
 
   public void addFront(EdgeId front, ActorRef actorRef) {
-    fronts.putIfAbsent(front, actorRef);
+    //fronts.putIfAbsent(front, actorRef);
   }
 
-  @Override
   public void onMinTime(GlobalTime minTime) {
     /*final Iterator<InFlightTime> iterator = inFlight.iterator();
     while (iterator.hasNext()) {
@@ -52,8 +41,8 @@ public class SourceJoba implements VertexJoba {
   }
 
   @Override
-  public void accept(DataItem dataItem) {
-    sink.accept(dataItem);
+  public void accept(DataItem dataItem, boolean fromAsync) {
+    process(dataItem, Stream.of(dataItem), fromAsync);
     /*{ //back-pressure logic
       final GlobalTime globalTime = dataItem.meta().globalTime();
       if (inFlight.size() < maxInFlightItems) {
@@ -66,7 +55,12 @@ public class SourceJoba implements VertexJoba {
     }*/
   }
 
-  private static class InFlightTime {
+  @Override
+  public boolean isAsync() {
+    return false;
+  }
+
+  /*private static class InFlightTime {
     private final GlobalTime globalTime;
     private final boolean accepted;
 
@@ -74,5 +68,5 @@ public class SourceJoba implements VertexJoba {
       this.globalTime = globalTime;
       this.accepted = accepted;
     }
-  }
+  }*/
 }

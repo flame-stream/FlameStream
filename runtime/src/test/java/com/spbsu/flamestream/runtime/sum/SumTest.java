@@ -11,12 +11,13 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
-import com.spbsu.flamestream.runtime.edge.front.akka.AkkaFrontType;
-import com.spbsu.flamestream.runtime.edge.rear.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.util.AwaitConsumer;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -25,7 +26,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public final class SumTest extends FlameStreamSuite {
 
@@ -69,6 +69,10 @@ public final class SumTest extends FlameStreamSuite {
     final LocalRuntime runtime = new LocalRuntime(4);
     final FlameRuntime.Flame flame = runtime.run(sumGraph());
     {
+      final List<Sum> result = Collections.synchronizedList(new ArrayList<>());
+      flame.attachRear("sumRear", new AkkaRearType<>(runtime.system(), Sum.class))
+              .forEach(r -> r.addListener(result::add));
+
       final Consumer<LongNumb> sink = randomConsumer(
               flame.attachFront("sumFront", new AkkaFrontType<LongNumb>(runtime.system())).collect(Collectors.toList())
       );
@@ -78,19 +82,12 @@ public final class SumTest extends FlameStreamSuite {
               .collect(Collectors.toList());
       final long expected = source.stream().map(LongNumb::value).reduce(Long::sum).orElse(0L);
 
-      final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.size());
-      flame.attachRear("sumRear", new AkkaRearType<>(runtime.system(), Sum.class))
-              .forEach(r -> r.addListener(consumer));
-
       source.forEach(sink);
-      consumer.await(10, TimeUnit.MINUTES);
+      TimeUnit.SECONDS.sleep(7);
 
-      final long actual = consumer.result()
-              .mapToLong(Sum::value)
-              .max()
-              .orElseThrow(NoSuchElementException::new);
+      final long actual = result.stream().mapToLong(Sum::value).max().orElseThrow(NoSuchElementException::new);
       Assert.assertEquals(actual, expected);
-      Assert.assertEquals(consumer.result().count(), source.size());
+      Assert.assertEquals(result.size(), source.size());
     }
   }
 
@@ -99,6 +96,10 @@ public final class SumTest extends FlameStreamSuite {
     final LocalRuntime runtime = new LocalRuntime(4);
     final FlameRuntime.Flame flame = runtime.run(sumGraph());
     {
+      final Set<Sum> result = Collections.synchronizedSet(new HashSet<>());
+      flame.attachRear("totalOrderRear", new AkkaRearType<>(runtime.system(), Sum.class))
+              .forEach(r -> r.addListener(result::add));
+
       final List<LongNumb> source = new Random()
               .ints(1000)
               .mapToObj(LongNumb::new)
@@ -108,11 +109,6 @@ public final class SumTest extends FlameStreamSuite {
               new AkkaFrontType<LongNumb>(runtime.system())
       ).findFirst().orElseThrow(IllegalStateException::new);
 
-      final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.size());
-      flame.attachRear("totalOrderRear", new AkkaRearType<>(runtime.system(), Sum.class))
-              .forEach(r -> r.addListener(consumer));
-
-
       final Set<Sum> expected = new HashSet<>();
       long currentSum = 0;
       for (LongNumb longNumb : source) {
@@ -121,9 +117,9 @@ public final class SumTest extends FlameStreamSuite {
       }
 
       source.forEach(sink);
-      consumer.await(10, TimeUnit.MINUTES);
+      TimeUnit.SECONDS.sleep(7);
 
-      Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+      Assert.assertEquals(result, expected);
     }
   }
 }
