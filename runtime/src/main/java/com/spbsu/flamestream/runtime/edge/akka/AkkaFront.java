@@ -117,6 +117,7 @@ public class AkkaFront implements Front {
       } else {
         final PayloadDataItem t = new PayloadDataItem(new Meta(currentTime()), data.data());
         hole.accept(t);
+        emmitHeartbeat();
       }
     }
 
