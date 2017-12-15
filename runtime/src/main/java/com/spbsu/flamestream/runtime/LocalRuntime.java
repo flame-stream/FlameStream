@@ -17,6 +17,8 @@ import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,7 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class LocalRuntime implements FlameRuntime {
+public class LocalRuntime implements FlameRuntime, AutoCloseable {
   private final int parallelism;
   private final ActorSystem system;
 
@@ -90,6 +92,11 @@ public class LocalRuntime implements FlameRuntime {
                 .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
       }
     };
+  }
+
+  @Override
+  public void close() throws Exception {
+    Await.ready(system.terminate(), Duration.Inf());
   }
 
   private static class InMemoryRegistry implements AttachRegistry {
