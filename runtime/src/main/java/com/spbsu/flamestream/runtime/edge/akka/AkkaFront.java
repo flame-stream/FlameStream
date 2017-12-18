@@ -14,7 +14,6 @@ import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import org.jetbrains.annotations.Nullable;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -47,17 +46,13 @@ public class AkkaFront implements Front {
   }
 
   private static class InnerActor extends LoggingActor {
-    private final EdgeId frontId;
-    private ActorRef frontType = null;
-
-    @Nullable
-    private Cancellable ping;
-
-    @Nullable
-    private Consumer<Object> hole = null;
-
     private final NavigableMap<GlobalTime, Object> history = new TreeMap<>();
+    private final EdgeId frontId;
 
+    private Cancellable ping = null;
+    private ActorRef frontHandle = null;
+
+    private Consumer<Object> hole = null;
     private long prevGlobalTs = 0;
 
     private InnerActor(EdgeId frontId) {
@@ -106,8 +101,8 @@ public class AkkaFront implements Front {
 
     private void onRequestNext(GlobalTime time) {
       // TODO: 18.12.2017 get from history
-      if (frontType != null) {
-        frontType.tell(new AkkaFrontType.Next(), self());
+      if (frontHandle != null) {
+        frontHandle.tell(new AkkaFrontType.Next(), self());
       }
     }
 
@@ -124,8 +119,8 @@ public class AkkaFront implements Front {
         emmitHeartbeat(); // FIXME: 18.12.2017 remove me
       }
 
-      if (frontType == null) {
-        frontType = sender();
+      if (frontHandle == null) {
+        frontHandle = sender();
       }
     }
 

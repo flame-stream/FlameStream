@@ -12,26 +12,24 @@ public class ClusterConfig {
   private final ComputationProps layout;
 
   @JsonCreator
-  public ClusterConfig(@JsonProperty("paths") Map<String, ActorPath> paths,
-                       @JsonProperty("acker_location") String ackerLocation,
-                       @JsonProperty("ranges") ComputationProps layout) {
+  public ClusterConfig(Map<String, ActorPath> paths, String ackerLocation, ComputationProps layout) {
     this.paths = paths;
     this.ackerLocation = ackerLocation;
     this.layout = layout;
   }
 
-  @JsonProperty("paths")
+  @JsonProperty
   public Map<String, ActorPath> paths() {
     return paths;
   }
 
-  @JsonProperty("acker_location")
+  @JsonProperty
   public String ackerLocation() {
     return ackerLocation;
   }
 
-  @JsonProperty("ranges")
-  public ComputationProps layout() {
+  @JsonProperty
+  public ComputationProps props() {
     return layout;
   }
 }

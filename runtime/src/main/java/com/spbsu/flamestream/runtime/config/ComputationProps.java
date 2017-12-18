@@ -10,18 +10,17 @@ public class ComputationProps {
   private final Map<String, HashRange> ranges;
 
   @JsonCreator
-  public ComputationProps(@JsonProperty("ranges") Map<String, HashRange> ranges,
-                          @JsonProperty("max-graph-elements") int maxElementsInGraph) {
+  public ComputationProps(Map<String, HashRange> ranges, int maxElementsInGraph) {
     this.ranges = ranges;
     this.maxElementsInGraph = maxElementsInGraph;
   }
 
-  @JsonProperty("ranges")
+  @JsonProperty
   public Map<String, HashRange> ranges() {
     return ranges;
   }
 
-  @JsonProperty("max-graph-elements")
+  @JsonProperty
   public int maxElementsInGraph() {
     return this.maxElementsInGraph;
   }

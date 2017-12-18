@@ -40,7 +40,7 @@ public class FlameNode extends LoggingActor {
             id,
             bootstrapGraph,
             acker,
-            config.layout(),
+            config.props(),
             resolvedBarriers()
     ), "graph");
     graph.tell(resolvedManagers(), self());
