@@ -9,10 +9,8 @@ public interface InvalidatingBucket {
 
   /**
    * Inserts data item in list according to its meta
-   *
-   * @return position of inserted item within list
    */
-  int insert(DataItem dataItem);
+  void insert(DataItem dataItem);
 
   /**
    * @param index within bucket
@@ -53,12 +51,10 @@ public interface InvalidatingBucket {
   boolean isEmpty();
 
   /**
-   * Returns the index of the greatest element in this bucket less than or equal to
-   * the given element
-   *
-   * @param meta the meta to match
-   * @return the index of the greatest element less than or equal to {@code meta},
-   * @throws NullPointerException if the specified meta is null
+   * Returns an index of the first element in the bucket that is not less than (i.e. greater or equal to) value,
+   * or last if no such element is found.
+   * <p>
+   * min i : a[i] >= x
    */
-  int floor(Meta meta);
+  int lowerBound(Meta meta);
 }
