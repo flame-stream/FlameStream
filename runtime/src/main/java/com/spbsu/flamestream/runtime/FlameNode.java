@@ -3,8 +3,6 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.google.common.hash.Hashing;
-import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.acker.Acker;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
@@ -19,22 +17,22 @@ import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 
 public class FlameNode extends LoggingActor {
   private final ActorRef edgeManager;
-  private final ActorRef acker;
   private final ClusterConfig config;
 
   private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, AttachRegistry attachRegistry) {
     this.config = config;
+    ActorRef acker;
     if (id.equals(config.ackerLocation())) {
-      this.acker = context().actorOf(Acker.props(System.currentTimeMillis(), attachRegistry), "acker");
+      acker = context().actorOf(Acker.props(System.currentTimeMillis(), attachRegistry), "acker");
     } else {
-      this.acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
+      acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
     }
 
     final ActorRef barrier = context().actorOf(Barrier.props(acker), "barrier");
@@ -72,15 +70,13 @@ public class FlameNode extends LoggingActor {
     return managers;
   }
 
-  private BiConsumer<DataItem, ActorRef> resolvedBarriers() {
+  private List<ActorRef> resolvedBarriers() {
     final List<ActorRef> barriers = new ArrayList<>();
     config.paths().values().forEach(path -> {
       final ActorRef b = AwaitResolver.syncResolve(path.child("barrier"), context());
       barriers.add(b);
     });
-    return (item, sender) -> {
-      final int hash = Hashing.murmur3_32().hashLong(item.meta().globalTime().time()).asInt();
-      barriers.get(Math.abs(hash) % barriers.size()).tell(item, sender);
-    };
+    Collections.sort(barriers);
+    return barriers;
   }
 }

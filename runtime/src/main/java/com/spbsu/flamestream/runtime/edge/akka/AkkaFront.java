@@ -48,6 +48,7 @@ public class AkkaFront implements Front {
 
   private static class InnerActor extends LoggingActor {
     private final EdgeId frontId;
+    private ActorRef frontType = null;
 
     @Nullable
     private Cancellable ping;
@@ -104,7 +105,10 @@ public class AkkaFront implements Front {
     }
 
     private void onRequestNext(GlobalTime time) {
-      unstashAll();
+      // TODO: 18.12.2017 get from history
+      if (frontType != null) {
+        frontType.tell(new AkkaFrontType.Next(), self());
+      }
     }
 
     private void onCheckpoint(GlobalTime to) {
@@ -117,7 +121,11 @@ public class AkkaFront implements Front {
       } else {
         final PayloadDataItem t = new PayloadDataItem(new Meta(currentTime()), data.data());
         hole.accept(t);
-        emmitHeartbeat();
+        emmitHeartbeat(); // FIXME: 18.12.2017 remove me
+      }
+
+      if (frontType == null) {
+        frontType = sender();
       }
     }
 
@@ -133,8 +141,6 @@ public class AkkaFront implements Front {
         globalTs = prevGlobalTs + 1;
       }
       prevGlobalTs = globalTs;
-
-
       return new GlobalTime(globalTs, frontId);
     }
   }

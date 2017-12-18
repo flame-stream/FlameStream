@@ -4,7 +4,7 @@ import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.runtime.config.ComputationLayout;
+import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.GraphManager;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
@@ -24,7 +24,7 @@ public class RouterJoba implements Joba {
   private final GraphManager.Destination destination;
   private final ActorContext context;
 
-  public RouterJoba(ComputationLayout layout,
+  public RouterJoba(ComputationProps layout,
                     Map<String, ActorRef> managerRefs,
                     HashFunction hashFunction,
                     GraphManager.Destination destination,
