@@ -29,19 +29,17 @@ public class MetaMapTest extends FlameStreamSuite {
             .mapToObj(i -> new PayloadDataItem(new Meta(new GlobalTime(i, EdgeId.MIN)), i))
             .collect(Collectors.toList());
 
-    final int[] localTime = {0};
     //noinspection ConstantConditions
     final List<DataItem> out = input.stream()
-            .flatMap(dataItem -> map.operation().apply(dataItem, localTime[0]++))
+            .flatMap(dataItem -> map.operation(0).apply(dataItem))
             .collect(Collectors.toList());
 
     for (int i = 0; i < inputSize; i++) {
       for (int j = 0; j < flatNumber; j++) {
         Assert.assertEquals(out.get(i * flatNumber + j).payload(Integer.class).intValue(), i);
         final Meta meta = out.get(i * flatNumber + j).meta();
-        final Trace trace = meta.trace();
-        Assert.assertEquals(LocalEvent.localTimeOf(trace.trace[0]), i);
-        Assert.assertEquals(LocalEvent.childIdOf(trace.trace[0]), j);
+        final int[] trace = meta.childIds();
+        Assert.assertEquals(trace[0], j);
       }
     }
   }

@@ -32,7 +32,7 @@ public class ExamplesTest extends FlameStreamSuite {
                     WordCountCheckers.CHECK_COUNT,
                     new WordCountGraph().get(),
                     WordCounter.class,
-                    10
+                    90
             },
             {
                     "SmallDump",

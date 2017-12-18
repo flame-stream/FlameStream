@@ -21,8 +21,6 @@ public class Grouping<T> extends Graph.Vertex.Stub {
   private final int window;
   private final Class<?> clazz;
 
-  private final GroupingOperation groupingOperation = new GroupingOperation();
-
   public Grouping(HashFunction hash, Equalz equalz, int window, Class<?> clazz) {
     this.window = window;
     this.hash = hash;
@@ -42,8 +40,8 @@ public class Grouping<T> extends Graph.Vertex.Stub {
     return window;
   }
 
-  public GroupingOperation operation() {
-    return groupingOperation;
+  public GroupingOperation operation(long physicalId) {
+    return new GroupingOperation(physicalId);
   }
 
   @Override
@@ -56,18 +54,41 @@ public class Grouping<T> extends Graph.Vertex.Stub {
   }
 
   public class GroupingOperation {
-    public Stream<DataItem> apply(DataItem dataItem, InvalidatingBucket bucket, int localTime) {
-      final int position = bucket.insert(dataItem);
+    private final long physicalId;
+
+    public GroupingOperation(long physicalId) {
+      this.physicalId = physicalId;
+    }
+
+    public Stream<DataItem> apply(DataItem dataItem, InvalidatingBucket bucket) {
       final Collection<DataItem> items = new ArrayList<>();
-      for (int right = position + 1; right <= Math.min(position + window, bucket.size()); ++right) {
+
+      if (!dataItem.meta().isTombstone()) {
+        final int positionToBeInserted = bucket.lowerBound(dataItem.meta());
+        items.addAll(replayAround(positionToBeInserted, bucket, true, false));
+        bucket.insert(dataItem);
+        items.addAll(replayAround(positionToBeInserted, bucket, false, true));
+      } else {
+        final int positionToBeCleared = bucket.lowerBound(dataItem.meta()) - 1;
+        items.addAll(replayAround(positionToBeCleared, bucket, true, true));
+        bucket.insert(dataItem);
+        items.addAll(replayAround(positionToBeCleared, bucket, false, false));
+      }
+
+      return items.stream();
+    }
+
+    private List<DataItem> replayAround(int index, InvalidatingBucket bucket, boolean areTombs, boolean include) {
+      final List<DataItem> items = new ArrayList<>();
+      for (int right = index + 1; right <= Math.min(index + window - (include ? 0 : 1), bucket.size()); ++right) {
         final int left = Math.max(right - window, 0);
-        final Meta meta = new Meta(bucket.get(right - 1).meta(), localTime);
         final List<T> groupingResult = bucket.rangeStream(left, right)
                 .map(item -> item.payload((Class<T>) clazz))
                 .collect(Collectors.toList());
+        final Meta meta = new Meta(bucket.get(right - 1).meta(), physicalId, areTombs);
         items.add(new PayloadDataItem(meta, groupingResult));
       }
-      return items.stream();
+      return items;
     }
   }
 }

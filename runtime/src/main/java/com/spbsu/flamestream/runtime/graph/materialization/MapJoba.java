@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.graph.FlameMap;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 /**
@@ -12,12 +13,11 @@ import java.util.stream.Stream;
  * Date: 28.11.2017
  */
 public class MapJoba extends Joba.Stub {
-  private final FlameMap<?, ?> flameMap;
-  private int localTime = 0;
+  private final FlameMap<?, ?>.FlameMapOperation operation;
 
   public MapJoba(FlameMap<?, ?> flameMap, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
     super(outJobas, acker, context);
-    this.flameMap = flameMap;
+    this.operation = flameMap.operation(ThreadLocalRandom.current().nextLong());
   }
 
   @Override
@@ -27,7 +27,7 @@ public class MapJoba extends Joba.Stub {
 
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
-    final Stream<DataItem> output = flameMap.operation().apply(dataItem, localTime++);
+    final Stream<DataItem> output = operation.apply(dataItem);
     process(dataItem, output, fromAsync);
   }
 }
