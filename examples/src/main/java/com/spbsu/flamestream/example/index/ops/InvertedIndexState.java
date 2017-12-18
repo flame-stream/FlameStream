@@ -5,20 +5,27 @@ import com.spbsu.flamestream.example.index.utils.IndexItemInLong;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 
+import java.util.Arrays;
+
 /**
  * User: Artem
  * Date: 19.03.2017
  * Time: 13:05
  */
 public class InvertedIndexState {
-  public static final int PREV_VALUE_NOT_FOUND = -1;
+  static final int PREV_VALUE_NOT_FOUND = -1;
   private static final int DEFAULT_MAX_WINDOW_SIZE = 100;
 
   private final int maxWindowSize;
-  private TLongArrayList[] storage;
+  private TLongArray[] storage;
 
-  public InvertedIndexState() {
+  InvertedIndexState() {
     this(DEFAULT_MAX_WINDOW_SIZE);
+  }
+
+  private InvertedIndexState(TLongArray[] arrayLists, int maxWindowSize) {
+    storage = arrayLists;
+    this.maxWindowSize = maxWindowSize;
   }
 
   private InvertedIndexState(int maxWindowSize) {
@@ -26,11 +33,11 @@ public class InvertedIndexState {
       throw new IllegalArgumentException("Max window size should be > 1");
     }
     this.maxWindowSize = maxWindowSize;
-    storage = new TLongArrayList[1];
-    storage[0] = new TLongArrayList();
+    storage = new TLongArray[1];
+    storage[0] = new TLongArray();
   }
 
-  public long updateOrInsert(long[] pagePositions) {
+  long updateOrInsert(long[] pagePositions) {
     final long first = pagePositions[0];
     final int pageId = IndexItemInLong.pageId(first);
 
@@ -46,25 +53,33 @@ public class InvertedIndexState {
     return prevValue;
   }
 
+  InvertedIndexState copy() {
+    final TLongArray[] copy = Arrays.copyOf(storage, storage.length);
+    return new InvertedIndexState(copy, maxWindowSize);
+  }
+
   @VisibleForTesting
   long tryToFindAndUpdate(long value, int newPosition, int newRange) {
     final int windowIndex = findWindow(value);
-    final TLongArrayList window = storage[windowIndex];
-    int searchIndex = window.binarySearch(value);
+    int searchIndex = storage[windowIndex].binarySearch(value);
     if (searchIndex < 0) {
       searchIndex = -searchIndex - 1;
     }
 
     final long searchValue;
-    if (searchIndex < window.size()
-            && IndexItemInLong.pageId(searchValue = window.get(searchIndex)) == IndexItemInLong.pageId(value)) {
+    if (searchIndex < storage[windowIndex].size()
+            && IndexItemInLong.pageId(searchValue = storage[windowIndex].get(searchIndex)) == IndexItemInLong.pageId(value)) {
       final long newValue = IndexItemInLong.createPagePosition(
               IndexItemInLong.pageId(value),
               newPosition,
               IndexItemInLong.version(value),
               newRange
       );
-      window.set(searchIndex, newValue);
+      final TLongArray temp = new TLongArray();
+      temp.setInner(Arrays.copyOf(storage[windowIndex].inner(), storage[windowIndex].inner().length));
+      temp.setPos(storage[windowIndex].pos());
+      storage[windowIndex] = temp;
+      storage[windowIndex].set(searchIndex, newValue);
       return searchValue;
     } else {
       return PREV_VALUE_NOT_FOUND;
@@ -74,23 +89,22 @@ public class InvertedIndexState {
   @VisibleForTesting
   void insert(long value) {
     final int windowIndex = findWindow(value);
-    final TLongArrayList window = storage[windowIndex];
-    final int insertIndex = -window.binarySearch(value) - 1;
+    final int insertIndex = -storage[windowIndex].binarySearch(value) - 1;
     if (insertIndex < 0) {
       throw new IllegalArgumentException("Storage contains such value");
     }
 
-    if (window.size() + 1 > maxWindowSize) {
-      final TLongArrayList firstWindow = new TLongArrayList();
-      final TLongArrayList secondWindow = new TLongArrayList();
-      for (int i = 0; i < window.size() / 2; i++) {
-        firstWindow.add(window.get(i));
+    if (storage[windowIndex].size() + 1 > maxWindowSize) {
+      final TLongArray firstWindow = new TLongArray();
+      final TLongArray secondWindow = new TLongArray();
+      for (int i = 0; i < storage[windowIndex].size() / 2; i++) {
+        firstWindow.add(storage[windowIndex].get(i));
       }
-      for (int i = window.size() / 2; i < window.size(); i++) {
-        secondWindow.add(window.get(i));
+      for (int i = storage[windowIndex].size() / 2; i < storage[windowIndex].size(); i++) {
+        secondWindow.add(storage[windowIndex].get(i));
       }
 
-      final TLongArrayList[] newStorage = new TLongArrayList[storage.length + 1];
+      final TLongArray[] newStorage = new TLongArray[storage.length + 1];
       System.arraycopy(storage, 0, newStorage, 0, windowIndex);
       System.arraycopy(
               storage,
@@ -105,14 +119,18 @@ public class InvertedIndexState {
 
       insert(value);
     } else {
-      window.insert(insertIndex, value);
+      final TLongArray temp = new TLongArray();
+      temp.setInner(Arrays.copyOf(storage[windowIndex].inner(), storage[windowIndex].inner().length));
+      temp.setPos(storage[windowIndex].pos());
+      storage[windowIndex] = temp;
+      storage[windowIndex].insert(insertIndex, value); // TODO: 18.12.2017  #112
     }
   }
 
   @VisibleForTesting
   TLongList toList() {
-    final TLongList result = new TLongArrayList();
-    for (TLongArrayList list : storage) {
+    final TLongList result = new TLongArray();
+    for (TLongArray list : storage) {
       result.addAll(list);
     }
     return result;
@@ -128,5 +146,28 @@ public class InvertedIndexState {
       }
     }
     return windowIndex >= storage.length ? windowIndex - 1 : windowIndex;
+  }
+
+  private static class TLongArray extends TLongArrayList {
+    @SuppressWarnings("WeakerAccess")
+    public TLongArray() {
+      super();
+    }
+
+    long[] inner() {
+      return _data;
+    }
+
+    int pos() {
+      return _pos;
+    }
+
+    void setInner(long[] data) {
+      _data = data;
+    }
+
+    void setPos(int pos) {
+      _pos = pos;
+    }
   }
 }

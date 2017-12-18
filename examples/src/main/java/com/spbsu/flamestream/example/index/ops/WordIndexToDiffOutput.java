@@ -35,7 +35,8 @@ public class WordIndexToDiffOutput implements Function<List<WordBase>, Stream<Wo
 
   private Stream<WordBase> createOutputStream(WordIndex wordIndex, WordPagePositions wordPagePosition) {
     WordIndexRemove wordRemoveOutput = null;
-    final long prevValue = wordIndex.state().updateOrInsert(wordPagePosition.positions());
+    final InvertedIndexState newState = wordIndex.state().copy();
+    final long prevValue = newState.updateOrInsert(wordPagePosition.positions());
     if (prevValue != InvertedIndexState.PREV_VALUE_NOT_FOUND) {
       wordRemoveOutput = new WordIndexRemove(
               wordIndex.word(),
@@ -44,7 +45,7 @@ public class WordIndexToDiffOutput implements Function<List<WordBase>, Stream<Wo
       );
     }
 
-    final WordIndex newWordIndex = new WordIndex(wordIndex.word(), wordIndex.state());
+    final WordIndex newWordIndex = new WordIndex(wordIndex.word(), newState);
     final WordIndexAdd wordAddOutput = new WordIndexAdd(wordIndex.word(), wordPagePosition.positions());
     return Stream.of(newWordIndex, wordRemoveOutput, wordAddOutput).filter(Objects::nonNull);
   }
