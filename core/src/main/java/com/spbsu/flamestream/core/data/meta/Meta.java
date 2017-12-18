@@ -63,11 +63,11 @@ public class Meta implements Comparable<Meta> {
   }
 
   public boolean isInvalidedBy(Meta that) {
-    return globalTime.equals(that.globalTime)
-            && Arrays.equals(childIds, that.childIds)
+    return !tombstone
+            && that.tombstone
             && trace == that.trace
-            && !tombstone
-            && that.tombstone;
+            && globalTime.equals(that.globalTime)
+            && Arrays.equals(childIds, that.childIds);
   }
 
   @Override
