@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,7 +39,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
   private static final Equalz EQUALZ = Equalz.hashEqualz(HASH_FUNCTION);
 
   @SuppressWarnings("Convert2Lambda")
-  public Graph graph() {
+  private Graph graph() {
     final Grouping<Integer> firstGroup = new Grouping<>(
             HASH_FUNCTION,
             EQUALZ,
@@ -103,11 +102,11 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     doubleGroupingTest(4);
   }
 
-  public void doubleGroupingTest(int nodes) throws InterruptedException {
+  private void doubleGroupingTest(int nodes) throws InterruptedException {
     final LocalRuntime runtime = new LocalRuntime(nodes);
     final FlameRuntime.Flame flame = runtime.run(graph());
     {
-      final Consumer<Integer> sink = flame.attachFront(
+      final AkkaFrontType.Handle<Integer> sink = flame.attachFront(
               "doubleGroupingFront",
               new AkkaFrontType<Integer>(runtime.system())
       )
@@ -129,7 +128,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
       flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
               .forEach(r -> r.addListener(consumer));
 
-      source.forEach(sink);
+      sink.accept(source.stream());
       consumer.await(10, TimeUnit.MINUTES);
 
       Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);

@@ -5,17 +5,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
 
-public class ComputationLayout {
+public class ComputationProps {
+  private final int maxElementsInGraph;
   private final Map<String, HashRange> ranges;
 
   @JsonCreator
-  public ComputationLayout(@JsonProperty("ranges") Map<String, HashRange> ranges) {
+  public ComputationProps(Map<String, HashRange> ranges, int maxElementsInGraph) {
     this.ranges = ranges;
+    this.maxElementsInGraph = maxElementsInGraph;
   }
 
-  @JsonProperty("ranges")
+  @JsonProperty
   public Map<String, HashRange> ranges() {
     return ranges;
+  }
+
+  @JsonProperty
+  public int maxElementsInGraph() {
+    return this.maxElementsInGraph;
   }
 
   @Override

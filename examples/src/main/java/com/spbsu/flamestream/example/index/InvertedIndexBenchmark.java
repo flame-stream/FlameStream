@@ -26,7 +26,7 @@ import java.util.stream.Stream;
  */
 public class InvertedIndexBenchmark {
   public static void main(String[] args) throws InterruptedException {
-    try (LocalRuntime runtime = new LocalRuntime(1)) {
+    try (LocalRuntime runtime = new LocalRuntime(1, 1)) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       {
         final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(50, 0);
@@ -49,14 +49,7 @@ public class InvertedIndexBenchmark {
         final Stream<WikipediaPage> source = WikipeadiaInput.dumpStreamFromResources(
                 "wikipedia/national_football_teams_dump.xml")
                 .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
-        source.forEach(wikipediaPage -> {
-          randomConsumer.accept(wikipediaPage);
-          try {
-            Thread.sleep(100);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        });
+        source.forEach(randomConsumer);
         TimeUnit.SECONDS.sleep(5);
 
         final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();

@@ -12,7 +12,7 @@ import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
-import com.spbsu.flamestream.runtime.config.ComputationLayout;
+import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
@@ -30,16 +30,27 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class LocalRuntime implements FlameRuntime, AutoCloseable {
+  private static final int DEFAULT_MAX_ELEMENTS_IN_GRAPH = 100;
+
   private final int parallelism;
+  private final int maxElementsInGraph;
   private final ActorSystem system;
 
   public LocalRuntime(int parallelism) {
-    this(ActorSystem.create("local-runtime", ConfigFactory.load("local")), parallelism);
+    this(ActorSystem.create("local-runtime",
+            ConfigFactory.load("local")),
+            parallelism,
+            DEFAULT_MAX_ELEMENTS_IN_GRAPH);
   }
 
-  private LocalRuntime(ActorSystem system, int parallelism) {
-    this.parallelism = parallelism;
+  public LocalRuntime(int parallelism, int maxElementsInGraph) {
+    this(ActorSystem.create("local-runtime", ConfigFactory.load("local")), parallelism, maxElementsInGraph);
+  }
+
+  private LocalRuntime(ActorSystem system, int parallelism, int maxElementsInGraph) {
     this.system = system;
+    this.parallelism = parallelism;
+    this.maxElementsInGraph = maxElementsInGraph;
   }
 
   public int parallelism() {
@@ -67,7 +78,7 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
       ranges.put(id, range);
     }
 
-    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", new ComputationLayout(ranges));
+    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", new ComputationProps(ranges, maxElementsInGraph));
     final AttachRegistry registry = new InMemoryRegistry();
 
     final List<ActorRef> nodes = paths.keySet().stream()

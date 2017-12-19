@@ -11,7 +11,7 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
-import com.spbsu.flamestream.runtime.config.ComputationLayout;
+import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.materialization.GroupingJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.Joba;
@@ -25,8 +25,8 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,8 +34,8 @@ public class GraphManager extends LoggingActor {
   private final String nodeId;
   private final Graph graph;
   private final ActorRef acker;
-  private final ComputationLayout layout;
-  private final BiConsumer<DataItem, ActorRef> barrier;
+  private final ComputationProps computationProps;
+  private final List<ActorRef> barriers;
 
   private final Map<String, ActorRef> managerRefs = new HashMap<>();
   private final Map<Destination, Joba> materialization = new HashMap<>();
@@ -44,21 +44,21 @@ public class GraphManager extends LoggingActor {
   private GraphManager(String nodeId,
                        Graph graph,
                        ActorRef acker,
-                       ComputationLayout layout,
-                       BiConsumer<DataItem, ActorRef> barrier) {
+                       ComputationProps computationProps,
+                       List<ActorRef> barriers) {
     this.nodeId = nodeId;
-    this.layout = layout;
+    this.computationProps = computationProps;
     this.graph = graph;
     this.acker = acker;
-    this.barrier = barrier;
+    this.barriers = barriers;
   }
 
   public static Props props(String nodeId,
                             Graph graph,
                             ActorRef acker,
-                            ComputationLayout layout,
-                            BiConsumer<DataItem, ActorRef> barrier) {
-    return Props.create(GraphManager.class, nodeId, graph, acker, layout, barrier);
+                            ComputationProps layout,
+                            List<ActorRef> barriers) {
+    return Props.create(GraphManager.class, nodeId, graph, acker, layout, barriers);
   }
 
   @Override
@@ -96,7 +96,9 @@ public class GraphManager extends LoggingActor {
   }
 
   private void accept(DataItem dataItem) {
-    materialization.get(Destination.fromVertexId(graph.source().id())).accept(dataItem, false);
+    final SourceJoba joba = (SourceJoba) materialization.get(Destination.fromVertexId(graph.source().id()));
+    joba.addFront(dataItem.meta().globalTime().frontId(), sender());
+    joba.accept(dataItem, false);
   }
 
   private void inject(AddressedItem addressedItem) {
@@ -117,7 +119,7 @@ public class GraphManager extends LoggingActor {
                 // TODO: 15.12.2017 add circuit breaker
                 if (outVertex instanceof Grouping) {
                   return new RouterJoba(
-                          layout,
+                          computationProps,
                           managerRefs,
                           ((Grouping) outVertex).hash(),
                           Destination.fromVertexId(outVertex.id()),
@@ -128,14 +130,13 @@ public class GraphManager extends LoggingActor {
 
       final Joba joba;
       if (vertex instanceof Sink) {
-        joba = new SinkJoba(barrier, acker, context());
+        joba = new SinkJoba(barriers, acker, context());
       } else if (vertex instanceof FlameMap) {
         joba = new MapJoba((FlameMap<?, ?>) vertex, output, acker, context());
       } else if (vertex instanceof Grouping) {
         joba = new GroupingJoba((Grouping) vertex, output, acker, context());
       } else if (vertex instanceof Source) {
-        //this number will be computed using some intelligent method someday :)
-        joba = new SourceJoba(10, output, acker, context());
+        joba = new SourceJoba(computationProps.maxElementsInGraph(), output, acker, context());
       } else {
         throw new RuntimeException("Invalid vertex type");
       }
