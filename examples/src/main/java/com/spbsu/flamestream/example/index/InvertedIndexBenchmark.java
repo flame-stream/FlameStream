@@ -41,7 +41,7 @@ public class InvertedIndexBenchmark {
                 }));
 
         final List<Consumer<WikipediaPage>> fronts = flame
-                .attachFront("Front", new AkkaFrontType<WikipediaPage>(runtime.system()))
+                .attachFront("Front", new AkkaFrontType<WikipediaPage>(runtime.system(), true))
                 .collect(Collectors.toList());
         final Consumer<WikipediaPage> randomConsumer = wikipediaPage -> fronts
                 .get(ThreadLocalRandom.current().nextInt(fronts.size())).accept(wikipediaPage);

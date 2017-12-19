@@ -50,18 +50,17 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
               .boxed()
               .collect(Collectors.toList());
       final Consumer<Object> front = randomConsumer(
-              flame.attachFront("groupingAcceptanceFront", new AkkaFrontType<>(runtime.system()))
+              flame.attachFront("groupingAcceptanceFront", new AkkaFrontType<>(runtime.system(), false))
                       .collect(Collectors.toList())
       );
       final Set<List<Long>> expected = GroupingAcceptanceTest.expected(source, window);
 
-      final AwaitConsumer<List<Long>> consumer = new AwaitConsumer<>(expected.size());
+      final AwaitConsumer<List<Long>> consumer = new AwaitConsumer<>(source.size());
       flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
               .forEach(r -> r.addListener(consumer::accept));
-
       source.forEach(front);
-      TimeUnit.SECONDS.sleep(5);
 
+      consumer.await(5, TimeUnit.MINUTES);
       Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
     }
   }

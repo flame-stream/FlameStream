@@ -30,7 +30,6 @@ public final class SumTest extends FlameStreamSuite {
 
   private static Graph sumGraph() {
     final HashFunction identity = HashFunction.constantHash(1);
-    final HashFunction groupIdentity = HashFunction.constantHash(1);
 
     //noinspection Convert2Lambda
     final Equalz predicate = new Equalz() {
@@ -69,7 +68,8 @@ public final class SumTest extends FlameStreamSuite {
     final FlameRuntime.Flame flame = runtime.run(sumGraph());
     {
       final Consumer<LongNumb> sink = randomConsumer(
-              flame.attachFront("sumFront", new AkkaFrontType<LongNumb>(runtime.system())).collect(Collectors.toList())
+              flame.attachFront("sumFront",
+                      new AkkaFrontType<LongNumb>(runtime.system(), false)).collect(Collectors.toList())
       );
       final List<LongNumb> source = new Random()
               .ints(1000, 0, 100)
@@ -104,7 +104,7 @@ public final class SumTest extends FlameStreamSuite {
               .collect(Collectors.toList());
       final Consumer<LongNumb> sink = flame.attachFront(
               "totalOrderFront",
-              new AkkaFrontType<LongNumb>(runtime.system())
+              new AkkaFrontType<LongNumb>(runtime.system(), false)
       ).findFirst().orElseThrow(IllegalStateException::new);
 
       final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.size());

@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -106,11 +107,10 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     final LocalRuntime runtime = new LocalRuntime(nodes);
     final FlameRuntime.Flame flame = runtime.run(graph());
     {
-      final AkkaFrontType.Handle<Integer> sink = flame.attachFront(
+      final Consumer<Integer> sink = flame.attachFront(
               "doubleGroupingFront",
-              new AkkaFrontType<Integer>(runtime.system())
-      )
-              .collect(Collectors.toList()).get(0);
+              new AkkaFrontType<Integer>(runtime.system(), false)
+      ).collect(Collectors.toList()).get(0);
 
       final List<Integer> source = new Random()
               .ints(1000)
@@ -128,7 +128,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
       flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
               .forEach(r -> r.addListener(consumer));
 
-      sink.accept(source.stream());
+      source.forEach(sink);
       consumer.await(10, TimeUnit.MINUTES);
 
       Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);

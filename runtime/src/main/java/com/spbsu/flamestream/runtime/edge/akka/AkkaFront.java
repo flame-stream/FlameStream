@@ -101,7 +101,7 @@ public class AkkaFront implements Front {
 
     private void onRequestNext(GlobalTime time) {
       // TODO: 18.12.2017 get from history
-      if (frontHandle != null) {
+      if (frontHandle != null && !frontHandle.equals(context().system().deadLetters())) {
         frontHandle.tell(new AkkaFrontType.Next(), self());
       }
     }

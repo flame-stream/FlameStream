@@ -43,7 +43,7 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
     final FlameRuntime.Flame flame = runtime.run(multiGraph());
 
     final Consumer<Object> randomConsumer = randomConsumer(
-            flame.attachFront("linearFilterFront", new AkkaFrontType<>(runtime.system()))
+            flame.attachFront("linearFilterFront", new AkkaFrontType<>(runtime.system(), false))
                     .collect(Collectors.toList())
     );
 
@@ -52,11 +52,9 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
     final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(source.size());
     flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
             .forEach(f -> f.addListener(consumer));
-
     source.forEach(randomConsumer);
 
-    consumer.await(10, TimeUnit.MINUTES);
-
+    consumer.await(5, TimeUnit.MINUTES);
     Assert.assertEquals(
             consumer.result().collect(Collectors.toSet()),
             source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())

@@ -15,13 +15,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
-public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaFrontType.Handle<T>> {
+public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, Consumer<T>> {
   private final ActorSystem system;
+  private final boolean backPressure;
 
-  public AkkaFrontType(ActorSystem system) {
+  public AkkaFrontType(ActorSystem system, boolean backPressure) {
     this.system = system;
+    this.backPressure = backPressure;
   }
 
   @Override
@@ -40,34 +41,38 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaF
   }
 
   @Override
-  public Handle<T> handle(EdgeContext context) {
-    final ActorRef ref = AwaitResolver.syncResolve(
+  public Consumer<T> handle(EdgeContext context) {
+    final ActorRef frontRef = AwaitResolver.syncResolve(
             context.nodePath().child("edge").child(context.edgeId() + "-inner"),
             system
     );
-    return new Handle<>(ref, system);
+    return backPressure ? new BackPressureHandle<>(frontRef, system) : new SimpleHandle<>(frontRef);
   }
 
-  public static class Handle<T> implements Consumer<T> {
+  public static class SimpleHandle<T> implements Consumer<T> {
+    private final ActorRef frontRef;
+
+    SimpleHandle(ActorRef frontRef) {
+      this.frontRef = frontRef;
+    }
+
+    @Override
+    public void accept(T o) {
+      frontRef.tell(new RawData<>(o), ActorRef.noSender());
+    }
+  }
+
+  public static class BackPressureHandle<T> implements Consumer<T> {
     static final Timeout TIMEOUT = new Timeout(60, TimeUnit.SECONDS);
     private final ActorRef innerActor;
 
-    Handle(ActorRef frontRef, ActorSystem system) {
+    BackPressureHandle(ActorRef frontRef, ActorSystem system) {
       innerActor = system.actorOf(InnerActor.props(frontRef));
     }
 
     @Override
     public void accept(T o) {
       final CompletionStage<Object> stage = PatternsCS.ask(innerActor, new RawData<>(o), TIMEOUT);
-      try {
-        stage.toCompletableFuture().get();
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    public void accept(Stream<T> stream) {
-      final CompletionStage<Object> stage = PatternsCS.ask(innerActor, stream, TIMEOUT);
       try {
         stage.toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
@@ -92,7 +97,6 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaF
     public Receive createReceive() {
       return ReceiveBuilder.create()
               .match(RawData.class, this::onRawData)
-              .match(Stream.class, this::onStream)
               .match(Next.class, next -> onRequestNext())
               .build();
     }
@@ -103,15 +107,7 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaF
     }
 
     private void onRequestNext() {
-      if (sender != null) {
-        sender.tell("Unlock", self());
-        sender = null;
-      }
-    }
-
-    private void onStream(Stream<?> stream) {
-      stream.forEach(o -> frontActor.tell(new RawData<>(o), self()));
-      sender = sender();
+      sender.tell("Unlock", self());
     }
   }
 
