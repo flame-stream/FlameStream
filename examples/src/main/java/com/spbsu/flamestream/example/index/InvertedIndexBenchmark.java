@@ -10,6 +10,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,35 +27,34 @@ import java.util.stream.Stream;
  */
 public class InvertedIndexBenchmark {
   public static void main(String[] args) throws InterruptedException {
-    try (LocalRuntime runtime = new LocalRuntime(1, 1)) {
+    try (final LocalRuntime runtime = new LocalRuntime(1, 1)) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
-      {
-        final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(50, 0);
+      final LatencyMeasurer<Integer> latencyMeasurer = new LatencyMeasurer<>(50, 0);
+      final AwaitConsumer<WordBase> awaitConsumer = new AwaitConsumer<>(65813);
+      flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordBase.class))
+              .forEach(r -> r.addListener(wordBase -> {
+                awaitConsumer.accept(wordBase);
+                if (wordBase instanceof WordIndexAdd) {
+                  final WordIndexAdd indexAdd = (WordIndexAdd) wordBase;
+                  final int docId = IndexItemInLong.pageId(indexAdd.positions()[0]);
+                  latencyMeasurer.finish(docId);
+                }
+              }));
 
-        flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordBase.class))
-                .forEach(r -> r.addListener(wordBase -> {
-                  if (wordBase instanceof WordIndexAdd) {
-                    final WordIndexAdd indexAdd = (WordIndexAdd) wordBase;
-                    final int docId = IndexItemInLong.pageId(indexAdd.positions()[0]);
-                    latencyMeasurer.finish(docId);
-                  }
-                }));
+      final List<Consumer<WikipediaPage>> fronts = flame
+              .attachFront("Front", new AkkaFrontType<WikipediaPage>(runtime.system(), true))
+              .collect(Collectors.toList());
+      final Consumer<WikipediaPage> randomConsumer = wikipediaPage -> fronts
+              .get(ThreadLocalRandom.current().nextInt(fronts.size())).accept(wikipediaPage);
 
-        final List<Consumer<WikipediaPage>> fronts = flame
-                .attachFront("Front", new AkkaFrontType<WikipediaPage>(runtime.system(), true))
-                .collect(Collectors.toList());
-        final Consumer<WikipediaPage> randomConsumer = wikipediaPage -> fronts
-                .get(ThreadLocalRandom.current().nextInt(fronts.size())).accept(wikipediaPage);
+      final Stream<WikipediaPage> source = WikipeadiaInput.dumpStreamFromResources(
+              "wikipedia/national_football_teams_dump.xml")
+              .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
+      source.forEach(randomConsumer);
 
-        final Stream<WikipediaPage> source = WikipeadiaInput.dumpStreamFromResources(
-                "wikipedia/national_football_teams_dump.xml")
-                .peek(wikipediaPage -> latencyMeasurer.start(wikipediaPage.id()));
-        source.forEach(randomConsumer);
-        TimeUnit.SECONDS.sleep(5);
-
-        final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
-        System.out.println("Result: " + stat);
-      }
+      awaitConsumer.await(5, TimeUnit.MINUTES);
+      final LongSummaryStatistics stat = Arrays.stream(latencyMeasurer.latencies()).summaryStatistics();
+      System.out.println("Result: " + stat);
     }
   }
 }

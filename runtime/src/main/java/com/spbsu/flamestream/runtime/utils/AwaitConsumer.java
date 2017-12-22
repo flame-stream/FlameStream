@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.util;
+package com.spbsu.flamestream.runtime.utils;
 
 import java.util.ArrayList;
 import java.util.List;

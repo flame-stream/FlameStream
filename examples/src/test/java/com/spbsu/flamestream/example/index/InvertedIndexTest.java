@@ -9,12 +9,12 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.util.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -34,21 +34,27 @@ public class InvertedIndexTest extends FlameStreamSuite {
 
   @Test(dataProvider = "provider")
   public void test(InvertedIndexValidator validator, boolean backPressure) throws InterruptedException {
-    final LocalRuntime runtime = new LocalRuntime(4, 1);
-    final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
-    {
-      final AwaitConsumer<WordBase> awaitConsumer = new AwaitConsumer<>(validator.expectedOutputSize());
-      flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordBase.class))
-              .forEach(r -> r.addListener(awaitConsumer));
+    try (final LocalRuntime runtime = new LocalRuntime(4, 10)) {
+      final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
+      {
+        final AwaitConsumer<WordBase> awaitConsumer = new AwaitConsumer<>(validator.expectedOutputSize());
+        flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordBase.class))
+                .forEach(r -> r.addListener(awaitConsumer));
 
-      final Consumer<Object> sink = randomConsumer(
-              flame.attachFront("Sink", new AkkaFrontType<>(runtime.system(), backPressure))
-                      .collect(Collectors.toList())
-      );
-      validator.input().forEach(sink);
+        final List<AkkaFrontType.Handle<Object>> consumers =
+                flame.attachFront("Sink", new AkkaFrontType<>(runtime.system(), backPressure))
+                        .collect(Collectors.toList());
+        for (int i = 1; i < consumers.size(); i++) {
+          consumers.get(i).eos();
+        }
 
-      awaitConsumer.await(5, TimeUnit.MINUTES);
-      validator.assertCorrect(awaitConsumer.result());
+        final AkkaFrontType.Handle<Object> sink = consumers.get(0);
+        validator.input().forEach(sink);
+        sink.eos();
+
+        awaitConsumer.await(5, TimeUnit.MINUTES);
+        validator.assertCorrect(awaitConsumer.result());
+      }
     }
   }
 }

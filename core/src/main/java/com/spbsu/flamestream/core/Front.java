@@ -9,9 +9,9 @@ import java.util.function.Consumer;
  * Date: 15.11.2017
  */
 public interface Front {
-  void onStart(Consumer<Object> consumer);
+  void onStart(Consumer<Object> consumer, GlobalTime from);
 
-  void onRequestNext(GlobalTime from);
+  void onRequestNext();
 
   void onCheckpoint(GlobalTime to);
 }

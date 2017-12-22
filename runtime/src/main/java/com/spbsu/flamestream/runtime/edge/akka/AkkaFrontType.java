@@ -8,6 +8,7 @@ import akka.pattern.PatternsCS;
 import akka.util.Timeout;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
+import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -16,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, Consumer<T>> {
+public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaFrontType.Handle<T>> {
   private final ActorSystem system;
   private final boolean backPressure;
 
@@ -41,7 +42,7 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, Consu
   }
 
   @Override
-  public Consumer<T> handle(EdgeContext context) {
+  public Handle<T> handle(EdgeContext context) {
     final ActorRef frontRef = AwaitResolver.syncResolve(
             context.nodePath().child("edge").child(context.edgeId() + "-inner"),
             system
@@ -49,35 +50,46 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, Consu
     return backPressure ? new BackPressureHandle<>(frontRef, system) : new SimpleHandle<>(frontRef);
   }
 
-  public static class SimpleHandle<T> implements Consumer<T> {
-    private final ActorRef frontRef;
-
+  private static class SimpleHandle<T> extends Handle<T> {
     SimpleHandle(ActorRef frontRef) {
-      this.frontRef = frontRef;
+      super(frontRef);
     }
 
     @Override
     public void accept(T o) {
-      frontRef.tell(new RawData<>(o), ActorRef.noSender());
+      frontRef.tell(new AkkaFront.RawData<>(o), ActorRef.noSender());
     }
   }
 
-  public static class BackPressureHandle<T> implements Consumer<T> {
+  private static class BackPressureHandle<T> extends Handle<T> {
     static final Timeout TIMEOUT = new Timeout(60, TimeUnit.SECONDS);
     private final ActorRef innerActor;
 
     BackPressureHandle(ActorRef frontRef, ActorSystem system) {
+      super(frontRef);
       innerActor = system.actorOf(InnerActor.props(frontRef));
     }
 
     @Override
     public void accept(T o) {
-      final CompletionStage<Object> stage = PatternsCS.ask(innerActor, new RawData<>(o), TIMEOUT);
+      final CompletionStage<Object> stage = PatternsCS.ask(innerActor, new AkkaFront.RawData<>(o), TIMEOUT);
       try {
         stage.toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
+    }
+  }
+
+  public static abstract class Handle<T> implements Consumer<T> {
+    final ActorRef frontRef;
+
+    Handle(ActorRef frontRef) {
+      this.frontRef = frontRef;
+    }
+
+    public void eos() {
+      frontRef.tell(new AkkaFront.EOS(), ActorRef.noSender());
     }
   }
 
@@ -96,12 +108,12 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, Consu
     @Override
     public Receive createReceive() {
       return ReceiveBuilder.create()
-              .match(RawData.class, this::onRawData)
-              .match(Next.class, next -> onRequestNext())
+              .match(AkkaFront.RawData.class, this::onRawData)
+              .match(RequestNext.class, next -> onRequestNext())
               .build();
     }
 
-    private void onRawData(RawData rawData) {
+    private void onRawData(AkkaFront.RawData rawData) {
       frontActor.tell(rawData, self());
       sender = sender();
     }
@@ -109,9 +121,6 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, Consu
     private void onRequestNext() {
       sender.tell("Unlock", self());
     }
-  }
-
-  static class Next {
   }
 }
 

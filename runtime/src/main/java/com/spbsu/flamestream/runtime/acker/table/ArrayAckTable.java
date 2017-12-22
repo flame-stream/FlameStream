@@ -23,11 +23,7 @@ public final class ArrayAckTable implements AckTable {
       throw new IllegalArgumentException("Ring buffer overflow");
     } else {
       xors[(headPosition + headOffset) % xors.length] ^= xor;
-      if (xors[(headPosition + headOffset) % xors.length] == 0) {
-        return true;
-      } else {
-        return false;
-      }
+      return xors[(headPosition + headOffset) % xors.length] == 0;
     }
   }
 

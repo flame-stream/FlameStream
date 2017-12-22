@@ -1,25 +1,25 @@
 package com.spbsu.flamestream.runtime;
 
-import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.util.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class FilterAcceptanceTest extends FlameStreamSuite {
+public final class FilterAcceptanceTest extends FlameAkkaSuite {
 
   private static Graph multiGraph() {
     final Source source = new Source();
@@ -39,26 +39,34 @@ public final class FilterAcceptanceTest extends FlameStreamSuite {
 
   @Test
   public void linearFilter() throws InterruptedException {
-    final LocalRuntime runtime = new LocalRuntime(4);
-    final FlameRuntime.Flame flame = runtime.run(multiGraph());
+    final int parallelism = 4;
+    try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
+      final FlameRuntime.Flame flame = runtime.run(multiGraph());
+      {
+        final List<AkkaFrontType.Handle<Integer>> handles = flame
+                .attachFront("linearFilterFront", new AkkaFrontType<Integer>(runtime.system(), false))
+                .collect(Collectors.toList());
+        final int streamSize = 1000;
+        final Set<Integer> expected = new ConcurrentSkipListSet<>();
+        final List<Stream<Integer>> source = Stream
+                .generate(() -> new Random()
+                        .ints(streamSize)
+                        .peek(value -> expected.add(value * -1 * -2 * -3 * -4))
+                        .boxed())
+                .limit(parallelism).collect(Collectors.toList());
 
-    final Consumer<Object> randomConsumer = randomConsumer(
-            flame.attachFront("linearFilterFront", new AkkaFrontType<>(runtime.system(), false))
-                    .collect(Collectors.toList())
-    );
+        final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(streamSize * parallelism);
+        flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
+                .forEach(f -> f.addListener(consumer));
+        applyDataToHandles(source, handles);
 
-    final List<Integer> source = new Random().ints(1000).boxed().collect(Collectors.toList());
-
-    final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(source.size());
-    flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
-            .forEach(f -> f.addListener(consumer));
-    source.forEach(randomConsumer);
-
-    consumer.await(5, TimeUnit.MINUTES);
-    Assert.assertEquals(
-            consumer.result().collect(Collectors.toSet()),
-            source.stream().map(str -> str * -1 * -2 * -3 * -4).collect(Collectors.toSet())
-    );
+        consumer.await(5, TimeUnit.MINUTES);
+        Assert.assertEquals(
+                consumer.result().collect(Collectors.toSet()),
+                expected
+        );
+      }
+    }
   }
 
   static final class HumbleFiler implements Function<Integer, Stream<Integer>> {
