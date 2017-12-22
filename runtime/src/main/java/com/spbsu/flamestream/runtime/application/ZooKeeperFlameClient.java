@@ -25,6 +25,7 @@ import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Op;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
@@ -32,6 +33,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -210,24 +212,29 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Clus
       kryo.writeClassAndObject(o, graph);
 
       // ACL is so specific (cr) to forbid graph updates. There is no support yet
-      zooKeeper.create(
+      final Op op1 = Op.create(
               "/graph",
               o.toBytes(),
               ZKUtil.parseACLs("world:anyone:cr"),
               CreateMode.PERSISTENT
       );
-      zooKeeper.create(
+      final Op op2 = Op.create(
               "/graph/fronts",
               new byte[0],
               ZKUtil.parseACLs("world:anyone:cr"),
               CreateMode.PERSISTENT
       );
-      zooKeeper.create(
+      final Op op3 = Op.create(
               "/graph/rears",
               new byte[0],
               ZKUtil.parseACLs("world:anyone:cr"),
               CreateMode.PERSISTENT
       );
+
+      // This operations should be done in batch,
+      // so when workers checks fronts and rears
+      // there are nodes for them
+      zooKeeper.multi(Arrays.asList(op1, op2, op3));
     } catch (InterruptedException | KeeperException e) {
       throw new RuntimeException(e);
     }

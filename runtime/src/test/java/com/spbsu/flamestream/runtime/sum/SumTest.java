@@ -132,7 +132,7 @@ public final class SumTest extends FlameStreamSuite {
 
   @Test(invocationCount = 10)
   public void integrationTest() throws InterruptedException, IOException {
-    try (LocalClusterRuntime runtime = new LocalClusterRuntime(7, 100)) {
+    try (LocalClusterRuntime runtime = new LocalClusterRuntime(5, 1000)) {
       final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
       final FlameRuntime.Flame flame = runtime.run(sumGraph());
       {

@@ -12,7 +12,6 @@ import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.server.ZooKeeperApplication;
-import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,11 +33,10 @@ public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
 
   public LocalClusterRuntime(int parallelism, int maxElementsInGraph) throws IOException, InterruptedException {
     final List<Integer> ports = new ArrayList<>(freePorts(parallelism + 1));
-    this.zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
-    new Thread(Unchecked.runnable(zooKeeperApplication::run)).start();
 
-    //There is a proper way to wait on ZK's status :)
-    Thread.sleep(2000);
+    this.zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
+    zooKeeperApplication.run();
+
     final String zkString = "localhost:" + ports.get(0);
     final ClusterManagementClient configClient = new ZooKeeperFlameClient(new ZooKeeper(
             zkString,
