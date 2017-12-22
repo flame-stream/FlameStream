@@ -9,13 +9,15 @@ import java.util.Map;
 public class ClusterConfig {
   private final Map<String, ActorPath> paths;
   private final String ackerLocation;
-  private final ComputationProps layout;
+  private final ComputationProps props;
 
   @JsonCreator
-  public ClusterConfig(Map<String, ActorPath> paths, String ackerLocation, ComputationProps layout) {
+  public ClusterConfig(@JsonProperty("paths") Map<String, ActorPath> paths,
+                       @JsonProperty("ackerLocation") String ackerLocation,
+                       @JsonProperty("props") ComputationProps props) {
     this.paths = paths;
     this.ackerLocation = ackerLocation;
-    this.layout = layout;
+    this.props = props;
   }
 
   @JsonProperty
@@ -30,6 +32,6 @@ public class ClusterConfig {
 
   @JsonProperty
   public ComputationProps props() {
-    return layout;
+    return props;
   }
 }

@@ -33,8 +33,8 @@ public interface Graph {
   }
 
   class Builder {
-    private Multimap<Vertex, Vertex> adjLists = HashMultimap.create();
-    private Multimap<Vertex, Vertex> invertedAdjLists = HashMultimap.create();
+    private final Multimap<Vertex, Vertex> adjLists = HashMultimap.create();
+    private final Multimap<Vertex, Vertex> invertedAdjLists = HashMultimap.create();
 
     public Builder link(Vertex from, Vertex to) {
       adjLists.put(from, to);
@@ -49,29 +49,42 @@ public interface Graph {
         throw new IllegalStateException("Source must not have outputs");
       }
 
-      final Collection<Vertex> allVertices = new ArrayList<>(adjLists.keySet());
-      allVertices.add(sink);
-      return new Graph() {
-        @Override
-        public Stream<Vertex> vertices() {
-          return allVertices.stream();
-        }
+      return new MyGraph(adjLists, source, sink);
+    }
 
-        @Override
-        public Stream<Vertex> adjacent(Vertex vertex) {
-          return adjLists.get(vertex).stream();
-        }
+    public static class MyGraph implements Graph {
+      private final Collection<Vertex> allVertices;
+      private final Source source;
+      private final Sink sink;
+      private final Multimap<Vertex, Vertex> adjLists;
 
-        @Override
-        public Source source() {
-          return source;
-        }
+      public MyGraph(Multimap<Vertex, Vertex> adjLists, Source source, Sink sink) {
+        this.allVertices = new ArrayList<>(adjLists.keySet());
+        allVertices.add(sink);
+        this.adjLists = HashMultimap.create(adjLists);
+        this.source = source;
+        this.sink = sink;
+      }
 
-        @Override
-        public Sink sink() {
-          return sink;
-        }
-      };
+      @Override
+      public Stream<Vertex> vertices() {
+        return allVertices.stream();
+      }
+
+      @Override
+      public Stream<Vertex> adjacent(Vertex vertex) {
+        return adjLists.get(vertex).stream();
+      }
+
+      @Override
+      public Source source() {
+        return source;
+      }
+
+      @Override
+      public Sink sink() {
+        return sink;
+      }
     }
   }
 }

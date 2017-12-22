@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime;
 
+import akka.actor.ActorSystem;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.FlameStreamSuite;
@@ -11,11 +12,13 @@ import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.util.AwaitConsumer;
+import com.typesafe.config.ConfigFactory;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +31,10 @@ import java.util.stream.Collectors;
 @SuppressWarnings("Convert2Lambda")
 public final class GroupingAcceptanceTest extends FlameStreamSuite {
   @Test
-  public void reorderingMultipleHash() throws InterruptedException {
+  public void reorderingMultipleHash() throws InterruptedException, IOException {
     final int window = 2;
-    final LocalRuntime runtime = new LocalRuntime(4);
+    final LocalClusterRuntime runtime = new LocalClusterRuntime(4);
+    final ActorSystem system = ActorSystem.create("stand", ConfigFactory.load("remote"));
 
     final Graph graph = groupGraph(
             window,
@@ -50,13 +54,13 @@ public final class GroupingAcceptanceTest extends FlameStreamSuite {
               .boxed()
               .collect(Collectors.toList());
       final Consumer<Object> front = randomConsumer(
-              flame.attachFront("groupingAcceptanceFront", new AkkaFrontType<>(runtime.system()))
+              flame.attachFront("groupingAcceptanceFront", new AkkaFrontType<>(system))
                       .collect(Collectors.toList())
       );
       final Set<List<Long>> expected = GroupingAcceptanceTest.expected(source, window);
 
       final AwaitConsumer<List<Long>> consumer = new AwaitConsumer<>(expected.size());
-      flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
+      flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(system, List.class))
               .forEach(r -> r.addListener(consumer::accept));
 
       source.forEach(front);

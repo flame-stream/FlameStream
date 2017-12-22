@@ -29,7 +29,7 @@ public class AwaitResolver extends AbstractActor {
     try {
       return resolve(path, context).toCompletableFuture().get(10, TimeUnit.SECONDS);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to resolve " + path, e);
     }
   }
 

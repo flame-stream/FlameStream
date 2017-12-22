@@ -35,6 +35,14 @@ public class EdgeId implements Comparable<EdgeId> {
     this.nodeId = nodeId;
   }
 
+  public String edgeName() {
+    return edgeName;
+  }
+
+  public String nodeId() {
+    return nodeId;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
