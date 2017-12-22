@@ -81,7 +81,7 @@ public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
     });
     assert ranges.isEmpty();
 
-    final ComputationProps computationProps = new ComputationProps(rangeMap, 100);
+    final ComputationProps computationProps = new ComputationProps(rangeMap, 1000000);
     return new ClusterConfig(workers, ackerLocation, computationProps);
   }
 

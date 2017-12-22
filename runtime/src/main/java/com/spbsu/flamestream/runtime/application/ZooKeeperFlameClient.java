@@ -28,8 +28,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.objenesis.strategy.StdInstantiatorStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -41,27 +39,37 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, AdminClient {
-  private final Logger log = LoggerFactory.getLogger(ZooKeeperFlameClient.class);
+  private static final int MAX_BUFFER_SIZE = 20000;
+  private static final int BUFFER_SIZE = 1000;
+
+  private final ZooKeeper zooKeeper;
   private final Kryo kryo;
   private final ObjectMapper mapper = new ObjectMapper();
-  private final ZooKeeper zooKeeper;
+
   private final Set<String> seenFronts = Collections.synchronizedSet(new HashSet<>());
   private final Set<String> seenRears = Collections.synchronizedSet(new HashSet<>());
 
   public ZooKeeperFlameClient(ZooKeeper zooKeeper) {
+    this.zooKeeper = zooKeeper;
+
     final SimpleModule module = new SimpleModule();
     module.addSerializer(ActorPath.class, new ActorPathSerializer(ActorPath.class));
     module.addDeserializer(ActorPath.class, new ActorPathDes(ActorPath.class));
     mapper.registerModule(module);
-    this.zooKeeper = zooKeeper;
+
     this.kryo = new Kryo();
     ((Kryo.DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy())
             .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
   }
 
+  @Override
+  public void close() throws Exception {
+    zooKeeper.close();
+  }
+
   public void attachFront(String name, FlameRuntime.FrontInstance<?> instance) {
     try {
-      final ByteBufferOutput o = new ByteBufferOutput(1000, 20000);
+      final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
       kryo.writeClassAndObject(o, instance);
 
       zooKeeper.create(
@@ -77,7 +85,7 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
 
   public void attachRear(String name, FlameRuntime.RearInstance<?> instance) {
     try {
-      final ByteBufferOutput o = new ByteBufferOutput(1000, 20000);
+      final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
       kryo.writeClassAndObject(o, instance);
 
       zooKeeper.create(
@@ -108,7 +116,7 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
     }
   }
 
-  public FlameRuntime.FrontInstance<?> frontBy(String name) {
+  private FlameRuntime.FrontInstance<?> frontBy(String name) {
     try {
       final byte[] data = zooKeeper.getData("/graph/fronts/" + name, false, null);
       final ByteBufferInput input = new ByteBufferInput(data);
@@ -135,8 +143,9 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
     }
   }
 
-  public FlameRuntime.RearInstance<?> rearBy(String name) {
+  private FlameRuntime.RearInstance<?> rearBy(String name) {
     try {
+      // There is no watcher because fronts are immutable
       final byte[] data = zooKeeper.getData("/graph/rears/" + name, false, null);
       final ByteBufferInput input = new ByteBufferInput(data);
       return (FlameRuntime.RearInstance<?>) kryo.readClassAndObject(input);
@@ -145,6 +154,9 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
     }
   }
 
+  /**
+   * Fetch graph, if present, and set watcher that would be called on updates
+   */
   public Optional<Graph> graph(Consumer<Graph> watcher) {
     try {
       final Stat exists = zooKeeper.exists(
@@ -162,10 +174,6 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
     }
   }
 
-  @Override
-  public void close() throws Exception {
-    zooKeeper.close();
-  }
 
   private Graph graph() {
     try {
@@ -175,7 +183,7 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
               null
       );
       final ByteBufferInput input = new ByteBufferInput(data);
-      return kryo.readObject(input, Graph.Builder.MyGraph.class);
+      return (Graph) kryo.readClassAndObject(input);
     } catch (InterruptedException | KeeperException e) {
       throw new RuntimeException(e);
     }
@@ -183,11 +191,10 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
 
   public void push(Graph graph) {
     try {
-      final ByteBufferOutput o = new ByteBufferOutput(1000, 20000);
-      kryo.writeObject(o, graph);
+      final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
+      kryo.writeClassAndObject(o, graph);
 
-      System.out.println("Written " + o.toBytes().length + " bytes");
-
+      // ACL is so specific (cr) to forbid graph updates. There is no support yet
       zooKeeper.create(
               "/graph",
               o.toBytes(),
@@ -235,6 +242,7 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
     }
   }
 
+  @Override
   public void put(ClusterConfig config) {
     try {
       zooKeeper.create(
@@ -271,19 +279,19 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
     }
   }
 
+  @SuppressWarnings("serial")
   private static class ActorPathDes extends StdDeserializer<ActorPath> {
     protected ActorPathDes(Class<?> vc) {
       super(vc);
     }
 
     @Override
-    public ActorPath deserialize(JsonParser p, DeserializationContext ctxt) throws
-                                                                            IOException,
-                                                                            JsonProcessingException {
+    public ActorPath deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return ActorPaths.fromString(p.getText());
     }
   }
 
+  @SuppressWarnings("serial")
   private static class ActorPathSerializer extends StdSerializer<ActorPath> {
     protected ActorPathSerializer(Class<ActorPath> t) {
       super(t);

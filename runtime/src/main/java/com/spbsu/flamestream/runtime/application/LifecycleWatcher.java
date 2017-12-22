@@ -11,7 +11,6 @@ import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.Set;
@@ -19,13 +18,12 @@ import java.util.Set;
 import static org.apache.zookeeper.Watcher.Event;
 
 public class LifecycleWatcher extends LoggingActor {
-  public static final int SESSION_TIMEOUT = 5000;
+  private static final int SESSION_TIMEOUT = 5000;
   private final String zkConnectString;
   private final String id;
 
   private ZooKeeperFlameClient client = null;
 
-  @Nullable
   private ActorRef flameNode = null;
 
   private LifecycleWatcher(String id, String zkConnectString) {
@@ -60,24 +58,10 @@ public class LifecycleWatcher extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(WatchedEvent.class, this::onWatchedEvent)
             .match(Graph.class, this::onGraph)
-            .match(AttachFront.class, f -> {
-              if (flameNode != null) {
-                log().info("Attaching front {}", f);
-                flameNode.tell(f, self());
-              } else {
-                throw new IllegalStateException();
-              }
-            })
-            .match(AttachRear.class, r -> {
-              if (flameNode != null) {
-                log().info("Attaching rear {}", r);
-                flameNode.tell(r, self());
-              } else {
-                throw new IllegalStateException();
-              }
-            })
+            .match(WatchedEvent.class, this::onWatchedEvent)
+            .match(AttachFront.class, f -> flameNode.tell(f, self()))
+            .match(AttachRear.class, r -> flameNode.tell(r, self()))
             .build();
   }
 

@@ -7,7 +7,12 @@ import com.spbsu.flamestream.core.graph.Source;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface Graph {
@@ -27,7 +32,8 @@ public interface Graph {
 
       @Override
       public String id() {
-        return toString() + "{id=" + id + "}";
+        // id shouldn't contain JVM-instance specific fields, e.g. hashCode
+        return String.valueOf(id);
       }
     }
   }
@@ -53,15 +59,23 @@ public interface Graph {
     }
 
     public static class MyGraph implements Graph {
-      private final Collection<Vertex> allVertices;
+      private final List<Vertex> allVertices;
       private final Source source;
       private final Sink sink;
-      private final Multimap<Vertex, Vertex> adjLists;
+      private final Map<Vertex, Collection<Vertex>> adjLists;
 
       public MyGraph(Multimap<Vertex, Vertex> adjLists, Source source, Sink sink) {
         this.allVertices = new ArrayList<>(adjLists.keySet());
         allVertices.add(sink);
-        this.adjLists = HashMultimap.create(adjLists);
+        // Multimap is converted to Map<.,Set> to support serialization
+        this.adjLists = adjLists.entries().stream().collect(Collectors.groupingBy(
+                Map.Entry::getKey,
+                Collectors.mapping(
+                        Map.Entry::getValue,
+                        Collectors.toCollection(HashSet::new)
+                )
+        ));
+
         this.source = source;
         this.sink = sink;
       }
@@ -73,7 +87,7 @@ public interface Graph {
 
       @Override
       public Stream<Vertex> adjacent(Vertex vertex) {
-        return adjLists.get(vertex).stream();
+        return adjLists.getOrDefault(vertex, Collections.emptyList()).stream();
       }
 
       @Override
