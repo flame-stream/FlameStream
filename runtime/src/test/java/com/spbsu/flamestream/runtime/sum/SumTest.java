@@ -63,7 +63,6 @@ public final class SumTest extends FlameAkkaSuite {
             .build(source, sink);
   }
 
-  // FIXME: 22.12.2017 this test produces OOM
   @Test(invocationCount = 10)
   public void sumTest() throws InterruptedException {
     final int parallelism = 4;
@@ -73,11 +72,12 @@ public final class SumTest extends FlameAkkaSuite {
         final List<AkkaFrontType.Handle<LongNumb>> handles = flame.attachFront("sumFront",
                 new AkkaFrontType<LongNumb>(runtime.system(), false)).collect(Collectors.toList());
         final AtomicLong expected = new AtomicLong();
-        final int streamSize = 10;
+        final int streamSize = 1000;
         final List<Stream<LongNumb>> source = Stream.generate(() -> new Random()
                 .ints(streamSize, 0, 100)
                 .peek(expected::addAndGet)
                 .mapToObj(LongNumb::new))
+                .limit(parallelism)
                 .collect(Collectors.toList());
 
         final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(streamSize * parallelism);
@@ -91,7 +91,7 @@ public final class SumTest extends FlameAkkaSuite {
                 .max()
                 .orElseThrow(NoSuchElementException::new);
         Assert.assertEquals(actual, expected.get());
-        Assert.assertEquals(consumer.result().count(), source.size());
+        Assert.assertEquals(consumer.result().count(), streamSize * parallelism);
       }
     }
   }
