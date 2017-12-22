@@ -1,8 +1,8 @@
-package com.spbsu.flamestream.runtime.client;
+package com.spbsu.flamestream.runtime;
 
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 
-public interface AdminClient {
+public interface ClusterManagementClient {
   ClusterConfig config();
 
   void put(ClusterConfig config);

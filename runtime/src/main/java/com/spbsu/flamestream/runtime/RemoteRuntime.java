@@ -1,9 +1,8 @@
-package com.spbsu.flamestream.runtime.client;
+package com.spbsu.flamestream.runtime;
 
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Rear;
-import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.application.ZooKeeperFlameClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
@@ -56,18 +55,20 @@ public class RemoteRuntime implements FlameRuntime, AutoCloseable {
     public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type) {
       log.info("Attaching front id: '{}', type: '{}'", id, type);
       client.attachFront(id, type.instance());
-      return clusterConfig.paths().entrySet().stream().map(e -> {
-        return type.handle(new SystemEdgeContext(e.getValue(), e.getKey(), id, null));
-      });
+      return clusterConfig.paths()
+              .entrySet()
+              .stream()
+              .map(e -> type.handle(new SystemEdgeContext(e.getValue(), e.getKey(), id, null)));
     }
 
     @Override
     public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
       log.info("Attaching rear id: '{}', type: '{}'", id, type);
       client.attachRear(id, type.instance());
-      return clusterConfig.paths().entrySet().stream().map(e -> {
-        return type.handle(new SystemEdgeContext(e.getValue(), e.getKey(), id, null));
-      });
+      return clusterConfig.paths()
+              .entrySet()
+              .stream()
+              .map(e -> type.handle(new SystemEdgeContext(e.getValue(), e.getKey(), id, null)));
     }
   }
 }

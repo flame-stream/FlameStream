@@ -16,15 +16,16 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
+import com.spbsu.flamestream.runtime.ClusterManagementClient;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
-import com.spbsu.flamestream.runtime.client.AdminClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.objenesis.strategy.StdInstantiatorStrategy;
@@ -33,12 +34,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, AdminClient {
+public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, ClusterManagementClient {
   private static final int MAX_BUFFER_SIZE = 20000;
   private static final int BUFFER_SIZE = 1000;
 
@@ -103,7 +105,11 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
     try {
       return zooKeeper.getChildren(
               "/graph/fronts",
-              event -> watcher.accept(fronts(watcher)),
+              event -> {
+                if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+                  watcher.accept(fronts(watcher));
+                }
+              },
               null
       )
               .stream()
@@ -128,12 +134,17 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
 
   public Set<AttachRear<?>> rears(Consumer<Set<AttachRear<?>>> watcher) {
     try {
-      return zooKeeper.getChildren(
+      final List<String> children = zooKeeper.getChildren(
               "/graph/rears",
-              event -> watcher.accept(rears(watcher)),
+              event -> {
+                if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+                  watcher.accept(rears(watcher));
+                }
+              },
               null
-      )
-              .stream()
+      );
+
+      return children.stream()
               .filter(name -> !seenRears.contains(name))
               .peek(seenFronts::add)
               .map(name -> new AttachRear<>(name, rearBy(name)))
@@ -161,7 +172,11 @@ public class ZooKeeperFlameClient implements AttachRegistry, AutoCloseable, Admi
     try {
       final Stat exists = zooKeeper.exists(
               "/graph",
-              e -> watcher.accept(graph())
+              e -> {
+                if (e.getType() == Watcher.Event.EventType.NodeCreated) {
+                  watcher.accept(graph());
+                }
+              }
       );
 
       if (exists != null) {

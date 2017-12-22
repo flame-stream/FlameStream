@@ -99,6 +99,9 @@ public class LifecycleWatcher extends LoggingActor {
           log().info("Session expired");
           context().stop(self());
           break;
+        case Disconnected:
+          log().info("Disconnected");
+          break;
         default:
           unhandled(event);
       }

@@ -6,8 +6,6 @@ import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.application.WorkerApplication;
 import com.spbsu.flamestream.runtime.application.ZooKeeperFlameClient;
-import com.spbsu.flamestream.runtime.client.AdminClient;
-import com.spbsu.flamestream.runtime.client.RemoteRuntime;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashRange;
@@ -26,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
   private final Logger log = LoggerFactory.getLogger(LocalClusterRuntime.class);
@@ -33,15 +32,19 @@ public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
   private final RemoteRuntime remoteRuntime;
   private final Set<WorkerApplication> workers = new HashSet<>();
 
-  public LocalClusterRuntime(int parallelism) throws IOException, InterruptedException {
+  public LocalClusterRuntime(int parallelism, int maxElementsInGraph) throws IOException, InterruptedException {
     final List<Integer> ports = new ArrayList<>(freePorts(parallelism + 1));
     this.zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
     new Thread(Unchecked.runnable(zooKeeperApplication::run)).start();
 
-    //There is a way to wait on ZK's status :)
-    Thread.sleep(1000);
+    //There is a proper way to wait on ZK's status :)
+    Thread.sleep(2000);
     final String zkString = "localhost:" + ports.get(0);
-    final AdminClient adminClient = new ZooKeeperFlameClient(new ZooKeeper(zkString, 1000, (w) -> {}));
+    final ClusterManagementClient configClient = new ZooKeeperFlameClient(new ZooKeeper(
+            zkString,
+            1000,
+            (w) -> {}
+    ));
 
     final Map<String, ActorPath> workersAddresses = new HashMap<>();
     for (int i = 0; i < parallelism; i++) {
@@ -59,10 +62,16 @@ public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
       worker.run();
     }
 
-    final ClusterConfig config = config(workersAddresses);
+    final ClusterConfig config = config(workersAddresses, maxElementsInGraph);
     log.info("Pushing configuration {}", config);
-    adminClient.put(config);
+    configClient.put(config);
     this.remoteRuntime = new RemoteRuntime(zkString);
+  }
+
+  @Override
+  public void close() {
+    workers.forEach(WorkerApplication::close);
+    zooKeeperApplication.shutdown();
   }
 
   @Override
@@ -70,41 +79,19 @@ public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
     return remoteRuntime.run(g);
   }
 
-  private ClusterConfig config(Map<String, ActorPath> workers) {
+  private ClusterConfig config(Map<String, ActorPath> workers, int maxElementsInGraph) {
     final String ackerLocation = workers.keySet().stream().findAny().orElseThrow(IllegalArgumentException::new);
 
     final Map<String, HashRange> rangeMap = new HashMap<>();
-    final List<HashRange> ranges = ranges(workers.size());
+    final List<HashRange> ranges = HashRange.covering(workers.size()).collect(Collectors.toList());
     workers.keySet().forEach(name -> {
       rangeMap.put(name, ranges.get(0));
       ranges.remove(0);
     });
     assert ranges.isEmpty();
 
-    final ComputationProps computationProps = new ComputationProps(rangeMap, 1000000);
+    final ComputationProps computationProps = new ComputationProps(rangeMap, maxElementsInGraph);
     return new ClusterConfig(workers, ackerLocation, computationProps);
-  }
-
-  private List<HashRange> ranges(int n) {
-    final List<HashRange> result = new ArrayList<>();
-
-    final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / n);
-    long left = Integer.MIN_VALUE;
-    long right = left + step;
-
-    for (int i = 0; i < n; ++i) {
-      result.add(new HashRange((int) left, (int) right));
-      left += step;
-      right = Math.min(Integer.MAX_VALUE, right + step);
-    }
-
-    return result;
-  }
-
-  @Override
-  public void close() {
-    zooKeeperApplication.shutdown();
-    workers.forEach(WorkerApplication::close);
   }
 
   private Set<Integer> freePorts(int n) throws IOException {

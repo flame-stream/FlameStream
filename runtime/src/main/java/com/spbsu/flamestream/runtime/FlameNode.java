@@ -25,10 +25,8 @@ import java.util.Map;
 public class FlameNode extends LoggingActor {
   private final ActorRef edgeManager;
   private final ClusterConfig config;
-  private final String id;
 
   private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, AttachRegistry attachRegistry) {
-    this.id = id;
     this.config = config;
     final ActorRef acker;
     if (id.equals(config.ackerLocation())) {
@@ -58,10 +56,7 @@ public class FlameNode extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(AttachFront.class, f -> {
-              System.out.println("FRONT at " + id);
-              edgeManager.forward(f, context());
-            })
+            .match(AttachFront.class, f -> edgeManager.forward(f, context()))
             .match(AttachRear.class, f -> edgeManager.forward(f, context()))
             .build();
   }
