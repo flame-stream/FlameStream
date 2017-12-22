@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime.sum;
 
+import akka.actor.ActorSystem;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.FlameStreamSuite;
@@ -10,13 +11,16 @@ import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameRuntime;
+import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.util.AwaitConsumer;
+import com.typesafe.config.ConfigFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -123,6 +127,40 @@ public final class SumTest extends FlameStreamSuite {
       consumer.await(10, TimeUnit.MINUTES);
 
       Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+    }
+  }
+
+  @Test(invocationCount = 10)
+  public void integrationTest() throws InterruptedException, IOException {
+    try (LocalClusterRuntime runtime = new LocalClusterRuntime(5, 100)) {
+      final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
+      final FlameRuntime.Flame flame = runtime.run(sumGraph());
+      {
+        final List<LongNumb> source = new Random()
+                .ints(1000)
+                .mapToObj(LongNumb::new)
+                .collect(Collectors.toList());
+        final Consumer<LongNumb> sink = flame.attachFront(
+                "totalOrderFront",
+                new AkkaFrontType<LongNumb>(system)
+        ).findFirst().orElseThrow(IllegalStateException::new);
+
+        final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.size());
+        flame.attachRear("totalOrderRear", new AkkaRearType<>(system, Sum.class))
+                .forEach(r -> r.addListener(consumer));
+
+        final Set<Sum> expected = new HashSet<>();
+        long currentSum = 0;
+        for (LongNumb longNumb : source) {
+          currentSum += longNumb.value();
+          expected.add(new Sum(currentSum));
+        }
+
+        source.forEach(sink);
+        consumer.await(10, TimeUnit.MINUTES);
+
+        Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+      }
     }
   }
 }

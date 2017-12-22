@@ -3,9 +3,6 @@ package com.spbsu.flamestream.runtime.utils;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Objects;
 
 public final class DumbInetSocketAddress {
@@ -20,7 +17,7 @@ public final class DumbInetSocketAddress {
   }
 
   @JsonCreator
-  public DumbInetSocketAddress(@JsonProperty("host") String host, @JsonProperty("destanation") int port) {
+  public DumbInetSocketAddress(@JsonProperty("host") String host, @JsonProperty("port") int port) {
     this.host = host;
     this.port = port;
   }
@@ -30,18 +27,14 @@ public final class DumbInetSocketAddress {
     return host;
   }
 
-  @JsonProperty("destanation")
+  @JsonProperty("port")
   public int port() {
     return port;
   }
 
-  public InetSocketAddress toInetSocketAddress() throws UnknownHostException {
-    return new InetSocketAddress(InetAddress.getByName(host), port);
-  }
-
   @Override
   public String toString() {
-    return "DumbInetSocketAddress{" + "host='" + host + '\'' + ", destanation=" + port + '}';
+    return host + ':' + port;
   }
 
   @Override
