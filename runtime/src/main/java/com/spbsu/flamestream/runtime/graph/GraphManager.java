@@ -3,6 +3,8 @@ package com.spbsu.flamestream.runtime.graph;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.FlameMap;
@@ -39,6 +41,7 @@ public class GraphManager extends LoggingActor {
 
   private final Map<String, ActorRef> managerRefs = new HashMap<>();
   private final Map<Destination, Joba> materialization = new HashMap<>();
+  private final Multimap<Destination, RouterJoba> routers = LinkedListMultimap.create();
   private final Collection<MinTimeHandler> minTimeHandlers = new ArrayList<>();
 
   private GraphManager(String nodeId,
@@ -118,12 +121,21 @@ public class GraphManager extends LoggingActor {
               .map(outVertex -> {
                 // TODO: 15.12.2017 add circuit breaker
                 if (outVertex instanceof Grouping) {
-                  return new RouterJoba(
+                  final Destination destination = Destination.fromVertexId(outVertex.id());
+                  final RouterJoba routerJoba = new RouterJoba(
+                          nodeId,
                           computationProps,
                           managerRefs,
                           ((Grouping) outVertex).hash(),
-                          Destination.fromVertexId(outVertex.id()),
+                          destination,
+                          acker,
                           context());
+                  if (materialization.containsKey(destination)) {
+                    routerJoba.setLocalJoba(materialization.get(destination));
+                  } else {
+                    routers.put(destination, routerJoba);
+                  }
+                  return routerJoba;
                 }
                 return buildMaterialization(outVertex, allJobas);
               });
@@ -135,6 +147,7 @@ public class GraphManager extends LoggingActor {
         joba = new MapJoba((FlameMap<?, ?>) vertex, output, acker, context());
       } else if (vertex instanceof Grouping) {
         joba = new GroupingJoba((Grouping) vertex, output, acker, context());
+        routers.get(Destination.fromVertexId(vertex.id())).forEach(routerJoba -> routerJoba.setLocalJoba(joba));
       } else if (vertex instanceof Source) {
         joba = new SourceJoba(computationProps.maxElementsInGraph(), output, acker, context());
       } else {

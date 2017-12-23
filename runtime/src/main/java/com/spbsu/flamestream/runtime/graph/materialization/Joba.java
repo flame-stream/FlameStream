@@ -31,7 +31,6 @@ public interface Joba {
     }
 
     void process(DataItem input, Stream<DataItem> output, boolean fromAsync) {
-      // TODO: 12.12.2017 everything is ready for optimization
       output.forEach(dataItem -> {
         if (outJobas.length == 1) {
           sendToNext(outJobas[0], dataItem);

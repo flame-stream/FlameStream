@@ -56,7 +56,7 @@ public class Grouping<T> extends Graph.Vertex.Stub {
   public class GroupingOperation {
     private final long physicalId;
 
-    public GroupingOperation(long physicalId) {
+    GroupingOperation(long physicalId) {
       this.physicalId = physicalId;
     }
 
@@ -82,6 +82,7 @@ public class Grouping<T> extends Graph.Vertex.Stub {
       final List<DataItem> items = new ArrayList<>();
       for (int right = index + 1; right <= Math.min(index + window - (include ? 0 : 1), bucket.size()); ++right) {
         final int left = Math.max(right - window, 0);
+        //noinspection unchecked
         final List<T> groupingResult = bucket.rangeStream(left, right)
                 .map(item -> item.payload((Class<T>) clazz))
                 .collect(Collectors.toList());

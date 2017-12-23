@@ -36,11 +36,7 @@ public class Barrier extends LoggingActor {
             })
             .match(MinTimeUpdate.class, minTimeUpdate -> {
               final GlobalTime globalTime = minTimeUpdate.minTime();
-              collector.releaseFrom(globalTime, di -> {
-                rears.forEach(rear -> {
-                  rear.tell(di, self());
-                });
-              });
+              collector.releaseFrom(globalTime, di -> rears.forEach(rear -> rear.tell(di, self())));
             })
             .match(AttachRear.class, attach -> {
               log().info("Attach rear request: {}", attach.rear());

@@ -31,11 +31,12 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
   public class FlameMapOperation {
     private final long physicalId;
 
-    public FlameMapOperation(long physicalId) {
+    FlameMapOperation(long physicalId) {
       this.physicalId = physicalId;
     }
 
     public Stream<DataItem> apply(DataItem dataItem) {
+      //noinspection unchecked
       final Stream<R> result = function.apply(dataItem.payload((Class<T>) clazz));
       final int[] childId = {0};
       return result.map(r -> {
