@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class GraphManager extends LoggingActor {
@@ -41,7 +40,6 @@ public class GraphManager extends LoggingActor {
 
   private final Map<String, ActorRef> managerRefs = new HashMap<>();
   private final Map<Destination, Joba> materialization = new HashMap<>();
-  private final Multimap<Destination, RouterJoba> routers = LinkedListMultimap.create();
   private final Collection<MinTimeHandler> minTimeHandlers = new ArrayList<>();
 
   private GraphManager(String nodeId,
@@ -72,15 +70,20 @@ public class GraphManager extends LoggingActor {
               //noinspection unchecked
               managerRefs.putAll(managers);
 
-              final Map<String, Joba> allJobas = new HashMap<>();
-              graph.vertices().forEach(vertex -> buildMaterialization(vertex, allJobas));
-              minTimeHandlers.addAll(
-                      allJobas.values()
-                              .stream()
-                              .filter(joba -> joba instanceof MinTimeHandler)
-                              .map(joba -> (MinTimeHandler) joba)
-                              .collect(Collectors.toList())
-              );
+              { //materialization
+                final Map<String, Joba> jobasForVertices = new HashMap<>();
+                final Multimap<String, RouterJoba> routers = LinkedListMultimap.create();
+                graph.vertices().forEach(vertex -> buildMaterialization(vertex, jobasForVertices, routers));
+                jobasForVertices.forEach((vertexId, joba) -> {
+                  if (joba instanceof GroupingJoba || joba instanceof SourceJoba) {
+                    materialization.put(Destination.fromVertexId(vertexId), joba);
+                  }
+                  if (joba instanceof MinTimeHandler) {
+                    minTimeHandlers.add((MinTimeHandler) joba);
+                  }
+                  routers.get(vertexId).forEach(routerJoba -> routerJoba.setLocalJoba(joba));
+                });
+              }
 
               unstashAll();
               getContext().become(managing());
@@ -113,31 +116,26 @@ public class GraphManager extends LoggingActor {
   }
 
   //DFS
-  private Joba buildMaterialization(Graph.Vertex vertex, Map<String, Joba> allJobas) {
-    if (allJobas.containsKey(vertex.id())) {
-      return allJobas.get(vertex.id());
+  private Joba buildMaterialization(Graph.Vertex vertex, Map<String, Joba> jobasForVertices, Multimap<String, RouterJoba> routers) {
+    if (jobasForVertices.containsKey(vertex.id())) {
+      return jobasForVertices.get(vertex.id());
     } else {
       final Stream<Joba> output = graph.adjacent(vertex)
               .map(outVertex -> {
                 // TODO: 15.12.2017 add circuit breaker
                 if (outVertex instanceof Grouping) {
-                  final Destination destination = Destination.fromVertexId(outVertex.id());
                   final RouterJoba routerJoba = new RouterJoba(
                           nodeId,
                           computationProps,
                           managerRefs,
                           ((Grouping) outVertex).hash(),
-                          destination,
+                          Destination.fromVertexId(outVertex.id()),
                           acker,
                           context());
-                  if (materialization.containsKey(destination)) {
-                    routerJoba.setLocalJoba(materialization.get(destination));
-                  } else {
-                    routers.put(destination, routerJoba);
-                  }
+                  routers.put(outVertex.id(), routerJoba);
                   return routerJoba;
                 }
-                return buildMaterialization(outVertex, allJobas);
+                return buildMaterialization(outVertex, jobasForVertices, routers);
               });
 
       final Joba joba;
@@ -147,17 +145,12 @@ public class GraphManager extends LoggingActor {
         joba = new MapJoba((FlameMap<?, ?>) vertex, output, acker, context());
       } else if (vertex instanceof Grouping) {
         joba = new GroupingJoba((Grouping) vertex, output, acker, context());
-        routers.get(Destination.fromVertexId(vertex.id())).forEach(routerJoba -> routerJoba.setLocalJoba(joba));
       } else if (vertex instanceof Source) {
         joba = new SourceJoba(computationProps.maxElementsInGraph(), output, acker, context());
       } else {
         throw new RuntimeException("Invalid vertex type");
       }
-
-      if (vertex instanceof Source || vertex instanceof Grouping) {
-        materialization.put(Destination.fromVertexId(vertex.id()), joba);
-      }
-      allJobas.put(vertex.id(), joba);
+      jobasForVertices.put(vertex.id(), joba);
       return joba;
     }
   }

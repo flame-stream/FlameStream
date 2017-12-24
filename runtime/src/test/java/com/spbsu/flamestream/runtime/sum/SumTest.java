@@ -66,11 +66,11 @@ public final class SumTest extends FlameAkkaSuite {
   @Test(invocationCount = 10)
   public void sumTest() throws InterruptedException {
     final int parallelism = 4;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
+    try (final LocalRuntime runtime = new LocalRuntime(parallelism, 50)) {
       final FlameRuntime.Flame flame = runtime.run(sumGraph());
       {
         final List<AkkaFrontType.Handle<LongNumb>> handles = flame.attachFront("sumFront",
-                new AkkaFrontType<LongNumb>(runtime.system(), false)).collect(Collectors.toList());
+                new AkkaFrontType<LongNumb>(runtime.system(), true)).collect(Collectors.toList());
         final AtomicLong expected = new AtomicLong();
         final int streamSize = 1000;
         final List<Stream<LongNumb>> source = Stream.generate(() -> new Random()

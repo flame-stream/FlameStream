@@ -56,7 +56,7 @@ public class RouterJoba implements Joba {
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
     final int hash = hashFunction.applyAsInt(dataItem);
-    if (hash >= localRange.from() && hash < localRange.to()) {
+    if (localJoba != null && hash >= localRange.from() && hash < localRange.to()) {
       localJoba.accept(dataItem, fromAsync);
     } else {
       router.get(hash).tell(new AddressedItem(dataItem, destination), context.self());

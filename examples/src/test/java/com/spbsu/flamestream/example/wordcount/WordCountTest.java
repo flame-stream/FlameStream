@@ -8,7 +8,6 @@ import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
 import org.testng.Assert;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
@@ -31,19 +30,10 @@ import static java.util.stream.Collectors.toMap;
  * Date: 19.12.2017
  */
 public class WordCountTest extends FlameAkkaSuite {
-  @DataProvider
-  public static Object[][] provider() {
-    return new Object[][] {
-            {false},
-            {true}
-    };
-  }
-
-  // FIXME: 22.12.2017 this test consumes too much time & sometimes produces OOM
-  @Test(dataProvider = "provider")
-  public void localEnvironmentTest(boolean backPressure) throws InterruptedException {
+  @Test
+  public void localEnvironmentTest() throws InterruptedException {
     final int parallelism = 4;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism, 100)) {
+    try (final LocalRuntime runtime = new LocalRuntime(parallelism, 50)) {
       final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
       {
         final int lineSize = 50;
@@ -60,7 +50,7 @@ public class WordCountTest extends FlameAkkaSuite {
         flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordCounter.class))
                 .forEach(r -> r.addListener(awaitConsumer));
         final List<AkkaFrontType.Handle<String>> handles = flame
-                .attachFront("Sink", new AkkaFrontType<String>(runtime.system(), backPressure))
+                .attachFront("Sink", new AkkaFrontType<String>(runtime.system(), true))
                 .collect(Collectors.toList());
         applyDataToHandles(input.stream().map(Collection::stream).collect(Collectors.toList()), handles);
         awaitConsumer.await(5, TimeUnit.MINUTES);

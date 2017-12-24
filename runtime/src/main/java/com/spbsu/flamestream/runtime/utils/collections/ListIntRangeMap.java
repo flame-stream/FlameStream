@@ -23,6 +23,7 @@ public class ListIntRangeMap<T> implements IntRangeMap<T> {
   @Override
   public T get(int key) {
     for (RangeEntry<T> entry : mapping) {
+      // FIXME: 24.12.2017 possible bug?
       if (entry.range.containsInteger(key)) {
         return entry.node;
       }
