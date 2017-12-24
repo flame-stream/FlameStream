@@ -30,8 +30,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class LocalRuntime implements FlameRuntime, AutoCloseable {
-  private static final int DEFAULT_MAX_ELEMENTS_IN_GRAPH = 100;
-
   private final int parallelism;
   private final int maxElementsInGraph;
   private final ActorSystem system;

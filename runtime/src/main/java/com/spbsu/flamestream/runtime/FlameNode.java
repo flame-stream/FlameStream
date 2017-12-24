@@ -28,7 +28,7 @@ public class FlameNode extends LoggingActor {
 
   private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, AttachRegistry attachRegistry) {
     this.config = config;
-    ActorRef acker;
+    final ActorRef acker;
     if (id.equals(config.ackerLocation())) {
       acker = context().actorOf(Acker.props(System.currentTimeMillis(), attachRegistry), "acker");
     } else {

@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime.sum;
 
+import akka.actor.ActorSystem;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.Graph;
@@ -10,19 +11,25 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.FlameRuntime;
+import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
+import com.typesafe.config.ConfigFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -129,6 +136,45 @@ public final class SumTest extends FlameAkkaSuite {
 
         consumer.await(10, TimeUnit.MINUTES);
         Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+      }
+    }
+  }
+
+  @Test(invocationCount = 10)
+  public void integrationTest() throws InterruptedException, IOException, TimeoutException {
+    try (final LocalClusterRuntime runtime = new LocalClusterRuntime(5)) {
+      final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
+      final FlameRuntime.Flame flame = runtime.run(sumGraph());
+      {
+        final List<LongNumb> source = new Random()
+                .ints(1000)
+                .mapToObj(LongNumb::new)
+                .collect(Collectors.toList());
+        final List<AkkaFrontType.Handle<LongNumb>> handles = flame.attachFront(
+                "totalOrderFront",
+                new AkkaFrontType<LongNumb>(system, false)
+        ).collect(Collectors.toList());
+        for (int i = 1; i < handles.size(); i++) {
+          handles.get(i).eos();
+        }
+        final AkkaFrontType.Handle<LongNumb> sink = handles.get(0);
+
+        final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.size());
+        flame.attachRear("totalOrderRear", new AkkaRearType<>(system, Sum.class))
+                .forEach(r -> r.addListener(consumer));
+
+        final Set<Sum> expected = new HashSet<>();
+        long currentSum = 0;
+        for (LongNumb longNumb : source) {
+          currentSum += longNumb.value();
+          expected.add(new Sum(currentSum));
+        }
+
+        source.forEach(sink);
+        consumer.await(10, TimeUnit.MINUTES);
+
+        Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+        Await.ready(system.terminate(), Duration.Inf());
       }
     }
   }
