@@ -1,0 +1,4 @@
+base_dir: /opt
+
+zookeeper_version: 3.4.9
+zookeeper_client_port: 2181

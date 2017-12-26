@@ -1,0 +1,14 @@
+---
+all:
+  children:
+    manager:
+      hosts:
+        ansible_worker_1:
+    workers:
+      hosts:
+        ansible_worker_2:
+        ansible_worker_3:
+        ansible_worker_4:
+        ansible_worker_5:
+  vars:
+    ansible_connection: docker

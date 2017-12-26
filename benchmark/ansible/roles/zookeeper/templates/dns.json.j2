@@ -1,5 +1,0 @@
-{
-{% for worker in groups['workers'] %}
-  "{{ hostvars[worker].id }}": "{{ worker }}:{{ worker_port }}" {{ "," if not loop.last else "" }}
-{% endfor %}
-}
