@@ -37,12 +37,13 @@ public class InvertedIndexTest extends FlameStreamSuite {
     try (final LocalRuntime runtime = new LocalRuntime(4, 10)) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       {
+        final String invocationConfig = validator.getClass().getSimpleName() + "-bp-" + backPressure;
         final AwaitConsumer<WordBase> awaitConsumer = new AwaitConsumer<>(validator.expectedOutputSize());
-        flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordBase.class))
+        flame.attachRear("Rear-" + invocationConfig, new AkkaRearType<>(runtime.system(), WordBase.class))
                 .forEach(r -> r.addListener(awaitConsumer));
 
         final List<AkkaFrontType.Handle<Object>> consumers =
-                flame.attachFront("Sink", new AkkaFrontType<>(runtime.system(), backPressure))
+                flame.attachFront("Front-" + invocationConfig, new AkkaFrontType<>(runtime.system(), backPressure))
                         .collect(Collectors.toList());
         for (int i = 1; i < consumers.size(); i++) {
           consumers.get(i).eos();

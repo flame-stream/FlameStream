@@ -47,10 +47,10 @@ public class WordCountTest extends FlameAkkaSuite {
         final AwaitConsumer<WordCounter> awaitConsumer = new AwaitConsumer<>(
                 lineSize * streamSize * parallelism
         );
-        flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordCounter.class))
+        flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordCounter.class))
                 .forEach(r -> r.addListener(awaitConsumer));
         final List<AkkaFrontType.Handle<String>> handles = flame
-                .attachFront("Sink", new AkkaFrontType<String>(runtime.system(), true))
+                .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system(), true))
                 .collect(Collectors.toList());
         applyDataToHandles(input.stream().map(Collection::stream).collect(Collectors.toList()), handles);
         awaitConsumer.await(5, TimeUnit.MINUTES);
