@@ -11,9 +11,10 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.List;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -39,26 +40,27 @@ public final class FilterAcceptanceTest extends FlameAkkaSuite {
 
   @Test
   public void linearFilter() throws InterruptedException {
-    final int parallelism = 4;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
+    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM)) {
       final FlameRuntime.Flame flame = runtime.run(multiGraph());
       {
         final List<AkkaFrontType.Handle<Integer>> handles = flame
                 .attachFront("linearFilterFront", new AkkaFrontType<Integer>(runtime.system(), false))
                 .collect(Collectors.toList());
-        final int streamSize = 1000;
-        final Set<Integer> expected = new ConcurrentSkipListSet<>();
-        final List<Stream<Integer>> source = Stream
-                .generate(() -> new Random()
-                        .ints(streamSize)
-                        .peek(value -> expected.add(value * -1 * -2 * -3 * -4))
-                        .boxed())
-                .limit(parallelism).collect(Collectors.toList());
+        final int streamSize = 10000;
+        final Queue<Integer> source = new Random()
+                .ints(streamSize)
+                .boxed()
+                .limit(streamSize)
+                .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+        final Set<Integer> expected = source
+                .stream()
+                .map(integer -> integer * -1 * -2 * -3 * -4)
+                .collect(Collectors.toSet());
 
-        final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(streamSize * parallelism);
+        final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(streamSize);
         flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
                 .forEach(f -> f.addListener(consumer));
-        applyDataToHandles(source, handles);
+        applyDataToAllHandlesAsync(source, handles);
 
         consumer.await(5, TimeUnit.MINUTES);
         Assert.assertEquals(

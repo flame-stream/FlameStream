@@ -23,6 +23,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @SuppressWarnings("Convert2Lambda")
@@ -30,7 +31,7 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
 
   @Test
   public void reorderingMultipleHash() throws InterruptedException {
-    final int parallelism = 4;
+    final int parallelism = DEFAULT_PARALLELISM;
     try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
       final int window = 2;
       final Graph graph = groupGraph(
@@ -46,9 +47,9 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
 
       final FlameRuntime.Flame flame = runtime.run(graph);
       {
-        final int streamSize = 10000;
+        final int streamSize = 50000;
         final List<List<Long>> source = Stream.generate(() -> new Random()
-                .longs(streamSize, 0, 10)
+                .longs(streamSize / parallelism, 0, 10)
                 .boxed()
                 .collect(Collectors.toList()))
                 .limit(parallelism).collect(Collectors.toList());
@@ -57,10 +58,10 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
                 .attachFront("groupingAcceptanceFront", new AkkaFrontType<Long>(runtime.system(), false))
                 .collect(Collectors.toList());
 
-        final AwaitConsumer<List<Long>> consumer = new AwaitConsumer<>(streamSize * parallelism);
+        final AwaitConsumer<List<Long>> consumer = new AwaitConsumer<>(source.stream().mapToInt(List::size).sum());
         flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
                 .forEach(r -> r.addListener(consumer::accept));
-        applyDataToHandles(source.stream().map(Collection::stream).collect(Collectors.toList()), handles);
+        IntStream.range(0, parallelism).forEach(i -> applyDataToHandleAsync(source.get(i).stream(), handles.get(i)));
 
         consumer.await(5, TimeUnit.MINUTES);
         Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);

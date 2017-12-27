@@ -1,10 +1,10 @@
 package com.spbsu.flamestream.example.index;
 
-import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.example.index.model.WordBase;
 import com.spbsu.flamestream.example.index.validators.RankingValidator;
 import com.spbsu.flamestream.example.index.validators.SmallDumpRankingValidator;
 import com.spbsu.flamestream.example.index.validators.SmallDumpValidator;
+import com.spbsu.flamestream.runtime.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * User: Artem
  * Date: 19.12.2017
  */
-public class InvertedIndexTest extends FlameStreamSuite {
+public class InvertedIndexTest extends FlameAkkaSuite {
   @DataProvider
   public static Object[][] provider() {
     return new Object[][] {
@@ -34,7 +34,7 @@ public class InvertedIndexTest extends FlameStreamSuite {
 
   @Test(dataProvider = "provider")
   public void test(InvertedIndexValidator validator, boolean backPressure) throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(4, 10)) {
+    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM, 10)) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       {
         final String invocationConfig = validator.getClass().getSimpleName() + "-bp-" + backPressure;

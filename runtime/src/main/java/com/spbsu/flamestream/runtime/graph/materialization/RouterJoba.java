@@ -5,16 +5,10 @@ import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
-import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.graph.GraphManager;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
-import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
-import org.apache.commons.lang.math.IntRange;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: Artem
@@ -30,9 +24,8 @@ public class RouterJoba implements Joba {
 
   private Joba localJoba;
 
-  public RouterJoba(String nodeId,
-                    ComputationProps layout,
-                    Map<String, ActorRef> managerRefs,
+  public RouterJoba(IntRangeMap<ActorRef> router,
+                    HashRange localRange,
                     HashFunction hashFunction,
                     GraphManager.Destination destination,
                     ActorRef acker,
@@ -41,11 +34,8 @@ public class RouterJoba implements Joba {
     this.destination = destination;
     this.acker = acker;
     this.context = context;
-
-    final Map<IntRange, ActorRef> routerMap = new HashMap<>();
-    layout.ranges().forEach((key, value) -> routerMap.put(value.asRange(), managerRefs.get(key)));
-    router = new ListIntRangeMap<>(routerMap);
-    localRange = layout.ranges().get(nodeId);
+    this.router = router;
+    this.localRange = localRange;
   }
 
   @Override

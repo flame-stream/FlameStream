@@ -23,6 +23,9 @@ import com.spbsu.flamestream.runtime.graph.materialization.RouterJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.SinkJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.SourceJoba;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
+import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
+import org.apache.commons.lang.math.IntRange;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +41,7 @@ public class GraphManager extends LoggingActor {
   private final ComputationProps computationProps;
   private final List<ActorRef> barriers;
 
-  private final Map<String, ActorRef> managerRefs = new HashMap<>();
+  private final IntRangeMap<ActorRef> router = new ListIntRangeMap<>();
   private final Map<Destination, Joba> materialization = new HashMap<>();
   private final Collection<MinTimeHandler> minTimeHandlers = new ArrayList<>();
 
@@ -67,8 +70,11 @@ public class GraphManager extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Map.class, managers -> {
               log().info("Finishing constructor");
-              //noinspection unchecked
-              managerRefs.putAll(managers);
+              final Map<IntRange, ActorRef> routerMap = new HashMap<>();
+              computationProps.ranges()
+                      .forEach((key, value) -> routerMap.put(value.asRange(), (ActorRef) managers.get(key)));
+              final IntRangeMap<ActorRef> intRangeMap = new ListIntRangeMap<>(routerMap);
+              router.putAll(intRangeMap);
 
               { //materialization
                 final Map<String, Joba> jobasForVertices = new HashMap<>();
@@ -125,9 +131,8 @@ public class GraphManager extends LoggingActor {
                 // TODO: 15.12.2017 add circuit breaker
                 if (outVertex instanceof Grouping) {
                   final RouterJoba routerJoba = new RouterJoba(
-                          nodeId,
-                          computationProps,
-                          managerRefs,
+                          router,
+                          computationProps.ranges().get(nodeId),
                           ((Grouping) outVertex).hash(),
                           Destination.fromVertexId(outVertex.id()),
                           acker,

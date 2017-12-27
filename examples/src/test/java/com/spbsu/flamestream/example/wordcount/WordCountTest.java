@@ -11,11 +11,12 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -32,27 +33,31 @@ import static java.util.stream.Collectors.toMap;
 public class WordCountTest extends FlameAkkaSuite {
   @Test
   public void localEnvironmentTest() throws InterruptedException {
-    final int parallelism = 4;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism, 50)) {
+    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM, 50)) {
       final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
       {
         final int lineSize = 50;
-        final int streamSize = 500;
-        final List<List<String>> input = Stream.generate(() -> Stream.generate(() -> {
+        final int streamSize = 2000;
+        final Queue<String> input = Stream.generate(() -> {
           final String[] words = {"repka", "dedka", "babka", "zhuchka", "vnuchka"};
           return new Random().ints(lineSize, 0, words.length).mapToObj(i -> words[i])
                   .collect(joining(" "));
-        }).limit(streamSize).collect(Collectors.toList())).limit(parallelism).collect(Collectors.toList());
+        }).limit(streamSize).collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+        final Pattern pattern = Pattern.compile("\\s");
+        final Map<String, Integer> expected = input.stream()
+                .map(pattern::split)
+                .flatMap(Arrays::stream)
+                .collect(toMap(Function.identity(), o -> 1, Integer::sum));
 
         final AwaitConsumer<WordCounter> awaitConsumer = new AwaitConsumer<>(
-                lineSize * streamSize * parallelism
+                lineSize * streamSize
         );
         flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordCounter.class))
                 .forEach(r -> r.addListener(awaitConsumer));
         final List<AkkaFrontType.Handle<String>> handles = flame
                 .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system(), true))
                 .collect(Collectors.toList());
-        applyDataToHandles(input.stream().map(Collection::stream).collect(Collectors.toList()), handles);
+        applyDataToAllHandlesAsync(input, handles);
         awaitConsumer.await(5, TimeUnit.MINUTES);
 
         final Map<String, Integer> actual = new HashMap<>();
@@ -61,12 +66,6 @@ public class WordCountTest extends FlameAkkaSuite {
           actual.putIfAbsent(wordContainer.word(), 0);
           actual.computeIfPresent(wordContainer.word(), (uid, old) -> Math.max(wordContainer.count(), old));
         });
-        final Pattern pattern = Pattern.compile("\\s");
-        final Map<String, Integer> expected = input.stream()
-                .flatMap(Collection::stream)
-                .map(pattern::split)
-                .flatMap(Arrays::stream)
-                .collect(toMap(Function.identity(), o -> 1, Integer::sum));
 
         Assert.assertEquals(actual, expected);
       }

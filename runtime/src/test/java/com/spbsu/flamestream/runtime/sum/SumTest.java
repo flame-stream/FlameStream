@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public final class SumTest extends FlameAkkaSuite {
@@ -72,25 +73,24 @@ public final class SumTest extends FlameAkkaSuite {
 
   @Test(invocationCount = 10)
   public void sumTest() throws InterruptedException {
-    final int parallelism = 4;
+    final int parallelism = DEFAULT_PARALLELISM;
     try (final LocalRuntime runtime = new LocalRuntime(parallelism, 50)) {
       final FlameRuntime.Flame flame = runtime.run(sumGraph());
       {
         final List<AkkaFrontType.Handle<LongNumb>> handles = flame.attachFront("sumFront",
                 new AkkaFrontType<LongNumb>(runtime.system(), true)).collect(Collectors.toList());
         final AtomicLong expected = new AtomicLong();
-        final int streamSize = 1000;
-        final List<Stream<LongNumb>> source = Stream.generate(() -> new Random()
-                .ints(streamSize, 0, 100)
+        final int inputSize = 5000;
+        final List<List<LongNumb>> source = Stream.generate(() -> new Random()
+                .ints(inputSize / parallelism, 0, 100)
                 .peek(expected::addAndGet)
-                .mapToObj(LongNumb::new))
-                .limit(parallelism)
-                .collect(Collectors.toList());
+                .mapToObj(LongNumb::new)
+                .collect(Collectors.toList())).limit(parallelism).collect(Collectors.toList());
 
-        final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(streamSize * parallelism);
+        final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.stream().mapToInt(List::size).sum());
         flame.attachRear("sumRear", new AkkaRearType<>(runtime.system(), Sum.class))
                 .forEach(r -> r.addListener(consumer));
-        applyDataToHandles(source, handles);
+        IntStream.range(0, parallelism).forEach(i -> applyDataToHandleAsync(source.get(i).stream(), handles.get(i)));
 
         consumer.await(10, TimeUnit.MINUTES);
         final long actual = consumer.result()
@@ -98,7 +98,7 @@ public final class SumTest extends FlameAkkaSuite {
                 .max()
                 .orElseThrow(NoSuchElementException::new);
         Assert.assertEquals(actual, expected.get());
-        Assert.assertEquals(consumer.result().count(), streamSize * parallelism);
+        Assert.assertEquals(consumer.result().count(), inputSize);
       }
     }
   }
