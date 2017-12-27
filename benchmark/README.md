@@ -22,7 +22,7 @@ The core component of the benchmarks. It submits items to the graph and collects
 - Starts
 - Reads the data to be processed from filesystem
 - Creates sockets for sending and receiving data
-- Waits until the sufficient number of "fronts" (of Flinks sources) connects to the graph.
+- Waits until the sufficient number of "fronts" (of Flinks sources) connects to the source socket.
 - Submits items to the graph, collects results and measures the latencies.
 
 #### Jars
