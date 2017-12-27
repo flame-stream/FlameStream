@@ -58,8 +58,16 @@ public class AkkaFront implements Front {
               .match(RawData.class, this::onRaw)
               .match(AkkaStart.class, this::onStart)
               .match(RequestNext.class, this::onRequestNext)
-              .match(EOS.class, s -> hole.accept(new Heartbeat(new GlobalTime(Long.MAX_VALUE, frontId))))
+              .match(EOS.class, s -> onEos())
               .build();
+    }
+
+    private void onEos() {
+      if (hole != null) {
+        hole.accept(new Heartbeat(new GlobalTime(Long.MAX_VALUE, frontId)));
+      } else {
+        stash();
+      }
     }
 
     private void onStart(AkkaStart start) {
@@ -74,12 +82,12 @@ public class AkkaFront implements Front {
     }
 
     private void onRaw(RawData<Object> data) {
-      if (hole == null) {
-        stash();
-      } else {
+      if (hole != null) {
         final PayloadDataItem dataItem = new PayloadDataItem(new Meta(currentTime()), data.data());
         hole.accept(dataItem);
         hole.accept(new Heartbeat(currentTime()));
+      } else {
+        stash();
       }
 
       if (frontHandle == null) {
