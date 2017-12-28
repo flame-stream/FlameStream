@@ -29,6 +29,19 @@ import java.util.stream.Stream;
  */
 public class BenchStand {
 
+  public static void main(String[] args) throws IOException, InterruptedException {
+    final Config config = new Config(
+            10,
+            "wikipedia/national_football_teams_dump.xml",
+            300,
+            65813,
+            4567,
+            5678
+    );
+    final BenchStand benchStand = new BenchStand();
+    benchStand.run(config, new LocalGraphDeployer(1, 1));
+  }
+
   public void run(Config config, GraphDeployer graphDeployer) throws IOException, InterruptedException {
     final Map<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
     final Server producer = producer(config, latencies);
@@ -45,7 +58,7 @@ public class BenchStand {
   }
 
   private Server producer(Config config, Map<Integer, LatencyMeasurer> latencies) throws IOException {
-    final Stream<WikipediaPage> input = WikipeadiaInput.dumpStreamFromFile(config.wikiDumpPath)
+    final Stream<WikipediaPage> input = WikipeadiaInput.dumpStreamFromResources(config.wikiDumpPath)
             .limit(config.inputLimit);
     final Server producer = new Server(1_000_000, 1000);
     producer.getKryo().register(WikipediaPage.class);

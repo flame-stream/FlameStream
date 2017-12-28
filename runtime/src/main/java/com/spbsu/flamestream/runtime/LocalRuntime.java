@@ -51,10 +51,6 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
     this.maxElementsInGraph = maxElementsInGraph;
   }
 
-  public int parallelism() {
-    return parallelism;
-  }
-
   public ActorSystem system() {
     return system;
   }
@@ -93,14 +89,14 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
       public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type) {
         nodes.forEach(n -> n.tell(new AttachFront<>(id, type.instance()), ActorRef.noSender()));
         return paths.entrySet().stream()
-                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
+                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id)));
       }
 
       @Override
       public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
         nodes.forEach(n -> n.tell(new AttachRear<>(id, type.instance()), ActorRef.noSender()));
         return paths.entrySet().stream()
-                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
+                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id)));
       }
     };
   }

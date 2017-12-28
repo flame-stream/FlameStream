@@ -35,12 +35,12 @@ public interface FlameRuntime {
   interface FrontInstance<F extends Front> {
     Class<F> clazz();
 
-    String[] params();
+    Object[] params();
   }
 
   interface RearInstance<R extends Rear> {
     Class<R> clazz();
 
-    String[] params();
+    Object[] params();
   }
 }

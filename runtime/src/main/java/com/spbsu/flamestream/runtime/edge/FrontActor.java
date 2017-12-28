@@ -3,7 +3,9 @@ package com.spbsu.flamestream.runtime.edge;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.FlameRuntime;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.edge.api.Start;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -13,16 +15,20 @@ import java.lang.reflect.InvocationTargetException;
 public class FrontActor extends LoggingActor {
   private final Front front;
 
-  private FrontActor(EdgeContext context, FlameRuntime.FrontInstance<?> frontInstance) throws
+  private FrontActor(EdgeId edgeId, FlameRuntime.FrontInstance<?> frontInstance) throws
           IllegalAccessException,
           InvocationTargetException,
           InstantiationException {
-    this.front = (Front) frontInstance.clazz().getDeclaredConstructors()[0]
-            .newInstance(context);
+    //handle AkkaFront in order to not create yet another actor system
+    if (frontInstance.clazz().equals(AkkaFront.class)) {
+      this.front = (Front) frontInstance.clazz().getDeclaredConstructors()[0].newInstance(edgeId, context());
+    } else {
+      this.front = (Front) frontInstance.clazz().getDeclaredConstructors()[0].newInstance(frontInstance.params());
+    }
   }
 
-  public static Props props(EdgeContext context, FlameRuntime.FrontInstance<?> frontInstance) {
-    return Props.create(FrontActor.class, context, frontInstance);
+  public static Props props(EdgeId edgeId, FlameRuntime.FrontInstance<?> frontInstance) {
+    return Props.create(FrontActor.class, edgeId, frontInstance);
   }
 
   @Override

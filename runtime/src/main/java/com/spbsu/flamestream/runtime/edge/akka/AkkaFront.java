@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.edge.akka;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorRefFactory;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Front;
@@ -9,7 +10,6 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -18,9 +18,8 @@ import java.util.function.Consumer;
 public class AkkaFront implements Front {
   private final ActorRef innerActor;
 
-  public AkkaFront(SystemEdgeContext context) {
-    this.innerActor = context.refFactory()
-            .actorOf(InnerActor.props(context.edgeId()), context.edgeId() + "-inner");
+  public AkkaFront(EdgeId edgeId, ActorRefFactory refFactory) {
+    this.innerActor = refFactory.actorOf(InnerActor.props(edgeId), edgeId.nodeId() + "-inner");
   }
 
   @Override

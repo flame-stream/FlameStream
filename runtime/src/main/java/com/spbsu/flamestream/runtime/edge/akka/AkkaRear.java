@@ -1,11 +1,12 @@
 package com.spbsu.flamestream.runtime.edge.akka;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorRefFactory;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Rear;
-import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.ArrayList;
@@ -14,8 +15,8 @@ import java.util.List;
 public class AkkaRear implements Rear {
   private final ActorRef innerActor;
 
-  public AkkaRear(SystemEdgeContext context) {
-    this.innerActor = context.refFactory().actorOf(InnerActor.props(), context.edgeId() + "-inner");
+  public AkkaRear(EdgeId edgeId, ActorRefFactory refFactory) {
+    this.innerActor = refFactory.actorOf(InnerActor.props(), edgeId.nodeId() + "-inner");
   }
 
   @Override

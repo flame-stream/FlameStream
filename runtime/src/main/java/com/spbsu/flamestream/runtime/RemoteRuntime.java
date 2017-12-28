@@ -21,7 +21,8 @@ public class RemoteRuntime implements FlameRuntime, AutoCloseable {
     this.client = new ZooKeeperFlameClient(new ZooKeeper(
             zkString,
             5000,
-            (e) -> {}
+            (e) -> {
+            }
     ));
   }
 
@@ -58,7 +59,7 @@ public class RemoteRuntime implements FlameRuntime, AutoCloseable {
       return clusterConfig.paths()
               .entrySet()
               .stream()
-              .map(e -> type.handle(new SystemEdgeContext(e.getValue(), e.getKey(), id, null)));
+              .map(e -> type.handle(new SystemEdgeContext(e.getValue(), e.getKey(), id)));
     }
 
     @Override
@@ -68,7 +69,7 @@ public class RemoteRuntime implements FlameRuntime, AutoCloseable {
       return clusterConfig.paths()
               .entrySet()
               .stream()
-              .map(e -> type.handle(new SystemEdgeContext(e.getValue(), e.getKey(), id, null)));
+              .map(e -> type.handle(new SystemEdgeContext(e.getValue(), e.getKey(), id)));
     }
   }
 }
