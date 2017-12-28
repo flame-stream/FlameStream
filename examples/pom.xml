@@ -24,6 +24,11 @@
             <artifactId>flamestream-runtime</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <!--For benchmarks-->
+        <dependency>
+            <groupId>kryonet</groupId>
+            <artifactId>kryonet</artifactId>
+        </dependency>
         <!--Needed for checkers-->
         <dependency>
             <groupId>org.testng</groupId>
