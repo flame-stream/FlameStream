@@ -31,6 +31,10 @@ public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
   private final RemoteRuntime remoteRuntime;
   private final Set<WorkerApplication> workers = new HashSet<>();
 
+  public LocalClusterRuntime(int parallelism) throws IOException, InterruptedException {
+    this(parallelism, DEFAULT_MAX_ELEMENTS_IN_GRAPH);
+  }
+
   public LocalClusterRuntime(int parallelism, int maxElementsInGraph) throws IOException, InterruptedException {
     final List<Integer> ports = new ArrayList<>(freePorts(parallelism + 1));
 
@@ -41,7 +45,8 @@ public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
     final ClusterManagementClient configClient = new ZooKeeperFlameClient(new ZooKeeper(
             zkString,
             1000,
-            (w) -> {}
+            (w) -> {
+            }
     ));
 
     final Map<String, ActorPath> workersAddresses = new HashMap<>();

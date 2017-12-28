@@ -15,7 +15,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.util.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -103,35 +103,39 @@ public class DoubleGroupingTest extends FlameStreamSuite {
   }
 
   private void doubleGroupingTest(int nodes) throws InterruptedException {
-    final LocalRuntime runtime = new LocalRuntime(nodes);
-    final FlameRuntime.Flame flame = runtime.run(graph());
-    {
-      final AkkaFrontType.Handle<Integer> sink = flame.attachFront(
-              "doubleGroupingFront",
-              new AkkaFrontType<Integer>(runtime.system())
-      )
-              .collect(Collectors.toList()).get(0);
+    try (final LocalRuntime runtime = new LocalRuntime(nodes)) {
+      final FlameRuntime.Flame flame = runtime.run(graph());
+      {
+        final List<AkkaFrontType.Handle<Integer>> handles = flame.attachFront(
+                "doubleGroupingFront",
+                new AkkaFrontType<Integer>(runtime.system(), false)
+        ).collect(Collectors.toList());
+        final AkkaFrontType.Handle<Integer> sink = handles.get(0);
+        for (int i = 1; i < handles.size(); i++) {
+          handles.get(i).eos();
+        }
 
-      final List<Integer> source = new Random()
-              .ints(1000)
-              .boxed().collect(Collectors.toList());
+        final List<Integer> source = new Random()
+                .ints(1000)
+                .boxed().collect(Collectors.toList());
 
-      final Set<Integer> expected = semanticGrouping(
-              semanticGrouping(
-                      semanticGrouping(
-                              source
-                      ).stream().map(List::hashCode).collect(Collectors.toList())
-              ).stream().map(List::hashCode).collect(Collectors.toList())
-      ).stream().map(List::hashCode).collect(Collectors.toSet());
+        final Set<Integer> expected = semanticGrouping(
+                semanticGrouping(
+                        semanticGrouping(
+                                source
+                        ).stream().map(List::hashCode).collect(Collectors.toList())
+                ).stream().map(List::hashCode).collect(Collectors.toList())
+        ).stream().map(List::hashCode).collect(Collectors.toSet());
 
-      final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(expected.size());
-      flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
-              .forEach(r -> r.addListener(consumer));
+        final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(expected.size());
+        flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
+                .forEach(r -> r.addListener(consumer));
+        source.forEach(sink);
+        sink.eos();
 
-      sink.accept(source.stream());
-      consumer.await(10, TimeUnit.MINUTES);
-
-      Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+        consumer.await(10, TimeUnit.MINUTES);
+        Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+      }
     }
   }
 

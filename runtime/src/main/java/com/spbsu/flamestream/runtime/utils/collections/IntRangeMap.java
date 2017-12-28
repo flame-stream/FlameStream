@@ -1,9 +1,11 @@
 package com.spbsu.flamestream.runtime.utils.collections;
 
-import java.util.Collection;
+import java.util.Set;
 
 public interface IntRangeMap<V> {
   V get(int key);
 
-  Collection<V> values();
+  void putAll(IntRangeMap<V> map);
+
+  Set<ListIntRangeMap.Entry<V>> entrySet();
 }

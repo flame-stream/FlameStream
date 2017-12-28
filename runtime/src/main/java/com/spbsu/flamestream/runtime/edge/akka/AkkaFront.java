@@ -1,7 +1,6 @@
 package com.spbsu.flamestream.runtime.edge.akka;
 
 import akka.actor.ActorRef;
-import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Front;
@@ -11,15 +10,9 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
-import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import scala.concurrent.duration.Duration;
-import scala.concurrent.duration.FiniteDuration;
 
-import java.util.NavigableMap;
-import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class AkkaFront implements Front {
@@ -31,27 +24,23 @@ public class AkkaFront implements Front {
   }
 
   @Override
-  public void onStart(Consumer<Object> consumer) {
-    innerActor.tell(consumer, ActorRef.noSender());
+  public void onStart(Consumer<Object> consumer, GlobalTime from) {
+    innerActor.tell(new AkkaStart(consumer, from), ActorRef.noSender());
   }
 
   @Override
-  public void onRequestNext(GlobalTime from) {
-    innerActor.tell(new RequestNext(from), ActorRef.noSender());
+  public void onRequestNext() {
+    innerActor.tell(new RequestNext(), ActorRef.noSender());
   }
 
   @Override
   public void onCheckpoint(GlobalTime to) {
-    innerActor.tell(new RequestNext(to), ActorRef.noSender());
   }
 
   private static class InnerActor extends LoggingActor {
-    private final NavigableMap<GlobalTime, Object> history = new TreeMap<>();
     private final EdgeId frontId;
 
-    private Cancellable ping = null;
     private ActorRef frontHandle = null;
-
     private Consumer<Object> hole = null;
     private long prevGlobalTs = 0;
 
@@ -64,69 +53,45 @@ public class AkkaFront implements Front {
     }
 
     @Override
-    public void preStart() throws Exception {
-      super.preStart();
-      this.ping = context().system().scheduler().schedule(
-              Duration.Zero(),
-              FiniteDuration.apply(100, TimeUnit.MILLISECONDS),
-              self(),
-              "ping",
-              context().system().dispatcher(),
-              self()
-      );
-    }
-
-    @Override
-    public void postStop() {
-      if (ping != null) {
-        ping.cancel();
-      }
-    }
-
-    @Override
     public Receive createReceive() {
       return ReceiveBuilder.create()
               .match(RawData.class, this::onRaw)
-              .match(Consumer.class, this::onStart)
-              .match(RequestNext.class, requestNext -> onRequestNext(requestNext.time()))
-              .match(Checkpoint.class, checkpoint -> onCheckpoint(checkpoint.time()))
-              .match(String.class, s -> s.equals("ping"), p -> emmitHeartbeat())
+              .match(AkkaStart.class, this::onStart)
+              .match(RequestNext.class, this::onRequestNext)
+              .match(EOS.class, s -> onEos())
               .build();
     }
 
-    private void onStart(Consumer<Object> consumer) {
-      this.hole = consumer;
-      unstashAll();
-    }
-
-    private void onRequestNext(GlobalTime time) {
-      // TODO: 18.12.2017 get from history
-      if (frontHandle != null) {
-        frontHandle.tell(new AkkaFrontType.Next(), self());
+    private void onEos() {
+      if (hole != null) {
+        hole.accept(new Heartbeat(new GlobalTime(Long.MAX_VALUE, frontId)));
+      } else {
+        stash();
       }
     }
 
-    private void onCheckpoint(GlobalTime to) {
-      history.headMap(to).clear();
+    private void onStart(AkkaStart start) {
+      this.hole = start.consumer;
+      unstashAll();
+    }
+
+    private void onRequestNext(RequestNext requestNext) {
+      if (frontHandle != null && !frontHandle.equals(context().system().deadLetters())) {
+        frontHandle.tell(requestNext, self());
+      }
     }
 
     private void onRaw(RawData<Object> data) {
-      if (hole == null) {
-        stash();
+      if (hole != null) {
+        final PayloadDataItem dataItem = new PayloadDataItem(new Meta(currentTime()), data.data());
+        hole.accept(dataItem);
+        hole.accept(new Heartbeat(currentTime()));
       } else {
-        final PayloadDataItem t = new PayloadDataItem(new Meta(currentTime()), data.data());
-        hole.accept(t);
-        emmitHeartbeat(); // FIXME: 18.12.2017 remove me
+        stash();
       }
 
       if (frontHandle == null) {
         frontHandle = sender();
-      }
-    }
-
-    private void emmitHeartbeat() {
-      if (hole != null) {
-        hole.accept(new Heartbeat(currentTime()));
       }
     }
 
@@ -138,5 +103,31 @@ public class AkkaFront implements Front {
       prevGlobalTs = globalTs;
       return new GlobalTime(globalTs, frontId);
     }
+  }
+
+  private static class AkkaStart {
+    private final Consumer<Object> consumer;
+    @SuppressWarnings("unused") //needs for replay
+    private final GlobalTime globalTime;
+
+    private AkkaStart(Consumer<Object> consumer, GlobalTime globalTime) {
+      this.consumer = consumer;
+      this.globalTime = globalTime;
+    }
+  }
+
+  public static class RawData<T> {
+    private final T data;
+
+    public RawData(T data) {
+      this.data = data;
+    }
+
+    public T data() {
+      return data;
+    }
+  }
+
+  static class EOS {
   }
 }

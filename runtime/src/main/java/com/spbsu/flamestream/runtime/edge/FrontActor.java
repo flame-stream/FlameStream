@@ -14,9 +14,9 @@ public class FrontActor extends LoggingActor {
   private final Front front;
 
   private FrontActor(EdgeContext context, FlameRuntime.FrontInstance<?> frontInstance) throws
-                                                                          IllegalAccessException,
-                                                                          InvocationTargetException,
-                                                                          InstantiationException {
+          IllegalAccessException,
+          InvocationTargetException,
+          InstantiationException {
     this.front = (Front) frontInstance.clazz().getDeclaredConstructors()[0]
             .newInstance(context);
   }
@@ -28,8 +28,8 @@ public class FrontActor extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(Start.class, hole -> front.onStart(item -> hole.consumer().tell(item, self())))
-            .match(RequestNext.class, request -> front.onRequestNext(request.time()))
+            .match(Start.class, hole -> front.onStart(item -> hole.consumer().tell(item, self()), hole.globalTime()))
+            .match(RequestNext.class, request -> front.onRequestNext())
             .build();
   }
 }

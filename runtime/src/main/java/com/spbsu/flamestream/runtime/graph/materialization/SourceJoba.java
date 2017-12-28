@@ -5,7 +5,6 @@ import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 
 import java.util.ArrayList;
@@ -42,7 +41,7 @@ public class SourceJoba extends Joba.Stub implements MinTimeHandler {
       if (nextTime.compareTo(minTime) <= 0) {
         iterator.remove();
         if (!next.accepted) {
-          fronts.get(nextTime.frontId()).tell(new RequestNext(nextTime), context.self());
+          fronts.get(nextTime.frontId()).tell(new RequestNext(), context.self());
         }
       }
     }
@@ -54,10 +53,9 @@ public class SourceJoba extends Joba.Stub implements MinTimeHandler {
     { //back-pressure logic
       final GlobalTime globalTime = dataItem.meta().globalTime();
       if (inFlight.size() < maxInFlightItems) {
-        fronts.get(globalTime.frontId()).tell(new RequestNext(globalTime), context.self());
+        fronts.get(globalTime.frontId()).tell(new RequestNext(), context.self());
         inFlight.add(new InFlightTime(globalTime, true));
       } else {
-        acker.tell(new Heartbeat(globalTime), context.self());
         inFlight.add(new InFlightTime(globalTime, false));
       }
     }
