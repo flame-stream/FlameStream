@@ -1,6 +1,6 @@
 package com.spbsu.benchmark.flink;
 
-import com.spbsu.flamestream.example.wordcount.model.WordCounter;
+import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.FoldFunction;
 import org.apache.flink.api.java.tuple.Tuple1;

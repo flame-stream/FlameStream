@@ -2,8 +2,8 @@ package com.spbsu.benchmark.flink;
 
 import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.example.ExampleChecker;
-import com.spbsu.flamestream.example.wordcount.WordCountCheckers;
-import com.spbsu.flamestream.example.wordcount.model.WordCounter;
+import com.spbsu.flamestream.example.bl.wordcount.WordCountCheckers;
+import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;

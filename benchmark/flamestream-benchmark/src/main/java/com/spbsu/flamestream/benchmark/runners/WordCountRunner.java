@@ -4,7 +4,7 @@ import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.benchmark.EnvironmentRunner;
 import com.spbsu.flamestream.core.graph.HashFunction;
 import com.spbsu.flamestream.example.FlameStreamExample;
-import com.spbsu.flamestream.example.wordcount.model.WordCounter;
+import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
 import com.spbsu.flamestream.runtime.TestEnvironment;
 import com.spbsu.flamestream.runtime.environment.Environment;
 import com.typesafe.config.Config;

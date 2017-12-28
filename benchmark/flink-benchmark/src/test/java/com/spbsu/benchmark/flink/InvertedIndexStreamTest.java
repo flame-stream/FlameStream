@@ -2,10 +2,10 @@ package com.spbsu.benchmark.flink;
 
 import com.spbsu.benchmark.commons.LatencyMeasurer;
 import com.spbsu.flamestream.example.ExampleChecker;
-import com.spbsu.flamestream.example.index.InvertedIndexCheckers;
-import com.spbsu.flamestream.example.index.model.WikipediaPage;
-import com.spbsu.flamestream.example.index.model.WordIndexAdd;
-import com.spbsu.flamestream.example.index.utils.IndexItemInLong;
+import com.spbsu.flamestream.example.bl.index.InvertedIndexCheckers;
+import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
+import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
+import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.slf4j.Logger;

@@ -2,12 +2,12 @@ package com.spbsu.benchmark.flink;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.spbsu.flamestream.example.index.model.WikipediaPage;
-import com.spbsu.flamestream.example.index.model.WordIndexAdd;
-import com.spbsu.flamestream.example.index.model.WordIndexRemove;
-import com.spbsu.flamestream.example.index.model.WordPagePositions;
-import com.spbsu.flamestream.example.index.ops.InvertedIndexState;
-import com.spbsu.flamestream.example.index.utils.IndexItemInLong;
+import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
+import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
+import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
+import com.spbsu.flamestream.example.bl.index.model.WordPagePositions;
+import com.spbsu.flamestream.example.bl.index.ops.InvertedIndexState;
+import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ValueState;
@@ -41,8 +41,8 @@ public class InvertedIndexStream implements FlinkStream<WikipediaPage, InvertedI
   private static class WikipediaPageToWordPositions implements FlatMapFunction<WikipediaPage, Tuple2<String, long[]>> {
     @Override
     public void flatMap(WikipediaPage value, Collector<Tuple2<String, long[]>> out) {
-      final com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions filter =
-              new com.spbsu.flamestream.example.index.ops.WikipediaPageToWordPositions();
+      final com.spbsu.flamestream.example.bl.index.ops.WikipediaPageToWordPositions filter =
+              new com.spbsu.flamestream.example.bl.index.ops.WikipediaPageToWordPositions();
       final Stream<WordPagePositions> result = filter.apply(value);
       //noinspection Convert2Lambda
       result.forEach(new Consumer<WordPagePositions>() {
