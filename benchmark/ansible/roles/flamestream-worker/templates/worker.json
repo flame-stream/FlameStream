@@ -1,0 +1,5 @@
+{
+  "id": "{{ inventory_hostname }}",
+  "localAddress": "{{ inventory_hostname }}:{{ flamestream_worker_port }}",
+  "zkString": "{{ groups['manager'][0] }}:{{ zookeeper_client_port }}"
+}

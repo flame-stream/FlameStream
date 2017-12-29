@@ -1,4 +1,6 @@
 base_dir: /opt
 
-zookeeper_version: 3.4.9
+zookeeper_version: 3.4.10
 zookeeper_client_port: 2181
+
+flamestream_worker_port: 5412

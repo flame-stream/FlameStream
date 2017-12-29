@@ -1,6 +1,8 @@
 package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.ActorSystem;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -10,6 +12,10 @@ import org.slf4j.LoggerFactory;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -29,13 +35,16 @@ public class WorkerApplication {
     this.zkString = zkString;
   }
 
-  public static void main(String... args) {
-    if (args.length != 3) {
-      throw new IllegalArgumentException("Usage: worker.jar <id> <host:port> <zkString>");
-    }
-    final String id = args[0];
-    final DumbInetSocketAddress socketAddress = new DumbInetSocketAddress(args[1]);
-    final String zkString = args[2];
+  public static void main(String... args) throws IOException {
+    final Path cofigPath = Paths.get(args[0]);
+    final ObjectMapper mapper = new ObjectMapper();
+    final WorkerConfig workerConfig = mapper.readValue(
+            Files.readAllBytes(cofigPath),
+            WorkerConfig.class
+    );
+    final String id = workerConfig.id;
+    final DumbInetSocketAddress socketAddress = workerConfig.localAddress;
+    final String zkString = workerConfig.zkString;
     new WorkerApplication(id, socketAddress, zkString).run();
   }
 
@@ -58,6 +67,20 @@ public class WorkerApplication {
       }
     } catch (InterruptedException | TimeoutException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private static class WorkerConfig {
+    private final String id;
+    private final DumbInetSocketAddress localAddress;
+    private final String zkString;
+
+    private WorkerConfig(@JsonProperty("id") String id,
+                         @JsonProperty("localAddress") String localAddress,
+                         @JsonProperty("zkString") String zkString) {
+      this.id = id;
+      this.localAddress = new DumbInetSocketAddress(localAddress);
+      this.zkString = zkString;
     }
   }
 }

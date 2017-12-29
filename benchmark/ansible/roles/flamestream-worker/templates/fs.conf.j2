@@ -1,6 +1,0 @@
-{
-  id: {{ hostvars[inventory_hostname].id }},
-  port: {{ worker_port }},
-  host: "{{ inventory_hostname }}",
-  zk_string: "{{ groups['manager'][0] }}:{{ client_port }}"
-}

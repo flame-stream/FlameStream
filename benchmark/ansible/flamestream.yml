@@ -10,20 +10,18 @@
 
 - name: Prepare cluster
   hosts: all
-  remote_user: root
   roles:
     - { role: common }
 
 - name: Setup zookeeper
   hosts: manager
-  remote_user: root
   roles:
     - { role: zookeeper  }
 
-#- hosts: workers
-#  become: yes
-#  roles:
-#    - { role: flamestream-worker }
+- name: Init workers
+  hosts: workers
+  roles:
+    - { role: flamestream-worker }
 #
 #- hosts: manager
 #  become: yes

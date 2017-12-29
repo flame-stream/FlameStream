@@ -1,0 +1,2 @@
+---
+flamestream_dir: "{{ base_dir }}/flamestream"

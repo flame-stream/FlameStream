@@ -1,10 +1,4 @@
 ---
-- name: Clean the zookeeper dir
-  file:
-    path: "{{ zookeeper_dir }}"
-    state: absent
-  tags: clean
-
 - name: Create zookeeper dir exists
   file:
     path: "{{ zookeeper_dir }}"
