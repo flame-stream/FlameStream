@@ -91,7 +91,7 @@ public class BenchStand implements AutoCloseable {
                             .get(ThreadLocalRandom.current().nextInt(connections.size()));
                     latencies.put(page.id(), new LatencyMeasurer());
                     connection.sendTCP(page);
-                    //LOG.info("Sending: {} at {}", page.id(), System.nanoTime());
+                    LOG.info("Sending: {} at {}", page.id(), System.nanoTime());
                     Thread.sleep(config.sleepBetweenDocs);
                   } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -213,7 +213,7 @@ public class BenchStand implements AutoCloseable {
   //to check that it works
   public static void main(String[] args) throws IOException, InterruptedException {
     final Config config = new Config(
-            10,
+            100,
             "wikipedia/national_football_teams_dump.xml",
             300,
             65813,
