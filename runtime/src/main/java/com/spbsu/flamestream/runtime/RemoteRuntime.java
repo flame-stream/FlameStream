@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.stream.Stream;
 
-public class RemoteRuntime implements FlameRuntime, AutoCloseable {
+public class RemoteRuntime implements FlameRuntime {
   private final Logger log = LoggerFactory.getLogger(RemoteRuntime.class);
   private final ZooKeeperFlameClient client;
 

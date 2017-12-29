@@ -29,7 +29,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class LocalRuntime implements FlameRuntime, AutoCloseable {
+public class LocalRuntime implements FlameRuntime {
   private final int parallelism;
   private final int maxElementsInGraph;
   private final ActorSystem system;
@@ -42,7 +42,11 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
   }
 
   public LocalRuntime(int parallelism, int maxElementsInGraph) {
-    this(ActorSystem.create("local-runtime", ConfigFactory.load("local")), parallelism, maxElementsInGraph);
+    this(
+            ActorSystem.create("local-runtime", ConfigFactory.load("local")),
+            parallelism,
+            maxElementsInGraph
+    );
   }
 
   private LocalRuntime(ActorSystem system, int parallelism, int maxElementsInGraph) {
@@ -72,11 +76,16 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
       ranges.put(id, range);
     }
 
-    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", new ComputationProps(ranges, maxElementsInGraph));
+    final ClusterConfig clusterConfig = new ClusterConfig(
+            paths,
+            "node-0",
+            new ComputationProps(ranges, maxElementsInGraph)
+    );
     final AttachRegistry registry = new InMemoryRegistry();
 
     final List<ActorRef> nodes = paths.keySet().stream()
-            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry).withDispatcher("resolver-dispatcher"), id))
+            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry)
+                    .withDispatcher("resolver-dispatcher"), id))
             .collect(Collectors.toList());
 
     return new Flame() {

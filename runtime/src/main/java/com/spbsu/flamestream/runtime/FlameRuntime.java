@@ -7,7 +7,7 @@ import com.spbsu.flamestream.runtime.edge.EdgeContext;
 
 import java.util.stream.Stream;
 
-public interface FlameRuntime {
+public interface FlameRuntime extends AutoCloseable {
   int DEFAULT_MAX_ELEMENTS_IN_GRAPH = 100;
 
   Flame run(Graph g);

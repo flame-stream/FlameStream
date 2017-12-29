@@ -10,10 +10,12 @@ import com.spbsu.flamestream.runtime.edge.EdgeContext;
 public class SocketFrontType implements FlameRuntime.FrontType<SocketFront, SocketFrontType.Handle> {
   private final String host;
   private final int port;
+  private final Class[] inputClasses;
 
-  public SocketFrontType(String host, int port) {
+  public SocketFrontType(String host, int port, Class... inputClasses) {
     this.host = host;
     this.port = port;
+    this.inputClasses = inputClasses;
   }
 
   @Override
@@ -26,7 +28,7 @@ public class SocketFrontType implements FlameRuntime.FrontType<SocketFront, Sock
 
       @Override
       public Object[] params() {
-        return new Object[] {host, port};
+        return new Object[] {host, port, inputClasses};
       }
     };
   }
@@ -37,6 +39,6 @@ public class SocketFrontType implements FlameRuntime.FrontType<SocketFront, Sock
   }
 
   public static class Handle {
-    
+
   }
 }

@@ -6,13 +6,18 @@ import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.spbsu.flamestream.example.bl.index.InvertedIndexGraph;
 import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.bl.index.utils.WikipeadiaInput;
+import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
 import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
 import org.objenesis.strategy.StdInstantiatorStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,37 +32,35 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 28.12.2017
  */
-public class BenchStand {
+public class BenchStand implements AutoCloseable {
+  private final static Logger LOG = LoggerFactory.getLogger(BenchStand.class);
+  private final Map<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
 
-  public static void main(String[] args) throws IOException, InterruptedException {
-    final Config config = new Config(
-            10,
-            "wikipedia/national_football_teams_dump.xml",
-            300,
-            65813,
-            4567,
-            5678
-    );
-    final BenchStand benchStand = new BenchStand();
-    benchStand.run(config, new LocalGraphDeployer(1, 1));
+  private final Config config;
+  private final GraphDeployer graphDeployer;
+  private final AwaitConsumer<Object> awaitConsumer;
+
+  private final Server producer;
+  private final Server consumer;
+
+  public BenchStand(Config config, GraphDeployer graphDeployer) {
+    this.config = config;
+    this.graphDeployer = graphDeployer;
+    awaitConsumer = new AwaitConsumer<>(config.expectedOutput);
+    try {
+      producer = producer();
+      consumer = consumer();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  public void run(Config config, GraphDeployer graphDeployer) throws IOException, InterruptedException {
-    final Map<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
-    final Server producer = producer(config, latencies);
-
-    final AwaitConsumer<Object> awaitConsumer = new AwaitConsumer<>(config.expectedOutput);
-    final Server consumer = consumer(config, latencies, awaitConsumer);
-
+  public void run() throws IOException, InterruptedException {
     graphDeployer.deploy();
     awaitConsumer.await(5, TimeUnit.MINUTES);
-    graphDeployer.stop();
-
-    producer.stop();
-    consumer.stop();
   }
 
-  private Server producer(Config config, Map<Integer, LatencyMeasurer> latencies) throws IOException {
+  private Server producer() throws IOException {
     final Stream<WikipediaPage> input = WikipeadiaInput.dumpStreamFromResources(config.wikiDumpPath)
             .limit(config.inputLimit);
     final Server producer = new Server(1_000_000, 1000);
@@ -71,7 +74,7 @@ public class BenchStand {
         try {
           connections.wait();
         } catch (InterruptedException e) {
-          e.printStackTrace();
+          throw new RuntimeException(e);
         }
       }
       input.forEach(page -> {
@@ -81,10 +84,10 @@ public class BenchStand {
                             .get(ThreadLocalRandom.current().nextInt(connections.size()));
                     latencies.put(page.id(), new LatencyMeasurer());
                     connection.sendTCP(page);
-                    System.out.println("Sending: " + page.id() + " at " + System.nanoTime());
+                    LOG.info("Sending: {} at {}", page.id(), System.nanoTime());
                     Thread.sleep(config.sleepBetweenDocs);
                   } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                   }
                 }
               }
@@ -106,8 +109,7 @@ public class BenchStand {
     return producer;
   }
 
-  private Server consumer(Config config, Map<Integer, LatencyMeasurer> latencies, AwaitConsumer<Object> awaitConsumer)
-          throws IOException {
+  private Server consumer() throws IOException {
     final Server consumer = new Server(2000, 1_000_000);
     consumer.getKryo().register(WordIndexAdd.class);
     consumer.getKryo().register(WordIndexRemove.class);
@@ -119,7 +121,7 @@ public class BenchStand {
     consumer.addListener(new Listener() {
       @Override
       public void disconnected(Connection connection) {
-        System.out.println("Consumer has been disconnected " + connection);
+        LOG.info("Consumer has been disconnected {}", connection);
         new RuntimeException().printStackTrace();
       }
     });
@@ -141,6 +143,13 @@ public class BenchStand {
     return consumer;
   }
 
+  @Override
+  public void close() {
+    graphDeployer.close();
+    producer.stop();
+    consumer.stop();
+  }
+
   public static class Config {
     @JsonProperty
     private final int sleepBetweenDocs;
@@ -151,6 +160,8 @@ public class BenchStand {
     @JsonProperty
     private final int expectedOutput;
     @JsonProperty
+    private final String benchHost;
+    @JsonProperty
     private final int frontPort;
     @JsonProperty
     private final int rearPort;
@@ -160,14 +171,38 @@ public class BenchStand {
                   @JsonProperty("wikiDumpPath") String wikiDumpPath,
                   @JsonProperty("inputLimit") int inputLimit,
                   @JsonProperty("expectedOutput") int expectedOutput,
+                  @JsonProperty("benchHost") String benchHost,
                   @JsonProperty("frontPort") int frontPort,
                   @JsonProperty("rearPort") int rearPort) {
       this.sleepBetweenDocs = sleepBetweenDocs;
       this.wikiDumpPath = wikiDumpPath;
       this.inputLimit = inputLimit;
       this.expectedOutput = expectedOutput;
+      this.benchHost = benchHost;
       this.frontPort = frontPort;
       this.rearPort = rearPort;
+    }
+  }
+
+  //to check that it works
+  public static void main(String[] args) throws IOException, InterruptedException {
+    final Config config = new Config(
+            10,
+            "wikipedia/national_football_teams_dump.xml",
+            300,
+            65813,
+            "localhost",
+            4567,
+            5678
+    );
+
+    final GraphDeployer graphDeployer = new FlameGraphDeployer(
+            new LocalRuntime(1),
+            new InvertedIndexGraph().get(),
+            new SocketFrontType(config.benchHost, config.frontPort, WikipediaPage.class)
+    );
+    try (final BenchStand benchStand = new BenchStand(config, graphDeployer)) {
+      benchStand.run();
     }
   }
 }

@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
+public class LocalClusterRuntime implements FlameRuntime {
   private final Logger log = LoggerFactory.getLogger(LocalClusterRuntime.class);
   private final ZooKeeperApplication zooKeeperApplication;
   private final RemoteRuntime remoteRuntime;
