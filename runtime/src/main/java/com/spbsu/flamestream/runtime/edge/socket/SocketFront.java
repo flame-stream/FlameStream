@@ -67,8 +67,6 @@ public class SocketFront extends Front.Stub {
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
-      LOG.info("{}: connected to {}:{}", edgeId, host, port);
-      client.run();
     }
   }
 

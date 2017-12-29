@@ -91,7 +91,7 @@ public class BenchStand implements AutoCloseable {
                             .get(ThreadLocalRandom.current().nextInt(connections.size()));
                     latencies.put(page.id(), new LatencyMeasurer());
                     connection.sendTCP(page);
-                    LOG.info("Sending: {} at {}", page.id(), System.nanoTime());
+                    //LOG.info("Sending: {} at {}", page.id(), System.nanoTime());
                     Thread.sleep(config.sleepBetweenDocs);
                   } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -136,7 +136,6 @@ public class BenchStand implements AutoCloseable {
       @Override
       public void disconnected(Connection connection) {
         LOG.info("Consumer has been disconnected {}", connection);
-        //new RuntimeException().printStackTrace();
       }
     });
 
