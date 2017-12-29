@@ -7,7 +7,7 @@ import com.spbsu.flamestream.runtime.edge.EdgeContext;
  * User: Artem
  * Date: 28.12.2017
  */
-public class SocketFrontType implements FlameRuntime.FrontType<SocketFront, SocketFrontType.Handle> {
+public class SocketFrontType implements FlameRuntime.FrontType<SocketFront, Void> {
   private final String host;
   private final int port;
   private final Class[] inputClasses;
@@ -34,11 +34,7 @@ public class SocketFrontType implements FlameRuntime.FrontType<SocketFront, Sock
   }
 
   @Override
-  public Handle handle(EdgeContext context) {
-    return new Handle();
-  }
-
-  public static class Handle {
-
+  public Void handle(EdgeContext context) {
+    return null;
   }
 }

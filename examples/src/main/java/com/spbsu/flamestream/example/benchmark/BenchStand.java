@@ -6,6 +6,11 @@ import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.example.bl.index.InvertedIndexGraph;
 import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
@@ -14,6 +19,7 @@ import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.bl.index.utils.WikipeadiaInput;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
+import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
@@ -22,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -111,6 +118,13 @@ public class BenchStand implements AutoCloseable {
 
   private Server consumer() throws IOException {
     final Server consumer = new Server(2000, 1_000_000);
+    { //register inners of data item
+      consumer.getKryo().register(PayloadDataItem.class);
+      consumer.getKryo().register(Meta.class);
+      consumer.getKryo().register(GlobalTime.class);
+      consumer.getKryo().register(EdgeId.class);
+      consumer.getKryo().register(int[].class);
+    }
     consumer.getKryo().register(WordIndexAdd.class);
     consumer.getKryo().register(WordIndexRemove.class);
     consumer.getKryo().register(long[].class);
@@ -122,19 +136,20 @@ public class BenchStand implements AutoCloseable {
       @Override
       public void disconnected(Connection connection) {
         LOG.info("Consumer has been disconnected {}", connection);
-        new RuntimeException().printStackTrace();
+        //new RuntimeException().printStackTrace();
       }
     });
 
     consumer.addListener(new Listener() {
       @Override
       public void received(Connection connection, Object o) {
-        if (o instanceof WordIndexAdd) {
-          final WordIndexAdd wordIndexAdd = (WordIndexAdd) o;
+        if (o instanceof DataItem) {
+          final DataItem dataItem = (DataItem) o;
+          final WordIndexAdd wordIndexAdd = dataItem.payload(WordIndexAdd.class);
           final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
           latencies.get(docId).finish();
+          awaitConsumer.accept(o);
         }
-        awaitConsumer.accept(o);
       }
     });
 
@@ -148,6 +163,18 @@ public class BenchStand implements AutoCloseable {
     graphDeployer.close();
     producer.stop();
     consumer.stop();
+    { //print latencies
+      final LongSummaryStatistics result = new LongSummaryStatistics();
+      final StringBuilder stringBuilder = new StringBuilder();
+      latencies.values().stream().skip(50).forEach(latencyMeasurer -> {
+        result.accept(latencyMeasurer.statistics().getMax());
+        stringBuilder.append(latencyMeasurer.statistics().getMax()).append(", ");
+      });
+      stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length()); //remove last ", "
+
+      LOG.info("Latencies dump: {}", stringBuilder);
+      LOG.info("Result: {}", result);
+    }
   }
 
   public static class Config {
@@ -199,7 +226,14 @@ public class BenchStand implements AutoCloseable {
     final GraphDeployer graphDeployer = new FlameGraphDeployer(
             new LocalRuntime(1),
             new InvertedIndexGraph().get(),
-            new SocketFrontType(config.benchHost, config.frontPort, WikipediaPage.class)
+            new SocketFrontType(config.benchHost, config.frontPort, WikipediaPage.class),
+            new SocketRearType(
+                    config.benchHost,
+                    config.rearPort,
+                    WordIndexAdd.class,
+                    WordIndexRemove.class,
+                    long[].class
+            )
     );
     try (final BenchStand benchStand = new BenchStand(config, graphDeployer)) {
       benchStand.run();

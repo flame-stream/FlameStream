@@ -8,6 +8,7 @@ import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
+import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
@@ -41,13 +42,15 @@ public class SocketFront extends Front.Stub {
     client.addListener(new Listener() {
       public void received(Connection connection, Object object) {
         consumer.accept(new PayloadDataItem(new Meta(currentTime()), object));
+        consumer.accept(new Heartbeat(currentTime()));
       }
     });
     client.addListener(new Listener() {
       @Override
       public void disconnected(Connection connection) {
-        LOG.info("{}: DISCONNECTED", edgeId);
+        LOG.info("{} has been disconnected from {}", edgeId, connection);
         client.stop();
+        consumer.accept(new Heartbeat(new GlobalTime(Long.MAX_VALUE, edgeId)));
       }
     });
   }
@@ -64,7 +67,7 @@ public class SocketFront extends Front.Stub {
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
-      LOG.info("{}: CONNECTED", edgeId);
+      LOG.info("{}: connected to {}:{}", edgeId, host, port);
       client.run();
     }
   }

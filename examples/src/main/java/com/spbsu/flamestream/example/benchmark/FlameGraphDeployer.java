@@ -11,17 +11,21 @@ public class FlameGraphDeployer implements GraphDeployer {
   private final FlameRuntime runtime;
   private final Graph graph;
   private final FlameRuntime.FrontType<?, ?> frontType;
+  private final FlameRuntime.RearType<?, ?> rearType;
 
   public FlameGraphDeployer(FlameRuntime runtime,
                             Graph graph,
-                            FlameRuntime.FrontType<?, ?> frontType) {
+                            FlameRuntime.FrontType<?, ?> frontType,
+                            FlameRuntime.RearType<?, ?> rearType) {
     this.runtime = runtime;
     this.graph = graph;
     this.frontType = frontType;
+    this.rearType = rearType;
   }
 
   public void deploy() {
     final FlameRuntime.Flame flame = runtime.run(graph);
+    flame.attachRear("FlameSocketGraphDeployerRear", rearType);
     flame.attachFront("FlameSocketGraphDeployerFront", frontType);
   }
 

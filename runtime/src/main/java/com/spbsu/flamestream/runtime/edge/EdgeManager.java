@@ -39,7 +39,7 @@ public class EdgeManager extends LoggingActor {
             })
             .match(AttachRear.class, attachRear -> {
               final ActorRef rearRef = context().actorOf(RearActor.props(
-                      new EdgeId(attachRear.id(), nodeId),
+                      new SystemEdgeContext(nodePath, nodeId, attachRear.id()),
                       attachRear.instance()
               ), attachRear.id());
               barrier.tell(new com.spbsu.flamestream.runtime.barrier.api.AttachRear(rearRef), self());
