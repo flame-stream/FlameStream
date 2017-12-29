@@ -4,6 +4,7 @@ import akka.actor.ActorPath;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class ClusterConfig {
@@ -33,5 +34,14 @@ public class ClusterConfig {
   @JsonProperty
   public ComputationProps props() {
     return props;
+  }
+
+
+  public ClusterConfig withChildPath(String childPath) {
+    final Map<String, ActorPath> newPaths = new HashMap<>();
+    paths.forEach((s, path) -> {
+      newPaths.put(s, path.child(childPath));
+    });
+    return new ClusterConfig(newPaths, ackerLocation, props);
   }
 }

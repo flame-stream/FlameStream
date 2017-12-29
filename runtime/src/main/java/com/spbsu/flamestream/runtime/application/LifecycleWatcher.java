@@ -12,8 +12,11 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
 
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.zookeeper.Watcher.Event;
 
@@ -22,9 +25,9 @@ public class LifecycleWatcher extends LoggingActor {
   private final String zkConnectString;
   private final String id;
 
-  private ZooKeeperFlameClient client = null;
+  private ZooKeeperGraphClient client = null;
 
-  private ActorRef flameNode = null;
+  private final Map<String, ActorRef> nodes = new HashMap<>();
 
   private LifecycleWatcher(String id, String zkConnectString) {
     this.zkConnectString = zkConnectString;
@@ -38,7 +41,7 @@ public class LifecycleWatcher extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    client = new ZooKeeperFlameClient(new ZooKeeper(
+    client = new ZooKeeperGraphClient(new ZooKeeper(
             zkConnectString,
             SESSION_TIMEOUT,
             event -> self().tell(event, self())
@@ -58,31 +61,42 @@ public class LifecycleWatcher extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(Graph.class, this::onGraph)
+            .match(List.class, graphs -> {
+              final List<ZooKeeperGraphClient.ZooKeeperFlameClient> clients =
+                      (List<ZooKeeperGraphClient.ZooKeeperFlameClient>) graphs;
+
+              final Set<String> activeNames = clients.stream().map(s -> s.name()).collect(Collectors.toSet());
+              final Set<String> toBeKilled = nodes.keySet()
+                      .stream()
+                      .filter(n -> !activeNames.contains(n))
+                      .collect(Collectors.toSet());
+              toBeKilled.forEach(name -> {
+                context().stop(nodes.get(name));
+                nodes.remove(name);
+              });
+
+              clients.stream().filter(n -> !nodes.keySet().contains(n.name())).forEach(this::initGraph);
+            })
             .match(WatchedEvent.class, this::onWatchedEvent)
-            .match(AttachFront.class, f -> flameNode.tell(f, self()))
-            .match(AttachRear.class, r -> flameNode.tell(r, self()))
             .build();
   }
 
-  private void onGraph(Graph graph) {
-    final ClusterConfig config = client.config();
-    if (flameNode == null) {
-      log().info("Creating node with graph: '{}', config: '{}'", graph, config);
-      flameNode = context().actorOf(FlameNode.props(id, graph, config, client), "node");
+  private void initGraph(ZooKeeperGraphClient.ZooKeeperFlameClient flameClient) {
+    final ClusterConfig config = client.config().withChildPath(flameClient.name());
+    final Graph g = flameClient.graph();
+    log().info("Creating node with watchGraphs: '{}', config: '{}'", g, config);
+    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient), flameClient.name());
+    nodes.put(flameClient.name(), node);
 
-      final Set<AttachFront<?>> initialFronts = client.fronts(newFronts ->
-              newFronts.forEach(front -> self().tell(front, ActorRef.noSender()))
-      );
-      initialFronts.forEach(f -> self().tell(f, ActorRef.noSender()));
+    final Set<AttachFront<?>> initialFronts = flameClient.fronts(newFronts ->
+            newFronts.forEach(front -> node.tell(front, self()))
+    );
+    initialFronts.forEach(f -> node.tell(f, self()));
 
-      final Set<AttachRear<?>> initialRears = client.rears(newRears ->
-              newRears.forEach(rear -> self().tell(rear, ActorRef.noSender()))
-      );
-      initialRears.forEach(r -> self().tell(r, ActorRef.noSender()));
-    } else {
-      throw new IllegalStateException("Multiple graphs deployment detected");
-    }
+    final Set<AttachRear<?>> initialRears = flameClient.rears(newRears ->
+            newRears.forEach(rear -> node.tell(rear, self()))
+    );
+    initialRears.forEach(r -> node.tell(r, self()));
   }
 
   private void onWatchedEvent(WatchedEvent event) {
@@ -92,8 +106,13 @@ public class LifecycleWatcher extends LoggingActor {
       switch (state) {
         case SyncConnected:
           log().info("Connected to ZK");
-          final Optional<Graph> graph = client.graph(g -> self().tell(g, ActorRef.noSender()));
-          graph.ifPresent(g -> self().tell(g, ActorRef.noSender()));
+          final List<ZooKeeperGraphClient.ZooKeeperFlameClient> graphs = client.watchGraphs(g -> self().tell(
+                  g,
+                  ActorRef.noSender()
+          ));
+          if (!graphs.isEmpty()) {
+            self().tell(graphs, ActorRef.noSender());
+          }
           break;
         case Expired:
           log().info("Session expired");

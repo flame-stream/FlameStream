@@ -90,7 +90,7 @@ public class LocalRuntime implements FlameRuntime {
 
     return new Flame() {
       @Override
-      public void extinguish() {
+      public void close() {
         nodes.forEach(n -> n.tell(PoisonPill.getInstance(), ActorRef.noSender()));
       }
 

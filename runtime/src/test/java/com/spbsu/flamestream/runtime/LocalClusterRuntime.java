@@ -5,7 +5,7 @@ import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.application.WorkerApplication;
-import com.spbsu.flamestream.runtime.application.ZooKeeperFlameClient;
+import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashRange;
@@ -35,14 +35,14 @@ public class LocalClusterRuntime implements FlameRuntime {
     this(parallelism, DEFAULT_MAX_ELEMENTS_IN_GRAPH);
   }
 
-  public LocalClusterRuntime(int parallelism, int maxElementsInGraph) throws IOException, InterruptedException {
+  public LocalClusterRuntime(int parallelism, int maxElementsInGraph) throws IOException {
     final List<Integer> ports = new ArrayList<>(freePorts(parallelism + 1));
 
     this.zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
     zooKeeperApplication.run();
 
     final String zkString = "localhost:" + ports.get(0);
-    final ClusterManagementClient configClient = new ZooKeeperFlameClient(new ZooKeeper(
+    final ClusterManagementClient configClient = new ZooKeeperGraphClient(new ZooKeeper(
             zkString,
             1000,
             (w) -> {
@@ -59,7 +59,7 @@ public class LocalClusterRuntime implements FlameRuntime {
               "worker",
               address.host(),
               address.port()
-      ), "/").child("user").child("watcher").child("node");
+      ), "/").child("user").child("watcher");
       workersAddresses.put(name, path);
       workers.add(worker);
       worker.run();
