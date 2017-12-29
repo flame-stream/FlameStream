@@ -12,10 +12,10 @@ import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
 
+import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -25,7 +25,8 @@ import java.util.stream.Stream;
  */
 public class InvertedIndexBenchmark {
   public static void main(String[] args) throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(1, 1)) {
+    final int parallelism = 4;
+    try (final LocalRuntime runtime = new LocalRuntime(parallelism, 1)) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       final ConcurrentSkipListMap<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
       final AwaitConsumer<WordBase> awaitConsumer = new AwaitConsumer<>(65813);
@@ -39,13 +40,19 @@ public class InvertedIndexBenchmark {
                 }
               }));
 
-      final Consumer<WikipediaPage> sink = flame
+      final List<AkkaFrontType.Handle<WikipediaPage>> handles = flame
               .attachFront("Front", new AkkaFrontType<WikipediaPage>(runtime.system(), true))
-              .collect(Collectors.toList()).get(0);
+              .collect(Collectors.toList());
+      final AkkaFrontType.Handle<WikipediaPage> sink = handles.get(0);
+      for (int i = 1; i < parallelism; i++) {
+        handles.get(i).eos();
+      }
+
       final Stream<WikipediaPage> source = WikipeadiaInput.dumpStreamFromResources(
               "wikipedia/national_football_teams_dump.xml")
               .peek(wikipediaPage -> latencies.put(wikipediaPage.id(), new LatencyMeasurer()));
       source.forEach(sink);
+      sink.eos();
       awaitConsumer.await(5, TimeUnit.MINUTES);
 
       final LongSummaryStatistics result = new LongSummaryStatistics();
