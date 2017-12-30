@@ -10,9 +10,9 @@ import com.spbsu.flamestream.runtime.edge.EdgeContext;
 public class SocketFrontType implements FlameRuntime.FrontType<SocketFront, Void> {
   private final String host;
   private final int port;
-  private final Class[] inputClasses;
+  private final Class<?>[] inputClasses;
 
-  public SocketFrontType(String host, int port, Class... inputClasses) {
+  public SocketFrontType(String host, int port, Class<?>... inputClasses) {
     this.host = host;
     this.port = port;
     this.inputClasses = inputClasses;
