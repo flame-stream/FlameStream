@@ -30,7 +30,6 @@ import org.apache.commons.lang.math.IntRange;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -39,7 +38,7 @@ public class GraphManager extends LoggingActor {
   private final Graph graph;
   private final ActorRef acker;
   private final ComputationProps computationProps;
-  private final List<ActorRef> barriers;
+  private final Map<String, ActorRef> barriers;
 
   private final IntRangeMap<ActorRef> router = new ListIntRangeMap<>();
   private final Map<Destination, Joba> materialization = new HashMap<>();
@@ -49,7 +48,7 @@ public class GraphManager extends LoggingActor {
                        Graph graph,
                        ActorRef acker,
                        ComputationProps computationProps,
-                       List<ActorRef> barriers) {
+                       Map<String, ActorRef> barriers) {
     this.nodeId = nodeId;
     this.computationProps = computationProps;
     this.graph = graph;
@@ -61,7 +60,7 @@ public class GraphManager extends LoggingActor {
                             Graph graph,
                             ActorRef acker,
                             ComputationProps layout,
-                            List<ActorRef> barriers) {
+                            Map<String, ActorRef> barriers) {
     return Props.create(GraphManager.class, nodeId, graph, acker, layout, barriers);
   }
 

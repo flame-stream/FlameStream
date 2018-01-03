@@ -16,11 +16,9 @@ import com.spbsu.flamestream.runtime.negitioator.Negotiator;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class FlameNode extends LoggingActor {
   private final ActorRef edgeManager;
@@ -70,13 +68,12 @@ public class FlameNode extends LoggingActor {
     return managers;
   }
 
-  private List<ActorRef> resolvedBarriers() {
-    final List<ActorRef> barriers = new ArrayList<>();
-    config.paths().values().forEach(path -> {
-      final ActorRef b = AwaitResolver.syncResolve(path.child("barrier"), context());
-      barriers.add(b);
-    });
-    Collections.sort(barriers);
-    return barriers;
+  private Map<String, ActorRef> resolvedBarriers() {
+    return config.paths().entrySet()
+            .stream()
+            .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    o -> AwaitResolver.syncResolve(o.getValue().child("barrier"), context())
+            ));
   }
 }
