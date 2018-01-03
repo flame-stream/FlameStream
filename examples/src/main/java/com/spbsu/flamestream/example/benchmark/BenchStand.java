@@ -41,6 +41,7 @@ public class BenchStand implements AutoCloseable {
   private final Map<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
 
   private final Config config;
+  private final BenchValidator<WordIndexAdd> validator;
   private final GraphDeployer graphDeployer;
   private final AwaitCountConsumer awaitConsumer;
 
@@ -50,11 +51,14 @@ public class BenchStand implements AutoCloseable {
   public BenchStand(Config config, GraphDeployer graphDeployer) {
     this.config = config;
     this.graphDeployer = graphDeployer;
-    awaitConsumer = new AwaitCountConsumer(config.expectedOutput);
     try {
+      //noinspection unchecked
+      validator = ((Class<? extends BenchValidator>) Class.forName(config.validatorClass)).newInstance();
+      awaitConsumer = new AwaitCountConsumer(validator.expectedOutputSize());
+
       producer = producer();
       consumer = consumer();
-    } catch (IOException e) {
+    } catch (IOException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }
   }
@@ -66,7 +70,7 @@ public class BenchStand implements AutoCloseable {
 
   private Server producer() throws IOException {
     final Stream<WikipediaPage> input = WikipeadiaInput.dumpStreamFromResources(config.wikiDumpPath)
-            .limit(config.inputLimit);
+            .limit(validator.inputLimit());
     final Server producer = new Server(1_000_000, 1000);
     producer.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy())
@@ -146,6 +150,7 @@ public class BenchStand implements AutoCloseable {
           final WordIndexAdd wordIndexAdd = dataItem.payload(WordIndexAdd.class);
           final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
           latencies.get(docId).finish();
+          validator.accept(wordIndexAdd);
           awaitConsumer.accept(o);
         }
       }
@@ -158,13 +163,14 @@ public class BenchStand implements AutoCloseable {
 
   @Override
   public void close() {
+    validator.stop();
     graphDeployer.close();
     producer.stop();
     consumer.stop();
     { //print latencies
       final LongSummaryStatistics result = new LongSummaryStatistics();
       final StringBuilder stringBuilder = new StringBuilder();
-      latencies.values().stream().skip(50).forEach(latencyMeasurer -> {
+      latencies.values().forEach(latencyMeasurer -> {
         result.accept(latencyMeasurer.statistics().getMax());
         stringBuilder.append(latencyMeasurer.statistics().getMax()).append(", ");
       });
@@ -181,9 +187,7 @@ public class BenchStand implements AutoCloseable {
     @JsonProperty
     private final String wikiDumpPath;
     @JsonProperty
-    private final int inputLimit;
-    @JsonProperty
-    private final int expectedOutput;
+    private final String validatorClass;
     @JsonProperty
     private final String benchHost;
     @JsonProperty
@@ -194,15 +198,13 @@ public class BenchStand implements AutoCloseable {
     @JsonCreator
     public Config(@JsonProperty("sleepBetweenDocs") int sleepBetweenDocs,
                   @JsonProperty("wikiDumpPath") String wikiDumpPath,
-                  @JsonProperty("inputLimit") int inputLimit,
-                  @JsonProperty("expectedOutput") int expectedOutput,
+                  @JsonProperty("validatorClass") String validatorClass,
                   @JsonProperty("benchHost") String benchHost,
                   @JsonProperty("frontPort") int frontPort,
                   @JsonProperty("rearPort") int rearPort) {
       this.sleepBetweenDocs = sleepBetweenDocs;
       this.wikiDumpPath = wikiDumpPath;
-      this.inputLimit = inputLimit;
-      this.expectedOutput = expectedOutput;
+      this.validatorClass = validatorClass;
       this.benchHost = benchHost;
       this.frontPort = frontPort;
       this.rearPort = rearPort;
@@ -214,8 +216,7 @@ public class BenchStand implements AutoCloseable {
     final Config config = new Config(
             100,
             "wikipedia/national_football_teams_dump.xml",
-            300,
-            65813,
+            "com.spbsu.flamestream.example.benchmark.validators.FootballTeamsValidator",
             "127.0.0.1",
             4567,
             5678
