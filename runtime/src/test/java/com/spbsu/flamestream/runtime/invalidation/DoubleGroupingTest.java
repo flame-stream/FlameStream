@@ -15,7 +15,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -127,7 +127,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
                 ).stream().map(List::hashCode).collect(Collectors.toList())
         ).stream().map(List::hashCode).collect(Collectors.toSet());
 
-        final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(expected.size());
+        final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
         flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
                 .forEach(r -> r.addListener(consumer));
         source.forEach(sink);

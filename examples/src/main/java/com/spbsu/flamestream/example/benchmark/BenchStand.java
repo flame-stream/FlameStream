@@ -20,7 +20,7 @@ import com.spbsu.flamestream.example.bl.index.utils.WikipeadiaInput;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
 import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
-import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ public class BenchStand implements AutoCloseable {
 
   private final Config config;
   private final GraphDeployer graphDeployer;
-  private final AwaitConsumer<Object> awaitConsumer;
+  private final AwaitCountConsumer awaitConsumer;
 
   private final Server producer;
   private final Server consumer;
@@ -53,7 +53,7 @@ public class BenchStand implements AutoCloseable {
   public BenchStand(Config config, GraphDeployer graphDeployer) {
     this.config = config;
     this.graphDeployer = graphDeployer;
-    awaitConsumer = new AwaitConsumer<>(config.expectedOutput);
+    awaitConsumer = new AwaitCountConsumer(config.expectedOutput);
     try {
       producer = producer();
       consumer = consumer();

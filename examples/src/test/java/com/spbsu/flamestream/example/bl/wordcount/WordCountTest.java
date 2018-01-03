@@ -6,7 +6,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -49,7 +49,7 @@ public class WordCountTest extends FlameAkkaSuite {
                 .flatMap(Arrays::stream)
                 .collect(toMap(Function.identity(), o -> 1, Integer::sum));
 
-        final AwaitConsumer<WordCounter> awaitConsumer = new AwaitConsumer<>(
+        final AwaitResultConsumer<WordCounter> awaitConsumer = new AwaitResultConsumer<>(
                 lineSize * streamSize
         );
         flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordCounter.class))

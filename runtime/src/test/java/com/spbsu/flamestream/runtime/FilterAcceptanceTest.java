@@ -6,7 +6,7 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -57,7 +57,7 @@ public final class FilterAcceptanceTest extends FlameAkkaSuite {
                 .map(integer -> integer * -1 * -2 * -3 * -4)
                 .collect(Collectors.toSet());
 
-        final AwaitConsumer<Integer> consumer = new AwaitConsumer<>(streamSize);
+        final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(streamSize);
         flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
                 .forEach(f -> f.addListener(consumer));
         applyDataToAllHandlesAsync(source, handles);

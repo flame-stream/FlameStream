@@ -9,7 +9,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -38,7 +38,7 @@ public class InvertedIndexTest extends FlameAkkaSuite {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       {
         final String invocationConfig = validator.getClass().getSimpleName() + "-bp-" + backPressure;
-        final AwaitConsumer<WordBase> awaitConsumer = new AwaitConsumer<>(validator.expectedOutputSize());
+        final AwaitResultConsumer<WordBase> awaitConsumer = new AwaitResultConsumer<>(validator.expectedOutputSize());
         flame.attachRear("Rear-" + invocationConfig, new AkkaRearType<>(runtime.system(), WordBase.class))
                 .forEach(r -> r.addListener(awaitConsumer));
 

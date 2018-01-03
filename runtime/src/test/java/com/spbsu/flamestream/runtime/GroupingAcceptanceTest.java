@@ -9,7 +9,7 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.testng.Assert;
@@ -58,7 +58,7 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
                 .attachFront("groupingAcceptanceFront", new AkkaFrontType<Long>(runtime.system(), false))
                 .collect(Collectors.toList());
 
-        final AwaitConsumer<List<Long>> consumer = new AwaitConsumer<>(source.stream().mapToInt(List::size).sum());
+        final AwaitResultConsumer<List<Long>> consumer = new AwaitResultConsumer<>(source.stream().mapToInt(List::size).sum());
         flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
                 .forEach(r -> r.addListener(consumer::accept));
         IntStream.range(0, parallelism).forEach(i -> applyDataToHandleAsync(source.get(i).stream(), handles.get(i)));

@@ -6,11 +6,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class AwaitConsumer<T> implements Consumer<T> {
+public class AwaitResultConsumer<T> implements Consumer<T> {
   private final List<T> result = new ArrayList<>();
   private final int expectedSize;
 
-  public AwaitConsumer(int expectedSize) {
+  public AwaitResultConsumer(int expectedSize) {
     this.expectedSize = expectedSize;
   }
 

@@ -10,7 +10,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 
 import java.util.List;
 import java.util.LongSummaryStatistics;
@@ -29,7 +29,7 @@ public class InvertedIndexBenchmark {
     try (final LocalRuntime runtime = new LocalRuntime(parallelism, 1)) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       final ConcurrentSkipListMap<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
-      final AwaitConsumer<WordBase> awaitConsumer = new AwaitConsumer<>(65813);
+      final AwaitCountConsumer awaitConsumer = new AwaitCountConsumer(65813);
       flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordBase.class))
               .forEach(r -> r.addListener(wordBase -> {
                 awaitConsumer.accept(wordBase);

@@ -15,7 +15,7 @@ import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.utils.AwaitConsumer;
+import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import com.typesafe.config.ConfigFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -87,7 +87,7 @@ public final class SumTest extends FlameAkkaSuite {
                 .mapToObj(LongNumb::new)
                 .collect(Collectors.toList())).limit(parallelism).collect(Collectors.toList());
 
-        final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.stream().mapToInt(List::size).sum());
+        final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.stream().mapToInt(List::size).sum());
         flame.attachRear("sumRear", new AkkaRearType<>(runtime.system(), Sum.class))
                 .forEach(r -> r.addListener(consumer));
         IntStream.range(0, parallelism).forEach(i -> applyDataToHandleAsync(source.get(i).stream(), handles.get(i)));
@@ -128,7 +128,7 @@ public final class SumTest extends FlameAkkaSuite {
         }
         final AkkaFrontType.Handle<LongNumb> sink = handles.get(0);
 
-        final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.size());
+        final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.size());
         flame.attachRear("totalOrderRear", new AkkaRearType<>(runtime.system(), Sum.class))
                 .forEach(r -> r.addListener(consumer));
         source.forEach(sink);
@@ -159,7 +159,7 @@ public final class SumTest extends FlameAkkaSuite {
           }
           final AkkaFrontType.Handle<LongNumb> sink = handles.get(0);
 
-          final AwaitConsumer<Sum> consumer = new AwaitConsumer<>(source.size());
+          final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.size());
           flame.attachRear("totalOrderRear", new AkkaRearType<>(system, Sum.class))
                   .forEach(r -> r.addListener(consumer));
 
