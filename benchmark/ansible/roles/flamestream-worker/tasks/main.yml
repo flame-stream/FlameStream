@@ -1,29 +1,5 @@
 ---
-- name: Create the flamestream directory
-  file:
-    path: "{{ flamestream_dir }}"
-    state: directory
-  tags: deliver
-
-- name: Copy the worker application
-  copy:
-    src: flamestream-runtime-1.0-SNAPSHOT.jar
-    dest: "{{ flamestream_dir }}"
-  tags: deliver
-
-- name: Copy the dependencies
-  copy:
-    src: lib
-    dest: "{{ flamestream_dir }}"
-  tags: deliver
-
-- name: Copy the entrypoint
-  copy:
-    src: entrypoint.sh
-    dest: "{{ flamestream_dir }}"
-  tags: deliver
-
-- name: Copy the config
+- name: Copy the worker config
   template:
     src: worker.json
     dest: "{{ flamestream_dir }}"
@@ -32,3 +8,7 @@
 - name: Run flamstream
   raw: "cd {{ flamestream_dir }} && bash entrypoint.sh restart worker.json"
   tags: bootstrap
+
+#- name: Stop flamstream
+#  raw: "cd {{ flamestream_dir }} && bash entrypoint.sh stop worker.json"
+#  tags: bootstrap

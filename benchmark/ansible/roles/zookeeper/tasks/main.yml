@@ -28,6 +28,8 @@
   template:
     src: zoo.cfg.j2
     dest: "{{ zookeeper_dir }}/conf/zoo.cfg"
-  notify:
-    - restart zk
   tags: deliver
+
+- name: restart zk
+  shell: "{{ zookeeper_dir }}/bin/zkServer.sh restart"
+  tags: bootstrap

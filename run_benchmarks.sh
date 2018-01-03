@@ -7,17 +7,22 @@ package() {
 }
 
 copy_worker_artifacts() {
+  local files="${ANSIBLE_HOME}/roles/deliver-flamestream/files/"
   local worker=runtime/target/flamestream-runtime-1.0-SNAPSHOT.jar
   local dependencies=runtime/target/lib
   local entrypoint=runtime/target/entrypoint.sh
-  local files="${ANSIBLE_HOME}/roles/flamestream-worker/files/"
+  local examples=examples/target/flamestream-examples-1.0-SNAPSHOT.jar
+  local examples_dependencies=examples/target/lib
 
-  if [[ -f "$worker" && -d "$dependencies" && -f "$entrypoint" ]]; then
+  if [[ -f "$worker" && -d "$dependencies" && -f "$entrypoint" && -f "$examples" && -d "$examples_dependencies" ]]; then
     cp "$worker" "$files"
     cp "$entrypoint" "$files"
     cp -r "$dependencies" "$files"
+    cp -rp "$examples_dependencies" "$files"
+    cp -rp "$examples" "${files}/lib"
   else
-    echo "Some artifacts hasn't been found";
+    echo "Some artifacts hasn't been found"
+    return 1
   fi
 }
 
@@ -30,10 +35,10 @@ deploy() {
 }
 
 local_bench() {
-  docker_compose_up
-  package
-  copy_worker_artifacts
-  deploy
+  docker_compose_up \
+    && package \
+    && copy_worker_artifacts \
+    && deploy
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && eval "$@"
+[[ "$0" == "$BASH_SOURCE" ]] && local_bench

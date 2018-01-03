@@ -1,5 +1,8 @@
 base_dir: /opt
 
+flamestream_dir: "{{ base_dir }}/flamestream"
+zookeeper_dir: "{{ base_dir }}/zookeeper"
+
 zookeeper_version: 3.4.10
 zookeeper_client_port: 2181
 

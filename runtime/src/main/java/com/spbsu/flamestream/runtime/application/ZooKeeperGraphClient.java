@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
-import com.spbsu.flamestream.runtime.ClusterManagementClient;
+import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
@@ -25,7 +25,6 @@ import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Op;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
@@ -42,7 +41,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class ZooKeeperGraphClient implements AutoCloseable, ClusterManagementClient {
+public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient {
   private static final int MAX_BUFFER_SIZE = 20000;
   private static final int BUFFER_SIZE = 1000;
 

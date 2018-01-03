@@ -11,12 +11,22 @@
 - name: Prepare cluster
   hosts: all
   roles:
-    - { role: common }
+    - { role: install-common-packages }
 
 - name: Setup zookeeper
   hosts: manager
   roles:
     - { role: zookeeper  }
+
+- name: Deliver flamestream artifacts
+  hosts: all
+  roles:
+    - { role: deliver-flamestream  }
+
+- name: Setup config
+  hosts: manager
+  roles:
+    - { role: flamestream-config }
 
 - name: Init workers
   hosts: workers
