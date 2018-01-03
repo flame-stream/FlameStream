@@ -26,12 +26,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -75,22 +72,20 @@ public class BenchStand implements AutoCloseable {
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy())
             .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
-    final List<Connection> connections = new ArrayList<>();
+    final Connection[] connection = new Connection[1];
     new Thread(() -> {
-      synchronized (connections) {
+      synchronized (connection) {
         try {
-          connections.wait();
+          connection.wait();
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
       }
       input.forEach(page -> {
-                synchronized (connections) {
+                synchronized (connection) {
                   try {
-                    final Connection connection = connections
-                            .get(ThreadLocalRandom.current().nextInt(connections.size()));
                     latencies.put(page.id(), new LatencyMeasurer());
-                    connection.sendTCP(page);
+                    connection[0].sendTCP(page);
                     LOG.info("Sending: {} at {}", page.id(), System.nanoTime());
                     Thread.sleep(config.sleepBetweenDocs);
                   } catch (InterruptedException e) {
@@ -99,15 +94,19 @@ public class BenchStand implements AutoCloseable {
                 }
               }
       );
-      connections.forEach(Connection::close);
+      connection[0].close();
     }).start();
 
     producer.addListener(new Listener() {
       @Override
-      public void connected(Connection connection) {
-        synchronized (connections) {
-          connections.add(connection);
-          connections.notify();
+      public void connected(Connection newConnection) {
+        synchronized (connection) {
+          if (connection[0] == null && newConnection.getRemoteAddressTCP().getHostName().equals(config.benchHost)) {
+            connection[0] = newConnection;
+            connection.notify();
+          } else {
+            newConnection.close();
+          }
         }
       }
     });
@@ -217,13 +216,13 @@ public class BenchStand implements AutoCloseable {
             "wikipedia/national_football_teams_dump.xml",
             300,
             65813,
-            "localhost",
+            "127.0.0.1",
             4567,
             5678
     );
 
     final GraphDeployer graphDeployer = new FlameGraphDeployer(
-            new LocalRuntime(1),
+            new LocalRuntime(4),
             new InvertedIndexGraph().get(),
             new SocketFrontType(config.benchHost, config.frontPort, WikipediaPage.class),
             new SocketRearType(
