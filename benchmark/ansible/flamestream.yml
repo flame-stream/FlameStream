@@ -11,7 +11,7 @@
 - name: Prepare cluster
   hosts: all
   roles:
-    - { role: install-common-packages }
+    - { role: common-packages }
 
 - name: Setup zookeeper
   hosts: manager
@@ -21,7 +21,7 @@
 - name: Deliver flamestream artifacts
   hosts: all
   roles:
-    - { role: deliver-flamestream  }
+    - { role: flamestream-common  }
 
 - name: Setup config
   hosts: manager
@@ -32,8 +32,13 @@
   hosts: workers
   roles:
     - { role: flamestream-worker }
-#
-#- hosts: manager
-#  become: yes
-#  roles:
-#    - { role: flamestream-bench }
+
+- name: Destroy flamestream
+  hosts: workers
+  roles:
+    - { role: flamestream-destroy }
+
+- name: Destroy zookeeper
+  hosts: manager
+  roles:
+    - { role: zookeeper-destroy }

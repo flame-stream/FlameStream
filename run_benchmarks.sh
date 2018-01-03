@@ -7,7 +7,7 @@ package() {
 }
 
 copy_worker_artifacts() {
-  local files="${ANSIBLE_HOME}/roles/deliver-flamestream/files/"
+  local files="${ANSIBLE_HOME}/roles/flamestream-common/files/"
   local worker=runtime/target/flamestream-runtime-1.0-SNAPSHOT.jar
   local dependencies=runtime/target/lib
   local entrypoint=runtime/target/entrypoint.sh
@@ -27,7 +27,7 @@ copy_worker_artifacts() {
 }
 
 docker_compose_up() {
-  sudo docker-compose -f "$DOCKER_COMPOSE" up -d --scale worker=3
+  sudo docker-compose -f "$DOCKER_COMPOSE" up -d
 }
 
 deploy() {

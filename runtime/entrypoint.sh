@@ -31,7 +31,7 @@ main() {
   local target=$1
   case "$target" in
     start) start "$2";;
-    stop) stop ||:;;
+    stop) stop;;
     restart) stop ||:; start "$2";;
     *) usage;;
   esac

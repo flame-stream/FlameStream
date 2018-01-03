@@ -16,10 +16,10 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
-import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import org.apache.hadoop.util.ZKUtil;
@@ -121,6 +121,10 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient 
   @Override
   public void put(ClusterConfig config) {
     try {
+      final Stat exists = zooKeeper.exists("/config", false);
+      if (exists != null) {
+        zooKeeper.delete("/config", exists.getVersion());
+      }
       zooKeeper.create(
               "/config",
               mapper.writeValueAsBytes(config),

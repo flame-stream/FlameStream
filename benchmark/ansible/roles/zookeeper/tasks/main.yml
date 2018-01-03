@@ -30,6 +30,6 @@
     dest: "{{ zookeeper_dir }}/conf/zoo.cfg"
   tags: deliver
 
-- name: restart zk
+- name: Restart zk
   shell: "{{ zookeeper_dir }}/bin/zkServer.sh restart"
   tags: bootstrap
