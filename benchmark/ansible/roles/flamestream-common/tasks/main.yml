@@ -3,22 +3,18 @@
   file:
     path: "{{ flamestream_dir }}"
     state: directory
-  tags: deliver
 
 - name: Copy the dependencies
   copy:
     src: lib
     dest: "{{ flamestream_dir }}"
-  tags: deliver
 
 - name: Copy the worker application
   copy:
     src: flamestream-runtime-1.0-SNAPSHOT.jar
     dest: "{{ flamestream_dir }}"
-  tags: deliver
 
 - name: Copy the entrypoint
   copy:
     src: entrypoint.sh
     dest: "{{ flamestream_dir }}"
-  tags: deliver

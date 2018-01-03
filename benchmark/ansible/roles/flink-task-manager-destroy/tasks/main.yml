@@ -1,0 +1,3 @@
+---
+- name: Stopping flink taskmanager
+  shell: nohup bash {{ flink_dir }}/bin/taskmanager.sh stop-all

@@ -1,43 +1,31 @@
 ---
-- name: Clean the flink directory
-  file:
-    path: "{{ flink_dir }}"
-    state: absent
-  tags: clean
-
-- name: Ensure the flink dir exists at {{ flink_dir }}
+- name: Ensure the flink dir exists
   file:
     path: "{{ flink_dir }}"
     state: directory
-  tags: deliver
 
-- name: Ensure the tarball dir exists {{ flink_tarball_dir }}
+- name: Ensure the tarball dir exists
   file:
     path: "{{ flink_tarball_dir }}"
     state: directory
-  tags: deliver
 
 - name: Download flink application
   get_url:
     url: "{{ flink_url }}"
-    dest: "{{ flink_tarball_dir }}/flink.tgz"
-  tags: deliver
+    dest: "{{ flink_tarball_dir }}/flin.tgz"
 
 - name: Unpack flink tarball
-  command: tar -xf {{ flink_tarball_dir }}/flink.tgz --strip-components=1
+  command: tar -xf {{ flink_tarball_dir }}/flin.tgz --strip-components=1
   args:
     chdir: "{{ flink_dir }}"
     creates: "{{ flink_dir }}/bin"
-  tags: deliver
 
 - name: Set up manager config
   template:
     src: slaves.j2
     dest: "{{ flink_dir }}/conf/slaves"
-  tags: deliver
 
 - name: Set up common config
   template:
     src: flink-conf.yaml.j2
     dest: "{{ flink_dir }}/conf/flink-conf.yaml"
-  tags: deliver

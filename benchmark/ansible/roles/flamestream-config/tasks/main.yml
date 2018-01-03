@@ -3,7 +3,6 @@
   template:
     src: config_deployer.json.j2
     dest: "{{ flamestream_dir }}/config_deployer.json"
-  tags: deliver
 
 - name: Run config deployer
   raw: >

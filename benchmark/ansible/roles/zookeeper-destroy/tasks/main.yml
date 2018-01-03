@@ -1,0 +1,4 @@
+---
+- name: Stop zk
+  shell: "{{ zookeeper_dir }}/bin/zkServer.sh stop"
+

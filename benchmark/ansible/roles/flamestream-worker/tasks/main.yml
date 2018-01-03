@@ -3,12 +3,6 @@
   template:
     src: worker.json
     dest: "{{ flamestream_dir }}"
-  tags: deliver
 
 - name: Run flamstream
   raw: "cd {{ flamestream_dir }} && bash entrypoint.sh restart worker.json"
-  tags: bootstrap
-
-#- name: Stop flamstream
-#  raw: "cd {{ flamestream_dir }} && bash entrypoint.sh stop worker.json"
-#  tags: bootstrap

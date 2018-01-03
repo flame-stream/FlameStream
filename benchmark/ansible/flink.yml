@@ -1,25 +1,40 @@
 ---
-- hosts: all
-  become: yes
-  roles:
-    - { role: common }
+- name: Install Python
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Install Python 2.x
+      raw: test -e /usr/bin/python || (apt update && apt install -y python-simplejson)
+      register: test
+      changed_when: test.stdout
 
-- hosts: all
-  become: yes
+- name: Prepare cluster
+  hosts: all
+  roles:
+    - { role: common-packages }
+
+- name: Deliver flink
+  hosts: all
   roles:
     - { role: flink-common }
 
-- hosts: manager
-  become: yes
+- name: Run flink manager
+  hosts: manager
   roles:
     - { role: flink-job-manager }
 
-- hosts: workers
-  become: yes
+- name: Run flink worker
+  hosts: workers
   roles:
     - { role: flink-task-manager }
 
-- hosts: manager
-  become: yes
-  roles:
-    - { role: flink-bench }
+#- name: Destroy flink manager
+#  hosts: manager
+#  roles:
+#    - { role: flink-job-manager-destroy }
+#
+#- name: Destroy flink worker
+#  hosts: workers
+#  roles:
+#    - { role: flink-task-manager-destroy }
+

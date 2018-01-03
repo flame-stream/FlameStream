@@ -8,3 +8,4 @@ flamestream.retry
 /roles/deliver-flamestream/files/entrypoint.sh
 /roles/deliver-flamestream/files/flamestream-examples-1.0-SNAPSHOT.jar
 /roles/deliver-flamestream/files/lib/
+/roles/bench/files/wiki.xml
