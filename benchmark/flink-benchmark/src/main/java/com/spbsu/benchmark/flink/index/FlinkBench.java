@@ -45,6 +45,7 @@ public final class FlinkBench {
                         paralellism,
                         deployerConfig.getString("uber-jar")
                 );
+        environment.setBufferTimeout(0);
 
         final DataStream<WikipediaPage> source = environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))
