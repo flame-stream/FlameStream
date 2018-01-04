@@ -28,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.LongSummaryStatistics;
@@ -109,13 +111,19 @@ public class BenchStand implements AutoCloseable {
       @Override
       public void connected(Connection newConnection) {
         synchronized (connection) {
-          if (connection[0] == null && newConnection.getRemoteAddressTCP()
-                  .getHostName()
-                  .equals(standConfig.benchHost())) {
-            connection[0] = newConnection;
-            connection.notify();
-          } else {
-            newConnection.close();
+          LOG.info("There is new connection: {}", newConnection.getRemoteAddressTCP());
+          try {
+            if (newConnection.getRemoteAddressTCP().getAddress()
+                    .equals(InetAddress.getByName(standConfig.benchHost()))) {
+              LOG.info("Accepting connection: {}", newConnection.getRemoteAddressTCP());
+              connection[0] = newConnection;
+              connection.notify();
+            } else {
+              LOG.info("Closing connection {}", newConnection.getRemoteAddressTCP());
+              newConnection.close();
+            }
+          } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
           }
         }
       }
