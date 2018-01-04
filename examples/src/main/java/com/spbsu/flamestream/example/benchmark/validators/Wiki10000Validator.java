@@ -12,6 +12,6 @@ public class Wiki10000Validator extends WikiBenchValidator {
 
   @Override
   public int expectedOutputSize() {
-    return 3063361;
+    return 4965692;
   }
 }
