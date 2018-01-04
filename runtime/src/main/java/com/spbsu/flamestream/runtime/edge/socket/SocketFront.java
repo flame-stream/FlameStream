@@ -31,18 +31,21 @@ public class SocketFront extends Front.Stub {
 
   private volatile Consumer<Object> consumer = null;
 
-  public SocketFront(EdgeContext edgeContext, String host, int port, Class[] classes) {
+  public SocketFront(EdgeContext edgeContext, String host, int port, Class<?>[] classes) {
     super(edgeContext.edgeId());
     this.host = host;
     this.port = port;
     client = new Client(1000, 20_000_000);
     Arrays.stream(classes).forEach(clazz -> client.getKryo().register(clazz));
-    ((Kryo.DefaultInstantiatorStrategy) client.getKryo().getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+    ((Kryo.DefaultInstantiatorStrategy) client.getKryo().getInstantiatorStrategy())
+            .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
     client.addListener(new Listener() {
       public void received(Connection connection, Object object) {
-        consumer.accept(new PayloadDataItem(new Meta(currentTime()), object));
-        consumer.accept(new Heartbeat(currentTime()));
+        if (Arrays.stream(classes).anyMatch(clazz -> clazz.isAssignableFrom(object.getClass()))) {
+          consumer.accept(new PayloadDataItem(new Meta(currentTime()), object));
+          consumer.accept(new Heartbeat(currentTime()));
+        }
       }
     });
     client.addListener(new Listener() {
