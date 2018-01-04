@@ -1,9 +1,10 @@
-package com.spbsu.benchmark.flink;
+package com.spbsu.benchmark.flink.index.ops;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
+import com.spbsu.benchmark.flink.index.Result;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
 import org.apache.flink.configuration.Configuration;
@@ -13,7 +14,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class KryoSocketSink extends RichSinkFunction<InvertedIndexStream.Result> {
+public class KryoSocketSink extends RichSinkFunction<Result> {
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOG = LoggerFactory.getLogger(KryoSocketSink.class);
@@ -34,7 +35,7 @@ class KryoSocketSink extends RichSinkFunction<InvertedIndexStream.Result> {
   @Override
   public void open(Configuration parameters) throws Exception {
     client = new Client(OUTPUT_BUFFER_SIZE, 1);
-    client.getKryo().register(InvertedIndexStream.Result.class);
+    client.getKryo().register(Result.class);
     client.getKryo().register(WordIndexAdd.class);
     client.getKryo().register(WordIndexRemove.class);
     client.getKryo().register(long[].class);
@@ -55,7 +56,7 @@ class KryoSocketSink extends RichSinkFunction<InvertedIndexStream.Result> {
   }
 
   @Override
-  public void invoke(InvertedIndexStream.Result value) {
+  public void invoke(Result value) {
     if (client != null && client.isConnected()) {
       client.sendTCP(value);
     } else {
