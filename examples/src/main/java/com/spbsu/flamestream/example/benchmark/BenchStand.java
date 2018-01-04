@@ -69,7 +69,7 @@ public class BenchStand implements AutoCloseable {
 
   public void run() throws InterruptedException {
     graphDeployer.deploy();
-    awaitConsumer.await(5, TimeUnit.MINUTES);
+    awaitConsumer.await(60, TimeUnit.MINUTES);
   }
 
   private Server producer() throws IOException {
