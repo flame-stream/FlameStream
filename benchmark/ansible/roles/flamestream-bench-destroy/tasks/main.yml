@@ -1,0 +1,4 @@
+---
+- name: Destroy flink-bench
+  shell: pkill -f bench
+  ignore_errors: True

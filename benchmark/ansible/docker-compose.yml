@@ -2,23 +2,16 @@
 version: '3'
 
 services:
-  worker_1:
-    container_name: worker_1
-    hostname: worker_1
+  worker1:
+    container_name: worker1
+    hostname: worker1
     command: sleep 365d
     image: debian
     networks: 
       - workers
-  worker_2:
-    container_name: worker_2
-    hostname: worker_2
-    command: sleep 365d
-    image: debian
-    networks:
-      - workers
-  worker_3:
-    container_name: worker_3
-    hostname: worker_3
+  worker2:
+    container_name: worker2
+    hostname: worker2
     command: sleep 365d
     image: debian
     networks:

@@ -3,11 +3,11 @@ all:
   children:
     manager:
       hosts:
-        worker_1:
+        worker1:
     workers:
       hosts:
-        worker_2:
-        worker_3:
+        worker1:
+        worker2:
   vars:
     ansible_user: root
     ansible_connection: docker

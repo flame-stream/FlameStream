@@ -19,6 +19,11 @@
     name: htop
     state: present
 
+- name: Install ps
+  apt:
+    name: procps
+    state: present
+
 - name: Install unzip
   apt:
     name: unzip

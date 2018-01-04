@@ -1,0 +1,9 @@
+benchmark {
+  bench-host = "{{ groups['manager'][0] }}"
+  bench-source-port = 4567
+  bench-sink-port = 5678
+
+  wiki-dump-path = "{{ flamestream_dir }}/wiki.xml"
+  sleep-between-docs-ms = 100
+  validator = com.spbsu.flamestream.example.benchmark.validators.Wiki1000Validator
+}
