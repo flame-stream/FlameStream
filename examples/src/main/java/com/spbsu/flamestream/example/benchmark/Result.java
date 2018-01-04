@@ -1,4 +1,4 @@
-package com.spbsu.benchmark.flink.index;
+package com.spbsu.flamestream.example.benchmark;
 
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;

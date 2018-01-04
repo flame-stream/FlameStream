@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
-import com.spbsu.benchmark.flink.index.Result;
+import com.spbsu.flamestream.example.benchmark.Result;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
 import org.apache.flink.configuration.Configuration;
@@ -34,7 +34,7 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
 
   @Override
   public void open(Configuration parameters) throws Exception {
-    client = new Client(OUTPUT_BUFFER_SIZE, 1);
+    client = new Client(OUTPUT_BUFFER_SIZE, 1234);
     client.getKryo().register(Result.class);
     client.getKryo().register(WordIndexAdd.class);
     client.getKryo().register(WordIndexRemove.class);
