@@ -4,8 +4,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
@@ -43,7 +41,7 @@ import java.util.stream.Stream;
  * Date: 28.12.2017
  */
 public class BenchStand implements AutoCloseable {
-  private final static Logger LOG = LoggerFactory.getLogger(BenchStand.class);
+  private static final Logger LOG = LoggerFactory.getLogger(BenchStand.class);
   private final Map<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
 
   private final StandConfig standConfig;
@@ -59,7 +57,7 @@ public class BenchStand implements AutoCloseable {
     this.graphDeployer = graphDeployer;
     try {
       //noinspection unchecked
-      validator = ((Class<? extends BenchValidator>) Class.forName(standConfig.validatorClass)).newInstance();
+      validator = ((Class<? extends BenchValidator>) Class.forName(standConfig.validatorClass())).newInstance();
       awaitConsumer = new AwaitCountConsumer(validator.expectedOutputSize());
 
       producer = producer();
@@ -69,13 +67,13 @@ public class BenchStand implements AutoCloseable {
     }
   }
 
-  public void run() throws IOException, InterruptedException {
+  public void run() throws InterruptedException {
     graphDeployer.deploy();
     awaitConsumer.await(5, TimeUnit.MINUTES);
   }
 
   private Server producer() throws IOException {
-    final Stream<WikipediaPage> input = WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath)
+    final Stream<WikipediaPage> input = WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath())
             .limit(validator.inputLimit());
     final Server producer = new Server(1_000_000, 1000);
     producer.getKryo().register(WikipediaPage.class);
@@ -97,7 +95,7 @@ public class BenchStand implements AutoCloseable {
                     latencies.put(page.id(), new LatencyMeasurer());
                     connection[0].sendTCP(page);
                     LOG.info("Sending: {} at {}", page.id(), System.nanoTime());
-                    Thread.sleep(standConfig.sleepBetweenDocs);
+                    Thread.sleep(standConfig.sleepBetweenDocs());
                   } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                   }
@@ -111,7 +109,9 @@ public class BenchStand implements AutoCloseable {
       @Override
       public void connected(Connection newConnection) {
         synchronized (connection) {
-          if (connection[0] == null && newConnection.getRemoteAddressTCP().getHostName().equals(standConfig.benchHost)) {
+          if (connection[0] == null && newConnection.getRemoteAddressTCP()
+                  .getHostName()
+                  .equals(standConfig.benchHost())) {
             connection[0] = newConnection;
             connection.notify();
           } else {
@@ -121,7 +121,7 @@ public class BenchStand implements AutoCloseable {
       }
     });
     producer.start();
-    producer.bind(standConfig.frontPort);
+    producer.bind(standConfig.frontPort());
     return producer;
   }
 
@@ -163,7 +163,7 @@ public class BenchStand implements AutoCloseable {
     });
 
     consumer.start();
-    consumer.bind(standConfig.rearPort);
+    consumer.bind(standConfig.rearPort());
     return consumer;
   }
 
@@ -188,32 +188,44 @@ public class BenchStand implements AutoCloseable {
   }
 
   public static class StandConfig {
-    @JsonProperty
     private final int sleepBetweenDocs;
-    @JsonProperty
     private final String wikiDumpPath;
-    @JsonProperty
     private final String validatorClass;
-    @JsonProperty
     private final String benchHost;
-    @JsonProperty
     private final int frontPort;
-    @JsonProperty
     private final int rearPort;
 
-    @JsonCreator
-    public StandConfig(@JsonProperty("sleepBetweenDocs") int sleepBetweenDocs,
-                       @JsonProperty("wikiDumpPath") String wikiDumpPath,
-                       @JsonProperty("validatorClass") String validatorClass,
-                       @JsonProperty("benchHost") String benchHost,
-                       @JsonProperty("frontPort") int frontPort,
-                       @JsonProperty("rearPort") int rearPort) {
-      this.sleepBetweenDocs = sleepBetweenDocs;
-      this.wikiDumpPath = wikiDumpPath;
-      this.validatorClass = validatorClass;
-      this.benchHost = benchHost;
-      this.frontPort = frontPort;
-      this.rearPort = rearPort;
+    public StandConfig(Config config) {
+      sleepBetweenDocs = config.getInt("sleep-between-docs-ms");
+      wikiDumpPath = config.getString("wiki-dump-path");
+      validatorClass = config.getString("validator");
+      benchHost = config.getString("bench-host");
+      frontPort = config.getInt("bench-source-port");
+      rearPort = config.getInt("bench-sink-port");
+    }
+
+    public int sleepBetweenDocs() {
+      return sleepBetweenDocs;
+    }
+
+    public String wikiDumpPath() {
+      return wikiDumpPath;
+    }
+
+    public String validatorClass() {
+      return validatorClass;
+    }
+
+    public String benchHost() {
+      return benchHost;
+    }
+
+    public int frontPort() {
+      return frontPort;
+    }
+
+    public int rearPort() {
+      return rearPort;
     }
   }
 
@@ -227,14 +239,7 @@ public class BenchStand implements AutoCloseable {
       benchConfig = ConfigFactory.load("bench.conf").getConfig("benchmark");
       deployerConfig = ConfigFactory.load("deployer.conf").getConfig("deployer");
     }
-    final StandConfig standConfig = new StandConfig(
-            benchConfig.getInt("sleep-between-docs-ms"),
-            benchConfig.getString("wiki-dump-path"),
-            benchConfig.getString("validator"),
-            benchConfig.getString("bench-host"),
-            benchConfig.getInt("bench-source-port"),
-            benchConfig.getInt("bench-sink-port")
-    );
+    final StandConfig standConfig = new StandConfig(benchConfig);
 
     final FlameRuntime runtime;
     if (deployerConfig.hasPath("local")) {
@@ -246,10 +251,10 @@ public class BenchStand implements AutoCloseable {
     final GraphDeployer graphDeployer = new FlameGraphDeployer(
             runtime,
             new InvertedIndexGraph().get(),
-            new SocketFrontType(standConfig.benchHost, standConfig.frontPort, WikipediaPage.class),
+            new SocketFrontType(standConfig.benchHost(), standConfig.frontPort(), WikipediaPage.class),
             new SocketRearType(
-                    standConfig.benchHost,
-                    standConfig.rearPort,
+                    standConfig.benchHost(),
+                    standConfig.rearPort(),
                     WordIndexAdd.class,
                     WordIndexRemove.class,
                     long[].class

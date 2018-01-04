@@ -13,13 +13,13 @@ import java.util.Arrays;
  * Time: 13:05
  */
 public class InvertedIndexState {
-  static final int PREV_VALUE_NOT_FOUND = -1;
+  public static final int PREV_VALUE_NOT_FOUND = -1;
   private static final int DEFAULT_MAX_WINDOW_SIZE = 100;
 
   private final int maxWindowSize;
   private TLongArray[] storage;
 
-  InvertedIndexState() {
+  public InvertedIndexState() {
     this(DEFAULT_MAX_WINDOW_SIZE);
   }
 
@@ -37,7 +37,7 @@ public class InvertedIndexState {
     storage[0] = new TLongArray();
   }
 
-  long updateOrInsert(long[] pagePositions) {
+  public long updateOrInsert(long[] pagePositions) {
     final long first = pagePositions[0];
     final int pageId = IndexItemInLong.pageId(first);
 
@@ -53,7 +53,7 @@ public class InvertedIndexState {
     return prevValue;
   }
 
-  InvertedIndexState copy() {
+  public InvertedIndexState copy() {
     final TLongArray[] copy = Arrays.copyOf(storage, storage.length);
     return new InvertedIndexState(copy, maxWindowSize);
   }
