@@ -16,6 +16,7 @@ import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.bl.index.utils.WikipeadiaInput;
 import com.spbsu.flamestream.runtime.FlameRuntime;
+import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
@@ -257,6 +258,8 @@ public class BenchStand implements AutoCloseable {
     final FlameRuntime runtime;
     if (deployerConfig.hasPath("local")) {
       runtime = new LocalRuntime(deployerConfig.getConfig("local").getInt("parallelism"));
+    } else if (deployerConfig.hasPath("local-cluster")) {
+      runtime = new LocalClusterRuntime(deployerConfig.getConfig("local-cluster").getInt("parallelism"));
     } else {
       runtime = new RemoteRuntime(deployerConfig.getConfig("remote").getString("zk"));
     }
