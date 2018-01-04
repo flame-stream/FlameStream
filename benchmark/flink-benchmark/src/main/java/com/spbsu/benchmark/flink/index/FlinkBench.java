@@ -27,7 +27,7 @@ public final class FlinkBench {
       benchConfig = ConfigFactory.parseReader(Files.newBufferedReader(Paths.get(args[0]))).getConfig("benchmark");
       deployerConfig = ConfigFactory.parseReader(Files.newBufferedReader(Paths.get(args[1]))).getConfig("deployer");
     } else {
-      benchConfig = ConfigFactory.load("bench.conf").getConfig("benchmark");
+      benchConfig = ConfigFactory.load("flink-bench.conf").getConfig("benchmark");
       deployerConfig = ConfigFactory.load("flink-deployer.conf").getConfig("deployer");
     }
     final BenchStand.StandConfig standConfig = new BenchStand.StandConfig(benchConfig);
