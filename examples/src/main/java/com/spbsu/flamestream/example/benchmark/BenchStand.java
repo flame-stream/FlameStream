@@ -142,7 +142,6 @@ public class BenchStand implements AutoCloseable {
       consumer.getKryo().register(EdgeId.class);
       consumer.getKryo().register(int[].class);
     }
-    consumer.getKryo().register(Result.class);
     consumer.getKryo().register(WordIndexAdd.class);
     consumer.getKryo().register(WordIndexRemove.class);
     consumer.getKryo().register(long[].class);
@@ -164,8 +163,8 @@ public class BenchStand implements AutoCloseable {
         if (o instanceof DataItem) {
           final DataItem dataItem = (DataItem) o;
           wordIndexAdd = dataItem.payload(WordIndexAdd.class);
-        } else if (o instanceof Result) {
-          wordIndexAdd = ((Result) o).wordIndexAdd();
+        } else if (o instanceof WordIndexAdd) {
+          wordIndexAdd = (WordIndexAdd) o;
         } else {
           return;
         }

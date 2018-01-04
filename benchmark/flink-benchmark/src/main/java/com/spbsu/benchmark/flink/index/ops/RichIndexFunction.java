@@ -1,6 +1,6 @@
 package com.spbsu.benchmark.flink.index.ops;
 
-import com.spbsu.flamestream.example.benchmark.Result;
+import com.spbsu.benchmark.flink.index.Result;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
 import com.spbsu.flamestream.example.bl.index.ops.InvertedIndexState;
