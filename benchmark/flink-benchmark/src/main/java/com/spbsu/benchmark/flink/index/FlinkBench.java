@@ -3,22 +3,23 @@ package com.spbsu.benchmark.flink.index;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSink;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSource;
 import com.spbsu.benchmark.flink.index.ops.RichIndexFunction;
+import com.spbsu.benchmark.flink.index.ops.SimpleWindow;
 import com.spbsu.benchmark.flink.index.ops.WikipediaPageToWordPositions;
 import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
 import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public final class FlinkBench {
-  private static final Logger LOG = LoggerFactory.getLogger(FlinkBench.class);
+  //private static final Logger LOG = LoggerFactory.getLogger(FlinkBench.class);
 
   public static void main(String[] args) throws Exception {
     final Config benchConfig;
@@ -35,29 +36,45 @@ public final class FlinkBench {
     final GraphDeployer deployer = new GraphDeployer() {
       @Override
       public void deploy() {
-        final int paralellism = deployerConfig.getInt("paralellism");
-
-        final StreamExecutionEnvironment environment = StreamExecutionEnvironment
-                //.createLocalEnvironment(1);
-                .createRemoteEnvironment(
-                        deployerConfig.getString("manager-hostname"),
-                        deployerConfig.getInt("manager-port"),
-                        paralellism,
-                        deployerConfig.getString("uber-jar")
-                );
+        final int parallelism = deployerConfig.getInt("parallelism");
+        final StreamExecutionEnvironment environment;
+        if (deployerConfig.hasPath("remote")) {
+          environment = StreamExecutionEnvironment.createRemoteEnvironment(
+                  deployerConfig.getString("manager-hostname"),
+                  deployerConfig.getInt("manager-port"),
+                  parallelism,
+                  deployerConfig.getString("uber-jar")
+          );
+        } else {
+          environment = StreamExecutionEnvironment.createLocalEnvironment(parallelism);
+        }
+        environment.setBufferTimeout(0);
+        environment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         final DataStream<WikipediaPage> source = environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))
-                .setParallelism(paralellism)
+                .setParallelism(parallelism)
                 .shuffle();
 
-        source.flatMap(new WikipediaPageToWordPositions())
-                .setParallelism(paralellism)
-                .keyBy(0)
-                .map(new RichIndexFunction())
-                .setParallelism(paralellism)
-                .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
-                .setParallelism(paralellism);
+        if (deployerConfig.getBoolean("windowed")) {
+          source.flatMap(new WikipediaPageToWordPositions())
+                  .setParallelism(parallelism)
+                  .keyBy(0)
+                  .map(new RichIndexFunction())
+                  .setParallelism(parallelism)
+                  .timeWindowAll(Time.milliseconds(1))
+                  .apply(new SimpleWindow())
+                  .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
+                  .setParallelism(parallelism);
+        } else {
+          source.flatMap(new WikipediaPageToWordPositions())
+                  .setParallelism(parallelism)
+                  .keyBy(0)
+                  .map(new RichIndexFunction())
+                  .setParallelism(parallelism)
+                  .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
+                  .setParallelism(parallelism);
+        }
         new Thread(() -> {
           try {
             environment.execute();

@@ -33,6 +33,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -50,14 +51,16 @@ public class BenchStand implements AutoCloseable {
   private final StandConfig standConfig;
   private final BenchValidator<WordIndexAdd> validator;
   private final GraphDeployer graphDeployer;
+  private final Class<?>[] classesToRegister;
   private final AwaitCountConsumer awaitConsumer;
 
   private final Server producer;
   private final Server consumer;
 
-  public BenchStand(StandConfig standConfig, GraphDeployer graphDeployer) {
+  public BenchStand(StandConfig standConfig, GraphDeployer graphDeployer, Class<?>... classesToRegister) {
     this.standConfig = standConfig;
     this.graphDeployer = graphDeployer;
+    this.classesToRegister = classesToRegister;
     try {
       //noinspection unchecked
       validator = ((Class<? extends BenchValidator>) Class.forName(standConfig.validatorClass())).newInstance();
@@ -136,13 +139,7 @@ public class BenchStand implements AutoCloseable {
 
   private Server consumer() throws IOException {
     final Server consumer = new Server(2000, 1_000_000);
-    { //register inners of data item
-      consumer.getKryo().register(PayloadDataItem.class);
-      consumer.getKryo().register(Meta.class);
-      consumer.getKryo().register(GlobalTime.class);
-      consumer.getKryo().register(EdgeId.class);
-      consumer.getKryo().register(int[].class);
-    }
+    Arrays.stream(classesToRegister).forEach(clazz -> consumer.getKryo().register(clazz));
     consumer.getKryo().register(WordIndexAdd.class);
     consumer.getKryo().register(WordIndexRemove.class);
     consumer.getKryo().register(long[].class);
@@ -276,7 +273,15 @@ public class BenchStand implements AutoCloseable {
                     long[].class
             )
     );
-    try (final BenchStand benchStand = new BenchStand(standConfig, graphDeployer)) {
+    try (final BenchStand benchStand = new BenchStand(
+            standConfig,
+            graphDeployer,
+            PayloadDataItem.class,
+            Meta.class,
+            GlobalTime.class,
+            EdgeId.class,
+            int[].class)
+    ) {
       benchStand.run();
     }
   }
