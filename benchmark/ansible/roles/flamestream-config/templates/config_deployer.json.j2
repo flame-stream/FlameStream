@@ -1,6 +1,6 @@
 {
-  "zkString": "{{ groups['manager'][0] }}:{{ zookeeper_client_port }}",
-  "ackerLocation": "{{ groups['workers'][0] }}",
+  "zkString": "{{ groups['zookeeper'][0] }}:{{ zookeeper_client_port }}",
+  "ackerLocation": "{{ groups['workers'][4] }}",
   "maxElementsInGraph": 100,
   "workers": {
   {% for worker in groups['workers'] %}

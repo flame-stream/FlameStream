@@ -1,6 +1,9 @@
 ---
 all:
   children:
+    zookeeper:
+      hosts:
+        worker1:
     manager:
       hosts:
         worker1:

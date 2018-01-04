@@ -1,30 +1,13 @@
 ---
-- name: Install java
+- name: Install {{ item }}
   apt: 
-    name: openjdk-8-jdk
+    name: "{{ item }}"
     state: present
-
-- name: Install vim
-  apt:
-    name: vim
-    state: present
-
-- name: Install less
-  apt:
-    name: less
-    state: present
-
-- name: Install htop
-  apt:
-    name: htop
-    state: present
-
-- name: Install ps
-  apt:
-    name: procps
-    state: present
-
-- name: Install unzip
-  apt:
-    name: unzip
-    state: present
+  with_items:
+    - openjdk-8-jdk
+    - rsync
+    - vim
+    - less
+    - htop
+    - procps
+    - unzip

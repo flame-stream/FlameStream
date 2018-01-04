@@ -16,7 +16,7 @@
 
 - name: Start the flamestream bench
   shell: >
-    java -Xms713m -Xmx713m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError
+    java -Xms200m -Xmx200m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError
     -cp '{{ flamestream_dir }}/lib/*'
     com.spbsu.flamestream.example.benchmark.BenchStand
     {{ flamestream_dir }}/bench.conf {{ flamestream_dir }}/deployer.conf > {{ flamestream_dir }}/bench.log 2>&1

@@ -5,7 +5,7 @@
     state: directory
 
 - name: Copy the dependencies
-  copy:
+  synchronize:
     src: lib
     dest: "{{ flamestream_dir }}"
 

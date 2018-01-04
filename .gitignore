@@ -30,3 +30,4 @@ roles/deliver-flamestream/files/flamestream-runtime-1.0-SNAPSHOT.jar
 roles/deliver-flamestream/files/lib/
 /.idea/shelf/
 /examples/wiki.xml
+/benchmark/ansible/aws.yml

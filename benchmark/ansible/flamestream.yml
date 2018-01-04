@@ -14,7 +14,7 @@
     - { role: common-packages }
 
 - name: Setup zookeeper
-  hosts: manager
+  hosts: zookeeper
   roles:
     - { role: zookeeper  }
 
@@ -44,7 +44,7 @@
     - { role: flamestream-destroy }
 
 - name: Destroy zookeeper
-  hosts: manager
+  hosts: zookeeper
   roles:
     - { role: zookeeper-destroy }
 

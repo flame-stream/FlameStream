@@ -5,4 +5,4 @@
     dest: "{{ flamestream_dir }}"
 
 - name: Run flamstream
-  raw: "cd {{ flamestream_dir }} && bash entrypoint.sh restart worker.json"
+  shell: "cd {{ flamestream_dir }} && bash entrypoint.sh restart worker.json"

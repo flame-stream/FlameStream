@@ -30,15 +30,25 @@ docker_compose_up() {
   sudo docker-compose -f "$DOCKER_COMPOSE" up -d
 }
 
-deploy() {
+deploy_local() {
   sudo ansible-playbook -v -i "${ANSIBLE_HOME}/local.yml" "${ANSIBLE_HOME}/flamestream.yml"
+}
+
+deploy_remote() {
+  ansible-playbook -v -i "${ANSIBLE_HOME}/aws.yml" "${ANSIBLE_HOME}/flamestream.yml"
 }
 
 local_bench() {
   docker_compose_up \
     && package \
     && copy_worker_artifacts \
-    && deploy
+    && deploy_local
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && local_bench
+remote_bench() {
+    package \
+    && copy_worker_artifacts \
+    && deploy_remote
+}
+
+[[ "$0" == "$BASH_SOURCE" ]] && remote_bench
