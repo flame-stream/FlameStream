@@ -20,21 +20,33 @@ public class SocketFrontType implements FlameRuntime.FrontType<SocketFront, Void
 
   @Override
   public FlameRuntime.FrontInstance<SocketFront> instance() {
-    return new FlameRuntime.FrontInstance<SocketFront>() {
-      @Override
-      public Class<SocketFront> clazz() {
-        return SocketFront.class;
-      }
-
-      @Override
-      public Object[] params() {
-        return new Object[] {host, port, inputClasses};
-      }
-    };
+    return new SocketFrontFrontInstance(host, port, inputClasses);
   }
 
   @Override
   public Void handle(EdgeContext context) {
     return null;
+  }
+
+  private static class SocketFrontFrontInstance implements FlameRuntime.FrontInstance<SocketFront> {
+    private final String host;
+    private final int port;
+    private final Class<?>[] inputClasses;
+
+    private SocketFrontFrontInstance(String host, int port, Class<?>[] inputClasses) {
+      this.host = host;
+      this.port = port;
+      this.inputClasses = inputClasses;
+    }
+
+    @Override
+    public Class<SocketFront> clazz() {
+      return SocketFront.class;
+    }
+
+    @Override
+    public Object[] params() {
+      return new Object[] {host, port, inputClasses};
+    }
   }
 }
