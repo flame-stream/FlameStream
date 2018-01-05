@@ -117,7 +117,8 @@ public class BenchStand implements AutoCloseable {
         synchronized (connection) {
           LOG.info("There is new connection: {}", newConnection.getRemoteAddressTCP());
           try {
-            if (newConnection.getRemoteAddressTCP().getAddress()
+            //first condition for local testing
+            if (connection[0] == null && newConnection.getRemoteAddressTCP().getAddress()
                     .equals(InetAddress.getByName(standConfig.benchHost()))) {
               LOG.info("Accepting connection: {}", newConnection.getRemoteAddressTCP());
               connection[0] = newConnection;
