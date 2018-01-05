@@ -9,7 +9,7 @@ import org.apache.flink.util.Collector;
  * User: Artem
  * Date: 04.01.2018
  */
-public class SimpleWindow implements AllWindowFunction<Tuple2<String, long[]>, Tuple2<String, long[]>, TimeWindow> {
+public class LocalOrderWindow implements AllWindowFunction<Tuple2<String, long[]>, Tuple2<String, long[]>, TimeWindow> {
   @Override
   public void apply(
           TimeWindow timeWindow,
