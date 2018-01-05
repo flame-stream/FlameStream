@@ -119,7 +119,7 @@ public class BenchStand implements AutoCloseable {
           try {
             //first condition for local testing
             if (connection[0] == null && newConnection.getRemoteAddressTCP().getAddress()
-                    .equals(InetAddress.getByName(standConfig.benchHost()))) {
+                    .equals(InetAddress.getByName(standConfig.inputHost()))) {
               LOG.info("Accepting connection: {}", newConnection.getRemoteAddressTCP());
               connection[0] = newConnection;
               connection.notify();
@@ -204,6 +204,7 @@ public class BenchStand implements AutoCloseable {
     private final String wikiDumpPath;
     private final String validatorClass;
     private final String benchHost;
+    private final String inputHost;
     private final int frontPort;
     private final int rearPort;
 
@@ -212,6 +213,7 @@ public class BenchStand implements AutoCloseable {
       wikiDumpPath = config.getString("wiki-dump-path");
       validatorClass = config.getString("validator");
       benchHost = config.getString("bench-host");
+      inputHost = config.getString("input-host");
       frontPort = config.getInt("bench-source-port");
       rearPort = config.getInt("bench-sink-port");
     }
@@ -238,6 +240,10 @@ public class BenchStand implements AutoCloseable {
 
     public int rearPort() {
       return rearPort;
+    }
+
+    public String inputHost() {
+      return this.inputHost;
     }
   }
 
