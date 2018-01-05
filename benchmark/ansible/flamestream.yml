@@ -14,7 +14,7 @@
     - { role: common-packages }
 
 - name: Setup zookeeper
-  hosts: zookeeper
+  hosts: manager
   roles:
     - { role: zookeeper  }
 
@@ -34,7 +34,7 @@
     - { role: flamestream-worker }
 
 - name: Run the benchmark
-  hosts: manager
+  hosts: bench
   roles:
     - { role: flamestream-bench }
 
@@ -44,11 +44,11 @@
     - { role: flamestream-destroy }
 
 - name: Destroy zookeeper
-  hosts: zookeeper
+  hosts: manager
   roles:
     - { role: zookeeper-destroy }
 
 - name: Destroy bench
-  hosts: manager
+  hosts: bench
   roles:
     - { role: flamestream-bench-destroy }

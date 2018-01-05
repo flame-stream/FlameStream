@@ -26,29 +26,45 @@ copy_worker_artifacts() {
   fi
 }
 
+copy_flink_artifacts() {
+  local files="${ANSIBLE_HOME}/roles/flink-bench/files"
+  local bench="benchmark/flink-benchmark/target/flink-benchmark-1.0-SNAPSHOT-uber.jar"
+  if [[ -f "$bench" ]]; then
+    cp "$bench" "$files"
+  else
+    echo "Some artifacts hasn't been found"
+    return 1
+  fi
+}
+
 docker_compose_up() {
   sudo docker-compose -f "$DOCKER_COMPOSE" up -d
-}
-
-deploy_local() {
-  sudo ansible-playbook -v -i "${ANSIBLE_HOME}/local.yml" "${ANSIBLE_HOME}/flamestream.yml"
-}
-
-deploy_remote() {
-  ansible-playbook -v -i "${ANSIBLE_HOME}/aws.yml" "${ANSIBLE_HOME}/flamestream.yml"
 }
 
 local_bench() {
   docker_compose_up \
     && package \
     && copy_worker_artifacts \
-    && deploy_local
+    && sudo ansible-playbook -v -i "${ANSIBLE_HOME}/local.yml" "${ANSIBLE_HOME}/flamestream.yml"
 }
 
 remote_bench() {
-    package \
+  package \
     && copy_worker_artifacts \
-    && deploy_remote
+    && ansible-playbook -v -i "${ANSIBLE_HOME}/aws.yml" "${ANSIBLE_HOME}/flamestream.yml"
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && remote_bench
+local_flink_bench() {
+  docker_compose_up \
+    && package \
+    && copy_flink_artifacts \
+    && sudo ansible-playbook -v -i "${ANSIBLE_HOME}/local.yml" "${ANSIBLE_HOME}/flink.yml"
+}
+
+remote_flink_bench() {
+    package \
+    && copy_flink_artifacts \
+    && ansible-playbook -v -i "${ANSIBLE_HOME}/aws.yml" "${ANSIBLE_HOME}/flink.yml"
+}
+
+[[ "$0" == "$BASH_SOURCE" ]] && local_flink_bench

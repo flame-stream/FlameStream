@@ -31,3 +31,4 @@ roles/deliver-flamestream/files/lib/
 /.idea/shelf/
 /examples/wiki.xml
 /benchmark/ansible/aws.yml
+/wiki.xml

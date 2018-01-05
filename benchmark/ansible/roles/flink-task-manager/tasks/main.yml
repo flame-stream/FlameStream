@@ -1,3 +1,6 @@
 ---
+- name: Stoping previously started flink jobmanager
+  shell: nohup bash {{ flink_dir }}/bin/taskmanager.sh stop-all
+
 - name: Starting flink taskmanager
   shell: nohup bash {{ flink_dir }}/bin/taskmanager.sh start

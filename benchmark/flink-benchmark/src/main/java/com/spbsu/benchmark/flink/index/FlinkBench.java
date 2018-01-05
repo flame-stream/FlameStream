@@ -40,10 +40,10 @@ public final class FlinkBench {
         final StreamExecutionEnvironment environment;
         if (deployerConfig.hasPath("remote")) {
           environment = StreamExecutionEnvironment.createRemoteEnvironment(
-                  deployerConfig.getString("manager-hostname"),
-                  deployerConfig.getInt("manager-port"),
+                  deployerConfig.getString("remote.manager-hostname"),
+                  deployerConfig.getInt("remote.manager-port"),
                   parallelism,
-                  deployerConfig.getString("uber-jar")
+                  deployerConfig.getString("remote.uber-jar")
           );
         } else {
           environment = StreamExecutionEnvironment.createLocalEnvironment(parallelism);
