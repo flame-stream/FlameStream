@@ -2,13 +2,11 @@ package com.spbsu.flamestream.example.benchmark.validators;
 
 import com.spbsu.flamestream.example.benchmark.BenchValidator;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
-import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import gnu.trove.set.TLongSet;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: Artem
@@ -16,7 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class WikiBenchValidator implements BenchValidator<WordIndexAdd> {
   final Map<String, TLongSet> expectedPositions = new ConcurrentHashMap<>();
-  private AtomicInteger prevDocId = new AtomicInteger(-1);
 
   @Override
   public void accept(WordIndexAdd wordIndexAdd) {
@@ -24,11 +21,6 @@ public abstract class WikiBenchValidator implements BenchValidator<WordIndexAdd>
       Arrays.stream(wordIndexAdd.positions()).forEach(set::remove);
       return set;
     });
-
-    final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
-    if (prevDocId.getAndSet(docId) > docId) {
-      throw new IllegalStateException("Output doc ids are not monotonic");
-    }
   }
 
   @Override

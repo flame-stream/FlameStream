@@ -59,13 +59,13 @@ public final class FlinkBench {
         if (deployerConfig.getBoolean("windowed")) {
           source.flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
+                  .timeWindowAll(Time.milliseconds(1))
+                  .apply(new SimpleWindow())
                   .keyBy(0)
                   .map(new RichIndexFunction())
                   .setParallelism(parallelism)
-                  .timeWindowAll(Time.milliseconds(1))
-                  .apply(new SimpleWindow())
                   .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
-                  .setParallelism(1);
+                  .setParallelism(parallelism);
         } else {
           source.flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
