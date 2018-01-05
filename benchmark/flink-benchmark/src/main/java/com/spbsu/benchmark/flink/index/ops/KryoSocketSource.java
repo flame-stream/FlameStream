@@ -58,6 +58,7 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
       @Override
       public void disconnected(Connection connection) {
         LOG.info("DISCONNECTED");
+        ctx.emitWatermark(new Watermark(Long.MAX_VALUE));
         client.stop();
       }
     });
