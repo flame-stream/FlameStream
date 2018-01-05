@@ -32,3 +32,6 @@ roles/deliver-flamestream/files/lib/
 /examples/wiki.xml
 /benchmark/ansible/aws.yml
 /wiki.xml
+benchmark/ansible/roles/flamestream-common/files/entrypoint.sh
+benchmark/ansible/roles/flamestream-common/files/flamestream-runtime-1.0-SNAPSHOT.jar
+benchmark/ansible/roles/flamestream-common/files/lib/
