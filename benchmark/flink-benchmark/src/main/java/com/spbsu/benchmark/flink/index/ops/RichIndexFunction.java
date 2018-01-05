@@ -11,8 +11,11 @@ import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class RichIndexFunction extends RichMapFunction<Tuple2<String, long[]>, Result> {
   private transient ValueState<InvertedIndexState> state = null;
+  private transient AtomicInteger prevDocId;
 
   @Override
   public void open(Configuration parameters) {
@@ -22,10 +25,16 @@ public class RichIndexFunction extends RichMapFunction<Tuple2<String, long[]>, R
     );
 
     state = getRuntimeContext().getState(descriptor);
+    prevDocId = new AtomicInteger(-1);
   }
 
   @Override
   public Result map(Tuple2<String, long[]> value) throws Exception {
+    final int docId = IndexItemInLong.pageId(value.f1[0]);
+    if (prevDocId.getAndSet(docId) > docId) {
+      throw new IllegalStateException("Output doc ids are not monotonic");
+    }
+
     final InvertedIndexState currentStat;
     if (state.value() == null) {
       currentStat = new InvertedIndexState();
