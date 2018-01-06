@@ -45,8 +45,7 @@ import java.util.Set;
 public class Acker extends LoggingActor {
   private static final int WINDOW = 1;
   private static final int SIZE = 100000;
-  private final long defaultMinimalTime;
-
+  private long defaultMinimalTime;
 
   private final Set<ActorRef> minTimeSubscribers = new HashSet<>();
 
@@ -90,6 +89,7 @@ public class Acker extends LoggingActor {
 
   private void unregisterFront(EdgeId frontId) {
     log().info("Unregistering front {}", frontId);
+    defaultMinimalTime = Math.max(defaultMinimalTime, maxHeartbeats.get(frontId).time());
     maxHeartbeats.remove(frontId);
   }
 
@@ -131,10 +131,12 @@ public class Acker extends LoggingActor {
   }
 
   private GlobalTime minAmongTables() {
+    final GlobalTime minHeartbeat;
     if (maxHeartbeats.isEmpty()) {
-      return new GlobalTime(defaultMinimalTime, EdgeId.MIN);
+      minHeartbeat = new GlobalTime(defaultMinimalTime, EdgeId.MIN);
+    } else {
+      minHeartbeat = Collections.min(maxHeartbeats.values());
     }
-    final GlobalTime minHeartbeat = Collections.min(maxHeartbeats.values());
     final long minTime = table.tryPromote(minHeartbeat.time());
     return new GlobalTime(minTime, EdgeId.MIN);
   }
