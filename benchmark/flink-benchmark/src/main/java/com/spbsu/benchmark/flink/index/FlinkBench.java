@@ -62,6 +62,7 @@ public final class FlinkBench {
                   .setParallelism(parallelism)
                   .timeWindowAll(Time.milliseconds(1))
                   .apply(new LocalOrderWindow())
+                  .setParallelism(parallelism)
                   .keyBy(0)
                   .map(new RichIndexFunction())
                   .setParallelism(parallelism)

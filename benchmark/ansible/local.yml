@@ -9,7 +9,7 @@ all:
         worker1:
     bench:
       hosts:
-        worker1:
+        worker2:
     workers:
       hosts:
         worker1:
