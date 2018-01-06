@@ -9,6 +9,7 @@ import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
+import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
@@ -53,7 +54,7 @@ public class SocketFront extends Front.Stub {
       public void disconnected(Connection connection) {
         LOG.info("{} has been disconnected from {}", edgeId, connection);
         client.stop();
-        consumer.accept(new Heartbeat(new GlobalTime(Long.MAX_VALUE, edgeId)));
+        consumer.accept(new UnregisterFront(edgeId));
       }
     });
   }

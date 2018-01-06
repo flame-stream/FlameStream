@@ -13,6 +13,7 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.materialization.GroupingJoba;
@@ -103,6 +104,7 @@ public class GraphManager extends LoggingActor {
             .match(AddressedItem.class, this::inject)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
             .match(Heartbeat.class, gt -> acker.forward(gt, context()))
+            .match(UnregisterFront.class, gt -> acker.forward(gt, context()))
             .build();
   }
 

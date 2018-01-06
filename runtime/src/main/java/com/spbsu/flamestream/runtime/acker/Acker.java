@@ -10,6 +10,7 @@ import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
+import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.acker.table.AckTable;
 import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
 import com.spbsu.flamestream.runtime.utils.Statistics;
@@ -72,6 +73,7 @@ public class Acker extends LoggingActor {
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
+            .match(UnregisterFront.class, unregisterFront -> unregisterFront(unregisterFront.frontId()))
             .build();
   }
 
@@ -84,6 +86,11 @@ public class Acker extends LoggingActor {
     log().info("Front instance \"{}\" has been registered, sending ticket", frontId);
 
     sender().tell(new FrontTicket(new GlobalTime(min.time(), frontId)), self());
+  }
+
+  private void unregisterFront(EdgeId frontId) {
+    log().info("Unregistering front {}", frontId);
+    maxHeartbeats.remove(frontId);
   }
 
   private void handleHeartBeat(Heartbeat heartbeat) {
