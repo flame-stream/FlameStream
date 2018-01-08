@@ -28,6 +28,6 @@ public class MapJoba extends Joba.Stub {
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
     final Stream<DataItem> output = operation.apply(dataItem);
-    process(dataItem, output, fromAsync);
+    processWithBuffer(dataItem, output, fromAsync);
   }
 }
