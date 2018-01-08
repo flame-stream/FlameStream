@@ -21,10 +21,6 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
     return new FlameMapOperation(physicalId);
   }
 
-  public Class<?> clazz() {
-    return clazz;
-  }
-
   @Override
   public String toString() {
     return "FlameMap{" +
