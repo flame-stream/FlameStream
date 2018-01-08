@@ -9,7 +9,6 @@ import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
-import com.spbsu.flamestream.core.data.meta.Trace;
 import com.spbsu.flamestream.example.bl.index.InvertedIndexGraph;
 import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
@@ -288,7 +287,6 @@ public class BenchStand implements AutoCloseable {
             Meta.class,
             GlobalTime.class,
             EdgeId.class,
-            Trace.class,
             int[].class)
     ) {
       benchStand.run();

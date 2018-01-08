@@ -13,6 +13,7 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 /**
@@ -21,13 +22,14 @@ import java.util.stream.Stream;
  */
 public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
   private final Grouping<?> grouping;
+  private final Grouping<?>.GroupingOperation instance;
   private final TIntObjectMap<Object> buffers = new TIntObjectHashMap<>();
 
   private GlobalTime currentMinTime = GlobalTime.MIN;
-  private int localTime = 0;
 
   public GroupingJoba(Grouping<?> grouping, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
     super(outJobas, acker, context);
+    this.instance = grouping.operation(ThreadLocalRandom.current().nextLong());
     this.grouping = grouping;
   }
 
@@ -39,10 +41,10 @@ public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
     final InvalidatingBucket bucket = bucketFor(dataItem);
-    final Stream<DataItem> output = grouping.operation().apply(dataItem, bucket, localTime++);
+    final Stream<DataItem> output = instance.apply(dataItem, bucket);
     process(dataItem, output, fromAsync);
     { //clear outdated
-      final int position = Math.max(bucket.floor(new Meta(currentMinTime)) - grouping.window(), 0);
+      final int position = Math.max(bucket.lowerBound(new Meta(currentMinTime)) - grouping.window(), 0);
       bucket.clearRange(0, position);
     }
   }
@@ -64,7 +66,7 @@ public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
         //noinspection unchecked
         final List<InvalidatingBucket> container = (List<InvalidatingBucket>) obj;
         final InvalidatingBucket result = container.stream()
-                .filter(bucket -> grouping.equalz()
+                .filter(bucket -> bucket.isEmpty() || grouping.equalz()
                         .test(bucket.get(0), item))
                 .findAny()
                 .orElse(new ArrayInvalidatingBucket());
@@ -75,7 +77,7 @@ public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
         return result;
       } else {
         final InvalidatingBucket bucket = (InvalidatingBucket) obj;
-        if (grouping.equalz().test(bucket.get(0), item)) {
+        if (bucket.isEmpty() || grouping.equalz().test(bucket.get(0), item)) {
           return bucket;
         } else {
           final List<InvalidatingBucket> container = new ArrayList<>();

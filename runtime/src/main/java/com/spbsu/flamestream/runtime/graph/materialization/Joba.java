@@ -19,7 +19,6 @@ public interface Joba {
   void accept(DataItem dataItem, boolean fromAsync);
 
   abstract class Stub implements Joba {
-    private static final int BROADCAST_LOCAL_TIME = Integer.MAX_VALUE;
     private final Joba[] outJobas;
 
     protected final ActorContext context;
@@ -37,7 +36,7 @@ public interface Joba {
           sendToNext(outJobas[0], dataItem);
         } else if (outJobas.length > 1) { //broadcast
           for (int i = 0; i < outJobas.length; i++) {
-            final Meta newMeta = new Meta(dataItem.meta(), BROADCAST_LOCAL_TIME, i);
+            final Meta newMeta = new Meta(dataItem.meta(), 0, i);
             final DataItem newItem = new BroadcastDataItem(dataItem, newMeta);
             sendToNext(outJobas[i], newItem);
           }
@@ -56,20 +55,20 @@ public interface Joba {
       }
     }
 
-    private void ack(DataItem dataItem) {
-      acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), context.self());
+    private void ack(DataItem item) {
+      acker.tell(new Ack(item.meta().globalTime(), item.xor()), context.self());
     }
 
     // TODO: 13.12.2017 i believe there is more effective and smart solution
     private static class BroadcastDataItem implements DataItem {
       private final DataItem inner;
       private final Meta newMeta;
-      private final long ackHashCode;
+      private final long xor;
 
       private BroadcastDataItem(DataItem inner, Meta newMeta) {
         this.inner = inner;
         this.newMeta = newMeta;
-        ackHashCode = ThreadLocalRandom.current().nextLong();
+        this.xor = ThreadLocalRandom.current().nextLong();
       }
 
       @Override
@@ -84,7 +83,7 @@ public interface Joba {
 
       @Override
       public long xor() {
-        return ackHashCode;
+        return xor;
       }
     }
   }

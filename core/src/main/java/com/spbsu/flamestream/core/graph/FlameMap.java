@@ -17,8 +17,8 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
     this.clazz = clazz;
   }
 
-  public FlameMapOperation operation() {
-    return new FlameMapOperation();
+  public FlameMapOperation operation(long physicalId) {
+    return new FlameMapOperation(physicalId);
   }
 
   @Override
@@ -29,11 +29,18 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
   }
 
   public class FlameMapOperation {
-    public Stream<DataItem> apply(DataItem dataItem, int localTime) {
+    private final long physicalId;
+
+    FlameMapOperation(long physicalId) {
+      this.physicalId = physicalId;
+    }
+
+    public Stream<DataItem> apply(DataItem dataItem) {
+      //noinspection unchecked
       final Stream<R> result = function.apply(dataItem.payload((Class<T>) clazz));
       final int[] childId = {0};
       return result.map(r -> {
-        final Meta newMeta = new Meta(dataItem.meta(), localTime, childId[0]++);
+        final Meta newMeta = new Meta(dataItem.meta(), physicalId, childId[0]++);
         return new PayloadDataItem(newMeta, r);
       });
     }

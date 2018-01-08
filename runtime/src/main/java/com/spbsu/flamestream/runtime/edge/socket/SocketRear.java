@@ -10,7 +10,6 @@ import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
-import com.spbsu.flamestream.core.data.meta.Trace;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
@@ -37,7 +36,6 @@ public class SocketRear implements Rear {
       client.getKryo().register(Meta.class);
       client.getKryo().register(GlobalTime.class);
       client.getKryo().register(EdgeId.class);
-      client.getKryo().register(Trace.class);
       client.getKryo().register(int[].class);
     }
     Arrays.stream(classes).forEach(clazz -> client.getKryo().register(clazz));

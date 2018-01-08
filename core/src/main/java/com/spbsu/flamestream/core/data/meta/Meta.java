@@ -1,45 +1,73 @@
 package com.spbsu.flamestream.core.data.meta;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 
 public class Meta implements Comparable<Meta> {
-  private static final Comparator<Meta> NATURAL_ORDER = Comparator
-          .comparing(Meta::globalTime).thenComparing(Meta::trace);
+  private static final int[] EMPTY_ARRAY = new int[0];
+
+  public static final Comparator<Meta> NATURAL_ORDER = Comparator
+          .comparing(Meta::globalTime)
+          .thenComparing(Meta::childIds, new ArrayComparator())
+          .thenComparing(Meta::trace)
+          .thenComparing(Meta::isTombstone);
+
 
   private final GlobalTime globalTime;
-  private final Trace trace;
+  private final int[] childIds;
+  private final long trace;
+  private final boolean tombstone;
 
   public Meta(GlobalTime globalTime) {
     this.globalTime = globalTime;
-    this.trace = Trace.EMPTY_TRACE;
+    this.childIds = EMPTY_ARRAY;
+    this.tombstone = false;
+    this.trace = 0;
   }
 
-  public Meta(Meta previous, int localTime) {
+  public Meta(Meta previous, long physicalId, boolean tombstone) {
     this.globalTime = previous.globalTime();
-    this.trace = new Trace(previous.trace(), localTime, 0);
+    this.childIds = previous.childIds;
+    this.tombstone = tombstone;
+    this.trace = previous.trace ^ physicalId;
   }
 
-  public Meta(Meta previous, int localTime, int childId) {
+  public Meta(Meta previous, long physicalId, int childId) {
     this.globalTime = previous.globalTime();
-    this.trace = new Trace(previous.trace(), localTime, childId);
+    this.childIds = Arrays.copyOf(previous.childIds, previous.childIds.length + 1);
+    childIds[childIds.length - 1] = childId;
+    this.tombstone = previous.tombstone;
+    this.trace = previous.trace ^ physicalId;
   }
 
-  public boolean isInvalidatedBy(Meta that) {
-    return globalTime.equals(that.globalTime()) && trace.isInvalidatedBy(that.trace());
+  public boolean isTombstone() {
+    return tombstone;
   }
 
   public GlobalTime globalTime() {
     return globalTime;
   }
 
-  Trace trace() {
+  public long trace() {
     return trace;
+  }
+
+  int[] childIds() {
+    return childIds;
   }
 
   @Override
   public int compareTo(Meta that) {
     return NATURAL_ORDER.compare(this, that);
+  }
+
+  public boolean isInvalidedBy(Meta that) {
+    return globalTime.equals(that.globalTime)
+            && Arrays.equals(childIds, that.childIds)
+            && trace == that.trace
+            && !tombstone
+            && that.tombstone;
   }
 
   @Override
@@ -51,16 +79,33 @@ public class Meta implements Comparable<Meta> {
       return false;
     }
     final Meta meta = (Meta) o;
-    return Objects.equals(globalTime, meta.globalTime) && Objects.equals(trace, meta.trace);
+    return trace == meta.trace &&
+            tombstone == meta.tombstone &&
+            Objects.equals(globalTime, meta.globalTime) &&
+            Arrays.equals(childIds, meta.childIds);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(globalTime, trace);
+    int result = Objects.hash(globalTime, trace, tombstone);
+    result = 31 * result + Arrays.hashCode(childIds);
+    return result;
   }
 
   @Override
   public String toString() {
-    return "(" + globalTime + ", " + trace + ')';
+    return "(" + globalTime + ", " + Arrays.toString(childIds) + ", " + trace + (tombstone ? ", tombstone" : "") + ')';
+  }
+
+  public static class ArrayComparator implements Comparator<int[]> {
+    @Override
+    public int compare(int[] o1, int[] o2) {
+      for (int i = 0; i < Math.min(o1.length, o2.length); ++i) {
+        if (o1[i] != o2[i]) {
+          return Long.compare(o1[i], o2[i]);
+        }
+      }
+      return Integer.compare(o1.length, o2.length);
+    }
   }
 }
