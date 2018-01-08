@@ -8,13 +8,15 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class PayloadDataItem implements DataItem {
   private final Meta meta;
+
   private final Object payload;
-  private final long xor;
+
+  private final long ackHashCode;
 
   public PayloadDataItem(Meta meta, Object payload) {
     this.payload = payload;
     this.meta = meta;
-    this.xor = ThreadLocalRandom.current().nextLong();
+    this.ackHashCode = ThreadLocalRandom.current().nextLong();
   }
 
   @Override
@@ -29,7 +31,7 @@ public class PayloadDataItem implements DataItem {
 
   @Override
   public long xor() {
-    return xor;
+    return ackHashCode;
   }
 
   @Override
@@ -46,13 +48,11 @@ public class PayloadDataItem implements DataItem {
       return false;
     }
     final PayloadDataItem that = (PayloadDataItem) o;
-    return xor == that.xor &&
-            Objects.equals(meta, that.meta) &&
-            Objects.equals(payload, that.payload);
+    return ackHashCode == that.ackHashCode && Objects.equals(meta, that.meta) && Objects.equals(payload, that.payload);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(meta, payload, xor);
+    return Objects.hash(meta, payload, ackHashCode);
   }
 }

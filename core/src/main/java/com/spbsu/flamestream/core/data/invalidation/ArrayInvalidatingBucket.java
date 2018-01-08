@@ -15,17 +15,48 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
   private final List<DataItem> innerList = new ArrayList<>();
 
   @Override
-  public void insert(DataItem insertee) {
-    if (!insertee.meta().isTombstone()) {
-      final int position = lowerBound(insertee.meta());
-      innerList.add(position, insertee);
-    } else {
-      final int position = lowerBound(insertee.meta()) - 1;
-      if (!innerList.get(position).meta().isInvalidedBy(insertee.meta())) {
-        throw new IllegalStateException("There is no invalidee");
+  public int insert(DataItem insertee) {
+    int position = innerList.size() - 1;
+    int endPosition = -1;
+    { //find position
+      while (position >= 0) {
+        final DataItem currentItem = innerList.get(position);
+        final int compareTo = currentItem.meta().compareTo(insertee.meta());
+
+        if (compareTo > 0) {
+          if (insertee.meta().isInvalidatedBy(currentItem.meta())) {
+            return -1;
+          }
+          position--;
+        } else {
+          if (currentItem.meta().isInvalidatedBy(insertee.meta())) {
+            endPosition = endPosition == -1 ? position : endPosition;
+            position--;
+          } else {
+            break;
+          }
+        }
       }
-      innerList.remove(position);
     }
+    { //invalidation/adding
+      if (position == (innerList.size() - 1)) {
+        innerList.add(insertee);
+      } else {
+        if (endPosition != -1) {
+          innerList.set(position + 1, insertee);
+          final int itemsForRemove = endPosition - position - 1;
+          //subList.clear is faster if the number of items for removing >= 2
+          if (itemsForRemove >= 2) {
+            innerList.subList(position + 2, endPosition + 1).clear();
+          } else if (itemsForRemove > 0) {
+            innerList.remove(endPosition);
+          }
+        } else {
+          innerList.add(position + 1, insertee);
+        }
+      }
+    }
+    return position + 1;
   }
 
   @Override
@@ -58,20 +89,16 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
     return innerList.isEmpty();
   }
 
-  /**
-   * Lower bound as Burunduk1 says
-   * <a href="http://acm.math.spbu.ru/~sk1/mm/cs-center/src/2015-09-24/bs.cpp.html"/>"/>
-   */
   @Override
-  public int lowerBound(Meta meta) {
+  public int floor(Meta meta) {
     int left = 0;
     int right = innerList.size();
-    while (left != right) {
+    while (right - left > 1) {
       final int middle = left + (right - left) / 2;
-      if (innerList.get(middle).meta().compareTo(meta) >= 0) {
+      if (meta.compareTo(innerList.get(middle).meta()) < 0) {
         right = middle;
       } else {
-        left = middle + 1;
+        left = middle;
       }
     }
     return left;
