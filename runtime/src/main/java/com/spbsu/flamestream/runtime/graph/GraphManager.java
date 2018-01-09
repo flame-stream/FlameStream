@@ -151,7 +151,11 @@ public class GraphManager extends LoggingActor {
       if (vertex instanceof Sink) {
         joba = new SinkJoba(barriers, acker, context());
       } else if (vertex instanceof FlameMap) {
-        joba = new ActorJoba(new MapJoba((FlameMap<?, ?>) vertex, output, acker, context()));
+        if (!((FlameMap) vertex).clazz().getSimpleName().equals("WikipediaPage")) {
+          joba = new MapJoba((FlameMap<?, ?>) vertex, output, acker, context());
+        } else {
+          joba = new ActorJoba(new MapJoba((FlameMap<?, ?>) vertex, output, acker, context()));
+        }
       } else if (vertex instanceof Grouping) {
         joba = new GroupingJoba((Grouping) vertex, output, acker, context());
       } else if (vertex instanceof Source) {
