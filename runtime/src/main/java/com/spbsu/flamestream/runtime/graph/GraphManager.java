@@ -16,6 +16,7 @@ import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
+import com.spbsu.flamestream.runtime.graph.materialization.ActorJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.GroupingJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.Joba;
 import com.spbsu.flamestream.runtime.graph.materialization.MapJoba;
@@ -150,7 +151,7 @@ public class GraphManager extends LoggingActor {
       if (vertex instanceof Sink) {
         joba = new SinkJoba(barriers, acker, context());
       } else if (vertex instanceof FlameMap) {
-        joba = new MapJoba((FlameMap<?, ?>) vertex, output, acker, context());
+        joba = new ActorJoba(new MapJoba((FlameMap<?, ?>) vertex, output, acker, context()));
       } else if (vertex instanceof Grouping) {
         joba = new GroupingJoba((Grouping) vertex, output, acker, context());
       } else if (vertex instanceof Source) {
