@@ -85,7 +85,7 @@ public class LifecycleWatcher extends LoggingActor {
     final ClusterConfig config = client.config().withChildPath(flameClient.name());
     final Graph g = flameClient.graph();
     log().info("Creating node with watchGraphs: '{}', config: '{}'", g, config);
-    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient), flameClient.name());
+    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient).withDispatcher("resolver-dispatcher"), flameClient.name());
     nodes.put(flameClient.name(), node);
 
     final Set<AttachFront<?>> initialFronts = flameClient.fronts(newFronts ->
