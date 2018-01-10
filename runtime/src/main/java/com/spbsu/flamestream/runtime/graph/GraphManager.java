@@ -138,9 +138,7 @@ public class GraphManager extends LoggingActor {
                           Destination.fromVertexId(outVertex.id()),
                           acker,
                           context());
-                  if (!(vertex instanceof FlameMap) || !((FlameMap) vertex).clazz().getSimpleName().equals("WikipediaPage")) {
-                    routers.put(outVertex.id(), routerJoba);
-                  }
+                  routers.put(outVertex.id(), routerJoba);
                   return routerJoba;
                 }
                 return buildMaterialization(outVertex, jobasForVertices, routers);
