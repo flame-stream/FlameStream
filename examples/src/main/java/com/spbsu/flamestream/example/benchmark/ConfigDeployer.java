@@ -46,15 +46,11 @@ public class ConfigDeployer {
     });
 
     final Map<String, HashRange> ranges = new HashMap<>();
-    final List<HashRange> covering = HashRange.covering(paths.size() - 1)
+    final List<HashRange> covering = HashRange.covering(paths.size())
             .collect(Collectors.toCollection(ArrayList::new));
     paths.keySet().forEach(s -> {
-      if (!s.equals(config.ackerLocation)) {
-        ranges.put(s, covering.get(0));
-        covering.remove(0);
-      } else {
-        ranges.put(s, new HashRange(0, 0));
-      }
+      ranges.put(s, covering.get(0));
+      covering.remove(0);
     });
     assert covering.isEmpty();
 
