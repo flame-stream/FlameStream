@@ -54,22 +54,20 @@ public final class FlinkBench {
 
         final DataStream<WikipediaPage> source = environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))
-                .setParallelism(parallelism)
-                .shuffle();
+                .setParallelism(parallelism);
 
         if (deployerConfig.getBoolean("windowed")) {
           source.flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
                   .timeWindowAll(Time.milliseconds(1))
                   .apply(new LocalOrderWindow())
-                  .setParallelism(parallelism)
                   .keyBy(0)
                   .map(new RichIndexFunction())
                   .setParallelism(parallelism)
                   .timeWindowAll(Time.milliseconds(1))
                   .apply(new TotalOrderWindow())
                   .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
-                  .setParallelism(1);
+                  .setParallelism(parallelism);
         } else {
           source.flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
