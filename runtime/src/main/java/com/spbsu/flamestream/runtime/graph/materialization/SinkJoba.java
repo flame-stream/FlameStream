@@ -3,8 +3,10 @@ package com.spbsu.flamestream.runtime.graph.materialization;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
+import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.barrier.BarrierCollector;
+import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +17,7 @@ import java.util.stream.Stream;
  * Date: 12.12.2017
  */
 public class SinkJoba extends Joba.Stub implements MinTimeHandler {
-  private final BarrierCollector collector = new BarrierCollector();
+  private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
   private final List<ActorRef> rears = new ArrayList<>();
 
   public SinkJoba(ActorRef acker, ActorContext context) {
@@ -33,12 +35,14 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
 
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
-    collector.enqueue(dataItem);
+    invalidatingBucket.insert(dataItem);
     process(dataItem, Stream.of(dataItem), fromAsync);
   }
 
   @Override
   public void onMinTime(GlobalTime minTime) {
-    collector.releaseFrom(minTime, di -> rears.forEach(rear -> rear.tell(di, context.self())));
+    final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
+    invalidatingBucket.rangeStream(0, pos).forEach(di -> rears.forEach(rear -> rear.tell(di, context.self())));
+    invalidatingBucket.clearRange(0, pos);
   }
 }
