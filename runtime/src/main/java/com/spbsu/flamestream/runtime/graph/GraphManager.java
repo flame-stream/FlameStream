@@ -16,6 +16,7 @@ import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
+import com.spbsu.flamestream.runtime.graph.materialization.ActorJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.GroupingJoba;
 import com.spbsu.flamestream.runtime.graph.materialization.Joba;
 import com.spbsu.flamestream.runtime.graph.materialization.MapJoba;
@@ -80,7 +81,9 @@ public class GraphManager extends LoggingActor {
                 final Multimap<String, RouterJoba> routers = LinkedListMultimap.create();
                 graph.vertices().forEach(vertex -> buildMaterialization(vertex, jobasForVertices, routers));
                 jobasForVertices.forEach((vertexId, joba) -> {
-                  if (joba instanceof GroupingJoba || joba instanceof SourceJoba || joba instanceof MapJoba) {
+                  if (joba instanceof GroupingJoba || joba instanceof MapJoba) {
+                    materialization.put(Destination.fromVertexId(vertexId), new ActorJoba(joba));
+                  } else if (joba instanceof SourceJoba) {
                     materialization.put(Destination.fromVertexId(vertexId), joba);
                   }
                   if (joba instanceof MinTimeHandler) {
@@ -149,7 +152,11 @@ public class GraphManager extends LoggingActor {
                   routers.put(outVertex.id(), routerJoba);
                   return routerJoba;
                 }
-                return buildMaterialization(outVertex, jobasForVertices, routers);
+                if (((Graph.Builder.MyGraph) graph).isAsync(vertex, outVertex)) {
+                  return new ActorJoba(buildMaterialization(outVertex, jobasForVertices, routers));
+                } else {
+                  return buildMaterialization(outVertex, jobasForVertices, routers);
+                }
               });
 
       final Joba joba;

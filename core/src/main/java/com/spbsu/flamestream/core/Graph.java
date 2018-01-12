@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import org.jooq.lambda.tuple.Tuple2;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +42,14 @@ public interface Graph {
   class Builder {
     private final Multimap<Vertex, Vertex> adjLists = HashMultimap.create();
     private final Multimap<Vertex, Vertex> invertedAdjLists = HashMultimap.create();
+    private final List<Tuple2<Vertex, Vertex>> asyncs = new ArrayList<>();
+
+    public Builder linkAsync(Vertex from, Vertex to) {
+      adjLists.put(from, to);
+      invertedAdjLists.put(to, from);
+      asyncs.add(new Tuple2<>(from, to));
+      return this;
+    }
 
     public Builder link(Vertex from, Vertex to) {
       adjLists.put(from, to);
@@ -55,7 +64,7 @@ public interface Graph {
         throw new IllegalStateException("Source must not have outputs");
       }
 
-      return new MyGraph(adjLists, source, sink);
+      return new MyGraph(adjLists, source, sink, asyncs);
     }
 
     public static class MyGraph implements Graph {
@@ -63,8 +72,13 @@ public interface Graph {
       private final Source source;
       private final Sink sink;
       private final Map<Vertex, Collection<Vertex>> adjLists;
+      private final List<Tuple2<Vertex, Vertex>> asyncs;
 
-      public MyGraph(Multimap<Vertex, Vertex> adjLists, Source source, Sink sink) {
+      public MyGraph(Multimap<Vertex, Vertex> adjLists,
+                     Source source,
+                     Sink sink,
+                     List<Tuple2<Vertex, Vertex>> asyncs) {
+        this.asyncs = asyncs;
         this.allVertices = new ArrayList<>(adjLists.keySet());
         allVertices.add(sink);
         // Multimap is converted to Map<.,Set> to support serialization
@@ -78,6 +92,10 @@ public interface Graph {
 
         this.source = source;
         this.sink = sink;
+      }
+
+      public boolean isAsync(Vertex from, Vertex to) {
+        return asyncs.contains(new Tuple2<>(from, to));
       }
 
       @Override

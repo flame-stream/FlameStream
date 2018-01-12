@@ -49,7 +49,7 @@ public class InvertedIndexGraph implements Supplier<Graph> {
 
     return new Graph.Builder()
             .link(source, wikiPageToPositions)
-            .link(wikiPageToPositions, grouping)
+            .linkAsync(wikiPageToPositions, grouping)
             .link(grouping, wrongOrderingFilter)
             .link(wrongOrderingFilter, indexer)
             .link(indexer, indexFilter)
