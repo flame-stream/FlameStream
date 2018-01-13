@@ -4,11 +4,14 @@ import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.HashFunction;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.graph.GraphManager;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
+
+import java.util.stream.Stream;
 
 /**
  * User: Artem
@@ -51,6 +54,25 @@ public class RouterJoba implements Joba {
     } else {
       router.get(hash).tell(new AddressedItem(dataItem, destination), context.self());
       acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), context.self());
+    }
+  }
+
+  public void accept(Stream<DataItem> dataItemStream, boolean fromAsync) {
+    final long[] xor = {0};
+    final GlobalTime[] globalTime = {null};
+    dataItemStream.forEach(dataItem -> {
+      final int hash = hashFunction.applyAsInt(dataItem);
+      if (localJoba != null && hash >= localRange.from() && hash < localRange.to()) {
+        localJoba.accept(dataItem, fromAsync);
+      } else {
+        router.get(hash).tell(new AddressedItem(dataItem, destination), context.self());
+        globalTime[0] = dataItem.meta().globalTime();
+        xor[0] ^= dataItem.xor();
+        //acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), context.self());
+      }
+    });
+    if (globalTime[0] != null) {
+      acker.tell(new Ack(globalTime[0], xor[0]), context.self());
     }
   }
 

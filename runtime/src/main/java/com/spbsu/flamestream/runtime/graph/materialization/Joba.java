@@ -31,17 +31,21 @@ public interface Joba {
     }
 
     void process(DataItem input, Stream<DataItem> output, boolean fromAsync) {
-      output.forEach(dataItem -> {
-        if (outJobas.length == 1) {
-          sendToNext(outJobas[0], dataItem);
-        } else if (outJobas.length > 1) { //broadcast
-          for (int i = 0; i < outJobas.length; i++) {
-            final Meta newMeta = new Meta(dataItem.meta(), 0, i);
-            final DataItem newItem = new BroadcastDataItem(dataItem, newMeta);
-            sendToNext(outJobas[i], newItem);
+      if (outJobas.length == 1 && outJobas[0] instanceof RouterJoba) {
+        ((RouterJoba) outJobas[0]).accept(output, fromAsync);
+      } else {
+        output.forEach(dataItem -> {
+          if (outJobas.length == 1) {
+            sendToNext(outJobas[0], dataItem);
+          } else if (outJobas.length > 1) { //broadcast
+            for (int i = 0; i < outJobas.length; i++) {
+              final Meta newMeta = new Meta(dataItem.meta(), 0, i);
+              final DataItem newItem = new BroadcastDataItem(dataItem, newMeta);
+              sendToNext(outJobas[i], newItem);
+            }
           }
-        }
-      });
+        });
+      }
       if (fromAsync) {
         //ACK for input DI should be later than for output
         ack(input);
