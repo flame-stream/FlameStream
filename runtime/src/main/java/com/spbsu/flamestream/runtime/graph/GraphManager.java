@@ -42,30 +42,29 @@ public class GraphManager extends LoggingActor {
   private final Graph graph;
   private final ActorRef acker;
   private final ComputationProps computationProps;
-  private final Map<String, ActorRef> barriers;
 
   private final IntRangeMap<ActorRef> router = new ListIntRangeMap<>();
   private final Map<Destination, Joba> materialization = new HashMap<>();
   private final Collection<MinTimeHandler> minTimeHandlers = new ArrayList<>();
+  private final Collection<Joba> allJobas = new ArrayList<>();
+
+  private SinkJoba sinkJoba;
 
   private GraphManager(String nodeId,
                        Graph graph,
                        ActorRef acker,
-                       ComputationProps computationProps,
-                       Map<String, ActorRef> barriers) {
+                       ComputationProps computationProps) {
     this.nodeId = nodeId;
     this.computationProps = computationProps;
     this.graph = graph;
     this.acker = acker;
-    this.barriers = barriers;
   }
 
   public static Props props(String nodeId,
                             Graph graph,
                             ActorRef acker,
-                            ComputationProps layout,
-                            Map<String, ActorRef> barriers) {
-    return Props.create(GraphManager.class, nodeId, graph, acker, layout, barriers);
+                            ComputationProps layout) {
+    return Props.create(GraphManager.class, nodeId, graph, acker, layout);
   }
 
   @Override
@@ -92,6 +91,10 @@ public class GraphManager extends LoggingActor {
                   if (joba instanceof MinTimeHandler) {
                     minTimeHandlers.add((MinTimeHandler) joba);
                   }
+                  if (joba instanceof SinkJoba) {
+                    sinkJoba = (SinkJoba) joba;
+                  }
+                  allJobas.add(joba);
                   routers.get(vertexId).forEach(routerJoba -> routerJoba.setLocalJoba(joba));
                 });
               }
@@ -108,9 +111,14 @@ public class GraphManager extends LoggingActor {
             .match(DataItem.class, this::accept)
             .match(AddressedItem.class, this::inject)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
+            .match(com.spbsu.flamestream.runtime.barrier.api.AttachRear.class, this::attachRear)
             .match(Heartbeat.class, gt -> acker.forward(gt, context()))
             .match(UnregisterFront.class, gt -> acker.forward(gt, context()))
             .build();
+  }
+
+  private void attachRear(com.spbsu.flamestream.runtime.barrier.api.AttachRear attachRear) {
+    sinkJoba.addRear(attachRear.rear());
   }
 
   private void accept(DataItem dataItem) {
@@ -159,7 +167,7 @@ public class GraphManager extends LoggingActor {
 
       final Joba joba;
       if (vertex instanceof Sink) {
-        joba = new SinkJoba(barriers, acker, context());
+        joba = new SinkJoba(acker, context());
       } else if (vertex instanceof FlameMap) {
         joba = new MapJoba((FlameMap<?, ?>) vertex, output, acker, context());
       } else if (vertex instanceof Grouping) {

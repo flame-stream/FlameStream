@@ -9,10 +9,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 
-class BarrierCollector {
+public class BarrierCollector {
   private final SortedMap<GlobalTime, InvalidatingBucket> invalidationPool = new TreeMap<>();
 
-  void releaseFrom(GlobalTime minTime, Consumer<DataItem> consumer) {
+  public void releaseFrom(GlobalTime minTime, Consumer<DataItem> consumer) {
     if (!invalidationPool.isEmpty()) {
       final SortedMap<GlobalTime, InvalidatingBucket> headMap = invalidationPool.headMap(minTime);
       headMap.values().stream().flatMap(InvalidatingBucket::stream).forEach(consumer);
@@ -20,7 +20,7 @@ class BarrierCollector {
     }
   }
 
-  void enqueue(DataItem item) {
+  public void enqueue(DataItem item) {
     final DataItem dataItem = item;
     invalidationPool.compute(item.meta().globalTime(), (globalTime, dataItems) -> {
       final InvalidatingBucket items = dataItems == null ? new ArrayInvalidatingBucket() : dataItems;
