@@ -15,15 +15,13 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.jooq.lambda.Unchecked;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * User: Artem
  * Date: 04.01.2018
  */
 public class RichIndexWindow extends RichWindowFunction<Tuple2<String, long[]>, Result, Tuple, TimeWindow> {
   private transient ValueState<InvertedIndexState> state = null;
-  private transient AtomicInteger prevDocId;
+  //private transient AtomicInteger prevDocId;
 
   @Override
   public void open(Configuration parameters) throws Exception {
@@ -33,16 +31,16 @@ public class RichIndexWindow extends RichWindowFunction<Tuple2<String, long[]>, 
     );
 
     state = getRuntimeContext().getState(descriptor);
-    prevDocId = new AtomicInteger(-1);
+    //prevDocId = new AtomicInteger(-1);
   }
 
   @Override
   public void apply(Tuple tuple, TimeWindow window, Iterable<Tuple2<String, long[]>> input, Collector<Result> out) throws Exception {
     input.forEach(Unchecked.consumer(value -> {
-      final int docId = IndexItemInLong.pageId(value.f1[0]);
+      /*final int docId = IndexItemInLong.pageId(value.f1[0]);
       if (prevDocId.getAndSet(docId) > docId) {
         throw new IllegalStateException("Output doc ids are not monotonic");
-      }
+      }*/
 
       final InvertedIndexState currentStat;
       if (state.value() == null) {
