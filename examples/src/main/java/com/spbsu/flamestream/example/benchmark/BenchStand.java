@@ -25,6 +25,7 @@ import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.jooq.lambda.Seq;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +36,12 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -79,8 +83,9 @@ public class BenchStand implements AutoCloseable {
   }
 
   private Server producer() throws IOException {
-    final Stream<WikipediaPage> input = WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath())
-            .limit(validator.inputLimit());
+    final Stream<WikipediaPage> input = Seq.seq(WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath()))
+            .limit(validator.inputLimit())
+            .shuffle(new Random(1));
     final Server producer = new Server(1_000_000, 1000);
     producer.getKryo().register(WikipediaPage.class);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy())
@@ -189,7 +194,17 @@ public class BenchStand implements AutoCloseable {
 
     final double[] latencies = this.latencies.values().stream().mapToDouble(l -> l.statistics().getMax()).toArray();
     LOG.info("Result: {}", Arrays.toString(latencies));
-    final double[] skipped = this.latencies.values().stream().skip(200).mapToDouble(l -> l.statistics().getMax()).toArray();
+    final List<Integer> collect = Seq.seq(WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath()))
+            .limit(validator.inputLimit())
+            .shuffle(new Random(1))
+            .map(p -> p.text().length())
+            .collect(Collectors.toList());
+    LOG.info("Page sizes: {}", collect);
+    final double[] skipped = this.latencies.values()
+            .stream()
+            .skip(200)
+            .mapToDouble(l -> l.statistics().getMax())
+            .toArray();
     final DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(skipped);
     LOG.info("Median: {}", descriptiveStatistics.getPercentile(5));
     LOG.info("75%: {}", descriptiveStatistics.getPercentile(75));
