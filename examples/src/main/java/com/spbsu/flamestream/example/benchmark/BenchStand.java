@@ -207,7 +207,7 @@ public class BenchStand implements AutoCloseable {
             .mapToDouble(l -> l.statistics().getMax())
             .toArray();
     final DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(skipped);
-    LOG.info("Median: {}", descriptiveStatistics.getPercentile(5));
+    LOG.info("Median: {}", descriptiveStatistics.getPercentile(50));
     LOG.info("75%: {}", descriptiveStatistics.getPercentile(75));
     LOG.info("90%: {}", descriptiveStatistics.getPercentile(90));
     LOG.info("99%: {}", descriptiveStatistics.getPercentile(99));

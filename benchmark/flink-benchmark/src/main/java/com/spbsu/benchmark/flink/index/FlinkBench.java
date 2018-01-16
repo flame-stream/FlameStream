@@ -2,8 +2,9 @@ package com.spbsu.benchmark.flink.index;
 
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSink;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSource;
-import com.spbsu.benchmark.flink.index.ops.RichIndexWindow;
 import com.spbsu.benchmark.flink.index.ops.RichIndexFunction;
+import com.spbsu.benchmark.flink.index.ops.RichIndexWindow;
+import com.spbsu.benchmark.flink.index.ops.TotalOrderWindow;
 import com.spbsu.benchmark.flink.index.ops.WikipediaPageToWordPositions;
 import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
@@ -62,8 +63,10 @@ public final class FlinkBench {
                   .keyBy(0)
                   .timeWindow(Time.milliseconds(1))
                   .apply(new RichIndexWindow())
+                  .timeWindowAll(Time.milliseconds(1))
+                  .apply(new TotalOrderWindow())
                   .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
-                  .setParallelism(parallelism);
+                  .setParallelism(1);
         } else {
           source.flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
