@@ -95,12 +95,13 @@ public class BenchStand implements AutoCloseable {
           throw new RuntimeException(e);
         }
       }
+      final int[] i = {0};
       input.forEach(page -> {
                 synchronized (connection) {
                   try {
                     latencies.put(page.id(), new LatencyMeasurer());
                     connection[0].sendTCP(page);
-                    LOG.info("Sending: {} at {}", page.id(), System.nanoTime());
+                    LOG.info("Sending: {}", i[0]++);
                     Thread.sleep(standConfig.sleepBetweenDocs());
                   } catch (InterruptedException e) {
                     throw new RuntimeException(e);
