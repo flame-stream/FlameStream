@@ -285,9 +285,9 @@ public class BenchStand implements AutoCloseable {
             GlobalTime.class,
             EdgeId.class,
             int[].class
-    )
-    ) {
+    )) {
       benchStand.run();
     }
+    System.exit(0);
   }
 }
