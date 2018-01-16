@@ -32,7 +32,7 @@ public interface Joba {
 
     void process(DataItem input, Stream<DataItem> output, boolean fromAsync) {
       if (outJobas.length == 1 && outJobas[0] instanceof RouterJoba) {
-        ((RouterJoba) outJobas[0]).accept(output, fromAsync);
+        ((RouterJoba) outJobas[0]).accept(output, isAsync());
       } else {
         output.forEach(dataItem -> {
           if (outJobas.length == 1) {

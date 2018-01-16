@@ -42,12 +42,19 @@ public interface Graph {
   class Builder {
     private final Multimap<Vertex, Vertex> adjLists = HashMultimap.create();
     private final Multimap<Vertex, Vertex> invertedAdjLists = HashMultimap.create();
+
     private final List<Tuple2<Vertex, Vertex>> asyncs = new ArrayList<>();
+    private final List<Tuple2<Vertex, Vertex>> shuffles = new ArrayList<>();
 
     public Builder linkAsync(Vertex from, Vertex to) {
-      adjLists.put(from, to);
-      invertedAdjLists.put(to, from);
+      link(from, to);
       asyncs.add(new Tuple2<>(from, to));
+      return this;
+    }
+
+    public Builder linkShuffle(Vertex from, Vertex to) {
+      link(from, to);
+      shuffles.add(new Tuple2<>(from, to));
       return this;
     }
 
@@ -64,7 +71,7 @@ public interface Graph {
         throw new IllegalStateException("Source must not have outputs");
       }
 
-      return new MyGraph(adjLists, source, sink, asyncs);
+      return new MyGraph(adjLists, source, sink, asyncs, shuffles);
     }
 
     public static class MyGraph implements Graph {
@@ -72,14 +79,17 @@ public interface Graph {
       private final Source source;
       private final Sink sink;
       private final Map<Vertex, Collection<Vertex>> adjLists;
+
       private final List<Tuple2<Vertex, Vertex>> asyncs;
+      private final List<Tuple2<Vertex, Vertex>> shuffles;
 
       public MyGraph(Multimap<Vertex, Vertex> adjLists,
                      Source source,
                      Sink sink,
-                     List<Tuple2<Vertex, Vertex>> asyncs) {
+                     List<Tuple2<Vertex, Vertex>> asyncs, List<Tuple2<Vertex, Vertex>> shuffles) {
         this.asyncs = asyncs;
         this.allVertices = new ArrayList<>(adjLists.keySet());
+        this.shuffles = shuffles;
         allVertices.add(sink);
         // Multimap is converted to Map<.,Set> to support serialization
         this.adjLists = adjLists.entries().stream().collect(Collectors.groupingBy(
@@ -96,6 +106,10 @@ public interface Graph {
 
       public boolean isAsync(Vertex from, Vertex to) {
         return asyncs.contains(new Tuple2<>(from, to));
+      }
+
+      public boolean isShuffle(Vertex from, Vertex to) {
+        return shuffles.contains(new Tuple2<>(from, to));
       }
 
       @Override

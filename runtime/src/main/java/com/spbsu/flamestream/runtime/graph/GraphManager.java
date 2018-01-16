@@ -5,8 +5,10 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
@@ -141,17 +143,21 @@ public class GraphManager extends LoggingActor {
       final Stream<Joba> output = graph.adjacent(vertex)
               .map(outVertex -> {
                 // TODO: 15.12.2017 add circuit breaker
-                if (outVertex instanceof Grouping) {
+                if (outVertex instanceof Grouping || ((Graph.Builder.MyGraph) graph).isShuffle(vertex, outVertex)) {
+                  final HashFunction hashFunction = outVertex instanceof Grouping ?
+                          ((Grouping) outVertex).hash() :
+                          dataItem -> Hashing.murmur3_32().hashLong(dataItem.xor()).asInt();
                   final RouterJoba routerJoba = new RouterJoba(
                           router,
                           computationProps.ranges().get(nodeId),
-                          ((Grouping) outVertex).hash(),
+                          hashFunction,
                           Destination.fromVertexId(outVertex.id()),
                           acker,
                           context());
                   routers.put(outVertex.id(), routerJoba);
                   return routerJoba;
                 }
+
                 if (((Graph.Builder.MyGraph) graph).isAsync(vertex, outVertex)) {
                   return new ActorJoba(buildMaterialization(outVertex, jobasForVertices, routers));
                 } else {
