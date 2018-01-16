@@ -24,6 +24,7 @@ import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,6 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
@@ -185,18 +185,15 @@ public class BenchStand implements AutoCloseable {
     graphDeployer.close();
     producer.stop();
     consumer.stop();
-    { //print latencies
-      final LongSummaryStatistics result = new LongSummaryStatistics();
-      final StringBuilder stringBuilder = new StringBuilder();
-      latencies.values().forEach(latencyMeasurer -> {
-        result.accept(latencyMeasurer.statistics().getMax());
-        stringBuilder.append(latencyMeasurer.statistics().getMax()).append(", ");
-      });
-      stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length()); //remove last ", "
 
-      LOG.info("Latencies dump: {}", stringBuilder);
-      LOG.info("Result: {}", result);
-    }
+    final double[] latencies = this.latencies.values().stream().mapToDouble(l -> l.statistics().getMax()).toArray();
+    LOG.info("Result: {}", Arrays.toString(latencies));
+    final double[] skipped = this.latencies.values().stream().skip(200).mapToDouble(l -> l.statistics().getMax()).toArray();
+    final DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(skipped);
+    LOG.info("Median: {}", descriptiveStatistics.getPercentile(5));
+    LOG.info("75%: {}", descriptiveStatistics.getPercentile(75));
+    LOG.info("90%: {}", descriptiveStatistics.getPercentile(90));
+    LOG.info("99%: {}", descriptiveStatistics.getPercentile(99));
   }
 
   public static class StandConfig {
@@ -287,7 +284,8 @@ public class BenchStand implements AutoCloseable {
             Meta.class,
             GlobalTime.class,
             EdgeId.class,
-            int[].class)
+            int[].class
+    )
     ) {
       benchStand.run();
     }
