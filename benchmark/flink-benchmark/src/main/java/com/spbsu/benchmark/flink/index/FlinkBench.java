@@ -4,7 +4,6 @@ import com.spbsu.benchmark.flink.index.ops.KryoSocketSink;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSource;
 import com.spbsu.benchmark.flink.index.ops.LocalOrderWindow;
 import com.spbsu.benchmark.flink.index.ops.RichIndexFunction;
-import com.spbsu.benchmark.flink.index.ops.TotalOrderWindow;
 import com.spbsu.benchmark.flink.index.ops.WikipediaPageToWordPositions;
 import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
@@ -57,15 +56,16 @@ public final class FlinkBench {
                 .setParallelism(parallelism);
 
         if (deployerConfig.getBoolean("windowed")) {
-          source.flatMap(new WikipediaPageToWordPositions())
+          source.shuffle()
+                  .flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
                   .timeWindowAll(Time.milliseconds(1))
                   .apply(new LocalOrderWindow())
                   .keyBy(0)
                   .map(new RichIndexFunction())
                   .setParallelism(parallelism)
-                  .timeWindowAll(Time.milliseconds(1))
-                  .apply(new TotalOrderWindow())
+                  /*.timeWindowAll(Time.milliseconds(1))
+                  .apply(new TotalOrderWindow())*/
                   .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
                   .setParallelism(parallelism);
         } else {
