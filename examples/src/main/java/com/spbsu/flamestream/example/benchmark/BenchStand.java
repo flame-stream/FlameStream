@@ -36,10 +36,11 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,7 +51,7 @@ import java.util.stream.Stream;
  */
 public class BenchStand implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(BenchStand.class);
-  private final Map<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
+  private final Map<Integer, LatencyMeasurer> latencies = Collections.synchronizedMap(new LinkedHashMap<>());
 
   private final StandConfig standConfig;
   private final BenchValidator<WordIndexAdd> validator;
