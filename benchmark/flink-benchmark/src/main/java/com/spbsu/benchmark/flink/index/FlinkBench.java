@@ -94,5 +94,6 @@ public final class FlinkBench {
     try (BenchStand benchStand = new BenchStand(standConfig, deployer)) {
       benchStand.run();
     }
+    System.exit(0);
   }
 }
