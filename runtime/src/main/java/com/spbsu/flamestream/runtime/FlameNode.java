@@ -6,6 +6,7 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.acker.Acker;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
+import com.spbsu.flamestream.runtime.barrier.Barrier;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
@@ -32,16 +33,18 @@ public class FlameNode extends LoggingActor {
       acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
     }
 
+    final ActorRef barrier = context().actorOf(Barrier.props(acker), "barrier");
     final ActorRef graph = context().actorOf(GraphManager.props(
             id,
             bootstrapGraph,
             acker,
-            config.props()
+            config.props(),
+            resolvedBarriers()
     ), "graph");
     graph.tell(resolvedManagers(), self());
 
     final ActorRef negotiator = context().actorOf(Negotiator.props(id, acker, graph), "negotiator");
-    this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, graph), "edge");
+    this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, barrier), "edge");
   }
 
   public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, AttachRegistry attachRegistry) {

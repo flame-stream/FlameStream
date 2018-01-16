@@ -14,17 +14,17 @@ public class EdgeManager extends LoggingActor {
   private final ActorPath nodePath;
   private final String nodeId;
   private final ActorRef negotiator;
-  private final ActorRef graphManager;
+  private final ActorRef barrier;
 
-  private EdgeManager(ActorPath nodePath, String nodeId, ActorRef localNegotiator, ActorRef graphManager) {
+  private EdgeManager(ActorPath nodePath, String nodeId, ActorRef localNegotiator, ActorRef localBarrier) {
     this.nodePath = nodePath;
     this.nodeId = nodeId;
     this.negotiator = localNegotiator;
-    this.graphManager = graphManager;
+    this.barrier = localBarrier;
   }
 
-  public static Props props(ActorPath nodePath, String nodeId, ActorRef localNegotiator, ActorRef graphManager) {
-    return Props.create(EdgeManager.class, nodePath, nodeId, localNegotiator, graphManager);
+  public static Props props(ActorPath nodePath, String nodeId, ActorRef localNegotiator, ActorRef localBarrier) {
+    return Props.create(EdgeManager.class, nodePath, nodeId, localNegotiator, localBarrier);
   }
 
   @Override
@@ -42,7 +42,7 @@ public class EdgeManager extends LoggingActor {
                       new SystemEdgeContext(nodePath, nodeId, attachRear.id()),
                       attachRear.instance()
               ), attachRear.id());
-              graphManager.tell(new com.spbsu.flamestream.runtime.barrier.api.AttachRear(rearRef), self());
+              barrier.tell(new com.spbsu.flamestream.runtime.barrier.api.AttachRear(rearRef), self());
             })
             .build();
   }
