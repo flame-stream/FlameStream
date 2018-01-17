@@ -35,14 +35,14 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
 
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
-    invalidatingBucket.insert(dataItem);
+    rears.forEach(rear -> rear.tell(dataItem, context.self()));
     process(dataItem, Stream.of(dataItem), fromAsync);
   }
 
   @Override
   public void onMinTime(GlobalTime minTime) {
-    final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
+    /*final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
     invalidatingBucket.rangeStream(0, pos).forEach(di -> rears.forEach(rear -> rear.tell(di, context.self())));
-    invalidatingBucket.clearRange(0, pos);
+    invalidatingBucket.clearRange(0, pos);*/
   }
 }

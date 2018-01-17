@@ -57,8 +57,7 @@ public final class FlinkBench {
                 .setParallelism(parallelism);
 
         if (deployerConfig.getBoolean("windowed")) {
-          source.shuffle()
-                  .flatMap(new WikipediaPageToWordPositions())
+          source.flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
                   .keyBy(0)
                   .timeWindow(Time.milliseconds(1))
