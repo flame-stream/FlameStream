@@ -63,10 +63,10 @@ public final class FlinkBench {
                   .keyBy(0)
                   .timeWindow(Time.milliseconds(1))
                   .apply(new RichIndexWindow())
-                  .timeWindowAll(Time.milliseconds(1))
-                  .apply(new TotalOrderWindow())
+                  //.timeWindowAll(Time.milliseconds(1))
+                  //.apply(new TotalOrderWindow())
                   .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
-                  .setParallelism(1);
+                  .setParallelism(parallelism);
         } else {
           source.flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
