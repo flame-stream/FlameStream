@@ -63,6 +63,7 @@ public final class FlinkBench {
                   .keyBy(0)
                   .timeWindow(Time.milliseconds(1))
                   .apply(new RichIndexWindow())
+                  .setParallelism(parallelism)
                   //.timeWindowAll(Time.milliseconds(1))
                   //.apply(new TotalOrderWindow())
                   .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
