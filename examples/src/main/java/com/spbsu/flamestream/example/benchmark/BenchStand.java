@@ -45,6 +45,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.google.common.math.Quantiles.percentiles;
+
 /**
  * User: Artem
  * Date: 28.12.2017
@@ -193,7 +195,7 @@ public class BenchStand implements AutoCloseable {
     producer.stop();
     consumer.stop();
 
-    final double[] latencies = this.latencies.values().stream().mapToDouble(l -> l.statistics().getMax()).toArray();
+    final long[] latencies = this.latencies.values().stream().mapToLong(l -> l.statistics().getMax()).toArray();
     LOG.info("Result: {}", Arrays.toString(latencies));
     final List<Integer> collect = Seq.seq(WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath()))
             .limit(validator.inputLimit())
@@ -201,16 +203,15 @@ public class BenchStand implements AutoCloseable {
             .map(p -> p.text().length())
             .collect(Collectors.toList());
     LOG.info("Page sizes: {}", collect);
-    final double[] skipped = this.latencies.values()
+    final long[] skipped = this.latencies.values()
             .stream()
             .skip(200)
-            .mapToDouble(l -> l.statistics().getMax())
+            .mapToLong(l -> l.statistics().getMax())
             .toArray();
-    final DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(skipped);
-    LOG.info("Median: {}", descriptiveStatistics.getPercentile(50));
-    LOG.info("75%: {}", descriptiveStatistics.getPercentile(75));
-    LOG.info("90%: {}", descriptiveStatistics.getPercentile(90));
-    LOG.info("99%: {}", descriptiveStatistics.getPercentile(99));
+    LOG.info("Median: {}", ((long) percentiles().index(50).compute(skipped)));
+    LOG.info("75%: {}", ((long) percentiles().index(75).compute(skipped)));
+    LOG.info("90%: {}", ((long) percentiles().index(90).compute(skipped)));
+    LOG.info("99%: {}", ((long) percentiles().index(99).compute(skipped)));
   }
 
   public static class StandConfig {
