@@ -66,7 +66,7 @@ public final class FlinkBench {
                   .timeWindowAll(Time.milliseconds(1))
                   .apply(new TotalOrderWindow())
                   .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
-                  .setParallelism(parallelism);
+                  .setParallelism(1);
         } else {
           source.flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
