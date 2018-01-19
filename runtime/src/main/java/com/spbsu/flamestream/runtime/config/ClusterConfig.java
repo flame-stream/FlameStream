@@ -44,4 +44,13 @@ public class ClusterConfig {
     });
     return new ClusterConfig(newPaths, ackerLocation, props);
   }
+
+  @Override
+  public String toString() {
+    return "ClusterConfig{" +
+            "paths=" + paths +
+            ", ackerLocation='" + ackerLocation + '\'' +
+            ", props=" + props +
+            '}';
+  }
 }
