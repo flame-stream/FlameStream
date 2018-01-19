@@ -1,11 +1,4 @@
 flamestream.retry
 /flink.retry
 /roles/flamestream-bench/files/wiki.xml
-/roles/flamestream-bench/files/flamestream-benchmark-1.0-SNAPSHOT-uber.jar
 /roles/flink-bench/files/wiki.xml
-/roles/flink-bench/files/flink-benchmark-1.0-SNAPSHOT-uber.jar
-/roles/deliver-flamestream/files/flamestream-runtime-1.0-SNAPSHOT.jar
-/roles/deliver-flamestream/files/entrypoint.sh
-/roles/deliver-flamestream/files/flamestream-examples-1.0-SNAPSHOT.jar
-/roles/deliver-flamestream/files/lib/
-/roles/bench/files/wiki.xml

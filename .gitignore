@@ -24,14 +24,7 @@ examples/leveldb/
 /.idea/checkstyle-idea.xml
 /.idea/encodings.xml
 /.idea/php.xml
-roles/deliver-flamestream/files/entrypoint.sh
-roles/deliver-flamestream/files/flamestream-examples-1.0-SNAPSHOT.jar
-roles/deliver-flamestream/files/flamestream-runtime-1.0-SNAPSHOT.jar
-roles/deliver-flamestream/files/lib/
 /.idea/shelf/
 /examples/wiki.xml
 /benchmark/ansible/aws.yml
 /wiki.xml
-benchmark/ansible/roles/flamestream-common/files/entrypoint.sh
-benchmark/ansible/roles/flamestream-common/files/flamestream-runtime-1.0-SNAPSHOT.jar
-benchmark/ansible/roles/flamestream-common/files/lib/
