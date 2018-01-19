@@ -5,7 +5,6 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
@@ -146,7 +145,7 @@ public class GraphManager extends LoggingActor {
                 if (outVertex instanceof Grouping || ((Graph.Builder.MyGraph) graph).isShuffle(vertex, outVertex)) {
                   final HashFunction hashFunction = outVertex instanceof Grouping ?
                           ((Grouping) outVertex).hash() :
-                          dataItem -> Hashing.murmur3_32().hashLong(dataItem.xor()).asInt();
+                          dataItem -> 0;
                   final RouterJoba routerJoba = new RouterJoba(
                           router,
                           computationProps.ranges().get(nodeId),
