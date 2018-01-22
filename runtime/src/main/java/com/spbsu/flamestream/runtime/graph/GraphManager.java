@@ -145,7 +145,7 @@ public class GraphManager extends LoggingActor {
                 if (outVertex instanceof Grouping || ((Graph.Builder.MyGraph) graph).isShuffle(vertex, outVertex)) {
                   final HashFunction hashFunction = outVertex instanceof Grouping ?
                           ((Grouping) outVertex).hash() :
-                          dataItem -> 0;
+                          dataItem -> 0; // I know that 0 is not in inputs node hash range
                   final RouterJoba routerJoba = new RouterJoba(
                           router,
                           computationProps.ranges().get(nodeId),

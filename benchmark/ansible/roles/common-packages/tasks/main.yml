@@ -11,3 +11,6 @@
     - htop
     - procps
     - unzip
+    - sysstat
+    - linux-tools-common
+    - linux-tools-aws
