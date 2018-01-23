@@ -48,7 +48,7 @@ public class InvertedIndexGraph implements Supplier<Graph> {
     final Sink sink = new Sink();
 
     return new Graph.Builder()
-            .linkShuffle(source, wikiPageToPositions)
+            .linkAsync(source, wikiPageToPositions)
             .link(wikiPageToPositions, grouping)
             .link(grouping, wrongOrderingFilter)
             .link(wrongOrderingFilter, indexer)
