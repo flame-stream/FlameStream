@@ -1,7 +1,4 @@
 flamestream.retry
 /flink.retry
 /roles/flamestream-bench/files/wiki.xml
-/roles/flamestream-common/files/**/*.jar
-/roles/flamestream-common/files/entrypoint.sh
 /roles/flink-bench/files/wiki.xml
-/roles/flink-bench/files/*.jar
