@@ -24,7 +24,7 @@ stop() {
   fi
   local pid=$(cat flamestream.pid)
   echo "Pid=$pid"
-  kill -9 "$pid"
+  kill "$pid"
 }
 
 main() {
