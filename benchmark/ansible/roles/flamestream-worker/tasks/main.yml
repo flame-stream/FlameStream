@@ -1,4 +1,7 @@
 ---
+- name: Clean shm
+  shell: rm -rf /dev/shm/aeron*
+
 - name: Copy the worker config
   template:
     src: worker.json
