@@ -46,7 +46,7 @@ public class RichIndexWindow extends RichWindowFunction<Tuple2<String, long[]>, 
       if (state.value() == null) {
         currentStat = new InvertedIndexState();
       } else {
-        currentStat = state.value();
+        currentStat = state.value().copy();
       }
 
       final long prevValue = currentStat.updateOrInsert(value.f1);
