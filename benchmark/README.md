@@ -38,6 +38,6 @@ All this steps are automated with script in the root of the project. On the last
 
 Caveats:
 
-- If something goes wrong you need to manually kill bench. I ssh into a host and `sudo pkill -f spbsu` (There is a role for it:))
+- If something goes wrong you need to manually kill bench. I ssh into a host and `sudo pkill -f spbsu` (There is a role for it: `sudo ansible -v -i aws.yml all -a 'sudo pkill -f spb'`
 - You need to manually check resources on each host. So I suggest to ssh into _bench_ and _input_ hosts and random worker. Run `vmstat -Sm 1`. To monitor memory and cpu usage.
 - When you are copying hosts to inventory from aws console check twice
