@@ -35,6 +35,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Time;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -117,6 +118,11 @@ public class BenchStand implements AutoCloseable {
                 }
               }
       );
+      try {
+        TimeUnit.SECONDS.sleep(5);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
       connection[0].close();
     }).start();
 
