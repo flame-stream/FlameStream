@@ -24,7 +24,6 @@ import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.jooq.lambda.Seq;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
@@ -35,14 +34,15 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Time;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -107,14 +107,11 @@ public class BenchStand implements AutoCloseable {
       final int[] i = {0};
       input.forEach(page -> {
                 synchronized (connection) {
-                  try {
-                    latencies.put(page.id(), new LatencyMeasurer());
-                    connection[0].sendTCP(page);
-                    LOG.info("Sending: {}", i[0]++);
-                    Thread.sleep(standConfig.sleepBetweenDocs());
-                  } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                  }
+                  latencies.put(page.id(), new LatencyMeasurer());
+                  connection[0].sendTCP(page);
+                  LOG.info("Sending: {}", i[0]++);
+                  final long v = (long) (nextExp(1.0 / standConfig.sleepBetweenDocs()) * 1.0e6);
+                  LockSupport.parkNanos(v);
                 }
               }
       );
@@ -153,6 +150,10 @@ public class BenchStand implements AutoCloseable {
     return producer;
   }
 
+  private double nextExp(double lambda) {
+    return StrictMath.log(1 - ThreadLocalRandom.current().nextDouble()) / -lambda;
+  }
+
   private Server consumer() throws IOException {
     final Server consumer = new Server(2000, 1_000_000);
     Arrays.stream(classesToRegister).forEach(clazz -> consumer.getKryo().register(clazz));
@@ -186,6 +187,9 @@ public class BenchStand implements AutoCloseable {
         latencies.get(docId).finish();
         validator.accept(wordIndexAdd);
         awaitConsumer.accept(o);
+        if (awaitConsumer.got() % 10000 == 0) {
+          LOG.info("Progress: {}/{}", awaitConsumer.got(), awaitConsumer.expected());
+        }
       }
     });
 

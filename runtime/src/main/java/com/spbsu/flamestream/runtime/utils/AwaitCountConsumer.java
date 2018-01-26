@@ -25,6 +25,14 @@ public class AwaitCountConsumer implements Consumer<Object> {
     }
   }
 
+  public int got() {
+    return counter.get();
+  }
+
+  public int expected() {
+    return expectedSize;
+  }
+
   public void await(long timeout, TimeUnit unit) throws InterruptedException {
     final long stop = System.currentTimeMillis() + unit.toMillis(timeout);
     synchronized (counter) {
