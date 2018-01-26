@@ -84,6 +84,8 @@ public class BenchStand implements AutoCloseable {
   public void run() throws InterruptedException {
     graphDeployer.deploy();
     awaitConsumer.await(60, TimeUnit.MINUTES);
+    producer.close();
+    consumer.close();
   }
 
   private Server producer() throws IOException {
@@ -115,12 +117,6 @@ public class BenchStand implements AutoCloseable {
                 }
               }
       );
-      try {
-        TimeUnit.SECONDS.sleep(5);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      connection[0].close();
     }).start();
 
     producer.addListener(new Listener() {

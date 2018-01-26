@@ -62,7 +62,7 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
         client.sendTCP(value.wordIndexRemove());
       }
     } else {
-      LOG.warn("Writing to closed log");
+      throw new RuntimeException("Writing to the closed log");
     }
   }
 

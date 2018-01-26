@@ -2,9 +2,9 @@ package com.spbsu.benchmark.flink.index;
 
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSink;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSource;
+import com.spbsu.benchmark.flink.index.ops.OrderEnforcer;
 import com.spbsu.benchmark.flink.index.ops.RichIndexFunction;
-import com.spbsu.benchmark.flink.index.ops.RichIndexWindow;
-import com.spbsu.benchmark.flink.index.ops.TotalOrderWindow;
+import com.spbsu.benchmark.flink.index.ops.IndexFunction;
 import com.spbsu.benchmark.flink.index.ops.WikipediaPageToWordPositions;
 import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
@@ -14,7 +14,6 @@ import com.typesafe.config.ConfigFactory;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -57,16 +56,16 @@ public final class FlinkBench {
                 .setParallelism(parallelism);
 
         if (deployerConfig.getBoolean("windowed")) {
-          source.flatMap(new WikipediaPageToWordPositions())
+          source.rebalance()
+                  .flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
                   .keyBy(0)
-                  .timeWindow(Time.milliseconds(1))
-                  .apply(new RichIndexWindow())
+                  .process(new OrderEnforcer())
+                  .process(new IndexFunction())
                   .setParallelism(parallelism)
                   //.timeWindowAll(Time.milliseconds(1))
                   //.apply(new TotalOrderWindow())
-                  .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
-                  .setParallelism(parallelism);
+                  .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()));
         } else {
           source.flatMap(new WikipediaPageToWordPositions())
                   .setParallelism(parallelism)
