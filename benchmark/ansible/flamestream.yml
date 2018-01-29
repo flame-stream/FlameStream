@@ -59,6 +59,14 @@
   roles:
     - { role: flamestream-destroy }
 
+- hosts: workers
+  tasks:
+    - name: Fetch replay times
+      fetch:
+        src: /tmp/elements.cnt
+        dest: rates/{{ groups['workers'] | length }}/{{ rate }}/{{ inventory_hostname }}.cnt
+        flat: true
+
 - name: Destroy zookeeper
   hosts: manager
   roles:

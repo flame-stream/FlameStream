@@ -18,6 +18,9 @@ public interface Joba {
 
   void accept(DataItem dataItem, boolean fromAsync);
 
+  default void onStop() throws Exception {
+  }
+
   abstract class Stub implements Joba {
     private final Joba[] outJobas;
 

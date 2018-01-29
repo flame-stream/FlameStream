@@ -8,6 +8,10 @@ import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -19,6 +23,8 @@ import java.util.stream.Stream;
 public class SinkJoba extends Joba.Stub implements MinTimeHandler {
   private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
   private final List<ActorRef> rears = new ArrayList<>();
+  private int allItems;
+  private int validItems;
 
   public SinkJoba(ActorRef acker, ActorContext context) {
     super(Stream.empty(), acker, context);
@@ -35,14 +41,31 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
 
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
-    rears.forEach(rear -> rear.tell(dataItem, context.self()));
+    allItems++;
+    //rears.forEach(rear -> rear.tell(dataItem, context.self()));
+    invalidatingBucket.insert(dataItem);
     process(dataItem, Stream.of(dataItem), fromAsync);
   }
 
   @Override
   public void onMinTime(GlobalTime minTime) {
-    /*final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
-    invalidatingBucket.rangeStream(0, pos).forEach(di -> rears.forEach(rear -> rear.tell(di, context.self())));
-    invalidatingBucket.clearRange(0, pos);*/
+    final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
+    invalidatingBucket.rangeStream(0, pos).forEach(di -> {
+      validItems++;
+      rears.forEach(rear -> rear.tell(di, context.self()));
+    });
+    invalidatingBucket.clearRange(0, pos);
+  }
+
+  @Override
+  public void onStop() throws Exception {
+    try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(
+            Paths.get("/tmp/elements.cnt"),
+            StandardOpenOption.WRITE,
+            StandardOpenOption.TRUNCATE_EXISTING,
+            StandardOpenOption.CREATE
+    ))) {
+      pw.println(allItems + "/" + validItems);
+    }
   }
 }

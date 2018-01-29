@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public class GraphManager extends LoggingActor {
@@ -145,7 +146,7 @@ public class GraphManager extends LoggingActor {
                 if (outVertex instanceof Grouping || ((Graph.Builder.MyGraph) graph).isShuffle(vertex, outVertex)) {
                   final HashFunction hashFunction = outVertex instanceof Grouping ?
                           ((Grouping) outVertex).hash() :
-                          dataItem -> 0; // I know that 0 is not in inputs node hash range
+                          dataItem -> ThreadLocalRandom.current().nextInt();
                   final RouterJoba routerJoba = new RouterJoba(
                           router,
                           computationProps.ranges().get(nodeId),
@@ -221,5 +222,17 @@ public class GraphManager extends LoggingActor {
         return destination;
       });
     }
+  }
+
+  @Override
+  public void postStop() {
+    super.postStop();
+    allJobas.forEach(j -> {
+      try {
+        j.onStop();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    });
   }
 }
