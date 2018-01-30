@@ -28,9 +28,11 @@ copy_worker_artifacts() {
 
 copy_flink_artifacts() {
   local files="${ANSIBLE_HOME}/roles/flink-bench/files"
+  local sum_files="${ANSIBLE_HOME}/roles/flink-sum-bench/files"
   local bench="benchmark/flink-benchmark/target/flink-benchmark-1.0-SNAPSHOT-uber.jar"
   if [[ -f "$bench" ]]; then
     cp "$bench" "$files"
+    cp "$bench" "$sum_files"
   else
     echo "Some artifacts hasn't been found"
     return 1
@@ -67,4 +69,4 @@ remote_flink_bench() {
     && ansible-playbook -v -i "${ANSIBLE_HOME}/aws.yml" "${ANSIBLE_HOME}/flink.yml"
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && remote_bench
+[[ "$0" == "$BASH_SOURCE" ]] && remote_flink_bench

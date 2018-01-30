@@ -1,0 +1,28 @@
+---
+- name: Copy the deployer file
+  template:
+    src: deployer.conf.j2
+    dest: "{{ flink_dir }}/deployer.conf"
+
+- name: Copy the bench configuration file
+  template:
+    src: bench.conf.j2
+    dest: "{{ flink_dir }}/bench.conf"
+
+- name: Copy the bench jar
+  copy:
+    src: flink-benchmark-1.0-SNAPSHOT-uber.jar
+    dest: "{{ flink_dir }}"
+
+- name: Start the flamestream bench
+  shell: >
+    java -Xms200m -Xmx200m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError
+    -cp {{ flink_dir }}/flink-benchmark-1.0-SNAPSHOT-uber.jar
+    com.spbsu.benchmark.flink.sum.SumBench
+    {{ flink_dir }}/bench.conf {{ flink_dir }}/deployer.conf > {{ flink_dir }}/bench.log 2>&1
+
+
+- name: Fetch bench logs
+  fetch:
+    src: "{{ flink_dir }}/bench.log"
+    dest: flink_bench.log
