@@ -67,6 +67,14 @@
         dest: rates/{{ groups['workers'] | length }}/{{ rate }}/{{ inventory_hostname }}.cnt
         flat: true
 
+- hosts: bench
+  tasks:
+    - name: Fetch latency
+      fetch:
+        src: /tmp/lat.data
+        dest: lat/{{ groups['workers'] | length }}/{{ rate }}/lat.data
+        flat: true
+
 - name: Destroy zookeeper
   hosts: manager
   roles:

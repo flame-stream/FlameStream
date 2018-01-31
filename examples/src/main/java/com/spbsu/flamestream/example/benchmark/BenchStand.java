@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -202,6 +203,12 @@ public class BenchStand implements AutoCloseable {
     consumer.stop();
 
     final long[] latencies = this.latencies.values().stream().mapToLong(l -> l.statistics().getMax()).toArray();
+    try (final PrintWriter pw = new PrintWriter(Files.newBufferedWriter(Paths.get("/tmp/lat.data")))) {
+      final String collect = Arrays.stream(latencies).mapToObj(Long::toString).collect(Collectors.joining(", "));
+      pw.println(collect);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
     LOG.info("Result: {}", Arrays.toString(latencies));
     final List<Integer> collect = Seq.seq(WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath()))
             .limit(validator.inputLimit())
