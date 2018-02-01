@@ -1,27 +1,24 @@
 package com.spbsu.benchmark.flink.index;
 
+import com.spbsu.benchmark.flink.index.ops.IndexFunction;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSink;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSource;
 import com.spbsu.benchmark.flink.index.ops.OrderEnforcer;
-import com.spbsu.benchmark.flink.index.ops.RichIndexFunction;
-import com.spbsu.benchmark.flink.index.ops.IndexFunction;
 import com.spbsu.benchmark.flink.index.ops.WikipediaPageToWordPositions;
 import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
-import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.flink.streaming.api.TimeCharacteristic;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.jooq.lambda.Unchecked;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-public final class FlinkBench {
-  //private static final Logger LOG = LoggerFactory.getLogger(FlinkBench.class);
-
-  public static void main(String[] args) throws Exception {
+public class FlinkBench {
+  public static void main(String[] args) throws IOException, InterruptedException {
     final Config benchConfig;
     final Config deployerConfig;
     if (args.length == 2) {
@@ -51,37 +48,18 @@ public final class FlinkBench {
         environment.setBufferTimeout(0);
         environment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        final DataStream<WikipediaPage> source = environment
+        environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))
-                .setParallelism(parallelism);
-
-        if (deployerConfig.getBoolean("windowed")) {
-          source.shuffle()
-                  .flatMap(new WikipediaPageToWordPositions())
-                  .setParallelism(parallelism)
-                  .keyBy(0)
-                  .process(new OrderEnforcer())
-                  .process(new IndexFunction())
-                  .setParallelism(parallelism)
-                  //.timeWindowAll(Time.milliseconds(1))
-                  //.apply(new TotalOrderWindow())
-                  .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()));
-        } else {
-          source.flatMap(new WikipediaPageToWordPositions())
-                  .setParallelism(parallelism)
-                  .keyBy(0)
-                  .map(new RichIndexFunction())
-                  .setParallelism(parallelism)
-                  .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
-                  .setParallelism(parallelism);
-        }
-        new Thread(() -> {
-          try {
-            environment.execute();
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-        }).start();
+                .setParallelism(parallelism)
+                .shuffle()
+                .flatMap(new WikipediaPageToWordPositions())
+                .setParallelism(parallelism)
+                .keyBy(0)
+                .process(new OrderEnforcer())
+                .process(new IndexFunction())
+                .setParallelism(parallelism)
+                .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()));
+        new Thread(Unchecked.runnable(environment::execute)).start();
       }
 
       @Override

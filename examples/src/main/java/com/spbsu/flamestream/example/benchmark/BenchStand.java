@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -204,10 +205,10 @@ public class BenchStand implements AutoCloseable {
 
     final long[] latencies = this.latencies.values().stream().mapToLong(l -> l.statistics().getMax()).toArray();
     try (final PrintWriter pw = new PrintWriter(Files.newBufferedWriter(Paths.get("/tmp/lat.data")))) {
-      final String collect = Arrays.stream(latencies).mapToObj(Long::toString).collect(Collectors.joining(", "));
-      pw.println(collect);
+      final String joined = Arrays.stream(latencies).mapToObj(Long::toString).collect(Collectors.joining(", "));
+      pw.println(joined);
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new UncheckedIOException(e);
     }
     LOG.info("Result: {}", Arrays.toString(latencies));
     final List<Integer> collect = Seq.seq(WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath()))
@@ -221,10 +222,10 @@ public class BenchStand implements AutoCloseable {
             .skip(200)
             .mapToLong(l -> l.statistics().getMax())
             .toArray();
-    LOG.info("Median: {}", ((long) percentiles().index(50).compute(skipped)));
+    LOG.info("Median: {}", (long) percentiles().index(50).compute(skipped));
     LOG.info("75%: {}", ((long) percentiles().index(75).compute(skipped)));
-    LOG.info("90%: {}", ((long) percentiles().index(90).compute(skipped)));
-    LOG.info("99%: {}", ((long) percentiles().index(99).compute(skipped)));
+    LOG.info("90%: {}", (long) percentiles().index(90).compute(skipped));
+    LOG.info("99%: {}", (long) percentiles().index(99).compute(skipped));
   }
 
   public static class StandConfig {

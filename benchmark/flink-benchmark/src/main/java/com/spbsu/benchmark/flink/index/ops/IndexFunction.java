@@ -16,7 +16,6 @@ import org.apache.flink.util.Collector;
  */
 public class IndexFunction extends ProcessFunction<Tuple2<String, long[]>, Result> {
   private transient InvertedIndexState state;
-  //private transient AtomicInteger prevDocId;
 
   @Override
   public void open(Configuration parameters) {

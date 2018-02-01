@@ -23,6 +23,7 @@ public class FlameGraphDeployer implements GraphDeployer {
     this.rearType = rearType;
   }
 
+  @Override
   public void deploy() {
     final FlameRuntime.Flame flame = runtime.run(graph);
     flame.attachRear("FlameSocketGraphDeployerRear", rearType);
