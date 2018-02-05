@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -68,7 +69,8 @@ public class BenchStand implements AutoCloseable {
   private final Server consumer;
   private final Random random = new Random(7);
 
-  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("bench-send", 1000, 1);
+  private final Tracing.Tracer sendTracer = Tracing.TRACING.forEvent("bench-send", 1000, 1);
+  private final Tracing.Tracer receiveTracer = Tracing.TRACING.forEvent("bench-receive", 850000, 1);
 
   public BenchStand(StandConfig standConfig, GraphDeployer graphDeployer, Class<?>... classesToRegister) {
     this.standConfig = standConfig;
@@ -116,7 +118,7 @@ public class BenchStand implements AutoCloseable {
       input.forEach(page -> {
                 synchronized (connection) {
                   latencies.put(page.id(), new LatencyMeasurer());
-                  tracer.log(page.id());
+                  sendTracer.log(page.id());
 
                   connection[0].sendTCP(page);
                   LOG.info("Sending: {}", i[0]++);
@@ -188,6 +190,8 @@ public class BenchStand implements AutoCloseable {
           return;
         }
         final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
+        receiveTracer.log(Objects.hash(wordIndexAdd.word(), docId));
+
         latencies.get(docId).finish();
         validator.accept(wordIndexAdd);
         awaitConsumer.accept(o);
