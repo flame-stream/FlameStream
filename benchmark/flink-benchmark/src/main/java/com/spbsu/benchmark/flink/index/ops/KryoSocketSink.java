@@ -7,12 +7,16 @@ import com.esotericsoftware.kryonet.Listener;
 import com.spbsu.benchmark.flink.index.Result;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.jetbrains.annotations.Nullable;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.file.Paths;
 
 public class KryoSocketSink extends RichSinkFunction<Result> {
   private static final long serialVersionUID = 1L;
@@ -68,6 +72,14 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
 
   @Override
   public void close() {
+    try {
+      // 1. It's assumed that the whole graph would be loaded by a single classloader
+      // so there is only one instance of static field Tracing.TRACING per JVM
+      // 2. There is one sink per node => flush would be done only one time
+      Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
     if (client != null) {
       LOG.info("Closing sink connection");
       client.close();
