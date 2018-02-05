@@ -84,11 +84,12 @@ public class BenchStand implements AutoCloseable {
     }
   }
 
-  public void run() throws InterruptedException {
+  public void run() throws InterruptedException, IOException {
     graphDeployer.deploy();
     awaitConsumer.await(60, TimeUnit.MINUTES);
     producer.close();
     consumer.close();
+    Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
   }
 
   private Server producer() throws IOException {
@@ -321,7 +322,6 @@ public class BenchStand implements AutoCloseable {
     )) {
       benchStand.run();
     }
-    Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
     System.exit(0);
   }
 }

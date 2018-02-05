@@ -33,6 +33,14 @@
   roles:
     - { role: flink-sum-bench }
 
+- hosts: bench
+  tasks:
+    - name: Fetch latencies
+      fetch:
+        src: /tmp/lat.data
+        dest: flink/latency/{{ groups['workers'] | length }}/{{ rate }}/lat.data
+        flat: true
+
 - name: Destroy flink manager
   hosts: manager
   roles:
@@ -42,3 +50,11 @@
   hosts: workers
   roles:
     - { role: flink-task-manager-destroy }
+
+- hosts: all
+  tasks:
+    - name: Fetch traces
+      fetch:
+        src: /tmp/trace.csv
+        dest: flink/traces/{{ inventory_hostname }}.csv
+        flat: true
