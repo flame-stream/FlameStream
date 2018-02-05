@@ -4,6 +4,7 @@ import akka.actor.ActorSystem;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.jetbrains.annotations.Nullable;
@@ -58,6 +59,14 @@ public class WorkerApplication {
 
     this.system = ActorSystem.create("worker", config);
     system.actorOf(LifecycleWatcher.props(id, zkString), "watcher");
+
+    system.registerOnTermination(() -> {
+      try {
+        Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    });
   }
 
   public void close() {
