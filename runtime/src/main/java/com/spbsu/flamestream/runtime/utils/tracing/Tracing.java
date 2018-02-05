@@ -1,0 +1,76 @@
+package com.spbsu.flamestream.runtime.utils.tracing;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class Tracing {
+  public static final int SIZE = 100_000;
+  public static final int SAMPLING = 101;
+
+  public static final Tracing TRACING = new Tracing();
+  private final Map<String, Tracer> tracers = Collections.synchronizedMap(new HashMap<>());
+
+  public Tracer forEvent(String event) {
+    tracers.putIfAbsent(event, new Tracer(event, SIZE, SAMPLING));
+    return tracers.get(event);
+  }
+
+  public Tracer forEvent(String event, int expectedSize, int sampling) {
+    tracers.putIfAbsent(event, new Tracer(event, expectedSize, sampling));
+    return tracers.get(event);
+  }
+
+  public void flush(Path path) throws IOException {
+    try (final PrintWriter bw = new PrintWriter(Files.newBufferedWriter(
+            path,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.WRITE,
+            StandardOpenOption.TRUNCATE_EXISTING
+    ))) {
+      tracers.values().forEach(t -> t.flush(bw));
+    }
+  }
+
+  public final class Tracer {
+    private final String event;
+    private final int size;
+    private final int sampling;
+
+    private final long[] ts;
+    private final long[] id;
+    private final AtomicInteger offset = new AtomicInteger();
+    private final AtomicInteger attempts = new AtomicInteger(0);
+
+    public Tracer(String event, int size, int sampling) {
+      this.ts = new long[size];
+      this.id = new long[size];
+      this.sampling = sampling;
+      this.event = event;
+      this.size = size;
+    }
+
+    public void log(long id) {
+      attempts.incrementAndGet();
+      if (id % sampling == 0) {
+        final int pos = offset.getAndIncrement();
+        this.id[pos % size] = id;
+        ts[pos % size] = System.nanoTime();
+      }
+    }
+
+    public void flush(PrintWriter pw) {
+      System.out.println("Attempts of event '" + event + "' - " + attempts.get());
+      final int total = offset.get();
+      for (int i = 0; i < total; ++i) {
+        pw.println(event + ',' + id[i] + ',' + (ts[i]));
+      }
+    }
+  }
+}
