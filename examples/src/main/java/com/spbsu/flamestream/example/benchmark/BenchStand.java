@@ -42,7 +42,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
@@ -66,6 +65,7 @@ public class BenchStand implements AutoCloseable {
 
   private final Server producer;
   private final Server consumer;
+  private final Random random = new Random(7);
 
   public BenchStand(StandConfig standConfig, GraphDeployer graphDeployer, Class<?>... classesToRegister) {
     this.standConfig = standConfig;
@@ -149,7 +149,7 @@ public class BenchStand implements AutoCloseable {
   }
 
   private double nextExp(double lambda) {
-    return StrictMath.log(1 - ThreadLocalRandom.current().nextDouble()) / -lambda;
+    return StrictMath.log(1 - random.nextDouble()) / -lambda;
   }
 
   private Server consumer() throws IOException {
