@@ -1,5 +1,7 @@
 package com.spbsu.flamestream.example.bl.index.model;
 
+import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -40,11 +42,11 @@ public class WordIndexAdd implements WordBase {
     }
     final WordIndexAdd that = (WordIndexAdd) o;
     return Objects.equals(word, that.word) &&
-            Arrays.equals(positions, that.positions);
+            (IndexItemInLong.pageId(positions[0]) == IndexItemInLong.pageId(that.positions[0]));
   }
 
   @Override
   public int hashCode() {
-    return word.hashCode();
+    return Objects.hash(word, IndexItemInLong.pageId(positions[0]));
   }
 }

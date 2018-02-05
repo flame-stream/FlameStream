@@ -11,6 +11,7 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,8 @@ public class SocketFront extends Front.Stub {
 
   private volatile Consumer<Object> consumer = null;
 
+  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("front-receive-send", 1000, 1);
+
   public SocketFront(EdgeContext edgeContext, String host, int port, Class<?>[] classes) {
     super(edgeContext.edgeId());
     this.host = host;
@@ -44,6 +47,7 @@ public class SocketFront extends Front.Stub {
     client.addListener(new Listener() {
       public void received(Connection connection, Object object) {
         if (Arrays.stream(classes).anyMatch(clazz -> clazz.isAssignableFrom(object.getClass()))) {
+          tracer.log(object.hashCode());
           consumer.accept(new PayloadDataItem(new Meta(currentTime()), object));
           consumer.accept(new Heartbeat(currentTime()));
         }

@@ -7,6 +7,7 @@ import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -26,6 +27,9 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
   private int allItems;
   private int validItems;
 
+  private final Tracing.Tracer receiveTracer = Tracing.TRACING.forEvent("barrier-receive", 850000, 1);
+  private final Tracing.Tracer sendTracer = Tracing.TRACING.forEvent("barrier-send", 850000, 1);
+
   public SinkJoba(ActorRef acker, ActorContext context) {
     super(Stream.empty(), acker, context);
   }
@@ -41,6 +45,7 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
 
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
+    receiveTracer.log(dataItem.payload(Object.class).hashCode());
     allItems++;
     //rears.forEach(rear -> rear.tell(dataItem, context.self()));
     invalidatingBucket.insert(dataItem);
@@ -52,7 +57,10 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
     final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
     invalidatingBucket.rangeStream(0, pos).forEach(di -> {
       validItems++;
-      rears.forEach(rear -> rear.tell(di, context.self()));
+      rears.forEach(rear -> {
+        sendTracer.log(di.payload(Object.class).hashCode());
+        rear.tell(di, context.self());
+      });
     });
     invalidatingBucket.clearRange(0, pos);
   }

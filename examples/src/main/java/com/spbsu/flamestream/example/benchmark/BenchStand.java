@@ -68,6 +68,8 @@ public class BenchStand implements AutoCloseable {
   private final Server consumer;
   private final Random random = new Random(7);
 
+  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("bench-send", 1000, 1);
+
   public BenchStand(StandConfig standConfig, GraphDeployer graphDeployer, Class<?>... classesToRegister) {
     this.standConfig = standConfig;
     this.graphDeployer = graphDeployer;
@@ -114,6 +116,8 @@ public class BenchStand implements AutoCloseable {
       input.forEach(page -> {
                 synchronized (connection) {
                   latencies.put(page.id(), new LatencyMeasurer());
+                  tracer.log(page.id());
+
                   connection[0].sendTCP(page);
                   LOG.info("Sending: {}", i[0]++);
                   final long v = (long) (nextExp(1.0 / standConfig.sleepBetweenDocs()) * 1.0e6);

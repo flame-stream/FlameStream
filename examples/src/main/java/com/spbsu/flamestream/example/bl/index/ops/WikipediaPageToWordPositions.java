@@ -6,6 +6,7 @@ import com.expleague.commons.text.stem.Stemmer;
 import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.bl.index.model.WordPagePositions;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -21,8 +23,12 @@ import java.util.stream.Stream;
  * Date: 10.07.2017
  */
 public class WikipediaPageToWordPositions implements Function<WikipediaPage, Stream<WordPagePositions>> {
+  private transient final Tracing.Tracer inputTracer = Tracing.TRACING.forEvent("flatmap-receive", 1000, 1);
+  private transient final Tracing.Tracer outputTracer = Tracing.TRACING.forEvent("flatmap-send", 800000, 1);
+
   @Override
   public Stream<WordPagePositions> apply(WikipediaPage wikipediaPage) {
+    inputTracer.log(wikipediaPage.id());
     //noinspection deprecation
     final Tokenizer tokenizer = new StemsTokenizer(Stemmer.getInstance(), wikipediaPage.text());
     final Map<String, TLongList> wordPositions = new HashMap<>();
@@ -45,6 +51,7 @@ public class WikipediaPageToWordPositions implements Function<WikipediaPage, Str
     }
     final List<WordPagePositions> wordPagePositions = new ArrayList<>();
     wordPositions.forEach((word, list) -> wordPagePositions.add(new WordPagePositions(word, list.toArray())));
-    return wordPagePositions.stream();
+    return wordPagePositions.stream()
+            .peek(positions -> outputTracer.log(Objects.hash(positions.word(), wikipediaPage.id())));
   }
 }

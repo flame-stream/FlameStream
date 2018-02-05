@@ -21,8 +21,17 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class InvertedIndexGraph implements Supplier<Graph> {
-  private final HashFunction wordHash = HashFunction.uniformHash(HashFunction.objectHash(WordBase.class));
+  @SuppressWarnings("Convert2Lambda")
+  private final HashFunction wordHash = HashFunction.uniformHash(new HashFunction() {
+    @Override
+    public int hash(DataItem dataItem) {
+      return dataItem.payload(WordBase.class)
+              .word()
+              .hashCode();
+    }
+  });
 
+  @SuppressWarnings("Convert2Lambda")
   private final Equalz wordEqualz = new Equalz() {
     @Override
     public boolean test(DataItem dataItem, DataItem dataItem2) {

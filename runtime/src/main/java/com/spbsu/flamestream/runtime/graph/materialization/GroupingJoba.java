@@ -8,6 +8,7 @@ import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.Grouping;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -27,6 +28,8 @@ public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
 
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
+  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("grouping-receive", 1600000, 1);
+
   public GroupingJoba(Grouping<?> grouping, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
     super(outJobas, acker, context);
     this.instance = grouping.operation(ThreadLocalRandom.current().nextLong());
@@ -40,6 +43,8 @@ public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
 
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
+    tracer.log(dataItem.payload(Object.class).hashCode());
+
     final InvalidatingBucket bucket = bucketFor(dataItem);
     final Stream<DataItem> output = instance.apply(dataItem, bucket);
     process(dataItem, output, fromAsync);
