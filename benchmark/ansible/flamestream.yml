@@ -64,15 +64,15 @@
     - name: Fetch replay times
       fetch:
         src: /tmp/elements.cnt
-        dest: rates/{{ groups['workers'] | length }}/{{ rate }}/{{ inventory_hostname }}.cnt
+        dest: flamestream/rates/{{ groups['workers'] | length }}/{{ rate }}/{{ inventory_hostname }}.cnt
         flat: true
 
 - hosts: bench
   tasks:
-    - name: Fetch latency
+    - name: Fetch latencies
       fetch:
         src: /tmp/lat.data
-        dest: lat/{{ groups['workers'] | length }}/{{ rate }}/lat.data
+        dest: flamestream/latency/{{ groups['workers'] | length }}/{{ rate }}/lat.data
         flat: true
 
 - name: Destroy zookeeper
@@ -84,3 +84,11 @@
   hosts: bench
   roles:
     - { role: flamestream-bench-destroy }
+
+- hosts: all
+  tasks:
+    - name: Fetch traces
+      fetch:
+        src: /tmp/trace.csv
+        dest: flamestream/traces/{{ inventory_hostname }}.csv
+        flat: true

@@ -22,6 +22,7 @@ import com.spbsu.flamestream.runtime.RemoteRuntime;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
 import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.jooq.lambda.Seq;
@@ -320,6 +321,7 @@ public class BenchStand implements AutoCloseable {
     )) {
       benchStand.run();
     }
+    Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
     System.exit(0);
   }
 }
