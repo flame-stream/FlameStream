@@ -15,6 +15,7 @@ import com.spbsu.flamestream.runtime.acker.table.AckTable;
 import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
 import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -109,8 +110,10 @@ public class Acker extends LoggingActor {
     log().info("Acker statistics: {}", stat);
   }
 
+  public Tracing.Tracer tracer = Tracing.TRACING.forEvent("ack-receive");
   private void handleAck(Ack ack) {
     //log().info("ACKING {}", ack);
+    tracer.log(ack.xor());
     minTimeSubscribers.add(sender());
     final long start = System.nanoTime();
     if (table.ack(ack.time().time(), ack.xor())) {
