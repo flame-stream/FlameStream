@@ -10,6 +10,7 @@ import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.graph.GraphManager;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.util.stream.Stream;
 
@@ -57,6 +58,7 @@ public class RouterJoba implements Joba {
     }
   }
 
+  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("flatmap-send");
   public void accept(Stream<DataItem> dataItemStream, boolean fromAsync) {
     final long[] xor = {0};
     final GlobalTime[] globalTime = {null};
@@ -65,6 +67,7 @@ public class RouterJoba implements Joba {
       if (localJoba != null && hash >= localRange.from() && hash < localRange.to()) {
         localJoba.accept(dataItem, fromAsync);
       } else {
+        tracer.log(dataItem.xor());
         router.get(hash).tell(new AddressedItem(dataItem, destination), context.self());
         globalTime[0] = dataItem.meta().globalTime();
         xor[0] ^= dataItem.xor();

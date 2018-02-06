@@ -43,7 +43,7 @@ public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
 
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
-    tracer.log(dataItem.payload(Object.class).hashCode());
+    tracer.log(dataItem.xor());
 
     final InvalidatingBucket bucket = bucketFor(dataItem);
     final Stream<DataItem> output = instance.apply(dataItem, bucket);

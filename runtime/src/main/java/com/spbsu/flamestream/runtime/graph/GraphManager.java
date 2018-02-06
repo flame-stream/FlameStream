@@ -126,16 +126,16 @@ public class GraphManager extends LoggingActor {
   private final Tracing.Tracer acceptIn = Tracing.TRACING.forEvent("accept-in");
   private final Tracing.Tracer acceptOut = Tracing.TRACING.forEvent("accept-out");
   private void accept(DataItem dataItem) {
-    acceptIn.log(dataItem.xor());
+    acceptIn.log(dataItem.payload(Object.class).hashCode());
     final SourceJoba joba = (SourceJoba) materialization.get(Destination.fromVertexId(graph.source().id()));
     joba.addFront(dataItem.meta().globalTime().frontId(), sender());
     joba.accept(dataItem, false);
-    acceptOut.log(dataItem.xor());
+    acceptOut.log(dataItem.payload(Object.class).hashCode());
 
   }
 
-  private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("accept-in");
-  private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("accept-out");
+  private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
+  private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
   private void inject(AddressedItem addressedItem) {
     injectIn.log(addressedItem.item().xor());
     materialization.get(addressedItem.destination()).accept(addressedItem.item(), true);
