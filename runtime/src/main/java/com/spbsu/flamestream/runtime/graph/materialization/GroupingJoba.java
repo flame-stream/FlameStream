@@ -28,7 +28,7 @@ public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
 
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
-  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("grouping-receive", 1600000, 1);
+  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("grouping-receive");
 
   public GroupingJoba(Grouping<?> grouping, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
     super(outJobas, acker, context);

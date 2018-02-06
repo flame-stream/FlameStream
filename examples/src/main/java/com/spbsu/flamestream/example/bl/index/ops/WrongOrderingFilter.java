@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  * Date: 10.07.2017
  */
 public class WrongOrderingFilter implements Function<List<WordBase>, Stream<List<WordBase>>> {
-  private transient final Tracing.Tracer tracer = Tracing.TRACING.forEvent("wrong-ordering-filter-receive", 850000, 1);
+  private transient final Tracing.Tracer tracer = Tracing.TRACING.forEvent("wrong-ordering-filter-receive");
 
   @Override
   public Stream<List<WordBase>> apply(List<WordBase> wordBases) {

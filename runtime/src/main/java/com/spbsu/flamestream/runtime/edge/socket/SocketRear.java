@@ -11,6 +11,7 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,8 @@ public class SocketRear implements Rear {
 
   private final EdgeId edgeId;
   private final Client client;
+
+  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("rear-in");
 
   public SocketRear(EdgeContext edgeContext, String host, int port, Class[] classes) {
     edgeId = edgeContext.edgeId();
@@ -61,6 +64,7 @@ public class SocketRear implements Rear {
 
   @Override
   public void accept(DataItem dataItem) {
+    tracer.log(dataItem.xor());
     if (client.isConnected()) {
       client.sendTCP(dataItem);
     } else {

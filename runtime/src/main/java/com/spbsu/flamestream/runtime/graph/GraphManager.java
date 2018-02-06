@@ -15,6 +15,7 @@ import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
+import com.spbsu.flamestream.runtime.barrier.api.AttachRear;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.materialization.ActorJoba;
@@ -28,6 +29,7 @@ import com.spbsu.flamestream.runtime.graph.materialization.SourceJoba;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.apache.commons.lang.math.IntRange;
 
 import java.util.ArrayList;
@@ -111,24 +113,33 @@ public class GraphManager extends LoggingActor {
             .match(DataItem.class, this::accept)
             .match(AddressedItem.class, this::inject)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
-            .match(com.spbsu.flamestream.runtime.barrier.api.AttachRear.class, this::attachRear)
+            .match(AttachRear.class, this::attachRear)
             .match(Heartbeat.class, gt -> acker.forward(gt, context()))
             .match(UnregisterFront.class, gt -> acker.forward(gt, context()))
             .build();
   }
 
-  private void attachRear(com.spbsu.flamestream.runtime.barrier.api.AttachRear attachRear) {
+  private void attachRear(AttachRear attachRear) {
     sinkJoba.addRear(attachRear.rear());
   }
 
+  private final Tracing.Tracer acceptIn = Tracing.TRACING.forEvent("accept-in");
+  private final Tracing.Tracer acceptOut = Tracing.TRACING.forEvent("accept-out");
   private void accept(DataItem dataItem) {
+    acceptIn.log(dataItem.xor());
     final SourceJoba joba = (SourceJoba) materialization.get(Destination.fromVertexId(graph.source().id()));
     joba.addFront(dataItem.meta().globalTime().frontId(), sender());
     joba.accept(dataItem, false);
+    acceptOut.log(dataItem.xor());
+
   }
 
+  private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("accept-in");
+  private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("accept-out");
   private void inject(AddressedItem addressedItem) {
+    injectIn.log(addressedItem.item().xor());
     materialization.get(addressedItem.destination()).accept(addressedItem.item(), true);
+    injectOut.log(addressedItem.item().xor());
   }
 
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {

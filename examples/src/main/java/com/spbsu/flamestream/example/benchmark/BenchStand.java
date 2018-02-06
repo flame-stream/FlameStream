@@ -70,7 +70,7 @@ public class BenchStand implements AutoCloseable {
   private final Random random = new Random(7);
 
   private final Tracing.Tracer sendTracer = Tracing.TRACING.forEvent("bench-send", 1000, 1);
-  private final Tracing.Tracer receiveTracer = Tracing.TRACING.forEvent("bench-receive", 850000, 1);
+  private final Tracing.Tracer receiveTracer = Tracing.TRACING.forEvent("bench-receive");
 
   public BenchStand(StandConfig standConfig, GraphDeployer graphDeployer, Class<?>... classesToRegister) {
     this.standConfig = standConfig;
@@ -184,13 +184,14 @@ public class BenchStand implements AutoCloseable {
         if (o instanceof DataItem) {
           final DataItem dataItem = (DataItem) o;
           wordIndexAdd = dataItem.payload(WordIndexAdd.class);
+          receiveTracer.log(((DataItem) o).xor());
         } else if (o instanceof WordIndexAdd) {
           wordIndexAdd = (WordIndexAdd) o;
         } else {
           return;
         }
         final int docId = IndexItemInLong.pageId(wordIndexAdd.positions()[0]);
-        receiveTracer.log(Objects.hash(wordIndexAdd.word(), docId));
+        //receiveTracer.log(Objects.hash(wordIndexAdd.word(), docId));
 
         latencies.get(docId).finish();
         validator.accept(wordIndexAdd);

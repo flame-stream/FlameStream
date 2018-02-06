@@ -27,8 +27,8 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
   private int allItems;
   private int validItems;
 
-  private final Tracing.Tracer receiveTracer = Tracing.TRACING.forEvent("barrier-receive", 850000, 1);
-  private final Tracing.Tracer sendTracer = Tracing.TRACING.forEvent("barrier-send", 850000, 1);
+  private final Tracing.Tracer receiveTracer = Tracing.TRACING.forEvent("barrier-receive");
+  private final Tracing.Tracer sendTracer = Tracing.TRACING.forEvent("barrier-send");
 
   public SinkJoba(ActorRef acker, ActorContext context) {
     super(Stream.empty(), acker, context);
@@ -45,7 +45,7 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
 
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
-    receiveTracer.log(dataItem.payload(Object.class).hashCode());
+    receiveTracer.log(dataItem.xor());
     allItems++;
     //rears.forEach(rear -> rear.tell(dataItem, context.self()));
     invalidatingBucket.insert(dataItem);
@@ -58,7 +58,7 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
     invalidatingBucket.rangeStream(0, pos).forEach(di -> {
       validItems++;
       rears.forEach(rear -> {
-        sendTracer.log(di.payload(Object.class).hashCode());
+        sendTracer.log(di.xor());
         rear.tell(di, context.self());
       });
     });

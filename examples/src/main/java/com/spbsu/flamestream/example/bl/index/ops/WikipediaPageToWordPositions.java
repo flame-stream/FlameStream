@@ -24,7 +24,7 @@ import java.util.stream.Stream;
  */
 public class WikipediaPageToWordPositions implements Function<WikipediaPage, Stream<WordPagePositions>> {
   private transient final Tracing.Tracer inputTracer = Tracing.TRACING.forEvent("flatmap-receive", 1000, 1);
-  private transient final Tracing.Tracer outputTracer = Tracing.TRACING.forEvent("flatmap-send", 800000, 1);
+  private transient final Tracing.Tracer outputTracer = Tracing.TRACING.forEvent("flatmap-send");
 
   @Override
   public Stream<WordPagePositions> apply(WikipediaPage wikipediaPage) {
