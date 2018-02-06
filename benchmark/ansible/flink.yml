@@ -55,6 +55,11 @@
   tasks:
     - name: Fetch traces
       fetch:
-        src: /tmp/trace/
-        dest: flink/traces/{{ inventory_hostname }}/
+        src: /tmp/{{ item }}.csv
+        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/traces/{{ item }}/{{ inventory_hostname }}.csv
         flat: true
+      with_items:
+        - source
+        - sink
+        - enforcer
+        - flatmap
