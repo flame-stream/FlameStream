@@ -123,8 +123,8 @@ public class GraphManager extends LoggingActor {
     sinkJoba.addRear(attachRear.rear());
   }
 
-  private final Tracing.Tracer acceptIn = Tracing.TRACING.forEvent("accept-in");
-  private final Tracing.Tracer acceptOut = Tracing.TRACING.forEvent("accept-out");
+  private final Tracing.Tracer acceptIn = Tracing.TRACING.forEvent("accept-in", 1000, 1);
+  private final Tracing.Tracer acceptOut = Tracing.TRACING.forEvent("accept-out", 1000, 1);
   private void accept(DataItem dataItem) {
     acceptIn.log(dataItem.payload(Object.class).hashCode());
     final SourceJoba joba = (SourceJoba) materialization.get(Destination.fromVertexId(graph.source().id()));
