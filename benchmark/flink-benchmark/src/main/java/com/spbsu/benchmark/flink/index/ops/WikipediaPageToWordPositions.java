@@ -39,6 +39,6 @@ public class WikipediaPageToWordPositions extends RichFlatMapFunction<WikipediaP
 
   @Override
   public void close() throws Exception {
-    Tracing.TRACING.flush(Paths.get("tmp/flatmap.csv"));
+    Tracing.TRACING.flush(Paths.get("/tmp/flatmap.csv"));
   }
 }

@@ -187,6 +187,7 @@ public class BenchStand implements AutoCloseable {
           receiveTracer.log(((DataItem) o).xor());
         } else if (o instanceof WordIndexAdd) {
           wordIndexAdd = (WordIndexAdd) o;
+          receiveTracer.log(wordIndexAdd.hashCode());
         } else {
           return;
         }

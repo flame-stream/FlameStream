@@ -51,6 +51,6 @@ public class OrderEnforcer extends ProcessFunction<Tuple2<String, long[]>, Tuple
   @Override
   public void close() throws Exception {
     super.close();
-    Tracing.TRACING.flush(Paths.get("tmp/enforcer.csv"));
+    Tracing.TRACING.flush(Paths.get("/tmp/enforcer.csv"));
   }
 }
