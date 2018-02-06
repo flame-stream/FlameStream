@@ -55,6 +55,6 @@
   tasks:
     - name: Fetch traces
       fetch:
-        src: /tmp/trace.csv
-        dest: flink/traces/{{ inventory_hostname }}.csv
+        src: /tmp/trace/
+        dest: flink/traces/{{ inventory_hostname }}/
         flat: true
