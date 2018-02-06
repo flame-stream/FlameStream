@@ -31,7 +31,7 @@
 - name: Run flink bench
   hosts: bench
   roles:
-    - { role: flink-sum-bench }
+    - { role: flink-bench }
 
 - hosts: bench
   tasks:
