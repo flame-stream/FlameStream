@@ -33,14 +33,6 @@
   roles:
     - { role: flink-bench }
 
-- hosts: bench
-  tasks:
-    - name: Fetch latencies
-      fetch:
-        src: /tmp/lat.data
-        dest: flink/latency/{{ groups['workers'] | length }}/{{ rate }}/lat.data
-        flat: true
-
 - name: Destroy flink manager
   hosts: manager
   roles:
@@ -50,6 +42,14 @@
   hosts: workers
   roles:
     - { role: flink-task-manager-destroy }
+
+- hosts: bench
+  tasks:
+    - name: Fetch latencies
+      fetch:
+        src: /tmp/lat.data
+        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/latency/lat.data
+        flat: true
 
 - hosts: all
   tasks:

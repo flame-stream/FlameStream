@@ -59,22 +59,6 @@
   roles:
     - { role: flamestream-destroy }
 
-- hosts: workers
-  tasks:
-    - name: Fetch replay times
-      fetch:
-        src: /tmp/elements.cnt
-        dest: flamestream/rates/{{ groups['workers'] | length }}/{{ rate }}/{{ inventory_hostname }}.cnt
-        flat: true
-
-- hosts: bench
-  tasks:
-    - name: Fetch latencies
-      fetch:
-        src: /tmp/lat.data
-        dest: flamestream/latency/{{ groups['workers'] | length }}/{{ rate }}/lat.data
-        flat: true
-
 - name: Destroy zookeeper
   hosts: manager
   roles:
@@ -85,10 +69,26 @@
   roles:
     - { role: flamestream-bench-destroy }
 
+- hosts: workers
+  tasks:
+    - name: Fetch replay times
+      fetch:
+        src: /tmp/elements.cnt
+        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/rate/{{ inventory_hostname }}.cnt
+        flat: true
+
+- hosts: bench
+  tasks:
+    - name: Fetch latencies
+      fetch:
+        src: /tmp/lat.data
+        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/latency/lat.data
+        flat: true
+
 - hosts: all
   tasks:
     - name: Fetch traces
       fetch:
         src: /tmp/trace.csv
-        dest: flamestream/traces/{{ inventory_hostname }}.csv
+        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/traces/{{ inventory_hostname }}.csv
         flat: true
