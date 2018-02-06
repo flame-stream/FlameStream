@@ -60,6 +60,7 @@
         flat: true
       with_items:
         - source
+        - trace
         - sink
         - enforcer
         - flatmap
