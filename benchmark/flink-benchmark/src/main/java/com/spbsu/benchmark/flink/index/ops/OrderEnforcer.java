@@ -24,7 +24,7 @@ public class OrderEnforcer extends ProcessFunction<Tuple2<String, long[]>, Tuple
     super.open(parameters);
     buffer = new TreeMap<>();
 
-    inputTracer = Tracing.TRACING.forEvent("enforcer-receive", 1000, 1);
+    inputTracer = Tracing.TRACING.forEvent("enforcer-receive");
     outputTracer = Tracing.TRACING.forEvent("enforcer-send");
   }
 
