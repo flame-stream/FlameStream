@@ -31,6 +31,8 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
   @Nullable
   private transient Client client = null;
 
+  private transient Tracing.Tracer tracer;
+
   public KryoSocketSink(String hostName, int port) {
     this.hostName = hostName;
     this.port = port;
@@ -38,6 +40,8 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
 
   @Override
   public void open(Configuration parameters) throws Exception {
+    tracer = Tracing.TRACING.forEvent("sink-receive");
+
     client = new Client(OUTPUT_BUFFER_SIZE, 1234);
     client.getKryo().register(WordIndexAdd.class);
     client.getKryo().register(WordIndexRemove.class);
@@ -61,6 +65,7 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
   @Override
   public void invoke(Result value) {
     if (client != null && client.isConnected()) {
+      tracer.log(value.hashCode());
       client.sendTCP(value.wordIndexAdd());
       if (value.wordIndexRemove() != null) {
         client.sendTCP(value.wordIndexRemove());
@@ -73,10 +78,7 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
   @Override
   public void close() {
     try {
-      // 1. It's assumed that the whole graph would be loaded by a single classloader
-      // so there is only one instance of static field Tracing.TRACING per JVM
-      // 2. There is one sink per node => flush would be done only one time
-      Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
+      Tracing.TRACING.flush(Paths.get("/tmp/sink.csv"));
     } catch (IOException e) {
       e.printStackTrace();
     }

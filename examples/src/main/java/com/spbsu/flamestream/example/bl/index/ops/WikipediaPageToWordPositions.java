@@ -23,8 +23,18 @@ import java.util.stream.Stream;
  * Date: 10.07.2017
  */
 public class WikipediaPageToWordPositions implements Function<WikipediaPage, Stream<WordPagePositions>> {
-  private transient final Tracing.Tracer inputTracer = Tracing.TRACING.forEvent("flatmap-receive", 1000, 1);
-  private transient final Tracing.Tracer outputTracer = Tracing.TRACING.forEvent("flatmap-send");
+  private transient final Tracing.Tracer inputTracer;
+  private transient final Tracing.Tracer outputTracer;
+
+  public WikipediaPageToWordPositions() {
+    inputTracer = Tracing.TRACING.forEvent("flatmap-receive", 1000, 1);
+    outputTracer = Tracing.TRACING.forEvent("flatmap-send");
+  }
+
+  public WikipediaPageToWordPositions(Tracing.Tracer inputTracer, Tracing.Tracer outputTracer) {
+    this.inputTracer = inputTracer;
+    this.outputTracer = outputTracer;
+  }
 
   @Override
   public Stream<WordPagePositions> apply(WikipediaPage wikipediaPage) {
