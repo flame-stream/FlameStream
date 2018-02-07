@@ -55,21 +55,6 @@
   tasks:
     - name: Fetch traces
       fetch:
-        src: /tmp/{{ item }}.csv
-        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/traces/{{ item }}/{{ inventory_hostname }}.csv
+        src: /tmp/trace.csv
+        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/traces/{{ inventory_hostname }}.csv
         flat: true
-      with_items:
-        - source
-        - sink
-        - enforcer
-        - flatmap
-
-- hosts: bench
-  tasks:
-    - name: Fetch traces
-      fetch:
-        src: /tmp/{{ item }}.csv
-        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/traces/{{ item }}/{{ inventory_hostname }}.csv
-        flat: true
-      with_items:
-        - trace

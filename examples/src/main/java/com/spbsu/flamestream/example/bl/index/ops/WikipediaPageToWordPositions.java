@@ -3,6 +3,7 @@ package com.spbsu.flamestream.example.bl.index.ops;
 import com.expleague.commons.text.lexical.StemsTokenizer;
 import com.expleague.commons.text.lexical.Tokenizer;
 import com.expleague.commons.text.stem.Stemmer;
+import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.bl.index.model.WordPagePositions;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
@@ -10,11 +11,11 @@ import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -62,6 +63,11 @@ public class WikipediaPageToWordPositions implements Function<WikipediaPage, Str
     final List<WordPagePositions> wordPagePositions = new ArrayList<>();
     wordPositions.forEach((word, list) -> wordPagePositions.add(new WordPagePositions(word, list.toArray())));
     return wordPagePositions.stream()
-            .peek(positions -> outputTracer.log(Objects.hash(positions.word(), wikipediaPage.id())));
+            .peek(positions -> {
+              final int wordHash = Hashing.murmur3_32().hashString(positions.word(), Charset.forName("UTF-8")).asInt();
+              final int pageId = wikipediaPage.id();
+              final int hash = wordHash ^ pageId;
+              outputTracer.log(hash);
+            });
   }
 }

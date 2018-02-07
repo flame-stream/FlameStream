@@ -78,7 +78,7 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
   @Override
   public void close() {
     try {
-      Tracing.TRACING.flush(Paths.get("/tmp/sink.csv"));
+      Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
     } catch (IOException e) {
       e.printStackTrace();
     }

@@ -94,10 +94,4 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
       theSocket.close();
     }
   }
-
-  @Override
-  public void close() throws Exception {
-    super.close();
-    Tracing.TRACING.flush(Paths.get("/tmp/source.csv"));
-  }
 }

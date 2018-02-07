@@ -3,13 +3,11 @@ package com.spbsu.benchmark.flink.index.ops;
 import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.bl.index.model.WordPagePositions;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 
-import java.nio.file.Paths;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -35,10 +33,5 @@ public class WikipediaPageToWordPositions extends RichFlatMapFunction<WikipediaP
         out.collect(new Tuple2<>(v.word(), v.positions()));
       }
     });
-  }
-
-  @Override
-  public void close() throws Exception {
-    Tracing.TRACING.flush(Paths.get("/tmp/flatmap.csv"));
   }
 }

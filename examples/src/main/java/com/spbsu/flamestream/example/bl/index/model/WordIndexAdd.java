@@ -1,7 +1,9 @@
 package com.spbsu.flamestream.example.bl.index.model;
 
+import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -47,6 +49,7 @@ public class WordIndexAdd implements WordBase {
 
   @Override
   public int hashCode() {
-    return Objects.hash(word, IndexItemInLong.pageId(positions[0]));
+    return Hashing.murmur3_32().hashString(word, Charset.forName("UTF-8")).asInt()
+            ^ IndexItemInLong.pageId(positions[0]);
   }
 }
