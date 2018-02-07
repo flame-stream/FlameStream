@@ -56,7 +56,7 @@ public class LocalClusterRuntime implements FlameRuntime {
       final DumbInetSocketAddress address = new DumbInetSocketAddress("localhost", ports.get(i + 1));
       final WorkerApplication worker = new WorkerApplication(name, address, zkString);
       final ActorPath path = RootActorPath.apply(Address.apply(
-              "akka.tcp",
+              "akka",
               "worker",
               address.host(),
               address.port()

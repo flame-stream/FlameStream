@@ -40,7 +40,7 @@ public class ConfigDeployer {
   private void run() throws IOException {
     final Map<String, ActorPath> paths = new HashMap<>();
     config.workers.forEach((s, address) -> {
-      final Address a = new Address("akka.tcp", "worker", address.host(), address.port());
+      final Address a = new Address("akka", "worker", address.host(), address.port());
       final ActorPath path = RootActorPath.apply(a, "/").child("user").child("watcher");
       paths.put(s, path);
     });

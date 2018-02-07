@@ -53,8 +53,8 @@ public class WorkerApplication {
     log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
 
     final Map<String, String> props = new HashMap<>();
-    props.put("akka.remote.netty.tcp.hostname", host.host());
-    props.put("akka.remote.netty.tcp.port", String.valueOf(host.port()));
+    props.put("akka.remote.artery.canonical.hostname", host.host());
+    props.put("akka.remote.artery.canonical.port", String.valueOf(host.port()));
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
 
     this.system = ActorSystem.create("worker", config);
