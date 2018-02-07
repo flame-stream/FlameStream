@@ -53,8 +53,8 @@ public class ConfigDeployer {
         ranges.put(s, new HashRange(0, 0));
       } else {
         ranges.put(s, covering.get(0));
+        covering.remove(0);
       }
-      covering.remove(0);
     });
     assert covering.isEmpty();
 
