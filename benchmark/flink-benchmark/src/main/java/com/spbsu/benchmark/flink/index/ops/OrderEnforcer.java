@@ -1,6 +1,7 @@
 package com.spbsu.benchmark.flink.index.ops;
 
 import com.google.common.hash.Hashing;
+import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -12,7 +13,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.NavigableMap;
-import java.util.Objects;
 import java.util.TreeMap;
 
 public class OrderEnforcer extends ProcessFunction<Tuple2<String, long[]>, Tuple2<String, long[]>> {
@@ -33,9 +33,7 @@ public class OrderEnforcer extends ProcessFunction<Tuple2<String, long[]>, Tuple
   public void processElement(Tuple2<String, long[]> value,
                              Context ctx,
                              Collector<Tuple2<String, long[]>> out) {
-    final int hash = Hashing.murmur3_32().hashString(value.f0, Charset.forName("UTF-8")).asInt()
-            ^ IndexItemInLong.pageId(value.f1[0]);
-    inputTracer.log(hash);
+    inputTracer.log(WordIndexAdd.hash(value.f0, IndexItemInLong.pageId(value.f1[0])));
     buffer.putIfAbsent(ctx.timestamp(), new ArrayList<>());
     buffer.get(ctx.timestamp()).add(value);
     ctx.timerService().registerEventTimeTimer(ctx.timestamp());

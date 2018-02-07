@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 
 public class KryoSocketSink extends RichSinkFunction<Result> {
   private static final long serialVersionUID = 1L;
@@ -62,10 +64,12 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
     LOG.info("Connected to {}:{}", hostName, port);
   }
 
+  private final Set<Long> hashes = new HashSet<>();
+
   @Override
   public void invoke(Result value) {
     if (client != null && client.isConnected()) {
-      tracer.log(value.hashCode());
+      tracer.log(value.wordIndexAdd().hash());
       client.sendTCP(value.wordIndexAdd());
       if (value.wordIndexRemove() != null) {
         client.sendTCP(value.wordIndexRemove());
