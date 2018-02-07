@@ -44,9 +44,7 @@ public class OrderEnforcer extends ProcessFunction<Tuple2<String, long[]>, Tuple
     final NavigableMap<Long, Collection<Tuple2<String, long[]>>> head = buffer.headMap(timestamp, true);
     head.forEach((ts, value) -> value.stream()
             .peek(tuple -> {
-              final int hash = Hashing.murmur3_32().hashString(tuple.f0, Charset.forName("UTF-8")).asInt()
-                      ^ IndexItemInLong.pageId(tuple.f1[0]);
-              outputTracer.log(hash);
+              outputTracer.log(WordIndexAdd.hash(tuple.f0, IndexItemInLong.pageId(tuple.f1[0])));
             })
             .forEach(out::collect));
     head.clear();
