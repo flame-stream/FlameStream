@@ -33,11 +33,9 @@ public class OrderEnforcer extends ProcessFunction<Tuple2<String, long[]>, Tuple
   public void processElement(Tuple2<String, long[]> value,
                              Context ctx,
                              Collector<Tuple2<String, long[]>> out) {
-    inputTracer.log(Objects.hash(value.f0, IndexItemInLong.pageId(value.f1[0])));
-
-    final long hash = IndexItemInLong.pageId(value.f1[0])
-            ^ Hashing.murmur3_32().hashString(value.f0, Charset.forName("UTF-8")).asInt();
-    outputTracer.log(hash);
+    final int hash = Hashing.murmur3_32().hashString(value.f0, Charset.forName("UTF-8")).asInt()
+            ^ IndexItemInLong.pageId(value.f1[0]);
+    inputTracer.log(hash);
     buffer.putIfAbsent(ctx.timestamp(), new ArrayList<>());
     buffer.get(ctx.timestamp()).add(value);
     ctx.timerService().registerEventTimeTimer(ctx.timestamp());
@@ -47,7 +45,11 @@ public class OrderEnforcer extends ProcessFunction<Tuple2<String, long[]>, Tuple
   public void onTimer(long timestamp, OnTimerContext ctx, Collector<Tuple2<String, long[]>> out) {
     final NavigableMap<Long, Collection<Tuple2<String, long[]>>> head = buffer.headMap(timestamp, true);
     head.forEach((ts, value) -> value.stream()
-            .peek(tuple -> outputTracer.log(Objects.hash(tuple.f0, IndexItemInLong.pageId(tuple.f1[0]))))
+            .peek(tuple -> {
+              final int hash = Hashing.murmur3_32().hashString(tuple.f0, Charset.forName("UTF-8")).asInt()
+                      ^ IndexItemInLong.pageId(tuple.f1[0]);
+              outputTracer.log(hash);
+            })
             .forEach(out::collect));
     head.clear();
   }
