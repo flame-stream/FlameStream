@@ -65,6 +65,15 @@ public class Tracing {
       }
     }
 
+    public void log(long id, long time) {
+      attempts.incrementAndGet();
+      if (id % sampling == 0) {
+        final int pos = offset.getAndIncrement();
+        this.id[pos % size] = id;
+        ts[pos % size] = time;
+      }
+    }
+
     public void flush(PrintWriter pw) {
       System.out.println("Attempts of event '" + event + "' - " + attempts.get());
       final int total = Math.min(offset.get(), size);
