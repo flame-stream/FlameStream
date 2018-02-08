@@ -39,10 +39,6 @@
     - name: Start background logging
       shell: nohup vmstat -nSm 1 < /dev/null > /vmstat.log &
 
-- hosts: bench
-  tasks:
-    - pause:
-
 - name: Run the benchmark
   hosts: bench
   roles:

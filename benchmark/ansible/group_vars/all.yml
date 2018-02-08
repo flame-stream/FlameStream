@@ -1,4 +1,4 @@
-rate: 100
+rate: 70
 base_dir: /opt
 
 flamestream_dir: "{{ base_dir }}/flamestream"

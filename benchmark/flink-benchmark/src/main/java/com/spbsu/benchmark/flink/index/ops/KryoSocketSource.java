@@ -14,8 +14,6 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Paths;
-
 public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> {
   private static final long serialVersionUID = 1L;
 
