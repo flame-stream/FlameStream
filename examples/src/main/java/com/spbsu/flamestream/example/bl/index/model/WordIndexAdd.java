@@ -43,8 +43,12 @@ public class WordIndexAdd implements WordBase {
       return false;
     }
     final WordIndexAdd that = (WordIndexAdd) o;
-    return Objects.equals(word, that.word) &&
-            (IndexItemInLong.pageId(positions[0]) == IndexItemInLong.pageId(that.positions[0]));
+    return (IndexItemInLong.pageId(positions[0]) == IndexItemInLong.pageId(that.positions[0]));
+  }
+
+  @Override
+  public int hashCode() {
+    return IndexItemInLong.pageId(positions[0]);
   }
 
   public long hash() {
@@ -53,7 +57,6 @@ public class WordIndexAdd implements WordBase {
 
   public static long hash(String word, int pageId) {
     final int wordHash = Hashing.murmur3_32().hashString(word, Charset.forName("UTF-8")).asInt();
-    final int page = pageId;
-    return (((long) wordHash) << 32) | (page & 0xffffffffL);
+    return (((long) wordHash) << 32) | (pageId & 0xffffffffL);
   }
 }
