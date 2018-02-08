@@ -33,26 +33,14 @@
   roles:
     - { role: flamestream-worker }
 
-- name: Log cpu usage
-  hosts: workers
+- hosts: bench
   tasks:
-    - name: Start background logging
-      shell: nohup vmstat -nSm 1 < /dev/null > /vmstat.log &
+    - pause:
 
 - name: Run the benchmark
   hosts: bench
   roles:
     - { role: flamestream-bench }
-
-- name: Log cpu usage
-  hosts: workers
-  tasks:
-    - name: Kill backgroung logging
-      shell: pkill -n vmstat
-    - name: Fetch cpustats
-      fetch:
-        src: /vmstat.log
-        dest: vmstat.log
 
 - name: Destroy flamestream
   hosts: workers
