@@ -33,10 +33,6 @@
   roles:
     - { role: flamestream-worker }
 
-- hosts: bench
-  tasks:
-    - pause:
-
 - name: Run the benchmark
   hosts: bench
   roles:
