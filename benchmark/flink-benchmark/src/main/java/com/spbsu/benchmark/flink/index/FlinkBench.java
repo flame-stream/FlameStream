@@ -4,11 +4,14 @@ import com.spbsu.benchmark.flink.index.ops.IndexFunction;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSink;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSource;
 import com.spbsu.benchmark.flink.index.ops.OrderEnforcer;
+import com.spbsu.benchmark.flink.index.ops.TotalOrderEnforcer;
 import com.spbsu.benchmark.flink.index.ops.WikipediaPageToWordPositions;
 import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
+import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.jooq.lambda.Unchecked;
@@ -58,6 +61,9 @@ public class FlinkBench {
                 .process(new OrderEnforcer())
                 .process(new IndexFunction())
                 .setParallelism(parallelism)
+                .keyBy((KeySelector<Result, Integer>) value
+                        -> IndexItemInLong.pageId(value.wordIndexAdd().positions()[0]))
+                .process(new TotalOrderEnforcer())
                 .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()));
         new Thread(Unchecked.runnable(environment::execute)).start();
       }

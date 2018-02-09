@@ -11,8 +11,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Tracing {
-  public static final int SIZE = 100_000;
-  public static final int SAMPLING = 101;
+  private static final int SIZE = 100_000;
+  private static final int SAMPLING = 101;
 
   public static final Tracing TRACING = new Tracing();
   private final Map<String, Tracer> tracers = Collections.synchronizedMap(new HashMap<>());
@@ -74,7 +74,7 @@ public class Tracing {
       }
     }
 
-    public void flush(PrintWriter pw) {
+    void flush(PrintWriter pw) {
       System.out.println("Attempts of event '" + event + "' - " + attempts.get());
       final int total = Math.min(offset.get(), size);
       for (int i = 0; i < total; ++i) {
