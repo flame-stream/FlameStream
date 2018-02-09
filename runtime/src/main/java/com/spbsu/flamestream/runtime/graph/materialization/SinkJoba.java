@@ -33,7 +33,7 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
   private int allItems;
   private int validItems;
 
-  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("barrier-delay");
+  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("barrier-delay", 3000, 1);
 
   private final long[] docFlush = new long[3000];
 
