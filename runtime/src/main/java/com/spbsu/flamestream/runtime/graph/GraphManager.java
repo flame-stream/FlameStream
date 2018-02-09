@@ -85,7 +85,7 @@ public class GraphManager extends LoggingActor {
                 final Multimap<String, RouterJoba> routers = LinkedListMultimap.create();
                 graph.vertices().forEach(vertex -> buildMaterialization(vertex, jobasForVertices, routers));
                 jobasForVertices.forEach((vertexId, joba) -> {
-                  if (joba instanceof GroupingJoba || joba instanceof MapJoba) {
+                  if (joba instanceof GroupingJoba || joba instanceof MapJoba || joba instanceof SinkJoba) {
                     materialization.put(Destination.fromVertexId(vertexId), new ActorJoba(joba));
                   } else if (joba instanceof SourceJoba) {
                     materialization.put(Destination.fromVertexId(vertexId), joba);
@@ -125,6 +125,7 @@ public class GraphManager extends LoggingActor {
 
   private final Tracing.Tracer acceptIn = Tracing.TRACING.forEvent("accept-in", 1000, 1);
   private final Tracing.Tracer acceptOut = Tracing.TRACING.forEvent("accept-out", 1000, 1);
+
   private void accept(DataItem dataItem) {
     acceptIn.log(dataItem.payload(Object.class).hashCode());
     final SourceJoba joba = (SourceJoba) materialization.get(Destination.fromVertexId(graph.source().id()));
@@ -136,6 +137,7 @@ public class GraphManager extends LoggingActor {
 
   private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
   private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
+
   private void inject(AddressedItem addressedItem) {
     injectIn.log(addressedItem.item().xor());
     materialization.get(addressedItem.destination()).accept(addressedItem.item(), true);
@@ -147,7 +149,9 @@ public class GraphManager extends LoggingActor {
   }
 
   //DFS
-  private Joba buildMaterialization(Graph.Vertex vertex, Map<String, Joba> jobasForVertices, Multimap<String, RouterJoba> routers) {
+  private Joba buildMaterialization(Graph.Vertex vertex,
+                                    Map<String, Joba> jobasForVertices,
+                                    Multimap<String, RouterJoba> routers) {
     if (jobasForVertices.containsKey(vertex.id())) {
       return jobasForVertices.get(vertex.id());
     } else {
@@ -155,16 +159,23 @@ public class GraphManager extends LoggingActor {
               .map(outVertex -> {
                 // TODO: 15.12.2017 add circuit breaker
                 if (outVertex instanceof Grouping || ((Graph.Builder.MyGraph) graph).isShuffle(vertex, outVertex)) {
-                  final HashFunction hashFunction = outVertex instanceof Grouping ?
-                          ((Grouping) outVertex).hash() :
-                          dataItem -> ThreadLocalRandom.current().nextInt();
+                  final HashFunction hashFunction;
+                  if (outVertex instanceof Grouping) {
+                    hashFunction = ((Grouping) outVertex).hash();
+                  } else if (outVertex instanceof Sink) {
+                    hashFunction = dataItem -> dataItem.payload(Object.class).hashCode();
+                  } else {
+                    hashFunction = dataItem -> ThreadLocalRandom.current().nextInt();
+                  }
+
                   final RouterJoba routerJoba = new RouterJoba(
                           router,
                           computationProps.ranges().get(nodeId),
                           hashFunction,
                           Destination.fromVertexId(outVertex.id()),
                           acker,
-                          context());
+                          context()
+                  );
                   routers.put(outVertex.id(), routerJoba);
                   return routerJoba;
                 }
