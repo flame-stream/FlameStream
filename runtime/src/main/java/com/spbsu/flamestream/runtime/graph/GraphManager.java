@@ -5,6 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
@@ -163,7 +164,7 @@ public class GraphManager extends LoggingActor {
                   if (outVertex instanceof Grouping) {
                     hashFunction = ((Grouping) outVertex).hash();
                   } else if (outVertex instanceof Sink) {
-                    hashFunction = dataItem -> dataItem.payload(Object.class).hashCode();
+                    hashFunction = dataItem -> Hashing.murmur3_32().hashInt(dataItem.payload(Object.class).hashCode()).asInt();
                   } else {
                     hashFunction = dataItem -> ThreadLocalRandom.current().nextInt();
                   }
