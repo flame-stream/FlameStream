@@ -70,7 +70,7 @@ public class Acker extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(Ack.class, this::handleAck)
+            //.match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
             .match(UnregisterFront.class, unregisterFront -> unregisterFront(unregisterFront.frontId()))

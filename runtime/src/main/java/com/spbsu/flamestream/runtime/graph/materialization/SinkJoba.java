@@ -52,31 +52,31 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
 
   @Override
   public void accept(DataItem dataItem, boolean fromAsync) {
-    docFlush[dataItem.payload(Object.class).hashCode()] = System.nanoTime();
+    //docFlush[dataItem.payload(Object.class).hashCode()] = System.nanoTime();
     allItems++;
-    //rears.forEach(rear -> rear.tell(dataItem, context.self()));
-    invalidatingBucket.insert(dataItem);
+    rears.forEach(rear -> rear.tell(dataItem, context.self()));
+    //invalidatingBucket.insert(dataItem);
     process(dataItem, Stream.of(dataItem), fromAsync);
   }
 
   @Override
   public void onMinTime(GlobalTime minTime) {
-    final TIntSet outDocIds = new TIntHashSet();
-
-    final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
-    invalidatingBucket.rangeStream(0, pos).forEach(di -> {
-      validItems++;
-      rears.forEach(rear -> {
-        outDocIds.add(di.payload(Object.class).hashCode());
-        rear.tell(di, context.self());
-      });
-    });
-    invalidatingBucket.clearRange(0, pos);
-
-    outDocIds.forEach(value -> {
-      tracer.log(value, System.nanoTime() - docFlush[value]);
-      return true;
-    });
+    //final TIntSet outDocIds = new TIntHashSet();
+    //
+    //final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
+    //invalidatingBucket.rangeStream(0, pos).forEach(di -> {
+    //  validItems++;
+    //  rears.forEach(rear -> {
+    //    outDocIds.add(di.payload(Object.class).hashCode());
+    //    rear.tell(di, context.self());
+    //  });
+    //});
+    //invalidatingBucket.clearRange(0, pos);
+    //
+    //outDocIds.forEach(value -> {
+    //  tracer.log(value, System.nanoTime() - docFlush[value]);
+    //  return true;
+    //});
   }
 
   @Override

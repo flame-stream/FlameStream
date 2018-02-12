@@ -63,7 +63,7 @@ public interface Joba {
     }
 
     private void ack(DataItem item) {
-      acker.tell(new Ack(item.meta().globalTime(), item.xor()), context.self());
+      //acker.tell(new Ack(item.meta().globalTime(), item.xor()), context.self());
     }
 
     // TODO: 13.12.2017 i believe there is more effective and smart solution
