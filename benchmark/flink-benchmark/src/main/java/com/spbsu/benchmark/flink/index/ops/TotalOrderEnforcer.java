@@ -23,8 +23,8 @@ public class TotalOrderEnforcer extends ProcessFunction<Result, Result> {
     super.open(parameters);
     buffer = new TreeMap<>();
 
-    inputTracer = Tracing.TRACING.forEvent("enforcer-receive");
-    outputTracer = Tracing.TRACING.forEvent("enforcer-send");
+    inputTracer = Tracing.TRACING.forEvent("tot-enforcer-receive");
+    outputTracer = Tracing.TRACING.forEvent("tot-enforcer-send");
   }
 
   @Override
