@@ -8,6 +8,7 @@ import com.spbsu.benchmark.flink.index.ops.TotalOrderEnforcer;
 import com.spbsu.benchmark.flink.index.ops.WikipediaPageToWordPositions;
 import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
+import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -54,7 +55,7 @@ public class FlinkBench {
         environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))
                 .setParallelism(parallelism)
-                .shuffle()
+                .keyBy((KeySelector<WikipediaPage, Integer>) value -> 1)
                 .flatMap(new WikipediaPageToWordPositions())
                 .setParallelism(parallelism)
                 .keyBy(0)
