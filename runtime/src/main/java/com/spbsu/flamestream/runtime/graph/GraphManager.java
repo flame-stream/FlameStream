@@ -166,8 +166,8 @@ public class GraphManager extends LoggingActor {
                   } else if (outVertex instanceof Sink) {
                     hashFunction = dataItem -> Hashing.murmur3_32().hashInt(dataItem.payload(Object.class).hashCode()).asInt();
                   } else {
-                    //hashFunction = dataItem -> 2_000_000_000;
-                    hashFunction = dataItem -> ThreadLocalRandom.current().nextInt();
+                    hashFunction = dataItem -> 2_000_000_000;
+                    //hashFunction = dataItem -> ThreadLocalRandom.current().nextInt();
                   }
 
                   final RouterJoba routerJoba = new RouterJoba(
