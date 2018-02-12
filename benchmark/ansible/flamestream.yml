@@ -53,22 +53,6 @@
   roles:
     - { role: flamestream-bench-destroy }
 
-- hosts: workers
-  tasks:
-    - name: Fetch replay times
-      fetch:
-        src: /tmp/elements.cnt
-        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/rate/{{ inventory_hostname }}.cnt
-        flat: true
-
-- hosts: bench
-  tasks:
-    - name: Fetch latencies
-      fetch:
-        src: /tmp/lat.data
-        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/latency/lat.data
-        flat: true
-
 - hosts: all
   tasks:
     - name: Fetch traces
