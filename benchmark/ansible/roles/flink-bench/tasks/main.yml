@@ -26,8 +26,14 @@
     com.spbsu.benchmark.flink.index.FlinkBench
     {{ flink_dir }}/bench.conf {{ flink_dir }}/deployer.conf > {{ flink_dir }}/bench.log 2>&1
 
-
 - name: Fetch bench logs
   fetch:
     src: "{{ flink_dir }}/bench.log"
-    dest: flink_bench.log
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/bench.log
+    flat: true
+
+- name: Fetch latencies
+  fetch:
+    src: /tmp/lat.data
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/latency/lat.data
+    flat: true

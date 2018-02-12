@@ -24,4 +24,11 @@
 - name: Fetch bench logs
   fetch:
     src: "{{ flamestream_dir }}/bench.log"
-    dest: flamestream_bench.log
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/bench.log
+    flat: true
+
+- name: Fetch latencies
+  fetch:
+    src: /tmp/lat.data
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/latency/lat.data
+    flat: true
