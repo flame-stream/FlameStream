@@ -64,8 +64,8 @@ public class FlinkBench {
                 .setParallelism(parallelism)
                 .keyBy((KeySelector<Result, Integer>) value
                         -> IndexItemInLong.pageId(value.wordIndexAdd().positions()[0]))
-                .process(new TotalOrderEnforcer())
-                .setParallelism(parallelism)
+                //.process(new TotalOrderEnforcer())
+                //.setParallelism(parallelism)
                 .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
                 .setParallelism(parallelism);
         new Thread(Unchecked.runnable(environment::execute)).start();
