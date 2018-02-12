@@ -54,7 +54,7 @@ public class RouterJoba implements Joba {
       localJoba.accept(dataItem, fromAsync);
     } else {
       router.get(hash).tell(new AddressedItem(dataItem, destination), context.self());
-      //acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), context.self());
+      acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), context.self());
     }
   }
 
@@ -71,11 +71,11 @@ public class RouterJoba implements Joba {
         router.get(hash).tell(new AddressedItem(dataItem, destination), context.self());
         globalTime[0] = dataItem.meta().globalTime();
         xor[0] ^= dataItem.xor();
-        //acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), context.self());
+        acker.tell(new Ack(dataItem.meta().globalTime(), dataItem.xor()), context.self());
       }
     });
     if (globalTime[0] != null) {
-      //acker.tell(new Ack(globalTime[0], xor[0]), context.self());
+      acker.tell(new Ack(globalTime[0], xor[0]), context.self());
     }
   }
 
