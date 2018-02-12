@@ -68,7 +68,6 @@ public class FlinkBench {
                 .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
                 .setParallelism(parallelism);
         new Thread(Unchecked.runnable(environment::execute)).start();
-        
       }
 
       @Override
