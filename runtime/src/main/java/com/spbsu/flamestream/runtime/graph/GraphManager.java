@@ -147,7 +147,7 @@ public class GraphManager extends LoggingActor {
   }
 
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
-    //minTimeHandlers.forEach(minTimeHandler -> minTimeHandler.onMinTime(minTimeUpdate.minTime()));
+    minTimeHandlers.forEach(minTimeHandler -> minTimeHandler.onMinTime(minTimeUpdate.minTime()));
   }
 
   //DFS
