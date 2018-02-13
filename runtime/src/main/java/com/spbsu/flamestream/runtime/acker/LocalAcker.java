@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 public class LocalAcker extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 10;
-  private static final int FLUSH_COUNT = 1000;
+  private static final int FLUSH_COUNT = 10000;
 
   private final Map<GlobalTime, Long> ackCache = new HashMap<>();
   private final List<Heartbeat> heartbeatCache = new ArrayList<>();
@@ -72,7 +72,6 @@ public class LocalAcker extends LoggingActor {
 
     if (flushCounter == FLUSH_COUNT) {
       flush();
-      flushCounter = 0;
     } else {
       flushCounter++;
     }
@@ -84,6 +83,8 @@ public class LocalAcker extends LoggingActor {
 
     heartbeatCache.forEach(heartbeat -> globalAcker.tell(heartbeat, self()));
     heartbeatCache.clear();
+
+    flushCounter = 0;
   }
 
   private enum Flush {
