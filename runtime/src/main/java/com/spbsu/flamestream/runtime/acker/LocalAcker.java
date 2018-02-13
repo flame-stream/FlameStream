@@ -18,11 +18,16 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class LocalAcker extends LoggingActor {
+  private static final int FLUSH_DELAY_IN_MILLIS = 10;
+  private static final int FLUSH_COUNT = 1000;
+
   private final Map<GlobalTime, Long> ackCache = new HashMap<>();
   private final List<Heartbeat> heartbeatCache = new ArrayList<>();
 
   private final ActorRef globalAcker;
   private final ActorRef pingActor;
+
+  private int flushCounter = 0;
 
   public LocalAcker(ActorRef globalAcker) {
     this.globalAcker = globalAcker;
@@ -36,7 +41,7 @@ public class LocalAcker extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(10)), self());
+    pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(FLUSH_DELAY_IN_MILLIS)), self());
   }
 
   @Override
@@ -64,6 +69,13 @@ public class LocalAcker extends LoggingActor {
         return ack.xor() ^ xor;
       }
     });
+
+    if (flushCounter == FLUSH_COUNT) {
+      flush();
+      flushCounter = 0;
+    } else {
+      flushCounter++;
+    }
   }
 
   private void flush() {
