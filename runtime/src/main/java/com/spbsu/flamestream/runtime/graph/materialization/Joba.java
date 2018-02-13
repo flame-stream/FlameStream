@@ -34,9 +34,9 @@ public interface Joba {
     }
 
     void process(DataItem input, Stream<DataItem> output, boolean fromAsync) {
-      if (outJobas.length == 1 && outJobas[0] instanceof RouterJoba) {
+      /*if (outJobas.length == 1 && outJobas[0] instanceof RouterJoba) {
         ((RouterJoba) outJobas[0]).accept(output, isAsync());
-      } else {
+      } else {*/
         output.forEach(dataItem -> {
           if (outJobas.length == 1) {
             sendToNext(outJobas[0], dataItem);
@@ -48,7 +48,7 @@ public interface Joba {
             }
           }
         });
-      }
+      //}
       if (fromAsync) {
         //ACK for input DI should be later than for output
         ack(input);
