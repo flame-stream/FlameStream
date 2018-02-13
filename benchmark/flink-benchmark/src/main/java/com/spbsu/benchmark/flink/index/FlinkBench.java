@@ -58,7 +58,7 @@ public class FlinkBench {
                 .flatMap(new WikipediaPageToWordPositions())
                 .setParallelism(parallelism)
                 .keyBy(0)
-                //.process(new OrderEnforcer())
+                .process(new OrderEnforcer())
                 .process(new IndexFunction())
                 .setParallelism(parallelism)
                 //.keyBy((KeySelector<Result, Integer>) value
