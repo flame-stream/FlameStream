@@ -13,6 +13,7 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import com.spbsu.flamestream.runtime.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
@@ -60,7 +61,7 @@ public class GraphManager extends LoggingActor {
     this.nodeId = nodeId;
     this.computationProps = computationProps;
     this.graph = graph;
-    this.acker = acker;
+    this.acker = context().actorOf(LocalAcker.props(acker), "local-acker");
   }
 
   public static Props props(String nodeId,
