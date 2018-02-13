@@ -139,15 +139,19 @@ public class GraphManager extends LoggingActor {
 
   private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
   private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
-
   private void inject(AddressedItem addressedItem) {
     injectIn.log(addressedItem.item().xor());
     materialization.get(addressedItem.destination()).accept(addressedItem.item(), true);
     injectOut.log(addressedItem.item().xor());
   }
 
+  private final Tracing.Tracer minTimeStart = Tracing.TRACING.forEvent("call-min-time-start", 5000, 1);
+  private final Tracing.Tracer minTimeStop = Tracing.TRACING.forEvent("call-min-timec-stop", 5000, 1);
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
+    final long id = ThreadLocalRandom.current().nextLong();
+    minTimeStart.log(id);
     minTimeHandlers.forEach(minTimeHandler -> minTimeHandler.onMinTime(minTimeUpdate.minTime()));
+    minTimeStop.log(id);
   }
 
   //DFS
