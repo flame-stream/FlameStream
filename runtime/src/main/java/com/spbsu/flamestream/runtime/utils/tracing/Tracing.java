@@ -18,12 +18,12 @@ public class Tracing {
   private final Map<String, Tracer> tracers = Collections.synchronizedMap(new HashMap<>());
 
   public Tracer forEvent(String event) {
-    tracers.putIfAbsent(event, new Tracer(event, SIZE, SAMPLING));
+    tracers.putIfAbsent(event, new EmptyTracer(event, SIZE, SAMPLING));
     return tracers.get(event);
   }
 
   public Tracer forEvent(String event, int expectedSize, int sampling) {
-    tracers.putIfAbsent(event, new Tracer(event, expectedSize, sampling));
+    tracers.putIfAbsent(event, new EmptyTracer(event, expectedSize, sampling));
     return tracers.get(event);
   }
 
@@ -38,7 +38,7 @@ public class Tracing {
     }
   }
 
-  public final class Tracer {
+  public final class TracerImpl implements Tracer {
     private final String event;
     private final int size;
     private final int sampling;
@@ -48,7 +48,7 @@ public class Tracing {
     private final AtomicInteger offset = new AtomicInteger();
     private final AtomicInteger attempts = new AtomicInteger(0);
 
-    public Tracer(String event, int size, int sampling) {
+    public TracerImpl(String event, int size, int sampling) {
       this.ts = new long[size];
       this.id = new long[size];
       this.sampling = sampling;
@@ -56,6 +56,7 @@ public class Tracing {
       this.size = size;
     }
 
+    @Override
     public void log(long id) {
       attempts.incrementAndGet();
       if (id % sampling == 0) {
@@ -65,6 +66,7 @@ public class Tracing {
       }
     }
 
+    @Override
     public void log(long id, long time) {
       attempts.incrementAndGet();
       if (id % sampling == 0) {
@@ -74,7 +76,7 @@ public class Tracing {
       }
     }
 
-    void flush(PrintWriter pw) {
+    public void flush(PrintWriter pw) {
       System.out.println("Attempts of event '" + event + "' - " + attempts.get());
       final int total = Math.min(offset.get(), size);
       for (int i = 0; i < total; ++i) {
@@ -82,4 +84,34 @@ public class Tracing {
       }
     }
   }
+
+  public final class EmptyTracer implements Tracer {
+    EmptyTracer(String event, int expectedSize, int sampling) {
+
+    }
+
+    @Override
+    public void log(long id) {
+
+    }
+
+    @Override
+    public void log(long id, long time) {
+
+    }
+
+    @Override
+    public void flush(PrintWriter pw) {
+
+    }
+  }
+
+  public interface Tracer {
+    void log(long id);
+
+    void log(long id, long time);
+
+    void flush(PrintWriter pw);
+  }
+
 }
