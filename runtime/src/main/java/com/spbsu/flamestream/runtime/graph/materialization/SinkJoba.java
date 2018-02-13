@@ -54,7 +54,7 @@ public class SinkJoba extends Joba.Stub implements MinTimeHandler {
   public void accept(DataItem dataItem, boolean fromAsync) {
     docFlush[dataItem.payload(Object.class).hashCode()] = System.nanoTime();
     allItems++;
-    rears.forEach(rear -> rear.tell(dataItem, context.self()));
+    //rears.forEach(rear -> rear.tell(dataItem, context.self()));
     invalidatingBucket.insert(dataItem);
     process(dataItem, Stream.of(dataItem), fromAsync);
   }
