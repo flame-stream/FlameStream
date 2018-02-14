@@ -58,13 +58,13 @@ public class FlinkBench {
                 .flatMap(new WikipediaPageToWordPositions())
                 .setParallelism(parallelism)
                 .keyBy(0)
-                .process(new OrderEnforcer())
+                //.process(new OrderEnforcer())
                 .process(new IndexFunction())
                 .setParallelism(parallelism)
-                //.keyBy((KeySelector<Result, Integer>) value
-                //        -> IndexItemInLong.pageId(value.wordIndexAdd().positions()[0]))
-                //.process(new TotalOrderEnforcer())
-                //.setParallelism(parallelism)
+                .keyBy((KeySelector<Result, Integer>) value
+                        -> IndexItemInLong.pageId(value.wordIndexAdd().positions()[0]))
+                .process(new TotalOrderEnforcer())
+                .setParallelism(parallelism)
                 .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
                 .setParallelism(parallelism);
         new Thread(Unchecked.runnable(environment::execute)).start();

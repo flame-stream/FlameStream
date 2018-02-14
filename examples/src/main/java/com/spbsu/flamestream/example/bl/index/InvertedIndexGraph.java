@@ -66,7 +66,7 @@ public class InvertedIndexGraph implements Supplier<Graph> {
             .link(indexer, indexDiffFilter)
             .colocate(grouping, wrongOrderingFilter, indexDiffFilter, indexer, indexFilter, indexDiffFilter, sink)
             .link(indexDiffFilter, grouping)
-            .link(indexFilter, sink)
+            .linkShuffle(indexFilter, sink)
             .build(source, sink);
   }
 }
