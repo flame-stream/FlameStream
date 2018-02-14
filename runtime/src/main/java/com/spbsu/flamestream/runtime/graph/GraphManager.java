@@ -53,6 +53,7 @@ public class GraphManager extends LoggingActor {
   private final Collection<Joba> allJobas = new ArrayList<>();
 
   private SinkJoba sinkJoba;
+  private ActorJoba source;
 
   private GraphManager(String nodeId,
                        Graph graph,
@@ -88,9 +89,10 @@ public class GraphManager extends LoggingActor {
                 graph.vertices().forEach(vertex -> buildMaterialization(vertex, jobasForVertices, routers));
                 jobasForVertices.forEach((vertexId, joba) -> {
                   if (joba instanceof GroupingJoba || joba instanceof MapJoba || joba instanceof SinkJoba) {
-                    materialization.put(Destination.fromVertexId(vertexId), new ActorJoba(joba));
+                    materialization.put(Destination.fromVertexId(vertexId), new ActorJoba(joba, acker));
                   } else if (joba instanceof SourceJoba) {
-                    materialization.put(Destination.fromVertexId(vertexId), joba);
+                    source = new ActorJoba(joba, acker);
+                    materialization.put(Destination.fromVertexId(vertexId), source);
                   }
                   if (joba instanceof MinTimeHandler) {
                     minTimeHandlers.add((MinTimeHandler) joba);
@@ -99,7 +101,14 @@ public class GraphManager extends LoggingActor {
                     sinkJoba = (SinkJoba) joba;
                   }
                   allJobas.add(joba);
-                  routers.get(vertexId).forEach(routerJoba -> routerJoba.setLocalJoba(joba));
+                  routers.get(vertexId).forEach(routerJoba -> {
+                    if (routerJoba.from() instanceof FlameMap && ((FlameMap) routerJoba.from()).function()
+                            .getClass()
+                            .getSimpleName()
+                            .equals("WordIndexDiffFilter")) {
+                      routerJoba.setLocalJoba(joba);
+                    }
+                  });
                 });
               }
 
@@ -116,7 +125,7 @@ public class GraphManager extends LoggingActor {
             .match(AddressedItem.class, this::inject)
             .match(MinTimeUpdate.class, this::onMinTimeUpdate)
             .match(AttachRear.class, this::attachRear)
-            .match(Heartbeat.class, gt -> acker.forward(gt, context()))
+            .match(Heartbeat.class, gt -> source.onHeartBeat(gt))
             .match(UnregisterFront.class, gt -> acker.forward(gt, context()))
             .build();
   }
@@ -130,7 +139,7 @@ public class GraphManager extends LoggingActor {
 
   private void accept(DataItem dataItem) {
     acceptIn.log(dataItem.payload(Object.class).hashCode());
-    final SourceJoba joba = (SourceJoba) materialization.get(Destination.fromVertexId(graph.source().id()));
+    final ActorJoba joba = (ActorJoba) materialization.get(Destination.fromVertexId(graph.source().id()));
     joba.addFront(dataItem.meta().globalTime().frontId(), sender());
     joba.accept(dataItem, false);
     acceptOut.log(dataItem.payload(Object.class).hashCode());
@@ -139,6 +148,7 @@ public class GraphManager extends LoggingActor {
 
   private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
   private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
+
   private void inject(AddressedItem addressedItem) {
     injectIn.log(addressedItem.item().xor());
     materialization.get(addressedItem.destination()).accept(addressedItem.item(), true);
@@ -147,6 +157,7 @@ public class GraphManager extends LoggingActor {
 
   private final Tracing.Tracer minTimeStart = Tracing.TRACING.forEvent("call-min-time-start", 5000, 1);
   private final Tracing.Tracer minTimeStop = Tracing.TRACING.forEvent("call-min-timec-stop", 5000, 1);
+
   private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
     final long id = ThreadLocalRandom.current().nextLong();
     minTimeStart.log(id);
@@ -169,7 +180,9 @@ public class GraphManager extends LoggingActor {
                   if (outVertex instanceof Grouping) {
                     hashFunction = ((Grouping) outVertex).hash();
                   } else if (outVertex instanceof Sink) {
-                    hashFunction = dataItem -> Hashing.murmur3_32().hashInt(dataItem.payload(Object.class).hashCode()).asInt();
+                    hashFunction = dataItem -> Hashing.murmur3_32()
+                            .hashInt(dataItem.payload(Object.class).hashCode())
+                            .asInt();
                   } else {
                     //hashFunction = dataItem -> 2_000_000_000;
                     hashFunction = dataItem -> ThreadLocalRandom.current().nextInt();
@@ -181,14 +194,15 @@ public class GraphManager extends LoggingActor {
                           hashFunction,
                           Destination.fromVertexId(outVertex.id()),
                           acker,
-                          context()
+                          context(),
+                          vertex
                   );
                   routers.put(outVertex.id(), routerJoba);
                   return routerJoba;
                 }
 
                 if (((Graph.Builder.MyGraph) graph).isAsync(vertex, outVertex)) {
-                  return new ActorJoba(buildMaterialization(outVertex, jobasForVertices, routers));
+                  return new ActorJoba(buildMaterialization(outVertex, jobasForVertices, routers), acker);
                 } else {
                   return buildMaterialization(outVertex, jobasForVertices, routers);
                 }

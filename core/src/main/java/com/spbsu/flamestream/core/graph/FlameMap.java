@@ -28,6 +28,10 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
             '}';
   }
 
+  public Function<T, Stream<R>> function() {
+    return function;
+  }
+
   public class FlameMapOperation {
     private final long physicalId;
 

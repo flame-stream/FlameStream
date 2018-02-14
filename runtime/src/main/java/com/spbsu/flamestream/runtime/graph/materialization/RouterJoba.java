@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime.graph.materialization;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
@@ -25,6 +26,7 @@ public class RouterJoba implements Joba {
   private final ActorRef acker;
   private final ActorContext context;
   private final HashRange localRange;
+  private final Graph.Vertex from;
 
   private Joba localJoba;
 
@@ -33,13 +35,14 @@ public class RouterJoba implements Joba {
                     HashFunction hashFunction,
                     GraphManager.Destination destination,
                     ActorRef acker,
-                    ActorContext context) {
+                    ActorContext context, Graph.Vertex from) {
     this.hashFunction = hashFunction;
     this.destination = destination;
     this.acker = acker;
     this.context = context;
     this.router = router;
     this.localRange = localRange;
+    this.from = from;
   }
 
   @Override
@@ -80,5 +83,9 @@ public class RouterJoba implements Joba {
 
   public void setLocalJoba(Joba localJoba) {
     this.localJoba = localJoba;
+  }
+
+  public Graph.Vertex from() {
+    return from;
   }
 }
