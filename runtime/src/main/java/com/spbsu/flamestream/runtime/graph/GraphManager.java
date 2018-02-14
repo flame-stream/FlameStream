@@ -3,14 +3,8 @@ package com.spbsu.flamestream.runtime.graph;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.graph.FlameMap;
-import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.acker.LocalAcker;
@@ -20,56 +14,41 @@ import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.barrier.api.AttachRear;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
-import com.spbsu.flamestream.runtime.graph.materialization.ActorJoba;
-import com.spbsu.flamestream.runtime.graph.materialization.GroupingJoba;
-import com.spbsu.flamestream.runtime.graph.materialization.Joba;
-import com.spbsu.flamestream.runtime.graph.materialization.MapJoba;
-import com.spbsu.flamestream.runtime.graph.materialization.MinTimeHandler;
-import com.spbsu.flamestream.runtime.graph.materialization.RouterJoba;
-import com.spbsu.flamestream.runtime.graph.materialization.SinkJoba;
-import com.spbsu.flamestream.runtime.graph.materialization.SourceJoba;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
-import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.apache.commons.lang.math.IntRange;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Stream;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class GraphManager extends LoggingActor {
-  private final String nodeId;
   private final Graph graph;
   private final ActorRef acker;
   private final ComputationProps computationProps;
 
-  private final IntRangeMap<ActorRef> router = new ListIntRangeMap<>();
-  private final Map<Destination, Joba> materialization = new HashMap<>();
-  private final Collection<MinTimeHandler> minTimeHandlers = new ArrayList<>();
-  private final Collection<Joba> allJobas = new ArrayList<>();
+  private ActorRef sourceComponent;
+  private ActorRef sinkComponent;
 
-  private SinkJoba sinkJoba;
-  private ActorJoba source;
+  private final IntRangeMap<ActorRef> routes = new ListIntRangeMap<>();
+  private final Map<Destination, ActorRef> verticesComponents = new HashMap<>();
+  private final Set<ActorRef> components = new HashSet<>();
 
-  private GraphManager(String nodeId,
-                       Graph graph,
+  private GraphManager(Graph graph,
                        ActorRef acker,
                        ComputationProps computationProps) {
-    this.nodeId = nodeId;
     this.computationProps = computationProps;
     this.graph = graph;
     this.acker = context().actorOf(LocalAcker.props(acker), "local-acker");
   }
 
-  public static Props props(String nodeId,
-                            Graph graph,
+  public static Props props(Graph graph,
                             ActorRef acker,
                             ComputationProps layout) {
-    return Props.create(GraphManager.class, nodeId, graph, acker, layout);
+    return Props.create(GraphManager.class, graph, acker, layout);
   }
 
   @Override
@@ -80,37 +59,36 @@ public class GraphManager extends LoggingActor {
               final Map<IntRange, ActorRef> routerMap = new HashMap<>();
               computationProps.ranges()
                       .forEach((key, value) -> routerMap.put(value.asRange(), (ActorRef) managers.get(key)));
-              final IntRangeMap<ActorRef> intRangeMap = new ListIntRangeMap<>(routerMap);
-              router.putAll(intRangeMap);
+              routes.putAll(new ListIntRangeMap<>(routerMap));
 
-              { //materialization
-                final Map<String, Joba> jobasForVertices = new HashMap<>();
-                final Multimap<String, RouterJoba> routers = LinkedListMultimap.create();
-                graph.vertices().forEach(vertex -> buildMaterialization(vertex, jobasForVertices, routers));
-                jobasForVertices.forEach((vertexId, joba) -> {
-                  if (joba instanceof GroupingJoba || joba instanceof MapJoba || joba instanceof SinkJoba) {
-                    materialization.put(Destination.fromVertexId(vertexId), new ActorJoba(joba, acker));
-                  } else if (joba instanceof SourceJoba) {
-                    source = new ActorJoba(joba, acker);
-                    materialization.put(Destination.fromVertexId(vertexId), source);
-                  }
-                  if (joba instanceof MinTimeHandler) {
-                    minTimeHandlers.add((MinTimeHandler) joba);
-                  }
-                  if (joba instanceof SinkJoba) {
-                    sinkJoba = (SinkJoba) joba;
-                  }
-                  allJobas.add(joba);
-                  routers.get(vertexId).forEach(routerJoba -> {
-                    if (routerJoba.from() instanceof FlameMap && ((FlameMap) routerJoba.from()).function()
-                            .getClass()
-                            .getSimpleName()
-                            .equals("WordIndexDiffFilter")) {
-                      routerJoba.setLocalJoba(joba);
-                    }
-                  });
-                });
-              }
+              graph.components().forEach(c -> {
+                final Set<Graph.Vertex> vertexSet = c.collect(Collectors.toSet());
+
+                final ActorRef component = context().actorOf(Component.props(
+                        vertexSet,
+                        graph,
+                        routes,
+                        self(),
+                        acker,
+                        computationProps
+                ));
+
+                vertexSet.stream()
+                        .map(v -> Destination.fromVertexId(v.id()))
+                        .forEach(dest -> verticesComponents.put(dest, component));
+
+                components.add(component);
+
+                vertexSet.stream()
+                        .filter(v -> v instanceof Source)
+                        .findAny()
+                        .ifPresent(v -> sourceComponent = component);
+
+                vertexSet.stream()
+                        .filter(v -> v instanceof Sink)
+                        .findAny()
+                        .ifPresent(v -> sinkComponent = component);
+              });
 
               unstashAll();
               getContext().become(managing());
@@ -121,112 +99,24 @@ public class GraphManager extends LoggingActor {
 
   private Receive managing() {
     return ReceiveBuilder.create()
-            .match(DataItem.class, this::accept)
-            .match(AddressedItem.class, this::inject)
-            .match(MinTimeUpdate.class, this::onMinTimeUpdate)
-            .match(AttachRear.class, this::attachRear)
-            .match(Heartbeat.class, gt -> source.onHeartBeat(gt))
-            .match(UnregisterFront.class, gt -> acker.forward(gt, context()))
+            .match(DataItem.class, dataItem -> sourceComponent.forward(dataItem, context()))
+            .match(
+                    AddressedItem.class,
+                    addressedItem -> verticesComponents.get(addressedItem.destination())
+                            .forward(addressedItem, context())
+            )
+            .match(
+                    MinTimeUpdate.class,
+                    minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
+            )
+            .match(AttachRear.class, attachRear -> sinkComponent.forward(attachRear, context()))
+            .match(Heartbeat.class, gt -> sourceComponent.forward(gt, context()))
+            .match(UnregisterFront.class, u -> sourceComponent.forward(u, context()))
             .build();
   }
 
-  private void attachRear(AttachRear attachRear) {
-    sinkJoba.addRear(attachRear.rear());
-  }
-
-  private final Tracing.Tracer acceptIn = Tracing.TRACING.forEvent("accept-in", 1000, 1);
-  private final Tracing.Tracer acceptOut = Tracing.TRACING.forEvent("accept-out", 1000, 1);
-
-  private void accept(DataItem dataItem) {
-    acceptIn.log(dataItem.payload(Object.class).hashCode());
-    final ActorJoba joba = (ActorJoba) materialization.get(Destination.fromVertexId(graph.source().id()));
-    joba.addFront(dataItem.meta().globalTime().frontId(), sender());
-    joba.accept(dataItem, false);
-    acceptOut.log(dataItem.payload(Object.class).hashCode());
-
-  }
-
-  private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
-  private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
-
-  private void inject(AddressedItem addressedItem) {
-    injectIn.log(addressedItem.item().xor());
-    materialization.get(addressedItem.destination()).accept(addressedItem.item(), true);
-    injectOut.log(addressedItem.item().xor());
-  }
-
-  private final Tracing.Tracer minTimeStart = Tracing.TRACING.forEvent("call-min-time-start", 5000, 1);
-  private final Tracing.Tracer minTimeStop = Tracing.TRACING.forEvent("call-min-timec-stop", 5000, 1);
-
-  private void onMinTimeUpdate(MinTimeUpdate minTimeUpdate) {
-    final long id = ThreadLocalRandom.current().nextLong();
-    minTimeStart.log(id);
-    minTimeHandlers.forEach(minTimeHandler -> minTimeHandler.onMinTime(minTimeUpdate.minTime()));
-    minTimeStop.log(id);
-  }
-
-  //DFS
-  private Joba buildMaterialization(Graph.Vertex vertex,
-                                    Map<String, Joba> jobasForVertices,
-                                    Multimap<String, RouterJoba> routers) {
-    if (jobasForVertices.containsKey(vertex.id())) {
-      return jobasForVertices.get(vertex.id());
-    } else {
-      final Stream<Joba> output = graph.adjacent(vertex)
-              .map(outVertex -> {
-                // TODO: 15.12.2017 add circuit breaker
-                if (outVertex instanceof Grouping || ((Graph.Builder.MyGraph) graph).isShuffle(vertex, outVertex)) {
-                  final HashFunction hashFunction;
-                  if (outVertex instanceof Grouping) {
-                    hashFunction = ((Grouping) outVertex).hash();
-                  } else if (outVertex instanceof Sink) {
-                    hashFunction = dataItem -> Hashing.murmur3_32()
-                            .hashInt(dataItem.payload(Object.class).hashCode())
-                            .asInt();
-                  } else {
-                    //hashFunction = dataItem -> 2_000_000_000;
-                    hashFunction = dataItem -> ThreadLocalRandom.current().nextInt();
-                  }
-
-                  final RouterJoba routerJoba = new RouterJoba(
-                          router,
-                          computationProps.ranges().get(nodeId),
-                          hashFunction,
-                          Destination.fromVertexId(outVertex.id()),
-                          acker,
-                          context(),
-                          vertex
-                  );
-                  routers.put(outVertex.id(), routerJoba);
-                  return routerJoba;
-                }
-
-                if (((Graph.Builder.MyGraph) graph).isAsync(vertex, outVertex)) {
-                  return new ActorJoba(buildMaterialization(outVertex, jobasForVertices, routers), acker);
-                } else {
-                  return buildMaterialization(outVertex, jobasForVertices, routers);
-                }
-              });
-
-      final Joba joba;
-      if (vertex instanceof Sink) {
-        joba = new SinkJoba(acker, context());
-      } else if (vertex instanceof FlameMap) {
-        joba = new MapJoba((FlameMap<?, ?>) vertex, output, acker, context());
-      } else if (vertex instanceof Grouping) {
-        joba = new GroupingJoba((Grouping) vertex, output, acker, context());
-      } else if (vertex instanceof Source) {
-        joba = new SourceJoba(computationProps.maxElementsInGraph(), output, acker, context());
-      } else {
-        throw new RuntimeException("Invalid vertex type");
-      }
-      jobasForVertices.put(vertex.id(), joba);
-      return joba;
-    }
-  }
-
   public static class Destination {
-    private final static Map<String, Destination> cache = new HashMap<>();
+    private static final Map<String, Destination> cache = new HashMap<>();
     private final String vertexId;
 
     @Override
@@ -257,7 +147,7 @@ public class GraphManager extends LoggingActor {
       this.vertexId = vertexId;
     }
 
-    private static Destination fromVertexId(String vertexId) {
+    static Destination fromVertexId(String vertexId) {
       return cache.compute(vertexId, (s, destination) -> {
         if (destination == null) {
           return new Destination(s);
@@ -265,17 +155,5 @@ public class GraphManager extends LoggingActor {
         return destination;
       });
     }
-  }
-
-  @Override
-  public void postStop() {
-    super.postStop();
-    allJobas.forEach(j -> {
-      try {
-        j.onStop();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    });
   }
 }

@@ -1,7 +1,5 @@
-package com.spbsu.flamestream.runtime.graph.materialization;
+package com.spbsu.flamestream.runtime.graph;
 
-import akka.actor.ActorContext;
-import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
@@ -15,13 +13,9 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
-/**
- * User: Artem
- * Date: 28.11.2017
- */
-public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
+public class GroupingJoba implements Joba {
   private final Grouping<?> grouping;
   private final Grouping<?>.GroupingOperation instance;
   private final TIntObjectMap<Object> buffers = new TIntObjectHashMap<>();
@@ -30,28 +24,22 @@ public class GroupingJoba extends Joba.Stub implements MinTimeHandler {
 
   private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("grouping-receive");
 
-  public GroupingJoba(Grouping<?> grouping, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
-    super(outJobas, acker, context);
+  public GroupingJoba(Grouping<?> grouping) {
     this.instance = grouping.operation(ThreadLocalRandom.current().nextLong());
     this.grouping = grouping;
   }
 
   @Override
-  public boolean isAsync() {
-    return false;
-  }
+  public void accept(DataItem item, Consumer<DataItem> sink) {
+    tracer.log(item.xor());
 
-  @Override
-  public void accept(DataItem dataItem, boolean fromAsync) {
-    tracer.log(dataItem.xor());
-
-    final InvalidatingBucket bucket = bucketFor(dataItem);
-    final Stream<DataItem> output = instance.apply(dataItem, bucket);
-    process(dataItem, output, fromAsync);
+    final InvalidatingBucket bucket = bucketFor(item);
+    instance.apply(item, bucket).forEach(sink);
     { //clear outdated
       final int position = Math.max(bucket.lowerBound(new Meta(currentMinTime)) - grouping.window(), 0);
       bucket.clearRange(0, position);
     }
+
   }
 
   @Override

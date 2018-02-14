@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.graph.materialization;
+package com.spbsu.flamestream.runtime.graph;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
@@ -12,21 +12,33 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
-/**
- * User: Artem
- * Date: 01.12.2017
- */
-public class SourceJoba extends Joba.Stub implements MinTimeHandler {
+public class SourceJoba implements Joba {
   private final Collection<InFlightTime> inFlight = new ArrayList<>();
   private final Map<EdgeId, ActorRef> fronts = new HashMap<>();
   private final int maxInFlightItems;
+  private final ActorContext context;
 
-  public SourceJoba(int maxInFlightItems, Stream<Joba> outJobas, ActorRef acker, ActorContext context) {
-    super(outJobas, acker, context);
+  public SourceJoba(int maxInFlightItems, ActorContext context) {
     this.maxInFlightItems = maxInFlightItems;
+    this.context = context;
   }
+
+  @Override
+  public void accept(DataItem item, Consumer<DataItem> sink) {
+    sink.accept(item);
+    { //back-pressure logic
+      final GlobalTime globalTime = item.meta().globalTime();
+      if (inFlight.size() < maxInFlightItems) {
+        fronts.get(globalTime.frontId()).tell(new RequestNext(), context.self());
+        inFlight.add(new InFlightTime(globalTime, true));
+      } else {
+        inFlight.add(new InFlightTime(globalTime, false));
+      }
+    }
+  }
+
 
   public void addFront(EdgeId front, ActorRef actorRef) {
     fronts.putIfAbsent(front, actorRef);
@@ -45,25 +57,6 @@ public class SourceJoba extends Joba.Stub implements MinTimeHandler {
         }
       }
     }
-  }
-
-  @Override
-  public void accept(DataItem dataItem, boolean fromAsync) {
-    process(dataItem, Stream.of(dataItem), fromAsync);
-    { //back-pressure logic
-      final GlobalTime globalTime = dataItem.meta().globalTime();
-      if (inFlight.size() < maxInFlightItems) {
-        fronts.get(globalTime.frontId()).tell(new RequestNext(), context.self());
-        inFlight.add(new InFlightTime(globalTime, true));
-      } else {
-        inFlight.add(new InFlightTime(globalTime, false));
-      }
-    }
-  }
-
-  @Override
-  public boolean isAsync() {
-    return false;
   }
 
   private static class InFlightTime {

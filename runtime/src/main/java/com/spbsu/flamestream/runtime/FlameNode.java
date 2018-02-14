@@ -33,7 +33,6 @@ public class FlameNode extends LoggingActor {
     }
 
     final ActorRef graph = context().actorOf(GraphManager.props(
-            id,
             bootstrapGraph,
             acker,
             config.props()
@@ -63,14 +62,5 @@ public class FlameNode extends LoggingActor {
       managers.put(id, manager);
     });
     return managers;
-  }
-
-  private Map<String, ActorRef> resolvedBarriers() {
-    return config.paths().entrySet()
-            .stream()
-            .collect(Collectors.toMap(
-                    Map.Entry::getKey,
-                    o -> AwaitResolver.syncResolve(o.getValue().child("barrier"), context())
-            ));
   }
 }

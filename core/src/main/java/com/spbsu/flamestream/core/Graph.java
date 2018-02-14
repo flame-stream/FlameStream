@@ -7,11 +7,13 @@ import com.spbsu.flamestream.core.graph.Source;
 import org.jooq.lambda.tuple.Tuple2;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -24,6 +26,10 @@ public interface Graph {
   Source source();
 
   Sink sink();
+
+  Stream<Stream<Vertex>> components();
+
+  boolean isShuffle(Vertex from, Vertex to);
 
   interface Vertex {
     String id();
@@ -42,13 +48,12 @@ public interface Graph {
   class Builder {
     private final Multimap<Vertex, Vertex> adjLists = HashMultimap.create();
     private final Multimap<Vertex, Vertex> invertedAdjLists = HashMultimap.create();
+    private final Set<Set<Vertex>> components = new HashSet<>();
 
-    private final List<Tuple2<Vertex, Vertex>> asyncs = new ArrayList<>();
     private final List<Tuple2<Vertex, Vertex>> shuffles = new ArrayList<>();
 
-    public Builder linkAsync(Vertex from, Vertex to) {
-      link(from, to);
-      asyncs.add(new Tuple2<>(from, to));
+    public Builder colocate(Vertex... vertices) {
+      components.add(new HashSet<>(Arrays.asList(vertices)));
       return this;
     }
 
@@ -71,7 +76,13 @@ public interface Graph {
         throw new IllegalStateException("Source must not have outputs");
       }
 
-      return new MyGraph(adjLists, source, sink, asyncs, shuffles);
+      final Set<Vertex> v = new HashSet<>(adjLists.keySet());
+      v.addAll(invertedAdjLists.keySet());
+      components.forEach(v::removeAll);
+
+      v.forEach(isolated -> components.add(Collections.singleton(isolated)));
+
+      return new MyGraph(adjLists, source, sink, components, shuffles);
     }
 
     public static class MyGraph implements Graph {
@@ -80,15 +91,16 @@ public interface Graph {
       private final Sink sink;
       private final Map<Vertex, Collection<Vertex>> adjLists;
 
-      private final List<Tuple2<Vertex, Vertex>> asyncs;
       private final List<Tuple2<Vertex, Vertex>> shuffles;
+      private final Set<Set<Vertex>> components;
 
       public MyGraph(Multimap<Vertex, Vertex> adjLists,
                      Source source,
                      Sink sink,
-                     List<Tuple2<Vertex, Vertex>> asyncs, List<Tuple2<Vertex, Vertex>> shuffles) {
-        this.asyncs = asyncs;
+                     Set<Set<Vertex>> components,
+                     List<Tuple2<Vertex, Vertex>> shuffles) {
         this.allVertices = new ArrayList<>(adjLists.keySet());
+        this.components = components;
         this.shuffles = shuffles;
         allVertices.add(sink);
         // Multimap is converted to Map<.,Set> to support serialization
@@ -104,10 +116,7 @@ public interface Graph {
         this.sink = sink;
       }
 
-      public boolean isAsync(Vertex from, Vertex to) {
-        return asyncs.contains(new Tuple2<>(from, to));
-      }
-
+      @Override
       public boolean isShuffle(Vertex from, Vertex to) {
         return shuffles.contains(new Tuple2<>(from, to));
       }
@@ -130,6 +139,11 @@ public interface Graph {
       @Override
       public Sink sink() {
         return sink;
+      }
+
+      @Override
+      public Stream<Stream<Vertex>> components() {
+        return components.stream().map(Collection::stream);
       }
     }
   }
