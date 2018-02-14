@@ -7,7 +7,6 @@ import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
-import com.spbsu.flamestream.runtime.acker.api.Ack;
 
 import java.util.ArrayList;
 import java.util.List;

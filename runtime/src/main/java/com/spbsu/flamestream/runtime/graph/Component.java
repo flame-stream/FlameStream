@@ -19,6 +19,7 @@ import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -32,6 +33,11 @@ public class Component extends LoggingActor {
   private final ActorRef acker;
   private final Map<GraphManager.Destination, Joba> jobas;
   private final Map<GraphManager.Destination, Consumer<DataItem>> downstreams = new HashMap<>();
+
+  private final Tracing.Tracer fmSend = Tracing.TRACING.forEvent("fm-send");
+  private final Tracing.Tracer accept = Tracing.TRACING.forEvent("accept-in", 1000, 1);
+  private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
+  private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
 
   @Nullable
   private SourceJoba sourceJoba;
@@ -77,6 +83,7 @@ public class Component extends LoggingActor {
                   };
                 } else if (to instanceof Grouping) {
                   sink = item -> {
+                    fmSend.log(item.xor());
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
                     routes.get(((Grouping) to).hash().applyAsInt(item))
                             .tell(new AddressedItem(item, destination), self());
@@ -152,8 +159,10 @@ public class Component extends LoggingActor {
 
   private void inject(AddressedItem addressedItem) {
     final DataItem item = addressedItem.item();
+    injectIn.log(item.xor());
     localCall(item, addressedItem.destination());
     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
+    injectOut.log(item.xor());
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {
@@ -166,6 +175,7 @@ public class Component extends LoggingActor {
 
   private void accept(DataItem item) {
     if (sourceJoba != null) {
+      accept.log(item.xor());
       sourceJoba.addFront(item.meta().globalTime().frontId(), sender());
       sourceJoba.accept(item, downstreams.get(sourceDestanation));
     } else {
