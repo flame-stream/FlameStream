@@ -7,6 +7,7 @@ import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ public class SinkJoba implements Joba {
   private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
   private final List<ActorRef> rears = new ArrayList<>();
   private final ActorContext context;
+  private final Tracing.Tracer tracing = Tracing.TRACING.forEvent("sink-receive");
 
   public SinkJoba(ActorContext context) {
     this.context = context;
@@ -23,6 +25,7 @@ public class SinkJoba implements Joba {
 
   @Override
   public void accept(DataItem item, Consumer<DataItem> sink) {
+    tracing.log(item.xor());
     //rears.forEach(rear -> rear.tell(dataItem, context.self()));
     invalidatingBucket.insert(item);
   }

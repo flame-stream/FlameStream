@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime.graph;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.Meta;
@@ -25,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -35,6 +35,7 @@ public class Component extends LoggingActor {
   private final Map<GraphManager.Destination, Consumer<DataItem>> downstreams = new HashMap<>();
 
   private final Tracing.Tracer fmSend = Tracing.TRACING.forEvent("fm-send");
+  private final Tracing.Tracer shuffleSend = Tracing.TRACING.forEvent("shuffle-send");
   private final Tracing.Tracer accept = Tracing.TRACING.forEvent("accept-in", 1000, 1);
   private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
   private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
@@ -77,8 +78,9 @@ public class Component extends LoggingActor {
                   sink = item -> localCall(item, destination);
                 } else if (graph.isShuffle(from, to)) {
                   sink = item -> {
+                    shuffleSend.log(item.xor());
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-                    routes.get(ThreadLocalRandom.current().nextInt())
+                    routes.get(Hashing.murmur3_32().hashInt(item.payload(Object.class).hashCode()).asInt())
                             .tell(new AddressedItem(item, destination), self());
                   };
                 } else if (to instanceof Grouping) {
