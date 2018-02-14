@@ -12,16 +12,17 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 public class LocalAcker extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 1;
   private static final int FLUSH_COUNT = 10;
 
-  private final Map<GlobalTime, Long> ackCache = new HashMap<>();
+  private final SortedMap<GlobalTime, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
   private final List<Heartbeat> heartbeatCache = new ArrayList<>();
 
   private final ActorRef globalAcker;
