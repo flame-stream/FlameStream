@@ -1,12 +1,15 @@
 package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.ActorSystem;
+import akka.remote.artery.TaskRunner;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.aeron.driver.MediaDriver;
+import io.aeron.driver.ThreadingMode;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 public class WorkerApplication {
@@ -50,9 +54,19 @@ public class WorkerApplication {
   }
 
   public void run() {
+    final MediaDriver.Context driverContext = new MediaDriver.Context();
+    final String uniquePart = UUID.randomUUID().toString();
+    final String randomName = "/dev/shm/aeron-" + uniquePart;
+    driverContext.aeronDirectoryName(randomName);
+    driverContext
+            .threadingMode(ThreadingMode.SHARED)
+            .sharedIdleStrategy(TaskRunner.createIdleStrategy(1));
+    final MediaDriver driver = MediaDriver.launchEmbedded(driverContext);
+    log.info("Started embedded media driver in directory [{}]", driver.aeronDirectoryName());
     log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
 
     final Map<String, String> props = new HashMap<>();
+    props.put("akka.remote.artery.advanced.aeron-dir", driver.aeronDirectoryName());
     props.put("akka.remote.artery.canonical.hostname", host.host());
     props.put("akka.remote.artery.canonical.port", String.valueOf(host.port()));
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
