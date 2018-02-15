@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -80,7 +81,7 @@ public class Component extends LoggingActor {
                   sink = item -> {
                     shuffleSend.log(item.xor());
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-                    routes.get(Hashing.murmur3_32().hashInt(item.payload(Object.class).hashCode()).asInt())
+                    routes.get(ThreadLocalRandom.current().nextInt())
                             .tell(new AddressedItem(item, destination), self());
                   };
                 } else if (to instanceof Grouping) {
