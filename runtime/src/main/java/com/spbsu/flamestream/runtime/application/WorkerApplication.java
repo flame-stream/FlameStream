@@ -1,7 +1,6 @@
 package com.spbsu.flamestream.runtime.application;
 
 import akka.actor.ActorSystem;
-import akka.remote.artery.TaskRunner;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
@@ -10,6 +9,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.aeron.driver.MediaDriver;
 import io.aeron.driver.ThreadingMode;
+import org.agrona.concurrent.BackoffIdleStrategy;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class WorkerApplication {
@@ -60,7 +61,7 @@ public class WorkerApplication {
     driverContext.aeronDirectoryName(randomName);
     driverContext
             .threadingMode(ThreadingMode.SHARED)
-            .sharedIdleStrategy(TaskRunner.createIdleStrategy(1));
+            .sharedIdleStrategy(new BackoffIdleStrategy(5, 5, 1, TimeUnit.MILLISECONDS.toNanos(1)));
     final MediaDriver driver = MediaDriver.launchEmbedded(driverContext);
     log.info("Started embedded media driver in directory [{}]", driver.aeronDirectoryName());
     log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
