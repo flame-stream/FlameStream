@@ -1,4 +1,7 @@
 ---
+- name: Clean shm
+  shell: rm -rf /dev/shm/aeron*
+
 - name: Stoping previously started flink jobmanager
   shell: nohup bash {{ flink_dir }}/bin/taskmanager.sh stop-all
 
