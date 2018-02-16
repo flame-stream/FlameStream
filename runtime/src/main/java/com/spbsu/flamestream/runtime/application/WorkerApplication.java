@@ -42,6 +42,11 @@ public class WorkerApplication {
   }
 
   public static void main(String... args) throws IOException {
+    try {
+      Class.forName("org.agrona.concurrent.SleepingIdleStrategy");
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
     final Path cofigPath = Paths.get(args[0]);
     final ObjectMapper mapper = new ObjectMapper();
     final WorkerConfig workerConfig = mapper.readValue(
@@ -55,19 +60,19 @@ public class WorkerApplication {
   }
 
   public void run() {
-    final MediaDriver.Context driverContext = new MediaDriver.Context();
-    final String uniquePart = UUID.randomUUID().toString();
-    final String randomName = "/dev/shm/aeron-" + uniquePart;
-    driverContext.aeronDirectoryName(randomName);
-    driverContext
-            .threadingMode(ThreadingMode.SHARED)
-            .sharedIdleStrategy(new BackoffIdleStrategy(5, 5, 1, TimeUnit.MILLISECONDS.toNanos(1)));
-    final MediaDriver driver = MediaDriver.launchEmbedded(driverContext);
-    log.info("Started embedded media driver in directory [{}]", driver.aeronDirectoryName());
-    log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
+    //final MediaDriver.Context driverContext = new MediaDriver.Context();
+    //final String uniquePart = UUID.randomUUID().toString();
+    //final String randomName = "/dev/shm/aeron-" + uniquePart;
+    //driverContext.aeronDirectoryName(randomName);
+    //driverContext
+    //        .threadingMode(ThreadingMode.SHARED)
+    //        .sharedIdleStrategy(new BackoffIdleStrategy(5, 5, 1, TimeUnit.MILLISECONDS.toNanos(1)));
+    //final MediaDriver driver = MediaDriver.launchEmbedded(driverContext);
+    //log.info("Started embedded media driver in directory [{}]", driver.aeronDirectoryName());
+    //log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
 
     final Map<String, String> props = new HashMap<>();
-    props.put("akka.remote.artery.advanced.aeron-dir", driver.aeronDirectoryName());
+    //props.put("akka.remote.artery.advanced.aeron-dir", driver.aeronDirectoryName());
     props.put("akka.remote.artery.canonical.hostname", host.host());
     props.put("akka.remote.artery.canonical.port", String.valueOf(host.port()));
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
