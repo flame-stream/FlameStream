@@ -8,6 +8,8 @@ import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
+import com.spbsu.flamestream.runtime.proto.AckProtos;
+import com.spbsu.flamestream.runtime.proto.GlobalTimeProtos;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 
@@ -79,7 +81,21 @@ public class LocalAcker extends LoggingActor {
   }
 
   private void flush() {
-    ackCache.forEach((globalTime, xor) -> globalAcker.tell(new Ack(globalTime, xor), context().parent()));
+    ackCache.forEach((globalTime, xor) -> {
+      final GlobalTimeProtos.GlobalTime globalTimeProtos = GlobalTimeProtos.GlobalTime.newBuilder()
+              .setTime(globalTime.time())
+              .setEdgeId(
+                      GlobalTimeProtos.GlobalTime.EdgeId.newBuilder()
+                      .setEdgeName(globalTime.frontId().edgeName())
+                      .setNodeId(globalTime.frontId().nodeId())
+              )
+              .build();
+      final AckProtos.Ack ack = AckProtos.Ack.newBuilder()
+              .setTime(globalTimeProtos)
+              .setXor(xor)
+              .build();
+      globalAcker.tell(ack, context().parent());
+    });
     ackCache.clear();
 
     heartbeatCache.forEach(heartbeat -> globalAcker.tell(heartbeat, self()));

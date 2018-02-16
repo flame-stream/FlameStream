@@ -13,6 +13,7 @@ import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.acker.table.AckTable;
 import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
+import com.spbsu.flamestream.runtime.proto.AckProtos;
 import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
@@ -70,7 +71,7 @@ public class Acker extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(Ack.class, this::handleAck)
+            .match(AckProtos.Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
             .match(UnregisterFront.class, unregisterFront -> unregisterFront(unregisterFront.frontId()))
@@ -111,12 +112,12 @@ public class Acker extends LoggingActor {
   }
 
   //public Tracing.Tracer tracer = Tracing.TRACING.forEvent("ack-receive");
-  private void handleAck(Ack ack) {
+  private void handleAck(AckProtos.Ack ack) {
     //log().info("ACKING {}", ack);
     //tracer.log(ack.xor());
     minTimeSubscribers.add(sender());
     final long start = System.nanoTime();
-    if (table.ack(ack.time().time(), ack.xor())) {
+    if (table.ack(ack.getTime().getTime(), ack.getXor())) {
       checkMinTime();
       stat.recordReleasingAck(System.nanoTime() - start);
     } else {

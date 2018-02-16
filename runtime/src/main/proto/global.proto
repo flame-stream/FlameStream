@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+option java_package = "com.spbsu.flamestream.runtime.proto";
+option java_outer_classname = "GlobalTimeProtos";
+
+message GlobalTime {
+    required int64 time = 1;
+    required EdgeId edgeId = 2;
+    message EdgeId {
+        required string edgeName = 1;
+        required string nodeId = 2;
+    }
+}
