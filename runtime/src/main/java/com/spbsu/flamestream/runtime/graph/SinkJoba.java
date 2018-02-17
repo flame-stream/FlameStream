@@ -17,7 +17,9 @@ public class SinkJoba implements Joba {
   private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
   private final List<ActorRef> rears = new ArrayList<>();
   private final ActorContext context;
-  private final Tracing.Tracer tracing = Tracing.TRACING.forEvent("sink-receive");
+
+  private final Tracing.Tracer sinkReceive = Tracing.TRACING.forEvent("sink-receive");
+  private final Tracing.Tracer sinkSend = Tracing.TRACING.forEvent("sink-send");
 
   public SinkJoba(ActorContext context) {
     this.context = context;
@@ -25,7 +27,7 @@ public class SinkJoba implements Joba {
 
   @Override
   public void accept(DataItem item, Consumer<DataItem> sink) {
-    tracing.log(item.xor());
+    sinkReceive.log(item.xor());
     //rears.forEach(rear -> rear.tell(dataItem, context.self()));
     invalidatingBucket.insert(item);
   }
@@ -38,6 +40,7 @@ public class SinkJoba implements Joba {
   public void onMinTime(GlobalTime minTime) {
     final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
     invalidatingBucket.rangeStream(0, pos).forEach(di -> {
+      sinkSend.log(di.xor());
       rears.forEach(rear -> {
         rear.tell(di, context.self());
       });
