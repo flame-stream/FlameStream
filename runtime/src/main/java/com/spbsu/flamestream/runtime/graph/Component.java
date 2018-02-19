@@ -193,4 +193,10 @@ public class Component extends LoggingActor {
       throw new IllegalStateException("Sink doesn't belong to this component");
     }
   }
+
+  @Override
+  public void postStop() {
+    jobas.values().forEach(Joba::postStop);
+    super.postStop();
+  }
 }
