@@ -19,7 +19,7 @@
     src: flink-benchmark-1.0-SNAPSHOT-uber.jar
     dest: "{{ flink_dir }}"
 
-- name: Start the flamestream bench
+- name: Start the flink bench
   shell: >
     java -Xms500m -Xmx500m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError
     -cp {{ flink_dir }}/flink-benchmark-1.0-SNAPSHOT-uber.jar

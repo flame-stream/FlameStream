@@ -18,12 +18,12 @@ public class Tracing {
   private final Map<String, Tracer> tracers = Collections.synchronizedMap(new HashMap<>());
 
   public Tracer forEvent(String event) {
-    tracers.putIfAbsent(event, new TracerImpl(event, SIZE, SAMPLING));
+    tracers.putIfAbsent(event, new EmptyTracer(event, SIZE, SAMPLING));
     return tracers.get(event);
   }
 
   public Tracer forEvent(String event, int expectedSize, int sampling) {
-    tracers.putIfAbsent(event, new TracerImpl(event, expectedSize, sampling));
+    tracers.putIfAbsent(event, new EmptyTracer(event, expectedSize, sampling));
     return tracers.get(event);
   }
 
