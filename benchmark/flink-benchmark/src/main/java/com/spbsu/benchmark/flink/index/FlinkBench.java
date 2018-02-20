@@ -48,7 +48,7 @@ public class FlinkBench {
         } else {
           environment = StreamExecutionEnvironment.createLocalEnvironment(parallelism);
         }
-        environment.setBufferTimeout(0);
+        //environment.setBufferTimeout(0);
         environment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         environment
