@@ -33,7 +33,7 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
   @Nullable
   private transient Client client = null;
 
-  private transient Tracing.Tracer tracer;
+  //private transient Tracing.Tracer tracer;
 
   public KryoSocketSink(String hostName, int port) {
     this.hostName = hostName;
@@ -42,7 +42,7 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
 
   @Override
   public void open(Configuration parameters) throws Exception {
-    tracer = Tracing.TRACING.forEvent("sink-receive");
+    //tracer = Tracing.TRACING.forEvent("sink-receive");
 
     client = new Client(OUTPUT_BUFFER_SIZE, 1234);
     client.getKryo().register(WordIndexAdd.class);
@@ -69,7 +69,7 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
   @Override
   public void invoke(Result value) {
     if (client != null && client.isConnected()) {
-      tracer.log(value.wordIndexAdd().hash());
+      //tracer.log(value.wordIndexAdd().hash());
       client.sendTCP(value.wordIndexAdd());
       if (value.wordIndexRemove() != null) {
         client.sendTCP(value.wordIndexRemove());

@@ -23,22 +23,22 @@ import java.util.stream.Stream;
  * Date: 10.07.2017
  */
 public class WikipediaPageToWordPositions implements Function<WikipediaPage, Stream<WordPagePositions>> {
-  private transient final Tracing.Tracer inputTracer;
-  private transient final Tracing.Tracer outputTracer;
+  //private transient final Tracing.Tracer inputTracer;
+  //private transient final Tracing.Tracer outputTracer;
 
   public WikipediaPageToWordPositions() {
-    inputTracer = Tracing.TRACING.forEvent("flatmap-receive", 1000, 1);
-    outputTracer = Tracing.TRACING.forEvent("flatmap-send");
+    //inputTracer = Tracing.TRACING.forEvent("flatmap-receive", 1000, 1);
+    //outputTracer = Tracing.TRACING.forEvent("flatmap-send");
   }
 
   public WikipediaPageToWordPositions(Tracing.Tracer inputTracer, Tracing.Tracer outputTracer) {
-    this.inputTracer = inputTracer;
-    this.outputTracer = outputTracer;
+    //this.inputTracer = inputTracer;
+    //this.outputTracer = outputTracer;
   }
 
   @Override
   public Stream<WordPagePositions> apply(WikipediaPage wikipediaPage) {
-    inputTracer.log(wikipediaPage.id());
+    //inputTracer.log(wikipediaPage.id());
     //noinspection deprecation
     final Tokenizer tokenizer = new StemsTokenizer(Stemmer.getInstance(), wikipediaPage.text());
     final Map<String, TLongList> wordPositions = new HashMap<>();
@@ -63,7 +63,7 @@ public class WikipediaPageToWordPositions implements Function<WikipediaPage, Str
     wordPositions.forEach((word, list) -> wordPagePositions.add(new WordPagePositions(word, list.toArray())));
     return wordPagePositions.stream()
             .peek(positions -> {
-              outputTracer.log(WordIndexAdd.hash(positions.word(), wikipediaPage.id()));
+              //outputTracer.log(WordIndexAdd.hash(positions.word(), wikipediaPage.id()));
             });
   }
 }

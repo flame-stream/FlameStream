@@ -35,11 +35,11 @@ public class Component extends LoggingActor {
   private final Map<GraphManager.Destination, Joba> jobas;
   private final Map<GraphManager.Destination, Consumer<DataItem>> downstreams = new HashMap<>();
 
-  private final Tracing.Tracer fmSend = Tracing.TRACING.forEvent("fm-send");
-  private final Tracing.Tracer shuffleSend = Tracing.TRACING.forEvent("shuffle-send");
-  private final Tracing.Tracer accept = Tracing.TRACING.forEvent("accept-in", 1000, 1);
-  private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
-  private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
+  //private final Tracing.Tracer fmSend = Tracing.TRACING.forEvent("fm-send");
+  //private final Tracing.Tracer shuffleSend = Tracing.TRACING.forEvent("shuffle-send");
+  //private final Tracing.Tracer accept = Tracing.TRACING.forEvent("accept-in", 1000, 1);
+  //private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
+  //private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
 
   @Nullable
   private SourceJoba sourceJoba;
@@ -79,14 +79,14 @@ public class Component extends LoggingActor {
                   sink = item -> localCall(item, destination);
                 } else if (graph.isShuffle(from, to)) {
                   sink = item -> {
-                    shuffleSend.log(item.xor());
+                    //shuffleSend.log(item.xor());
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
                     routes.get(ThreadLocalRandom.current().nextInt())
                             .tell(new AddressedItem(item, destination), self());
                   };
                 } else if (to instanceof Grouping) {
                   sink = item -> {
-                    fmSend.log(item.xor());
+                    //fmSend.log(item.xor());
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
                     routes.get(((Grouping) to).hash().applyAsInt(item))
                             .tell(new AddressedItem(item, destination), self());
@@ -162,10 +162,10 @@ public class Component extends LoggingActor {
 
   private void inject(AddressedItem addressedItem) {
     final DataItem item = addressedItem.item();
-    injectIn.log(item.xor());
+    //injectIn.log(item.xor());
     localCall(item, addressedItem.destination());
     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-    injectOut.log(item.xor());
+    //injectOut.log(item.xor());
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {
@@ -178,7 +178,7 @@ public class Component extends LoggingActor {
 
   private void accept(DataItem item) {
     if (sourceJoba != null) {
-      accept.log(item.xor());
+      //accept.log(item.xor());
       sourceJoba.addFront(item.meta().globalTime().frontId(), sender());
       sourceJoba.accept(item, downstreams.get(sourceDestanation));
     } else {

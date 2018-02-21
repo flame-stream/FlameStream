@@ -22,7 +22,7 @@ public class GroupingJoba implements Joba {
 
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
-  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("grouping-receive");
+  //private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("grouping-receive");
 
   public GroupingJoba(Grouping<?> grouping) {
     this.instance = grouping.operation(ThreadLocalRandom.current().nextLong());
@@ -31,7 +31,7 @@ public class GroupingJoba implements Joba {
 
   @Override
   public void accept(DataItem item, Consumer<DataItem> sink) {
-    tracer.log(item.xor());
+    //tracer.log(item.xor());
 
     final InvalidatingBucket bucket = bucketFor(item);
     instance.apply(item, bucket).forEach(sink);

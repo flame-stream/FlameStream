@@ -65,3 +65,5 @@
         src: /tmp/trace.csv
         dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/traces/{{ inventory_hostname }}.csv
         flat: true
+  tags:
+    - lat

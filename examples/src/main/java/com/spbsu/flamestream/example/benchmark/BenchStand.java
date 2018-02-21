@@ -69,8 +69,8 @@ public class BenchStand implements AutoCloseable {
   private final Server consumer;
   private final Random random = new Random(7);
 
-  private final Tracing.Tracer sendTracer = Tracing.TRACING.forEvent("bench-send", 1000, 1);
-  private final Tracing.Tracer receiveTracer = Tracing.TRACING.forEvent("bench-receive");
+  //private final Tracing.Tracer sendTracer = Tracing.TRACING.forEvent("bench-send", 1000, 1);
+  //private final Tracing.Tracer receiveTracer = Tracing.TRACING.forEvent("bench-receive");
 
   public BenchStand(StandConfig standConfig, GraphDeployer graphDeployer, Class<?>... classesToRegister) {
     this.standConfig = standConfig;
@@ -118,7 +118,7 @@ public class BenchStand implements AutoCloseable {
       input.forEach(page -> {
                 synchronized (connection) {
                   latencies.put(page.id(), new LatencyMeasurer());
-                  sendTracer.log(page.id());
+                  //sendTracer.log(page.id());
 
                   connection[0].sendTCP(page);
                   LOG.info("Sending: {}", i[0]++);
@@ -184,10 +184,10 @@ public class BenchStand implements AutoCloseable {
         if (o instanceof DataItem) {
           final DataItem dataItem = (DataItem) o;
           wordIndexAdd = dataItem.payload(WordIndexAdd.class);
-          receiveTracer.log(((DataItem) o).xor());
+          //receiveTracer.log(((DataItem) o).xor());
         } else if (o instanceof WordIndexAdd) {
           wordIndexAdd = (WordIndexAdd) o;
-          receiveTracer.log(wordIndexAdd.hash());
+          //receiveTracer.log(wordIndexAdd.hash());
         } else {
           return;
         }

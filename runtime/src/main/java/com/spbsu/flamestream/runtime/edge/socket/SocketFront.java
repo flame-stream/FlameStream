@@ -33,7 +33,7 @@ public class SocketFront extends Front.Stub {
 
   private volatile Consumer<Object> consumer = null;
 
-  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("front-receive-send", 1000, 1);
+  //private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("front-receive-send", 1000, 1);
 
   public SocketFront(EdgeContext edgeContext, String host, int port, Class<?>[] classes) {
     super(edgeContext.edgeId());
@@ -47,7 +47,7 @@ public class SocketFront extends Front.Stub {
     client.addListener(new Listener() {
       public void received(Connection connection, Object object) {
         if (Arrays.stream(classes).anyMatch(clazz -> clazz.isAssignableFrom(object.getClass()))) {
-          tracer.log(object.hashCode());
+          //tracer.log(object.hashCode());
           consumer.accept(new PayloadDataItem(new Meta(currentTime()), object));
           consumer.accept(new Heartbeat(currentTime()));
         }

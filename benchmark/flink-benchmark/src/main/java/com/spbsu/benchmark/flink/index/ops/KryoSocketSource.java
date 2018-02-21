@@ -24,7 +24,7 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
   private final String hostname;
   private final int port;
 
-  private transient Tracing.Tracer tracer;
+  //private transient Tracing.Tracer tracer;
 
   @Nullable
   private transient Client client = null;
@@ -37,7 +37,7 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
 
   @Override
   public void open(Configuration parameters) {
-    tracer = Tracing.TRACING.forEvent("source-receive", 1000, 1);
+    //tracer = Tracing.TRACING.forEvent("source-receive", 1000, 1);
 
     client = new Client(1000, INPUT_BUFFER_SIZE);
     client.getKryo().register(WikipediaPage.class);
@@ -51,7 +51,7 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
       @Override
       public void received(Connection connection, Object object) {
         if (object instanceof WikipediaPage) {
-          tracer.log(((WikipediaPage) object).id());
+          //tracer.log(((WikipediaPage) object).id());
 
           ctx.collectWithTimestamp((WikipediaPage) object, currentTime());
           ctx.emitWatermark(new Watermark(currentTime()));

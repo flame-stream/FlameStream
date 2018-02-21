@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  * Date: 10.07.2017
  */
 public class WrongOrderingFilter implements Function<List<WordBase>, Stream<List<WordBase>>> {
-  private transient final Tracing.Tracer tracer = Tracing.TRACING.forEvent("wrong-ordering-filter-receive");
+  //private transient final Tracing.Tracer tracer = Tracing.TRACING.forEvent("wrong-ordering-filter-receive");
 
   @Override
   public Stream<List<WordBase>> apply(List<WordBase> wordBases) {
@@ -30,7 +30,7 @@ public class WrongOrderingFilter implements Function<List<WordBase>, Stream<List
     if (wordBases.size() == 1 || (wordBases.get(0) instanceof WordIndex
             && wordBases.get(1) instanceof WordPagePositions)) {
       final WordPagePositions positions = (WordPagePositions) wordBases.get(wordBases.size() == 1 ? 0 : 1);
-      tracer.log(Objects.hash(positions.word(), IndexItemInLong.pageId(positions.positions()[0])));
+      //tracer.log(Objects.hash(positions.word(), IndexItemInLong.pageId(positions.positions()[0])));
       return Stream.of(wordBases);
     } else {
       return Stream.empty();

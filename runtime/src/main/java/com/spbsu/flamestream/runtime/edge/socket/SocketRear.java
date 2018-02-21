@@ -29,7 +29,7 @@ public class SocketRear implements Rear {
   private final EdgeId edgeId;
   private final Client client;
 
-  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("rear-in");
+  //private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("rear-in");
 
   public SocketRear(EdgeContext edgeContext, String host, int port, Class[] classes) {
     edgeId = edgeContext.edgeId();
@@ -64,7 +64,7 @@ public class SocketRear implements Rear {
 
   @Override
   public void accept(DataItem dataItem) {
-    tracer.log(dataItem.xor());
+    //tracer.log(dataItem.xor());
     if (client.isConnected()) {
       client.sendTCP(dataItem);
     } else {
