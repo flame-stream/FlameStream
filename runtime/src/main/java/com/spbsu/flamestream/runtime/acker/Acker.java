@@ -110,10 +110,11 @@ public class Acker extends LoggingActor {
     log().info("Acker statistics: {}", stat);
   }
 
-  //public Tracing.Tracer tracer = Tracing.TRACING.forEvent("ack-receive");
+  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("ack-receive");
+
   private void handleAck(Ack ack) {
-    //log().info("ACKING {}", ack);
-    //tracer.log(ack.xor());
+    tracer.log(ack.xor());
+
     minTimeSubscribers.add(sender());
     final long start = System.nanoTime();
     if (table.ack(ack.time().time(), ack.xor())) {
