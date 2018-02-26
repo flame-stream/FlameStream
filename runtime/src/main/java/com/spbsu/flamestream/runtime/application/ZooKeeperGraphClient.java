@@ -35,9 +35,7 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NavigableSet;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -48,8 +46,6 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient 
   private final ZooKeeper zooKeeper;
   private final Kryo kryo;
   private final ObjectMapper mapper = new ObjectMapper();
-
-  private final NavigableSet<String> seenGraphs = new TreeSet<>();
 
   public ZooKeeperGraphClient(ZooKeeper zooKeeper) {
     this.zooKeeper = zooKeeper;

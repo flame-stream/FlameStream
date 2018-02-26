@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class WorkerApplication {
+public class WorkerApplication implements Runnable {
   private final Logger log = LoggerFactory.getLogger(WorkerApplication.class);
   private final DumbInetSocketAddress host;
   private final String zkString;
@@ -37,18 +37,19 @@ public class WorkerApplication {
   }
 
   public static void main(String... args) throws IOException {
-    final Path cofigPath = Paths.get(args[0]);
+    final Path configPath = Paths.get(args[0]);
     final ObjectMapper mapper = new ObjectMapper();
     final WorkerConfig workerConfig = mapper.readValue(
-            Files.readAllBytes(cofigPath),
+            Files.readAllBytes(configPath),
             WorkerConfig.class
     );
-    final String id = workerConfig.id;
-    final DumbInetSocketAddress socketAddress = workerConfig.localAddress;
-    final String zkString = workerConfig.zkString;
+    final String id = workerConfig.id();
+    final DumbInetSocketAddress socketAddress = workerConfig.localAddress();
+    final String zkString = workerConfig.zkString();
     new WorkerApplication(id, socketAddress, zkString).run();
   }
 
+  @Override
   public void run() {
     log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
 
@@ -64,7 +65,7 @@ public class WorkerApplication {
       try {
         Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("Something went wrong during trace flush", e);
       }
     });
   }
@@ -90,6 +91,18 @@ public class WorkerApplication {
       this.id = id;
       this.localAddress = new DumbInetSocketAddress(localAddress);
       this.zkString = zkString;
+    }
+
+    String id() {
+      return id;
+    }
+
+    DumbInetSocketAddress localAddress() {
+      return localAddress;
+    }
+
+    String zkString() {
+      return zkString;
     }
   }
 }
