@@ -8,7 +8,7 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
-import com.spbsu.flamestream.runtime.negitioator.api.NewFront;
+import com.spbsu.flamestream.runtime.edge.negitioator.api.NewFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 public class EdgeManager extends LoggingActor {

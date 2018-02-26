@@ -11,13 +11,12 @@ import com.spbsu.flamestream.runtime.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.graph.GraphManager;
-import com.spbsu.flamestream.runtime.negitioator.Negotiator;
+import com.spbsu.flamestream.runtime.edge.negitioator.Negotiator;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class FlameNode extends LoggingActor {
   private final ActorRef edgeManager;
@@ -39,7 +38,7 @@ public class FlameNode extends LoggingActor {
     ), "graph");
     graph.tell(resolvedManagers(), self());
 
-    final ActorRef negotiator = context().actorOf(Negotiator.props(id, acker, graph), "negotiator");
+    final ActorRef negotiator = context().actorOf(Negotiator.props(acker, graph), "negotiator");
     this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, graph), "edge");
   }
 

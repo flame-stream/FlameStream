@@ -52,7 +52,6 @@ public class Acker extends LoggingActor {
 
   private final AckTable table;
   private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
-  private final AckerStatistics stat = new AckerStatistics();
   private final AttachRegistry registry;
 
   private GlobalTime currentMin = GlobalTime.MIN;
@@ -104,12 +103,6 @@ public class Acker extends LoggingActor {
     checkMinTime();
   }
 
-  @Override
-  public void postStop() {
-    super.postStop();
-    log().info("Acker statistics: {}", stat);
-  }
-
   private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("ack-receive");
 
   private void handleAck(Ack ack) {
@@ -119,9 +112,6 @@ public class Acker extends LoggingActor {
     final long start = System.nanoTime();
     if (table.ack(ack.time().time(), ack.xor())) {
       checkMinTime();
-      stat.recordReleasingAck(System.nanoTime() - start);
-    } else {
-      stat.recordNormalAck(System.nanoTime() - start);
     }
   }
 
@@ -143,31 +133,5 @@ public class Acker extends LoggingActor {
     }
     final long minTime = table.tryPromote(minHeartbeat.time());
     return new GlobalTime(minTime, EdgeId.MIN);
-  }
-
-  private static final class AckerStatistics implements Statistics {
-    private final LongSummaryStatistics normalAck = new LongSummaryStatistics();
-    private final LongSummaryStatistics releasingAck = new LongSummaryStatistics();
-
-    void recordNormalAck(long ts) {
-      normalAck.accept(ts);
-    }
-
-    void recordReleasingAck(long ts) {
-      releasingAck.accept(ts);
-    }
-
-    @Override
-    public Map<String, Double> metrics() {
-      final Map<String, Double> result = new HashMap<>();
-      result.putAll(Statistics.asMap("Normal ack duration", normalAck));
-      result.putAll(Statistics.asMap("Releasing ack duration", releasingAck));
-      return result;
-    }
-
-    @Override
-    public String toString() {
-      return metrics().toString();
-    }
   }
 }

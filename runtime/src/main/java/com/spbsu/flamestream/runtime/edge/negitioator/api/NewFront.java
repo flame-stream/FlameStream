@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.negitioator.api;
+package com.spbsu.flamestream.runtime.edge.negitioator.api;
 
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
