@@ -11,7 +11,7 @@ import com.spbsu.flamestream.runtime.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
-import com.spbsu.flamestream.runtime.barrier.api.AttachRear;
+import com.spbsu.flamestream.runtime.graph.api.AttachRear;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;

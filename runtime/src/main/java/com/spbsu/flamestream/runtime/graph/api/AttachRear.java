@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.barrier.api;
+package com.spbsu.flamestream.runtime.graph.api;
 
 import akka.actor.ActorRef;
 

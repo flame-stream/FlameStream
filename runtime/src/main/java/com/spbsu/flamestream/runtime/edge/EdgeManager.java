@@ -42,7 +42,7 @@ public class EdgeManager extends LoggingActor {
                       new SystemEdgeContext(nodePath, nodeId, attachRear.id()),
                       attachRear.instance()
               ), attachRear.id());
-              graphManager.tell(new com.spbsu.flamestream.runtime.barrier.api.AttachRear(rearRef), self());
+              graphManager.tell(new com.spbsu.flamestream.runtime.graph.api.AttachRear(rearRef), self());
             })
             .build();
   }

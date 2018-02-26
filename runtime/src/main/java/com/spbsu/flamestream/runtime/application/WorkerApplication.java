@@ -7,9 +7,6 @@ import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import io.aeron.driver.MediaDriver;
-import io.aeron.driver.ThreadingMode;
-import org.agrona.concurrent.BackoffIdleStrategy;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,11 +19,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class WorkerApplication {
+public class WorkerApplication implements Runnable {
   private final Logger log = LoggerFactory.getLogger(WorkerApplication.class);
   private final DumbInetSocketAddress host;
   private final String zkString;
@@ -47,32 +42,23 @@ public class WorkerApplication {
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
-    final Path cofigPath = Paths.get(args[0]);
+    final Path configPath = Paths.get(args[0]);
     final ObjectMapper mapper = new ObjectMapper();
     final WorkerConfig workerConfig = mapper.readValue(
-            Files.readAllBytes(cofigPath),
+            Files.readAllBytes(configPath),
             WorkerConfig.class
     );
-    final String id = workerConfig.id;
-    final DumbInetSocketAddress socketAddress = workerConfig.localAddress;
-    final String zkString = workerConfig.zkString;
+    final String id = workerConfig.id();
+    final DumbInetSocketAddress socketAddress = workerConfig.localAddress();
+    final String zkString = workerConfig.zkString();
     new WorkerApplication(id, socketAddress, zkString).run();
   }
 
+  @Override
   public void run() {
-    //final MediaDriver.Context driverContext = new MediaDriver.Context();
-    //final String uniquePart = UUID.randomUUID().toString();
-    //final String randomName = "/dev/shm/aeron-" + uniquePart;
-    //driverContext.aeronDirectoryName(randomName);
-    //driverContext
-    //        .threadingMode(ThreadingMode.SHARED)
-    //        .sharedIdleStrategy(new BackoffIdleStrategy(5, 5, 1, TimeUnit.MILLISECONDS.toNanos(1)));
-    //final MediaDriver driver = MediaDriver.launchEmbedded(driverContext);
-    //log.info("Started embedded media driver in directory [{}]", driver.aeronDirectoryName());
-    //log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
+    log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
 
     final Map<String, String> props = new HashMap<>();
-    //props.put("akka.remote.artery.advanced.aeron-dir", driver.aeronDirectoryName());
     props.put("akka.remote.artery.canonical.hostname", host.host());
     props.put("akka.remote.artery.canonical.port", String.valueOf(host.port()));
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
@@ -84,7 +70,7 @@ public class WorkerApplication {
       try {
         Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("Something went wrong during trace flush", e);
       }
     });
   }
@@ -110,6 +96,18 @@ public class WorkerApplication {
       this.id = id;
       this.localAddress = new DumbInetSocketAddress(localAddress);
       this.zkString = zkString;
+    }
+
+    String id() {
+      return id;
+    }
+
+    DumbInetSocketAddress localAddress() {
+      return localAddress;
+    }
+
+    String zkString() {
+      return zkString;
     }
   }
 }
