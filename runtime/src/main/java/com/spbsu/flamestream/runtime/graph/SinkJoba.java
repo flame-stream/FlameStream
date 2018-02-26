@@ -9,11 +9,6 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -23,11 +18,8 @@ public class SinkJoba implements Joba {
   private final List<ActorRef> rears = new ArrayList<>();
   private final ActorContext context;
 
-  private final Tracing.Tracer sinkReceive = Tracing.TRACING.forEvent("sink-receive");
-  private final Tracing.Tracer sinkSend = Tracing.TRACING.forEvent("sink-send");
-
-  private int cameToBarrier = 0;
-  private int releasedFromBarrier = 0;
+  private final Tracing.Tracer barrierReceiveTracer = Tracing.TRACING.forEvent("barrier-receive");
+  private final Tracing.Tracer barrierSendTracer = Tracing.TRACING.forEvent("barrier-send");
 
   public SinkJoba(ActorContext context) {
     this.context = context;
@@ -35,9 +27,7 @@ public class SinkJoba implements Joba {
 
   @Override
   public void accept(DataItem item, Consumer<DataItem> sink) {
-    cameToBarrier++;
-    sinkReceive.log(item.xor());
-    //rears.forEach(rear -> rear.tell(dataItem, context.self()));
+    barrierReceiveTracer.log(item.xor());
     invalidatingBucket.insert(item);
   }
 
@@ -49,21 +39,9 @@ public class SinkJoba implements Joba {
   public void onMinTime(GlobalTime minTime) {
     final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
     invalidatingBucket.rangeStream(0, pos).forEach(di -> {
-      releasedFromBarrier++;
-      sinkSend.log(di.xor());
-      rears.forEach(rear -> {
-        rear.tell(di, context.self());
-      });
+      barrierSendTracer.log(di.xor());
+      rears.forEach(rear -> rear.tell(di, context.self()));
     });
     invalidatingBucket.clearRange(0, pos);
-  }
-
-  @Override
-  public void postStop() {
-    try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(Paths.get("/tmp/elements.cnt")))) {
-      pw.println(cameToBarrier + "/" + releasedFromBarrier);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
   }
 }

@@ -2,10 +2,10 @@ package com.spbsu.flamestream.runtime.graph.api;
 
 import akka.actor.ActorRef;
 
-public class AttachRear {
+public class NewRear {
   private final ActorRef rear;
 
-  public AttachRear(ActorRef rear) {
+  public NewRear(ActorRef rear) {
     this.rear = rear;
   }
 

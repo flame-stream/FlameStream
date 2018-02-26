@@ -11,7 +11,7 @@ import com.spbsu.flamestream.runtime.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
-import com.spbsu.flamestream.runtime.graph.api.AttachRear;
+import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -109,7 +109,7 @@ public class GraphManager extends LoggingActor {
                     MinTimeUpdate.class,
                     minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
             )
-            .match(AttachRear.class, attachRear -> sinkComponent.forward(attachRear, context()))
+            .match(NewRear.class, newRear -> sinkComponent.forward(newRear, context()))
             .match(Heartbeat.class, gt -> sourceComponent.forward(gt, context()))
             .match(UnregisterFront.class, u -> sourceComponent.forward(u, context()))
             .build();

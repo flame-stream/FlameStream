@@ -7,6 +7,7 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.negitioator.api.NewFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -42,7 +43,7 @@ public class EdgeManager extends LoggingActor {
                       new SystemEdgeContext(nodePath, nodeId, attachRear.id()),
                       attachRear.instance()
               ), attachRear.id());
-              graphManager.tell(new com.spbsu.flamestream.runtime.graph.api.AttachRear(rearRef), self());
+              graphManager.tell(new NewRear(rearRef), self());
             })
             .build();
   }

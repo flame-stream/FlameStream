@@ -3,7 +3,6 @@ package com.spbsu.flamestream.runtime.graph;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.Meta;
@@ -15,9 +14,9 @@ import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
-import com.spbsu.flamestream.runtime.barrier.api.AttachRear;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
+import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
@@ -35,16 +34,17 @@ public class Component extends LoggingActor {
   private final Map<GraphManager.Destination, Joba> jobas;
   private final Map<GraphManager.Destination, Consumer<DataItem>> downstreams = new HashMap<>();
 
-  //private final Tracing.Tracer fmSend = Tracing.TRACING.forEvent("fm-send");
-  //private final Tracing.Tracer shuffleSend = Tracing.TRACING.forEvent("shuffle-send");
-  //private final Tracing.Tracer accept = Tracing.TRACING.forEvent("accept-in", 1000, 1);
-  //private final Tracing.Tracer injectIn = Tracing.TRACING.forEvent("inject-in");
-  //private final Tracing.Tracer injectOut = Tracing.TRACING.forEvent("inject-out");
+  private final Tracing.Tracer shuffleSendTracer = Tracing.TRACING.forEvent("shuffle-send");
+  private final Tracing.Tracer groupingSendTracer = Tracing.TRACING.forEvent("fm-send");
+  private final Tracing.Tracer acceptInTracer = Tracing.TRACING.forEvent("accept-in", 1000, 1);
+  private final Tracing.Tracer acceptOutTracer = Tracing.TRACING.forEvent("accept-in", 1000, 1);
+  private final Tracing.Tracer injectInTracer = Tracing.TRACING.forEvent("inject-in");
+  private final Tracing.Tracer injectOutTracer = Tracing.TRACING.forEvent("inject-out");
 
   @Nullable
   private SourceJoba sourceJoba;
   @Nullable
-  private GraphManager.Destination sourceDestanation;
+  private GraphManager.Destination sourceDestination;
 
   @Nullable
   private SinkJoba sinkJoba;
@@ -63,48 +63,48 @@ public class Component extends LoggingActor {
       jobas.put(GraphManager.Destination.fromVertexId(vertex.id()), joba);
       if (joba instanceof SourceJoba) {
         sourceJoba = (SourceJoba) joba;
-        sourceDestanation = GraphManager.Destination.fromVertexId(vertex.id());
+        sourceDestination = GraphManager.Destination.fromVertexId(vertex.id());
       } else if (joba instanceof SinkJoba) {
         sinkJoba = (SinkJoba) joba;
       }
     }
 
     for (Graph.Vertex from : componentVertices) {
+      final GraphManager.Destination fromDest = GraphManager.Destination.fromVertexId(from.id());
+
       final Set<Consumer<DataItem>> sinks = graph.adjacent(from)
               .map(to -> {
-                final GraphManager.Destination destination = GraphManager.Destination.fromVertexId(to.id());
+                final GraphManager.Destination toDest = GraphManager.Destination.fromVertexId(to.id());
 
                 final Consumer<DataItem> sink;
                 if (componentVertices.contains(to)) {
-                  sink = item -> localCall(item, destination);
+                  sink = item -> localCall(item, toDest);
                 } else if (graph.isShuffle(from, to)) {
                   sink = item -> {
-                    //shuffleSend.log(item.xor());
+                    shuffleSendTracer.log(item.xor());
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
                     routes.get(ThreadLocalRandom.current().nextInt())
-                            .tell(new AddressedItem(item, destination), self());
+                            .tell(new AddressedItem(item, toDest), self());
                   };
                 } else if (to instanceof Grouping) {
                   sink = item -> {
-                    //fmSend.log(item.xor());
+                    groupingSendTracer.log(item.xor());
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
                     routes.get(((Grouping) to).hash().applyAsInt(item))
-                            .tell(new AddressedItem(item, destination), self());
+                            .tell(new AddressedItem(item, toDest), self());
                   };
                 } else {
                   sink = item -> {
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-                    localManager.tell(new AddressedItem(item, destination), self());
+                    localManager.tell(new AddressedItem(item, toDest), self());
                   };
                 }
                 return sink;
               })
               .collect(Collectors.toSet());
 
-      final GraphManager.Destination key = GraphManager.Destination.fromVertexId(from.id());
-
       if (sinks.size() == 1) {
-        downstreams.put(key, sinks.stream().findAny().get());
+        downstreams.put(fromDest, sinks.stream().findAny().get());
       } else if (sinks.size() > 1) {
         final Consumer<DataItem> broadcast = item -> {
           final int[] childId = {0};
@@ -115,9 +115,9 @@ public class Component extends LoggingActor {
             childId[0]++;
           }
         };
-        downstreams.put(key, broadcast);
+        downstreams.put(fromDest, broadcast);
       } else {
-        downstreams.put(key, item -> context().system().deadLetters().tell(item, self()));
+        downstreams.put(fromDest, item -> context().system().deadLetters().tell(item, self()));
       }
     }
   }
@@ -135,7 +135,6 @@ public class Component extends LoggingActor {
     } else {
       throw new RuntimeException("Invalid vertex type");
     }
-
     return joba;
   }
 
@@ -154,7 +153,7 @@ public class Component extends LoggingActor {
             .match(AddressedItem.class, this::inject)
             .match(DataItem.class, this::accept)
             .match(MinTimeUpdate.class, this::onMinTime)
-            .match(AttachRear.class, this::attachRear)
+            .match(NewRear.class, this::onNewRear)
             .match(Heartbeat.class, h -> acker.forward(h, context()))
             .match(UnregisterFront.class, u -> acker.forward(u, context()))
             .build();
@@ -162,10 +161,10 @@ public class Component extends LoggingActor {
 
   private void inject(AddressedItem addressedItem) {
     final DataItem item = addressedItem.item();
-    //injectIn.log(item.xor());
+    injectInTracer.log(item.xor());
     localCall(item, addressedItem.destination());
     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-    //injectOut.log(item.xor());
+    injectOutTracer.log(item.xor());
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {
@@ -178,15 +177,16 @@ public class Component extends LoggingActor {
 
   private void accept(DataItem item) {
     if (sourceJoba != null) {
-      //accept.log(item.xor());
+      acceptInTracer.log(item.xor());
       sourceJoba.addFront(item.meta().globalTime().frontId(), sender());
-      sourceJoba.accept(item, downstreams.get(sourceDestanation));
+      sourceJoba.accept(item, downstreams.get(sourceDestination));
+      acceptOutTracer.log(item.xor());
     } else {
       throw new IllegalStateException("Source doesn't belong to this component");
     }
   }
 
-  private void attachRear(AttachRear attachRear) {
+  private void onNewRear(NewRear attachRear) {
     if (sinkJoba != null) {
       sinkJoba.attachRear(attachRear.rear());
     } else {
@@ -194,9 +194,30 @@ public class Component extends LoggingActor {
     }
   }
 
-  @Override
-  public void postStop() {
-    jobas.values().forEach(Joba::postStop);
-    super.postStop();
+  private static class BroadcastDataItem implements DataItem {
+    private final DataItem inner;
+    private final Meta newMeta;
+    private final long xor;
+
+    BroadcastDataItem(DataItem inner, Meta newMeta) {
+      this.inner = inner;
+      this.newMeta = newMeta;
+      this.xor = ThreadLocalRandom.current().nextLong();
+    }
+
+    @Override
+    public Meta meta() {
+      return newMeta;
+    }
+
+    @Override
+    public <T> T payload(Class<T> expectedClass) {
+      return inner.payload(expectedClass);
+    }
+
+    @Override
+    public long xor() {
+      return xor;
+    }
   }
 }
