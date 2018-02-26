@@ -40,7 +40,7 @@ public class FrontActor extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(Start.class, hole -> front.onStart(item -> hole.consumer().tell(item, self()), hole.globalTime()))
+            .match(Start.class, start -> front.onStart(item -> start.hole().tell(item, self()), start.from()))
             .match(RequestNext.class, request -> front.onRequestNext())
             .build();
   }
