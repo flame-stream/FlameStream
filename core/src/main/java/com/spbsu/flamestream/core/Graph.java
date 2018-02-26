@@ -19,15 +19,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface Graph {
-  Stream<Vertex> vertices();
-
-  Stream<Vertex> adjacent(Vertex vertex);
+  Stream<Stream<Vertex>> components();
 
   Source source();
 
   Sink sink();
 
-  Stream<Stream<Vertex>> components();
+  Stream<Vertex> adjacent(Vertex vertex);
 
   boolean isShuffle(Vertex from, Vertex to);
 
@@ -72,7 +70,8 @@ public interface Graph {
     public Graph build(Source source, Sink sink) {
       if (invertedAdjLists.keySet().contains(source)) {
         throw new IllegalStateException("Source must not have inputs");
-      } else if (adjLists.keySet().contains(sink)) {
+      }
+      if (adjLists.keySet().contains(sink)) {
         throw new IllegalStateException("Source must not have outputs");
       }
 
@@ -119,11 +118,6 @@ public interface Graph {
       @Override
       public boolean isShuffle(Vertex from, Vertex to) {
         return shuffles.contains(new Tuple2<>(from, to));
-      }
-
-      @Override
-      public Stream<Vertex> vertices() {
-        return allVertices.stream();
       }
 
       @Override
