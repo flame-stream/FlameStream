@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Tracing {
-  private static final int DEFAULT_SIZE = 100_000;
+  private static final int DEFAULT_SIZE = 10_000;
   private static final int DEFAULT_SAMPLING = 101;
   private static final Tracer EMPTY_TRACER = new EmptyTracer();
   private static final boolean TRACING_ENABLED = Boolean.parseBoolean(System.getProperty("enable.tracing", "false"));
