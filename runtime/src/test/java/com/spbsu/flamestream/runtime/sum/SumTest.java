@@ -140,9 +140,9 @@ public final class SumTest extends FlameAkkaSuite {
     }
   }
 
-  @Test
+  @Test(enabled = false)
   public void integrationTest() throws Exception {
-    try (final LocalClusterRuntime runtime = new LocalClusterRuntime(5)) {
+    try (final LocalClusterRuntime runtime = new LocalClusterRuntime(2)) {
       for (int graph = 0; graph < 10; ++graph) {
         final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
         try (final FlameRuntime.Flame flame = runtime.run(sumGraph())) {
