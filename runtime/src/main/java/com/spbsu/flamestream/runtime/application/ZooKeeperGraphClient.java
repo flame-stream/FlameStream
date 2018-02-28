@@ -311,7 +311,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient 
     @Override
     public long registeredTime(EdgeId frontId) {
       try {
-        final String frontPath = graphPath + "/fronts/" + frontId.edgeName() + '/' + frontId.nodeId(),
+        final String frontPath = graphPath + "/fronts/" + frontId.edgeName() + '/' + frontId.nodeId();
         final Stat exists = zooKeeper.exists(frontPath, false);
         if (exists != null) {
           final byte[] data = zooKeeper.getData(frontPath, false, null);
