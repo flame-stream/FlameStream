@@ -29,7 +29,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class LocalRuntime implements FlameRuntime, AutoCloseable {
+public class LocalRuntime implements FlameRuntime {
   private final int parallelism;
   private final int maxElementsInGraph;
   private final ActorSystem system;
@@ -42,17 +42,17 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
   }
 
   public LocalRuntime(int parallelism, int maxElementsInGraph) {
-    this(ActorSystem.create("local-runtime", ConfigFactory.load("local")), parallelism, maxElementsInGraph);
+    this(
+            ActorSystem.create("local-runtime", ConfigFactory.load("local")),
+            parallelism,
+            maxElementsInGraph
+    );
   }
 
   private LocalRuntime(ActorSystem system, int parallelism, int maxElementsInGraph) {
     this.system = system;
     this.parallelism = parallelism;
     this.maxElementsInGraph = maxElementsInGraph;
-  }
-
-  public int parallelism() {
-    return parallelism;
   }
 
   public ActorSystem system() {
@@ -76,16 +76,21 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
       ranges.put(id, range);
     }
 
-    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", new ComputationProps(ranges, maxElementsInGraph));
+    final ClusterConfig clusterConfig = new ClusterConfig(
+            paths,
+            "node-0",
+            new ComputationProps(ranges, maxElementsInGraph)
+    );
     final AttachRegistry registry = new InMemoryRegistry();
 
     final List<ActorRef> nodes = paths.keySet().stream()
-            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry).withDispatcher("resolver-dispatcher"), id))
+            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry)
+                    .withDispatcher("resolver-dispatcher"), id))
             .collect(Collectors.toList());
 
     return new Flame() {
       @Override
-      public void extinguish() {
+      public void close() {
         nodes.forEach(n -> n.tell(PoisonPill.getInstance(), ActorRef.noSender()));
       }
 
@@ -93,14 +98,14 @@ public class LocalRuntime implements FlameRuntime, AutoCloseable {
       public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type) {
         nodes.forEach(n -> n.tell(new AttachFront<>(id, type.instance()), ActorRef.noSender()));
         return paths.entrySet().stream()
-                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
+                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id)));
       }
 
       @Override
       public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
         nodes.forEach(n -> n.tell(new AttachRear<>(id, type.instance()), ActorRef.noSender()));
         return paths.entrySet().stream()
-                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id, system)));
+                .map(node -> type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), id)));
       }
     };
   }

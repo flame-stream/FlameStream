@@ -1,40 +1,43 @@
 ---
-- name: Clean the bench directory
-  file:
-    path: "{{ bench_dir }}"
-    state: absent
-  tags: clean
-
-- name: Create the bench dir
-  file:
-    path: "{{ bench_dir }}"
-    state: directory
-  tags: deliver
-
-- name: Copy wiki
+- name: Copy the wiki dump
   copy:
     src: wiki.xml
-    dest: "{{ bench_dir }}/wiki.xml"
-  tags: deliver
+    dest: "{{ flink_dir }}/wiki.xml"
 
-- name: Copy the bench application
-  copy:
-    src: flink-benchmark-1.0-SNAPSHOT-uber.jar
-    dest: "{{ bench_dir }}/bench.jar"
-  tags: deliver
+- name: Copy the deployer file
+  template:
+    src: deployer.conf.j2
+    dest: "{{ flink_dir }}/deployer.conf"
 
-- name: Copy the configuraion file
+- name: Copy the bench configuration file
   template:
     src: bench.conf.j2
-    dest: "{{ bench_dir }}/bench.conf"
-  tags: deliver
+    dest: "{{ flink_dir }}/bench.conf"
+
+- name: Copy the bench jar
+  copy:
+    src: flink-benchmark-1.0-SNAPSHOT-uber.jar
+    dest: "{{ flink_dir }}"
 
 - name: Start the flink bench
-  shell: java -Xmx500m -XX:MaxDirectMemorySize=256m -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf > {{ bench_dir }}/flink_bench.log 2>&1
-  tags: run
+  shell: >
+    java -Xms500m -Xmx500m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError
+    -cp {{ flink_dir }}/flink-benchmark-1.0-SNAPSHOT-uber.jar
+    com.spbsu.benchmark.flink.index.FlinkBench
+    {{ flink_dir }}/bench.conf {{ flink_dir }}/deployer.conf > {{ flink_dir }}/bench.log 2>&1
 
 - name: Fetch bench logs
   fetch:
-    src: "{{ bench_dir }}/flink_bench.log"
-    dest: flink.log
-  tags: run
+    src: "{{ flink_dir }}/bench.log"
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/bench.log
+    flat: true
+  tags:
+    - lat
+
+- name: Fetch latencies
+  fetch:
+    src: /tmp/lat.data
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/latency/lat.data
+    flat: true
+  tags:
+    - lat

@@ -1,20 +1,69 @@
 ---
-- hosts: all
-  become: yes
-  roles:
-    - { role: common }
+- name: Install Python
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Install Python 2.x
+      raw: test -e /usr/bin/python || (apt update && apt install -y python-simplejson)
+      register: test
+      changed_when: test.stdout
 
-- hosts: manager
-  become: yes
+- name: Prepare cluster
+  hosts: all
   roles:
-    - { role: zookeeper, worker_port: 4181 }
+    - { role: common-packages }
 
-- hosts: workers
-  become: yes
+- name: Setup zookeeper
+  hosts: manager
   roles:
-    - { role: flamestream-worker, worker_port: 4181 }
+    - { role: zookeeper  }
 
-- hosts: manager
-  become: yes
+- name: Deliver flamestream artifacts
+  hosts: all
+  roles:
+    - { role: flamestream-common  }
+
+- name: Setup config
+  hosts: manager
+  roles:
+    - { role: flamestream-config }
+
+- name: Init workers
+  hosts: workers
+  roles:
+    - { role: flamestream-worker }
+
+#- name: Pause
+#  hosts: bench
+#  tasks:
+#    - pause:
+
+- name: Run the benchmark
+  hosts: bench
   roles:
     - { role: flamestream-bench }
+
+- name: Destroy flamestream
+  hosts: workers
+  roles:
+    - { role: flamestream-destroy }
+
+- name: Destroy zookeeper
+  hosts: manager
+  roles:
+    - { role: zookeeper-destroy }
+
+- name: Destroy bench
+  hosts: bench
+  roles:
+    - { role: flamestream-bench-destroy }
+
+- hosts: all
+  tasks:
+    - name: Fetch traces
+      fetch:
+        src: /tmp/trace.csv
+        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/traces/{{ inventory_hostname }}.csv
+        flat: true
+  tags:
+    - lat

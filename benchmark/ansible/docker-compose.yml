@@ -1,0 +1,23 @@
+---
+version: '3'
+
+services:
+  worker1:
+    container_name: worker1
+    hostname: worker1
+    command: sleep 365d
+    image: debian
+    shm_size: 512M
+    networks: 
+      - workers
+  worker2:
+    container_name: worker2
+    hostname: worker2
+    command: sleep 365d
+    image: debian
+    shm_size: 512M
+    networks:
+      - workers
+
+networks:
+  workers:

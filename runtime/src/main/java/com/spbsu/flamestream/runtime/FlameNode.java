@@ -6,20 +6,16 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.acker.Acker;
 import com.spbsu.flamestream.runtime.acker.AttachRegistry;
-import com.spbsu.flamestream.runtime.barrier.Barrier;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.graph.GraphManager;
-import com.spbsu.flamestream.runtime.negitioator.Negotiator;
+import com.spbsu.flamestream.runtime.edge.negitioator.Negotiator;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class FlameNode extends LoggingActor {
@@ -35,18 +31,15 @@ public class FlameNode extends LoggingActor {
       acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
     }
 
-    final ActorRef barrier = context().actorOf(Barrier.props(acker), "barrier");
     final ActorRef graph = context().actorOf(GraphManager.props(
-            id,
             bootstrapGraph,
             acker,
-            config.props(),
-            resolvedBarriers()
+            config.props()
     ), "graph");
     graph.tell(resolvedManagers(), self());
 
-    final ActorRef negotiator = context().actorOf(Negotiator.props(id, acker, graph), "negotiator");
-    this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, barrier), "edge");
+    final ActorRef negotiator = context().actorOf(Negotiator.props(acker, graph), "negotiator");
+    this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, graph), "edge");
   }
 
   public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, AttachRegistry attachRegistry) {
@@ -68,15 +61,5 @@ public class FlameNode extends LoggingActor {
       managers.put(id, manager);
     });
     return managers;
-  }
-
-  private List<ActorRef> resolvedBarriers() {
-    final List<ActorRef> barriers = new ArrayList<>();
-    config.paths().values().forEach(path -> {
-      final ActorRef b = AwaitResolver.syncResolve(path.child("barrier"), context());
-      barriers.add(b);
-    });
-    Collections.sort(barriers);
-    return barriers;
   }
 }

@@ -12,11 +12,11 @@ public class Start {
     this.globalTime = globalTime;
   }
 
-  public ActorRef consumer() {
+  public ActorRef hole() {
     return consumer;
   }
 
-  public GlobalTime globalTime() {
-    return this.globalTime;
+  public GlobalTime from() {
+    return globalTime;
   }
 }

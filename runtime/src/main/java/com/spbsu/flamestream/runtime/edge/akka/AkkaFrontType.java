@@ -44,7 +44,10 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaF
   @Override
   public Handle<T> handle(EdgeContext context) {
     final ActorRef frontRef = AwaitResolver.syncResolve(
-            context.nodePath().child("edge").child(context.edgeId() + "-inner"),
+            context.nodePath()
+                    .child("edge")
+                    .child(context.edgeId().edgeName())
+                    .child(context.edgeId().nodeId() + "-inner"),
             system
     );
     return backPressure ? new BackPressureHandle<>(frontRef, system) : new SimpleHandle<>(frontRef);

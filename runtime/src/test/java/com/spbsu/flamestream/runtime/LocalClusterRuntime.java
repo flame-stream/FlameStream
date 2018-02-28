@@ -5,8 +5,9 @@ import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.application.WorkerApplication;
-import com.spbsu.flamestream.runtime.application.ZooKeeperFlameClient;
+import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashRange;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
@@ -25,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
+public class LocalClusterRuntime implements FlameRuntime {
   private final Logger log = LoggerFactory.getLogger(LocalClusterRuntime.class);
   private final ZooKeeperApplication zooKeeperApplication;
   private final RemoteRuntime remoteRuntime;
@@ -35,14 +36,14 @@ public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
     this(parallelism, DEFAULT_MAX_ELEMENTS_IN_GRAPH);
   }
 
-  public LocalClusterRuntime(int parallelism, int maxElementsInGraph) throws IOException, InterruptedException {
+  public LocalClusterRuntime(int parallelism, int maxElementsInGraph) throws IOException {
     final List<Integer> ports = new ArrayList<>(freePorts(parallelism + 1));
 
     this.zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
     zooKeeperApplication.run();
 
     final String zkString = "localhost:" + ports.get(0);
-    final ClusterManagementClient configClient = new ZooKeeperFlameClient(new ZooKeeper(
+    final ConfigurationClient configClient = new ZooKeeperGraphClient(new ZooKeeper(
             zkString,
             1000,
             (w) -> {
@@ -55,11 +56,11 @@ public class LocalClusterRuntime implements FlameRuntime, AutoCloseable {
       final DumbInetSocketAddress address = new DumbInetSocketAddress("localhost", ports.get(i + 1));
       final WorkerApplication worker = new WorkerApplication(name, address, zkString);
       final ActorPath path = RootActorPath.apply(Address.apply(
-              "akka.tcp",
+              "akka",
               "worker",
               address.host(),
               address.port()
-      ), "/").child("user").child("watcher").child("node");
+      ), "/").child("user").child("watcher");
       workersAddresses.put(name, path);
       workers.add(worker);
       worker.run();

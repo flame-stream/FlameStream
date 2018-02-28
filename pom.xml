@@ -15,8 +15,6 @@
         <module>core</module>
         <module>runtime</module>
         <module>examples</module>
-        <!--<module>benchmark/flamestream-benchmark</module>
         <module>benchmark/flink-benchmark</module>
-        <module>benchmark/benchmark-commons</module>-->
     </modules>
 </project>

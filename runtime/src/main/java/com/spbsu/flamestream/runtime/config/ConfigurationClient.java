@@ -1,5 +1,7 @@
 package com.spbsu.flamestream.runtime.config;
 
 public interface ConfigurationClient {
-  ClusterConfig configuration();
+  ClusterConfig config();
+
+  void put(ClusterConfig config);
 }

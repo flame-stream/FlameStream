@@ -1,0 +1,21 @@
+---
+- name: Create the flamestream directory
+  file:
+    path: "{{ flamestream_dir }}"
+    state: directory
+
+- name: Copy the dependencies
+#  copy:
+  synchronize:
+    src: lib
+    dest: "{{ flamestream_dir }}"
+
+- name: Copy the worker application
+  copy:
+    src: flamestream-runtime-1.0-SNAPSHOT.jar
+    dest: "{{ flamestream_dir }}"
+
+- name: Copy the entrypoint
+  copy:
+    src: entrypoint.sh
+    dest: "{{ flamestream_dir }}"

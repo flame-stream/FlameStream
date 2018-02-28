@@ -1,0 +1,4 @@
+---
+- name: Destroy flame-bench
+  shell: pkill -f bench
+  ignore_errors: True

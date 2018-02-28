@@ -1,45 +1,11 @@
 ---
-- name: Stop the fs worker
-  shell: pkill -f worker.jar
-  ignore_errors: yes
-  tags: destroy
+- name: Clean shm
+  shell: rm -rf /dev/shm/aeron*
 
-- name: Clean the fs directory
-  file:
-    path: "{{ flamestream_dir }}"
-    state: absent
-  tags: clean
-
-- name: Create the fs dir
-  file:
-    path: "{{ flamestream_dir }}"
-    state: directory
-  tags: deliver
-
-- name: Copy the worker application
-  copy:
-    src: flamestream-runtime-1.0-SNAPSHOT-uber.jar
-    dest: "{{ flamestream_dir }}/worker.jar"
-  tags: deliver
-
-- name: Copy the business logic application
-  copy:
-    src: flamestream-examples-1.0-SNAPSHOT.jar
-    dest: "{{ flamestream_dir }}/examples.jar"
-  tags: deliver
-
-- name: Copy the configuraion file
+- name: Copy the worker config
   template:
-    src: fs.conf.j2
-    dest: "{{ flamestream_dir }}/fs.conf"
-  tags: deliver
+    src: worker.json
+    dest: "{{ flamestream_dir }}"
 
-- name: Start the fs worker
-  shell: >
-    nohup java -Xms700m -Xmx700m \
-    -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+HeapDumpOnOutOfMemoryError \
-    -cp \
-    "{{ flamestream_dir }}/worker.jar:{{ flamestream_dir }}/examples.jar" \
-    com.spbsu.flamestream.runtime.application.WorkerApplication {{ flamestream_dir }}/fs.conf \
-    > {{ flamestream_dir}}/worker.log 2>&1 &
-  tags: bootstrap
+- name: Run flamstream
+  shell: "cd {{ flamestream_dir }} && bash entrypoint.sh restart worker.json"

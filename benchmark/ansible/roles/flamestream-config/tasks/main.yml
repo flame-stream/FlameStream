@@ -1,0 +1,11 @@
+---
+- name: Copy ConfigDeployer config
+  template:
+    src: config_deployer.json.j2
+    dest: "{{ flamestream_dir }}/config_deployer.json"
+
+- name: Run config deployer
+  raw: >
+    java -cp '{{ flamestream_dir }}/lib/*'
+    com.spbsu.flamestream.example.benchmark.ConfigDeployer
+    {{ flamestream_dir }}/config_deployer.json

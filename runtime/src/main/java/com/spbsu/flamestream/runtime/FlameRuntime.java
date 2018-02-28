@@ -7,14 +7,12 @@ import com.spbsu.flamestream.runtime.edge.EdgeContext;
 
 import java.util.stream.Stream;
 
-public interface FlameRuntime {
+public interface FlameRuntime extends AutoCloseable {
   int DEFAULT_MAX_ELEMENTS_IN_GRAPH = 100;
 
   Flame run(Graph g);
 
-  interface Flame {
-    void extinguish();
-
+  interface Flame extends AutoCloseable{
     <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type);
 
     <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type);
@@ -35,12 +33,12 @@ public interface FlameRuntime {
   interface FrontInstance<F extends Front> {
     Class<F> clazz();
 
-    String[] params();
+    Object[] params();
   }
 
   interface RearInstance<R extends Rear> {
     Class<R> clazz();
 
-    String[] params();
+    Object[] params();
   }
 }

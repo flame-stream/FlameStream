@@ -24,6 +24,11 @@
             <artifactId>flamestream-runtime</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <!--For benchmarks-->
+        <dependency>
+            <groupId>kryonet</groupId>
+            <artifactId>kryonet</artifactId>
+        </dependency>
         <!--Needed for checkers-->
         <dependency>
             <groupId>org.testng</groupId>
@@ -44,7 +49,6 @@
             <artifactId>flamestream-runtime</artifactId>
             <version>1.0-SNAPSHOT</version>
             <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -54,6 +58,24 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${project.build.directory}/lib
+                            </outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

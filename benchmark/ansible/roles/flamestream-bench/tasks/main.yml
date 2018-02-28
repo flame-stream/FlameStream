@@ -1,44 +1,34 @@
 ---
-- name: Clean the bench directory
-  file:
-    path: "{{ bench_dir }}"
-    state: absent
-  tags:
-    - clean
-
-- name: Create the bench dir
-  file:
-    path: "{{ bench_dir }}"
-    state: directory
-  tags: deliver
-
-- name: Copy the bench application
-  copy:
-    src: flamestream-benchmark-1.0-SNAPSHOT-uber.jar
-    dest: "{{ bench_dir }}/bench.jar"
-  tags: deliver
-
 - name: Copy the wiki dump
   copy:
     src: wiki.xml
-    dest: "{{ bench_dir }}/wiki.xml"
-  tags: deliver
+    dest: "{{ flamestream_dir }}/wiki.xml"
 
-- name: Copy the configuraion file
+- name: Copy the deployer file
+  template:
+    src: deployer.conf.j2
+    dest: "{{ flamestream_dir }}/deployer.conf"
+
+- name: Copy the bench configuration file
   template:
     src: bench.conf.j2
-    dest: "{{ bench_dir }}/bench.conf"
-  tags: deliver
+    dest: "{{ flamestream_dir }}/bench.conf"
 
 - name: Start the flamestream bench
   shell: >
-    java -Xms713m -Xmx713m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError \
-    -jar {{ bench_dir }}/bench.jar {{ bench_dir }}/bench.conf \
-    > {{ bench_dir }}/flamestream_bench.log 2>&1
-  tags: run
+    java -Xms500m -Xmx500m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError
+    -cp '{{ flamestream_dir }}/lib/*'
+    com.spbsu.flamestream.example.benchmark.BenchStand
+    {{ flamestream_dir }}/bench.conf {{ flamestream_dir }}/deployer.conf > {{ flamestream_dir }}/bench.log 2>&1
 
 - name: Fetch bench logs
   fetch:
-    src: "{{ bench_dir }}/flamestream_bench.log"
-    dest: flamestream_bench.log
-  tags: run
+    src: "{{ flamestream_dir }}/bench.log"
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/bench.log
+    flat: true
+
+- name: Fetch latencies
+  fetch:
+    src: /tmp/lat.data
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/latency/lat.data
+    flat: true

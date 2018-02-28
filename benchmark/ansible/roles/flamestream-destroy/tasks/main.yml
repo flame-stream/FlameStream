@@ -1,0 +1,15 @@
+---
+- name: Destroy flamstream
+  shell: "cd {{ flamestream_dir }} && bash entrypoint.sh stop"
+
+- name: Fetch replay times
+  fetch:
+    src: /tmp/elements.cnt
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/rate/{{ inventory_hostname }}.cnt
+    flat: true
+
+- name: Fetch worker logs
+  fetch:
+    src: "{{ flamestream_dir }}/worker.log"
+    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/logs/{{ inventory_hostname }}/worker.log
+    flat: true

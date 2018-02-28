@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.edge.akka;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorRefFactory;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Front;
@@ -9,18 +10,21 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
+import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.function.Consumer;
 
-public class AkkaFront implements Front {
+public class AkkaFront extends Front.Stub {
   private final ActorRef innerActor;
 
-  public AkkaFront(SystemEdgeContext context) {
-    this.innerActor = context.refFactory()
-            .actorOf(InnerActor.props(context.edgeId()), context.edgeId() + "-inner");
+  public AkkaFront(EdgeContext edgeContext, ActorRefFactory refFactory) {
+    super(edgeContext.edgeId());
+    this.innerActor = refFactory.actorOf(
+            InnerActor.props(edgeContext.edgeId(), this),
+            edgeContext.edgeId().nodeId() + "-inner"
+    );
   }
 
   @Override
@@ -37,19 +41,25 @@ public class AkkaFront implements Front {
   public void onCheckpoint(GlobalTime to) {
   }
 
+  @Override
+  public GlobalTime currentTime() {
+    return super.currentTime();
+  }
+
   private static class InnerActor extends LoggingActor {
     private final EdgeId frontId;
+    private final AkkaFront akkaFront;
 
     private ActorRef frontHandle = null;
     private Consumer<Object> hole = null;
-    private long prevGlobalTs = 0;
 
-    private InnerActor(EdgeId frontId) {
+    private InnerActor(EdgeId frontId, AkkaFront akkaFront) {
       this.frontId = frontId;
+      this.akkaFront = akkaFront;
     }
 
-    public static Props props(EdgeId frontId) {
-      return Props.create(InnerActor.class, frontId);
+    public static Props props(EdgeId frontId, AkkaFront akkaFront) {
+      return Props.create(InnerActor.class, frontId, akkaFront);
     }
 
     @Override
@@ -83,9 +93,9 @@ public class AkkaFront implements Front {
 
     private void onRaw(RawData<Object> data) {
       if (hole != null) {
-        final PayloadDataItem dataItem = new PayloadDataItem(new Meta(currentTime()), data.data());
+        final PayloadDataItem dataItem = new PayloadDataItem(new Meta(akkaFront.currentTime()), data.data());
         hole.accept(dataItem);
-        hole.accept(new Heartbeat(currentTime()));
+        hole.accept(new Heartbeat(akkaFront.currentTime()));
       } else {
         stash();
       }
@@ -93,15 +103,6 @@ public class AkkaFront implements Front {
       if (frontHandle == null) {
         frontHandle = sender();
       }
-    }
-
-    private GlobalTime currentTime() {
-      long globalTs = System.currentTimeMillis();
-      if (globalTs <= prevGlobalTs) {
-        globalTs = prevGlobalTs + 1;
-      }
-      prevGlobalTs = globalTs;
-      return new GlobalTime(globalTs, frontId);
     }
   }
 

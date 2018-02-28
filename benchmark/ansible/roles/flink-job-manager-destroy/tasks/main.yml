@@ -1,0 +1,3 @@
+---
+- name: Stopping flink jobmanager
+  shell: nohup bash {{ flink_dir }}/bin/jobmanager.sh stop-all

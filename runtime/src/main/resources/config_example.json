@@ -1,0 +1,35 @@
+{
+  "paths": {
+    "worker0": "akka.tcp://worker@localhost:43187/user/watcher/node",
+    "worker1": "akka.tcp://worker@localhost:40227/user/watcher/node",
+    "worker2": "akka.tcp://worker@localhost:39299/user/watcher/node",
+    "worker3": "akka.tcp://worker@localhost:39221/user/watcher/node",
+    "worker4": "akka.tcp://worker@localhost:37029/user/watcher/node"
+  },
+  "ackerLocation": "worker0",
+  "props": {
+    "ranges": {
+      "worker0": {
+        "from": 429496729,
+        "to": 1288490188
+      },
+      "worker1": {
+        "from": 1288490188,
+        "to": 2147483647
+      },
+      "worker2": {
+        "from": -2147483648,
+        "to": -1288490189
+      },
+      "worker3": {
+        "from": -429496730,
+        "to": 429496729
+      },
+      "worker4": {
+        "from": -1288490189,
+        "to": -429496730
+      }
+    },
+    "maxElementsInGraph": 100
+  }
+}

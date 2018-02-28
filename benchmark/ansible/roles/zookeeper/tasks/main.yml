@@ -1,87 +1,35 @@
 ---
-- name: Clean the zookeeper dir exists at {{ zookeeper_dir }}
-  file:
-    path: "{{ zookeeper_dir }}"
-    state: absent
-  tags: clean
-
-- name: Ensure the zookeeper dir exists at {{ zookeeper_dir }}
+- name: Create zookeeper dir exists
   file:
     path: "{{ zookeeper_dir }}"
     state: directory
-  tags: deliver
 
-- name: Clean the tarball dir exists {{ zookeeper_tarball_dir }}
+- name: Create tarball dir
   file:
     path: "{{ zookeeper_tarball_dir }}"
     state: directory
-  tags: clean
 
-- name: Ensure the tarball dir exists {{ zookeeper_tarball_dir }}
-  file:
-    path: "{{ zookeeper_tarball_dir }}"
-    state: directory
-  tags: deliver
-
-- name: Download zk tarball
+- name: Download ZK tarball
   get_url: 
     url: "{{ zookeeper_url }}"
     dest: "{{ zookeeper_tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz"
-  tags: deliver
 
 - name: Unpack the tarball
   command: tar -xf {{ zookeeper_tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz --strip-components=1
   args: 
     chdir: "{{ zookeeper_dir }}" 
     creates: "{{ zookeeper_dir }}/bin"
-  tags: deliver
 
 - name: Configure the zookeeper
   template:
     src: zoo.cfg.j2
     dest: "{{ zookeeper_dir }}/conf/zoo.cfg"
-  tags: deliver
 
-- name: Stop zookeeper
-  shell: "{{ zookeeper_dir }}/bin/zkServer.sh stop"
-  tags: destroy
-
-- name: Clear the zookeeper data directory at {{ zookeeper_data_dir }}
-  file:
-    path: "{{ zookeeper_data_dir }}"
-    state: absent
-  tags: destroy
-
-- name: Create the zookeeper data directory at {{ zookeeper_data_dir }}
-  file:
-    path: "{{ zookeeper_data_dir }}"
-    state: directory
-  tags: bootstrap
-
-- name: Restart zookeeper
+- name: Restart zk
   shell: "{{ zookeeper_dir }}/bin/zkServer.sh restart"
-  tags: bootstrap
 
-- name: Copy dns json
-  template:
-    src: dns.json.j2
-    dest: "{{ zookeeper_dir }}/dns.json"
-  tags: bootstrap
+- name: Clean graphs
+  shell: "{{ zookeeper_cli }} rmr /graphs"
 
-- name: Copy fronts json
-  template:
-    src: fronts.json.j2
-    dest: "{{ zookeeper_dir }}/fronts.json"
-  tags: bootstrap
-
-- name: Create ticks dir
-  shell: "{{ zookeeper_cli }} create /ticks \"\""
-  tags: bootstrap
-
-- name: Deploy dns
-  shell: "{{ zookeeper_cli }} create /dns \"$(cat {{ zookeeper_dir }}/dns.json)\""
-  tags: bootstrap
-
-- name: Deploy fronts
-  shell: "{{ zookeeper_cli }} create /fronts \"$(cat {{ zookeeper_dir }}/fronts.json)\""
-  tags: bootstrap
+- name: Clean configs
+  shell: "{{ zookeeper_cli }} rmr /config"

@@ -1,12 +1,10 @@
 benchmark {
-  manager-hostname = {{ groups['manager'][0] }}
-  manager-port = 6123
-  source-port = 12345
-  sink-port = 12346
-  bench-hostname = {{ inventory_hostname }}
-  jars = ["{{ bench_dir }}/bench.jar"]
-  input-path = {{ bench_dir }}/wiki.xml
-  limit = 10000,
-  parallelism = 10,
-  rate = 100
+  bench-host = "{{ groups['bench'][0] }}"
+  input-host = "{{ groups['input'][0] }}"
+  bench-source-port = 4567
+  bench-sink-port = 5678
+
+  wiki-dump-path = "{{ flink_dir }}/wiki.xml"
+  sleep-between-docs-ms = {{ rate }}
+  validator = com.spbsu.flamestream.example.benchmark.validators.Wiki10000Validator
 }

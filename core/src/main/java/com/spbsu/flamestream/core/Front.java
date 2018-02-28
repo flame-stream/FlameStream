@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.core;
 
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
 import java.util.function.Consumer;
@@ -14,4 +15,22 @@ public interface Front {
   void onRequestNext();
 
   void onCheckpoint(GlobalTime to);
+
+  abstract class Stub implements Front {
+    protected final EdgeId edgeId;
+    private long prevGlobalTs = 0;
+
+    protected Stub(EdgeId edgeId) {
+      this.edgeId = edgeId;
+    }
+
+    protected synchronized GlobalTime currentTime() {
+      long globalTs = System.currentTimeMillis();
+      if (globalTs <= prevGlobalTs) {
+        globalTs = prevGlobalTs + 1;
+      }
+      prevGlobalTs = globalTs;
+      return new GlobalTime(globalTs, edgeId);
+    }
+  }
 }

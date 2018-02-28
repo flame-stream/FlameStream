@@ -1,0 +1,12 @@
+rate: 50
+base_dir: /opt
+
+flamestream_dir: "{{ base_dir }}/flamestream"
+zookeeper_dir: "{{ base_dir }}/zookeeper"
+bench_dir: "{{ base_dir }}/flamestream"
+flink_dir: "{{ base_dir }}/flink"
+
+zookeeper_version: 3.4.10
+zookeeper_client_port: 2181
+
+flamestream_worker_port: 5412

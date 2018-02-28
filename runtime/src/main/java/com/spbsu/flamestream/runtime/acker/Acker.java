@@ -10,10 +10,12 @@ import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
+import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.acker.table.AckTable;
 import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
 import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,14 +46,12 @@ import java.util.Set;
 public class Acker extends LoggingActor {
   private static final int WINDOW = 1;
   private static final int SIZE = 100000;
-  private final long defaultMinimalTime;
-
+  private long defaultMinimalTime;
 
   private final Set<ActorRef> minTimeSubscribers = new HashSet<>();
 
   private final AckTable table;
   private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
-  private final AckerStatistics stat = new AckerStatistics();
   private final AttachRegistry registry;
 
   private GlobalTime currentMin = GlobalTime.MIN;
@@ -72,6 +72,7 @@ public class Acker extends LoggingActor {
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
+            .match(UnregisterFront.class, unregisterFront -> unregisterFront(unregisterFront.frontId()))
             .build();
   }
 
@@ -86,6 +87,12 @@ public class Acker extends LoggingActor {
     sender().tell(new FrontTicket(new GlobalTime(min.time(), frontId)), self());
   }
 
+  private void unregisterFront(EdgeId frontId) {
+    log().info("Unregistering front {}", frontId);
+    defaultMinimalTime = Math.max(defaultMinimalTime, maxHeartbeats.get(frontId).time());
+    maxHeartbeats.remove(frontId);
+  }
+
   private void handleHeartBeat(Heartbeat heartbeat) {
     final GlobalTime time = heartbeat.time();
     final GlobalTime previousHeartbeat = maxHeartbeats.get(heartbeat.time().frontId());
@@ -96,21 +103,15 @@ public class Acker extends LoggingActor {
     checkMinTime();
   }
 
-  @Override
-  public void postStop() {
-    super.postStop();
-    log().info("Acker statistics: {}", stat);
-  }
+  private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("ack-receive");
 
   private void handleAck(Ack ack) {
-    //log().info("ACKING {}", ack);
+    tracer.log(ack.xor());
+
     minTimeSubscribers.add(sender());
     final long start = System.nanoTime();
     if (table.ack(ack.time().time(), ack.xor())) {
       checkMinTime();
-      stat.recordReleasingAck(System.nanoTime() - start);
-    } else {
-      stat.recordNormalAck(System.nanoTime() - start);
     }
   }
 
@@ -124,37 +125,13 @@ public class Acker extends LoggingActor {
   }
 
   private GlobalTime minAmongTables() {
+    final GlobalTime minHeartbeat;
     if (maxHeartbeats.isEmpty()) {
-      return new GlobalTime(defaultMinimalTime, EdgeId.MIN);
+      minHeartbeat = new GlobalTime(defaultMinimalTime, EdgeId.MIN);
+    } else {
+      minHeartbeat = Collections.min(maxHeartbeats.values());
     }
-    final GlobalTime minHeartbeat = Collections.min(maxHeartbeats.values());
     final long minTime = table.tryPromote(minHeartbeat.time());
     return new GlobalTime(minTime, EdgeId.MIN);
-  }
-
-  private static final class AckerStatistics implements Statistics {
-    private final LongSummaryStatistics normalAck = new LongSummaryStatistics();
-    private final LongSummaryStatistics releasingAck = new LongSummaryStatistics();
-
-    void recordNormalAck(long ts) {
-      normalAck.accept(ts);
-    }
-
-    void recordReleasingAck(long ts) {
-      releasingAck.accept(ts);
-    }
-
-    @Override
-    public Map<String, Double> metrics() {
-      final Map<String, Double> result = new HashMap<>();
-      result.putAll(Statistics.asMap("Normal ack duration", normalAck));
-      result.putAll(Statistics.asMap("Releasing ack duration", releasingAck));
-      return result;
-    }
-
-    @Override
-    public String toString() {
-      return metrics().toString();
-    }
   }
 }
