@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.acker.AttachRegistry;
+import com.spbsu.flamestream.runtime.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
@@ -132,7 +132,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient 
     }
   }
 
-  public class ZooKeeperFlameClient implements AttachRegistry {
+  public class ZooKeeperFlameClient implements Registry {
     private final String graphPath;
     private final Set<String> seenFronts = Collections.synchronizedSet(new HashSet<>());
     private final Set<String> seenRears = Collections.synchronizedSet(new HashSet<>());
@@ -322,6 +322,17 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient 
       } catch (KeeperException | InterruptedException e) {
         throw new RuntimeException(e);
       }
+    }
+
+    @Override
+    public void committed(long time) {
+      // TODO: 2/28/18
+    }
+
+    @Override
+    public long lastCommit() {
+      // TODO: 2/28/18
+      return 0;
     }
   }
 

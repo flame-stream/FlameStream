@@ -6,9 +6,14 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
-import com.spbsu.flamestream.runtime.acker.api.registry.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.acker.api.commit.Committed;
+import com.spbsu.flamestream.runtime.acker.api.commit.GimmeTime;
+import com.spbsu.flamestream.runtime.acker.api.commit.LastCommit;
+import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
+import com.spbsu.flamestream.runtime.acker.api.commit.Ready;
+import com.spbsu.flamestream.runtime.acker.api.registry.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.registry.RegisterFront;
 import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.acker.table.AckTable;
@@ -44,35 +49,83 @@ import java.util.Set;
 public class Acker extends LoggingActor {
   private static final int WINDOW = 1;
   private static final int SIZE = 100000;
-  private long defaultMinimalTime;
+  private static final int MIN_TIMES_TO_COMMIT = 500;
+  private final int managersCount;
 
-  private final Set<ActorRef> minTimeSubscribers = new HashSet<>();
+  private final Set<ActorRef> managers = new HashSet<>();
 
   private final AckTable table;
   private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
-  private final AttachRegistry registry;
+  private final Registry registry;
 
-  private GlobalTime currentMin = GlobalTime.MIN;
-  private GlobalTime lastCommit = GlobalTime.MIN;
+  private long committers;
 
-  private Acker(long defaultMinimalTime, AttachRegistry registry) {
+  private long defaultMinimalTime;
+  private GlobalTime lastMinTime = GlobalTime.MIN;
+  private int minTimesSinceLastCommit = 0;
+  private GlobalTime lastPrepareTime = GlobalTime.MIN;
+  private int committed;
+
+  private Acker(int managersCount, long defaultMinimalTime, Registry registry) {
     this.table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW);
     this.defaultMinimalTime = defaultMinimalTime;
     this.registry = registry;
+    this.managersCount = managersCount;
   }
 
-  public static Props props(long defaultMinimalTime, AttachRegistry registry) {
-    return Props.create(Acker.class, defaultMinimalTime, registry);
+  public static Props props(int managersCount, long defaultMinimalTime, Registry registry) {
+    return Props.create(Acker.class, managersCount, defaultMinimalTime, registry);
   }
 
   @Override
   public Receive createReceive() {
+    return ReceiveBuilder.create()
+            .match(GimmeTime.class, gimmeTime -> {
+              log().info("Got gimme '{}'", gimmeTime);
+              committers += gimmeTime.awaitCommittedCount();
+              sender().tell(new LastCommit(new GlobalTime(registry.lastCommit(), EdgeId.MIN)), self());
+            })
+            .match(Ready.class, ready -> {
+              managers.add(sender());
+              if (managers.size() == managersCount) {
+                unstashAll();
+                getContext().become(acking());
+              }
+            })
+            .matchAny(m -> stash())
+            .build();
+  }
+
+  private Receive acking() {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
             .match(UnregisterFront.class, unregisterFront -> unregisterFront(unregisterFront.frontId()))
             .build();
+  }
+
+  private Receive committing() {
+    return acking().orElse(ReceiveBuilder.create()
+            .match(Committed.class, c -> {
+              committed++;
+              log().info("Manager '{}' has prepared", sender());
+              if (committed == committers) {
+                log().info("All managers have prepared, committing");
+                registry.committed(lastPrepareTime.time());
+                committed = 0;
+                minTimesSinceLastCommit = 0;
+                getContext().unbecome();
+              }
+            })
+            .build());
+  }
+
+  private void commit(GlobalTime time) {
+    log().info("Initiating commit for time '{}'", time);
+    managers.forEach(m -> m.tell(new Prepare(time), self()));
+    lastPrepareTime = time;
+    getContext().become(committing(), false);
   }
 
   private void registerFront(EdgeId frontId) {
@@ -87,7 +140,7 @@ public class Acker extends LoggingActor {
 
       sender().tell(new FrontTicket(new GlobalTime(min.time(), frontId)), self());
     } else {
-      final long startTime = Math.max(registeredTime, lastCommit.time());
+      final long startTime = Math.max(registeredTime, registry.lastCommit());
       log().info("Front '{}' has been registered already, starting from '{}'", frontId, startTime);
 
       sender().tell(new FrontTicket(new GlobalTime(startTime, frontId)), self());
@@ -114,9 +167,7 @@ public class Acker extends LoggingActor {
 
   private void handleAck(Ack ack) {
     tracer.log(ack.xor());
-
-    minTimeSubscribers.add(sender());
-    final long start = System.nanoTime();
+    managers.add(sender());
     if (table.ack(ack.time().time(), ack.xor())) {
       checkMinTime();
     }
@@ -124,10 +175,15 @@ public class Acker extends LoggingActor {
 
   private void checkMinTime() {
     final GlobalTime minAmongTables = minAmongTables();
-    if (minAmongTables.compareTo(currentMin) > 0) {
-      this.currentMin = minAmongTables;
-      log().debug("New min time: {}", currentMin);
-      minTimeSubscribers.forEach(s -> s.tell(new MinTimeUpdate(currentMin), self()));
+    if (minAmongTables.compareTo(lastMinTime) > 0) {
+      this.lastMinTime = minAmongTables;
+      log().debug("New min time: {}", lastMinTime);
+      managers.forEach(s -> s.tell(new MinTimeUpdate(lastMinTime), self()));
+      minTimesSinceLastCommit++;
+      // Counter will be zeroed only after commit is done
+      if (minTimesSinceLastCommit == MIN_TIMES_TO_COMMIT) {
+        commit(minAmongTables);
+      }
     }
   }
 

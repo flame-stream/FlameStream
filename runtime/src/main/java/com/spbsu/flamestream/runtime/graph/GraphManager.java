@@ -13,6 +13,7 @@ import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.commit.GimmeTime;
 import com.spbsu.flamestream.runtime.acker.api.commit.LastCommit;
 import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
+import com.spbsu.flamestream.runtime.acker.api.commit.Ready;
 import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
@@ -74,6 +75,7 @@ public class GraphManager extends LoggingActor {
   private Receive deploying() {
     return ReceiveBuilder.create()
             .match(LastCommit.class, lastCommit -> {
+              log().info("Received last commit '{}'", lastCommit);
               graph.components().forEach(c -> {
                 final Set<Graph.Vertex> vertexSet = c.collect(Collectors.toSet());
 
@@ -103,6 +105,7 @@ public class GraphManager extends LoggingActor {
                         .ifPresent(v -> sinkComponent = component);
               });
 
+              acker.tell(new Ready(), self());
               unstashAll();
               getContext().become(managing());
             })

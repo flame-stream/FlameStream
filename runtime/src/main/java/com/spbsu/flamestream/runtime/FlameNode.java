@@ -5,7 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.acker.Acker;
-import com.spbsu.flamestream.runtime.acker.AttachRegistry;
+import com.spbsu.flamestream.runtime.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
@@ -22,11 +22,11 @@ public class FlameNode extends LoggingActor {
   private final ActorRef edgeManager;
   private final ClusterConfig config;
 
-  private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, AttachRegistry attachRegistry) {
+  private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, Registry registry) {
     this.config = config;
     final ActorRef acker;
     if (id.equals(config.ackerLocation())) {
-      acker = context().actorOf(Acker.props(System.currentTimeMillis(), attachRegistry), "acker");
+      acker = context().actorOf(Acker.props(config.paths().size(), System.currentTimeMillis(), registry), "acker");
     } else {
       acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
     }
@@ -42,8 +42,8 @@ public class FlameNode extends LoggingActor {
     this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, graph), "edge");
   }
 
-  public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, AttachRegistry attachRegistry) {
-    return Props.create(FlameNode.class, id, initialGraph, initialConfig, attachRegistry);
+  public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, Registry registry) {
+    return Props.create(FlameNode.class, id, initialGraph, initialConfig, registry);
   }
 
   @Override

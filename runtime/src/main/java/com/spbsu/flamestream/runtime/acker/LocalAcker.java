@@ -56,9 +56,8 @@ public class LocalAcker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, heartbeatCache::add)
-            .match(RegisterFront.class, registerFront -> globalAcker.forward(registerFront, context()))
-            .match(UnregisterFront.class, unregisterFront -> globalAcker.forward(unregisterFront, context()))
             .match(Flush.class, flush -> flush())
+            .matchAny(m -> globalAcker.forward(m, context()))
             .build();
   }
 
