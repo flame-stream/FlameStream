@@ -307,44 +307,59 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient 
         throw new RuntimeException(e);
       }
     }
-  }
 
-  private void createIfNotExists(String path) throws KeeperException, InterruptedException {
-    try {
-      zooKeeper.create(
-              path,
-              new byte[0],
-              ZKUtil.parseACLs("world:anyone:crd"),
-              CreateMode.PERSISTENT
-      );
-    } catch (KeeperException k) {
-      if (k.code() != KeeperException.Code.NODEEXISTS) {
-        throw k;
+    @Override
+    public long registeredTime(EdgeId frontId) {
+      try {
+        final String frontPath = graphPath + "/fronts/" + frontId.edgeName() + '/' + frontId.nodeId(),
+        final Stat exists = zooKeeper.exists(frontPath, false);
+        if (exists != null) {
+          final byte[] data = zooKeeper.getData(frontPath, false, null);
+          return ByteBuffer.wrap(data).getLong();
+        } else {
+          return -1;
+        }
+      } catch (KeeperException | InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    private void createIfNotExists(String path) throws KeeperException, InterruptedException {
+      try {
+        zooKeeper.create(
+                path,
+                new byte[0],
+                ZKUtil.parseACLs("world:anyone:crd"),
+                CreateMode.PERSISTENT
+        );
+      } catch (KeeperException k) {
+        if (k.code() != KeeperException.Code.NODEEXISTS) {
+          throw k;
+        }
+      }
+    }
+
+    @SuppressWarnings("serial")
+    private static class ActorPathDes extends StdDeserializer<ActorPath> {
+      protected ActorPathDes(Class<?> vc) {
+        super(vc);
+      }
+
+      @Override
+      public ActorPath deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        return ActorPaths.fromString(p.getText());
+      }
+    }
+
+    @SuppressWarnings("serial")
+    private static class ActorPathSerializer extends StdSerializer<ActorPath> {
+      protected ActorPathSerializer(Class<ActorPath> t) {
+        super(t);
+      }
+
+      @Override
+      public void serialize(ActorPath value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+        gen.writeString(value.toSerializationFormat());
       }
     }
   }
-
-  @SuppressWarnings("serial")
-  private static class ActorPathDes extends StdDeserializer<ActorPath> {
-    protected ActorPathDes(Class<?> vc) {
-      super(vc);
-    }
-
-    @Override
-    public ActorPath deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-      return ActorPaths.fromString(p.getText());
-    }
-  }
-
-  @SuppressWarnings("serial")
-  private static class ActorPathSerializer extends StdSerializer<ActorPath> {
-    protected ActorPathSerializer(Class<ActorPath> t) {
-      super(t);
-    }
-
-    @Override
-    public void serialize(ActorPath value, JsonGenerator gen, SerializerProvider provider) throws IOException {
-      gen.writeString(value.toSerializationFormat());
-    }
-  }
-}

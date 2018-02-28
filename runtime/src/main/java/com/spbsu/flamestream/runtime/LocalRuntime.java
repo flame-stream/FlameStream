@@ -126,5 +126,10 @@ public class LocalRuntime implements FlameRuntime {
     public void register(EdgeId frontId, long attachTimestamp) {
       linearizableCollection.put(frontId, attachTimestamp);
     }
+
+    @Override
+    public long registeredTime(EdgeId frontId) {
+      return linearizableCollection.getOrDefault(frontId, -1L);
+    }
   }
 }

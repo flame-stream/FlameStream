@@ -6,21 +6,19 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
-import com.spbsu.flamestream.runtime.acker.api.FrontTicket;
+import com.spbsu.flamestream.runtime.acker.api.registry.FrontTicket;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
-import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
-import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
+import com.spbsu.flamestream.runtime.acker.api.registry.RegisterFront;
+import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.acker.table.AckTable;
 import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
-import com.spbsu.flamestream.runtime.utils.Statistics;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Set;
 
@@ -55,6 +53,7 @@ public class Acker extends LoggingActor {
   private final AttachRegistry registry;
 
   private GlobalTime currentMin = GlobalTime.MIN;
+  private GlobalTime lastCommit = GlobalTime.MIN;
 
   private Acker(long defaultMinimalTime, AttachRegistry registry) {
     this.table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW);
@@ -77,14 +76,22 @@ public class Acker extends LoggingActor {
   }
 
   private void registerFront(EdgeId frontId) {
-    final GlobalTime min = minAmongTables();
+    final long registeredTime = registry.registeredTime(frontId);
+    if (registeredTime == -1) {
+      final GlobalTime min = minAmongTables();
 
-    log().info("Registering timestamp {} for {}", min, frontId);
-    maxHeartbeats.put(frontId, min);
-    registry.register(frontId, min.time());
-    log().info("Front instance \"{}\" has been registered, sending ticket", frontId);
+      log().info("Registering timestamp {} for {}", min, frontId);
+      maxHeartbeats.put(frontId, min);
+      registry.register(frontId, min.time());
+      log().info("Front instance \"{}\" has been registered, sending ticket", frontId);
 
-    sender().tell(new FrontTicket(new GlobalTime(min.time(), frontId)), self());
+      sender().tell(new FrontTicket(new GlobalTime(min.time(), frontId)), self());
+    } else {
+      final long startTime = Math.max(registeredTime, lastCommit.time());
+      log().info("Front '{}' has been registered already, starting from '{}'", frontId, startTime);
+
+      sender().tell(new FrontTicket(new GlobalTime(startTime, frontId)), self());
+    }
   }
 
   private void unregisterFront(EdgeId frontId) {
