@@ -42,7 +42,7 @@ public class GroupingJoba implements Joba {
   }
 
   @Override
-  public void onMinTime(GlobalTime globalTime) {
+  public void onPrepareCommit(GlobalTime globalTime) {
     currentMinTime = globalTime;
   }
 

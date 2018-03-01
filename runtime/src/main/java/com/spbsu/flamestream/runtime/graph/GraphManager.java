@@ -10,10 +10,14 @@ import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
-import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
-import com.spbsu.flamestream.runtime.graph.api.NewRear;
+import com.spbsu.flamestream.runtime.acker.api.commit.GimmeTime;
+import com.spbsu.flamestream.runtime.acker.api.commit.LastCommit;
+import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
+import com.spbsu.flamestream.runtime.acker.api.commit.Ready;
+import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
+import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
@@ -61,6 +65,17 @@ public class GraphManager extends LoggingActor {
                       .forEach((key, value) -> routerMap.put(value.asRange(), (ActorRef) managers.get(key)));
               routes.putAll(new ListIntRangeMap<>(routerMap));
 
+              acker.tell(new GimmeTime(graph.components().count()), self());
+              getContext().become(deploying());
+            })
+            .matchAny(m -> stash())
+            .build();
+  }
+
+  private Receive deploying() {
+    return ReceiveBuilder.create()
+            .match(LastCommit.class, lastCommit -> {
+              log().info("Received last commit '{}'", lastCommit);
               graph.components().forEach(c -> {
                 final Set<Graph.Vertex> vertexSet = c.collect(Collectors.toSet());
 
@@ -90,6 +105,7 @@ public class GraphManager extends LoggingActor {
                         .ifPresent(v -> sinkComponent = component);
               });
 
+              acker.tell(new Ready(), self());
               unstashAll();
               getContext().become(managing());
             })
@@ -108,6 +124,10 @@ public class GraphManager extends LoggingActor {
             .match(
                     MinTimeUpdate.class,
                     minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
+            )
+            .match(
+                    Prepare.class,
+                    prepare -> components.forEach(c -> c.forward(prepare, context()))
             )
             .match(NewRear.class, newRear -> sinkComponent.forward(newRear, context()))
             .match(Heartbeat.class, gt -> sourceComponent.forward(gt, context()))

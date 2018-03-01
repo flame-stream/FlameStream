@@ -10,7 +10,7 @@ import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
-import com.spbsu.flamestream.runtime.acker.AttachRegistry;
+import com.spbsu.flamestream.runtime.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashRange;
@@ -81,7 +81,7 @@ public class LocalRuntime implements FlameRuntime {
             "node-0",
             new ComputationProps(ranges, maxElementsInGraph)
     );
-    final AttachRegistry registry = new InMemoryRegistry();
+    final Registry registry = new InMemoryRegistry();
 
     final List<ActorRef> nodes = paths.keySet().stream()
             .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry)
@@ -119,12 +119,28 @@ public class LocalRuntime implements FlameRuntime {
     }
   }
 
-  private static class InMemoryRegistry implements AttachRegistry {
+  private static class InMemoryRegistry implements Registry {
     private final Map<EdgeId, Long> linearizableCollection = Collections.synchronizedMap(new HashMap<>());
+    private long lastCommit = 0;
 
     @Override
     public void register(EdgeId frontId, long attachTimestamp) {
       linearizableCollection.put(frontId, attachTimestamp);
+    }
+
+    @Override
+    public long registeredTime(EdgeId frontId) {
+      return linearizableCollection.getOrDefault(frontId, -1L);
+    }
+
+    @Override
+    public void committed(long time) {
+      lastCommit = time;
+    }
+
+    @Override
+    public long lastCommit() {
+      return lastCommit;
     }
   }
 }
