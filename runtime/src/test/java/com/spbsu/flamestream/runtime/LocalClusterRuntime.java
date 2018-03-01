@@ -9,7 +9,8 @@ import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
-import com.spbsu.flamestream.runtime.config.HashRange;
+import com.spbsu.flamestream.runtime.config.HashGroup;
+import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.server.ZooKeeperApplication;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -86,10 +88,10 @@ public class LocalClusterRuntime implements FlameRuntime {
   private ClusterConfig config(Map<String, ActorPath> workers, int maxElementsInGraph) {
     final String ackerLocation = workers.keySet().stream().findAny().orElseThrow(IllegalArgumentException::new);
 
-    final Map<String, HashRange> rangeMap = new HashMap<>();
-    final List<HashRange> ranges = HashRange.covering(workers.size()).collect(Collectors.toList());
+    final Map<String, HashGroup> rangeMap = new HashMap<>();
+    final List<HashUnit> ranges = HashUnit.covering(workers.size()).collect(Collectors.toList());
     workers.keySet().forEach(name -> {
-      rangeMap.put(name, ranges.get(0));
+      rangeMap.put(name, new HashGroup(Collections.singleton(ranges.get(0))));
       ranges.remove(0);
     });
     assert ranges.isEmpty();

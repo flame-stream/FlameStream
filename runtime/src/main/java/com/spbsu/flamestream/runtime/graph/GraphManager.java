@@ -16,12 +16,12 @@ import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.acker.api.commit.Ready;
 import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
+import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
-import org.apache.commons.lang.math.IntRange;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,9 +60,9 @@ public class GraphManager extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Map.class, managers -> {
               log().info("Finishing constructor");
-              final Map<IntRange, ActorRef> routerMap = new HashMap<>();
-              computationProps.ranges()
-                      .forEach((key, value) -> routerMap.put(value.asRange(), (ActorRef) managers.get(key)));
+              final Map<HashGroup, ActorRef> routerMap = new HashMap<>();
+              computationProps.hashGroups()
+                      .forEach((key, value) -> routerMap.put(value, (ActorRef) managers.get(key)));
               routes.putAll(new ListIntRangeMap<>(routerMap));
 
               acker.tell(new GimmeTime(graph.components().count()), self());

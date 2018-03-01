@@ -13,7 +13,8 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
-import com.spbsu.flamestream.runtime.config.HashRange;
+import com.spbsu.flamestream.runtime.config.HashGroup;
+import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
@@ -35,10 +36,14 @@ public class LocalRuntime implements FlameRuntime {
   private final ActorSystem system;
 
   public LocalRuntime(int parallelism) {
-    this(ActorSystem.create("local-runtime",
-            ConfigFactory.load("local")),
+    this(
+            ActorSystem.create(
+                    "local-runtime",
+                    ConfigFactory.load("local")
+            ),
             parallelism,
-            DEFAULT_MAX_ELEMENTS_IN_GRAPH);
+            DEFAULT_MAX_ELEMENTS_IN_GRAPH
+    );
   }
 
   public LocalRuntime(int parallelism, int maxElementsInGraph) {
@@ -61,19 +66,19 @@ public class LocalRuntime implements FlameRuntime {
 
   @Override
   public Flame run(Graph g) {
-    final List<HashRange> ra = HashRange.covering(parallelism).collect(Collectors.toList());
+    final List<HashUnit> ra = HashUnit.covering(parallelism).collect(Collectors.toList());
     final Map<String, ActorPath> paths = new HashMap<>();
-    final Map<String, HashRange> ranges = new HashMap<>();
+    final Map<String, HashGroup> ranges = new HashMap<>();
     for (int i = 0; i < parallelism; ++i) {
       final String id = "node-" + i;
-      final HashRange range = ra.get(i);
+      final HashUnit range = ra.get(i);
       paths.put(
               id,
               RootActorPath.apply(Address.apply("akka", system.name()), "/")
                       .child("user")
                       .child(id)
       );
-      ranges.put(id, range);
+      ranges.put(id, new HashGroup(Collections.singleton(range)));
     }
 
     final ClusterConfig clusterConfig = new ClusterConfig(

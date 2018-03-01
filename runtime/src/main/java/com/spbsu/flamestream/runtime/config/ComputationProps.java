@@ -7,18 +7,18 @@ import java.util.Map;
 
 public class ComputationProps {
   private final int maxElementsInGraph;
-  private final Map<String, HashRange> ranges;
+  private final Map<String, HashGroup> hashGroups;
 
   @JsonCreator
-  public ComputationProps(@JsonProperty("ranges") Map<String, HashRange> ranges,
+  public ComputationProps(@JsonProperty("hashGroups") Map<String, HashGroup> hashGroups,
                           @JsonProperty("maxElementsInGraph") int maxElementsInGraph) {
-    this.ranges = ranges;
+    this.hashGroups = hashGroups;
     this.maxElementsInGraph = maxElementsInGraph;
   }
 
   @JsonProperty
-  public Map<String, HashRange> ranges() {
-    return ranges;
+  public Map<String, HashGroup> hashGroups() {
+    return hashGroups;
   }
 
   @JsonProperty
@@ -29,7 +29,7 @@ public class ComputationProps {
   @Override
   public String toString() {
     return "ComputationLayout{" +
-            "ranges=" + ranges +
+            "hashGroups=" + hashGroups +
             '}';
   }
 }

@@ -9,7 +9,8 @@ import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;
-import com.spbsu.flamestream.runtime.config.HashRange;
+import com.spbsu.flamestream.runtime.config.HashGroup;
+import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,14 +47,14 @@ public class ConfigDeployer {
       paths.put(s, path);
     });
 
-    final Map<String, HashRange> ranges = new HashMap<>();
-    final List<HashRange> covering = HashRange.covering(paths.size() - 1)
+    final Map<String, HashGroup> ranges = new HashMap<>();
+    final List<HashUnit> covering = HashUnit.covering(paths.size() - 1)
             .collect(Collectors.toCollection(ArrayList::new));
     paths.keySet().forEach(s -> {
       if (s.equals(config.ackerLocation)) {
-        ranges.put(s, new HashRange(0, 0));
+        ranges.put(s, new HashGroup(Collections.singleton(new HashUnit(0, 0))));
       } else {
-        ranges.put(s, covering.get(0));
+        ranges.put(s, new HashGroup(Collections.singleton(covering.get(0))));
         covering.remove(0);
       }
     });

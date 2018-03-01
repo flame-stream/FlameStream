@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.runtime.utils.collections;
 
-import org.apache.commons.lang.math.IntRange;
+import com.spbsu.flamestream.runtime.config.HashGroup;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -16,7 +16,7 @@ public class ListIntRangeMap<T> implements IntRangeMap<T> {
     mapping = new HashSet<>();
   }
 
-  public ListIntRangeMap(Map<IntRange, T> nodeMapping) {
+  public ListIntRangeMap(Map<HashGroup, T> nodeMapping) {
     this.mapping = nodeMapping.entrySet()
             .stream()
             .map(e -> new Entry<>(e.getKey(), e.getValue()))
@@ -26,12 +26,11 @@ public class ListIntRangeMap<T> implements IntRangeMap<T> {
   @Override
   public T get(int key) {
     for (Entry<T> entry : mapping) {
-      // FIXME: 24.12.2017 possible bug?
-      if (entry.range.containsInteger(key)) {
+      if (entry.range.covers(key)) {
         return entry.node;
       }
     }
-
+    
     throw new NoSuchElementException("No value found for key " + key);
   }
 
@@ -46,10 +45,10 @@ public class ListIntRangeMap<T> implements IntRangeMap<T> {
   }
 
   public static final class Entry<T> {
-    final IntRange range;
+    final HashGroup range;
     final T node;
 
-    private Entry(IntRange range, T node) {
+    private Entry(HashGroup range, T node) {
       this.range = range;
       this.node = node;
     }
