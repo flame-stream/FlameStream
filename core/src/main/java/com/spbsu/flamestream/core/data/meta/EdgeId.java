@@ -63,6 +63,12 @@ public class EdgeId implements Comparable<EdgeId> {
 
   @Override
   public int compareTo(EdgeId o) {
+    if (o == MIN) {
+      return 1;
+    } else if (o == MAX) {
+      return -1;
+    }
+
     if (edgeName.compareTo(o.edgeName) < 0) {
       return -1;
     } else if (edgeName.compareTo(o.edgeName) > 0) {
