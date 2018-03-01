@@ -97,7 +97,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     doubleGroupingTest(1);
   }
 
-  @Test(invocationCount = 10)
+  @Test(invocationCount = 100)
   public void multipleWorkersTest() throws InterruptedException {
     doubleGroupingTest(4);
   }
