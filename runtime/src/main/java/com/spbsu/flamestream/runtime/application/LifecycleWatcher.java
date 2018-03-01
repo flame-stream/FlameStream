@@ -8,6 +8,7 @@ import com.spbsu.flamestream.runtime.FlameNode;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.state.InMemStateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
@@ -85,7 +86,8 @@ public class LifecycleWatcher extends LoggingActor {
     final ClusterConfig config = client.config().withChildPath(flameClient.name());
     final Graph g = flameClient.graph();
     log().info("Creating node with watchGraphs: '{}', config: '{}'", g, config);
-    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient).withDispatcher("resolver-dispatcher"), flameClient.name());
+    // FIXME: 3/1/18 add real storage
+    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient, new InMemStateStorage()).withDispatcher("resolver-dispatcher"), flameClient.name());
     nodes.put(flameClient.name(), node);
 
     final Set<AttachFront<?>> initialFronts = flameClient.fronts(newFronts ->

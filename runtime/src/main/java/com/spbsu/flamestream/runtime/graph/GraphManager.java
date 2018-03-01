@@ -17,11 +17,15 @@ import com.spbsu.flamestream.runtime.acker.api.commit.Ready;
 import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashGroup;
+import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
+import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
+import com.spbsu.flamestream.runtime.graph.state.GroupingState;
+import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
-import com.spbsu.flamestream.runtime.utils.collections.ListIntRangeMap;
+import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
+import com.spbsu.flamestream.runtime.utils.collections.ListHashUnitMap;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,26 +37,35 @@ public class GraphManager extends LoggingActor {
   private final Graph graph;
   private final ActorRef acker;
   private final ComputationProps computationProps;
+  private final StateStorage storage;
+  private final String nodeId;
 
   private ActorRef sourceComponent;
   private ActorRef sinkComponent;
 
-  private final IntRangeMap<ActorRef> routes = new ListIntRangeMap<>();
+  private final HashUnitMap<ActorRef> routes = new ListHashUnitMap<>();
   private final Map<Destination, ActorRef> verticesComponents = new HashMap<>();
   private final Set<ActorRef> components = new HashSet<>();
 
-  private GraphManager(Graph graph,
+  private GraphManager(String nodeId,
+                       Graph graph,
                        ActorRef acker,
-                       ComputationProps computationProps) {
+                       ComputationProps computationProps,
+                       StateStorage storage) {
+    this.nodeId = nodeId;
+    this.storage = storage;
     this.computationProps = computationProps;
     this.graph = graph;
     this.acker = context().actorOf(LocalAcker.props(acker), "local-acker");
   }
 
-  public static Props props(Graph graph,
-                            ActorRef acker,
-                            ComputationProps layout) {
-    return Props.create(GraphManager.class, graph, acker, layout);
+  public static Props props(
+          String nodeId,
+          Graph graph,
+          ActorRef acker,
+          ComputationProps layout,
+          StateStorage storage) {
+    return Props.create(GraphManager.class, nodeId, graph, acker, layout, storage);
   }
 
   @Override
@@ -60,10 +73,14 @@ public class GraphManager extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Map.class, managers -> {
               log().info("Finishing constructor");
-              final Map<HashGroup, ActorRef> routerMap = new HashMap<>();
+              final Map<HashUnit, ActorRef> routerMap = new HashMap<>();
               computationProps.hashGroups()
-                      .forEach((key, value) -> routerMap.put(value, (ActorRef) managers.get(key)));
-              routes.putAll(new ListIntRangeMap<>(routerMap));
+                      .forEach((key, value) -> {
+                        value.units().forEach(unit -> {
+                          routerMap.put(unit, (ActorRef) managers.get(key));
+                        });
+                      });
+              routes.putAll(routerMap);
 
               acker.tell(new GimmeTime(graph.components().count()), self());
               getContext().become(deploying());
@@ -76,8 +93,30 @@ public class GraphManager extends LoggingActor {
     return ReceiveBuilder.create()
             .match(LastCommit.class, lastCommit -> {
               log().info("Received last commit '{}'", lastCommit);
+              final HashGroup localGroup = computationProps.hashGroups().get(nodeId);
+
+              final Map<String, GroupGroupingState> stateByVertex = new HashMap<>();
+              for (final HashUnit unit : localGroup.units()) {
+                final Map<String, GroupingState> unitState = storage.stateFor(
+                        unit,
+                        lastCommit.globalTime()
+                );
+                unitState.forEach((vertexId, groupingState) -> {
+                  stateByVertex.putIfAbsent(vertexId, new GroupGroupingState());
+                  stateByVertex.get(vertexId).addUnitState(unit, groupingState);
+                });
+              }
+
               graph.components().forEach(c -> {
                 final Set<Graph.Vertex> vertexSet = c.collect(Collectors.toSet());
+                final Set<String> vertexIds = vertexSet.stream().map(Graph.Vertex::id).collect(Collectors.toSet());
+
+                final Map<String, GroupGroupingState> componentState = new HashMap<>();
+                stateByVertex.forEach((vertexId, hashGroupState) -> {
+                  if (vertexIds.contains(vertexId)) {
+                    componentState.put(vertexId, hashGroupState);
+                  }
+                });
 
                 final ActorRef component = context().actorOf(Component.props(
                         vertexSet,
@@ -85,7 +124,8 @@ public class GraphManager extends LoggingActor {
                         routes,
                         self(),
                         acker,
-                        computationProps
+                        computationProps,
+                        componentState
                 ));
 
                 vertexSet.stream()

@@ -3,31 +3,23 @@ package com.spbsu.flamestream.runtime.graph.state;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
+import com.spbsu.flamestream.core.data.invalidation.SynchronizedArrayInvalidatingBucket;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 
-public class GroupingState {
+public class GroupingState  {
   private final ConcurrentMap<Integer, Object> buffers = new ConcurrentHashMap<>();
 
-  private final HashFunction hash;
-  private final Equalz equalz;
-
-  public GroupingState(HashFunction hash, Equalz equalz) {
-    this.hash = hash;
-    this.equalz = equalz;
-  }
-
-  public InvalidatingBucket bucketFor(DataItem item) {
+  public InvalidatingBucket bucketFor(DataItem item, HashFunction hash, Equalz equalz) {
     final int hashValue = hash.applyAsInt(item);
     final Object obj = buffers.get(hashValue);
     if (obj == null) {
-      final InvalidatingBucket newBucket = new ArrayInvalidatingBucket();
+      final InvalidatingBucket newBucket = new SynchronizedArrayInvalidatingBucket();
       buffers.put(hashValue, newBucket);
       return newBucket;
     } else {
@@ -37,7 +29,7 @@ public class GroupingState {
         final InvalidatingBucket result = container.stream()
                 .filter(bucket -> bucket.isEmpty() || equalz.test(bucket.get(0), item))
                 .findAny()
-                .orElse(new ArrayInvalidatingBucket());
+                .orElse(new SynchronizedArrayInvalidatingBucket());
 
         if (result.isEmpty()) {
           container.add(result);
@@ -50,7 +42,7 @@ public class GroupingState {
         } else {
           final List<InvalidatingBucket> container = new CopyOnWriteArrayList<>();
           container.add(bucket);
-          final InvalidatingBucket newList = new ArrayInvalidatingBucket();
+          final InvalidatingBucket newList = new SynchronizedArrayInvalidatingBucket();
           container.add(newList);
           buffers.put(hash.applyAsInt(item), container);
           return newList;
@@ -59,15 +51,7 @@ public class GroupingState {
     }
   }
 
-  public void forEachBucket(Consumer<InvalidatingBucket> consumer) {
-    buffers.forEach((integer, obj) -> {
-      if (obj instanceof List) {
-        //noinspection unchecked
-        final List<InvalidatingBucket> container = (List<InvalidatingBucket>) obj;
-        container.forEach(consumer);
-      } else {
-        consumer.accept((InvalidatingBucket) obj);
-      }
-    });
+  public GroupingState substate(GlobalTime ceil, int window) {
+    throw new UnsupportedOperationException("Not implemented yet");
   }
 }

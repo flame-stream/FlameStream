@@ -17,14 +17,16 @@ import com.spbsu.flamestream.runtime.acker.api.commit.Committed;
 import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
+import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
-import com.spbsu.flamestream.runtime.graph.state.GroupingState;
+import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
+import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -54,21 +56,41 @@ public class Component extends LoggingActor {
 
   private Component(Set<Graph.Vertex> componentVertices,
                     Graph graph,
-                    IntRangeMap<ActorRef> routes,
+                    HashUnitMap<ActorRef> routes,
                     ActorRef localManager,
                     ActorRef acker,
-                    ComputationProps props) {
+                    ComputationProps props,
+                    Map<String, GroupGroupingState> stateByVertex) {
     this.acker = acker;
-    jobas = new HashMap<>();
 
-    for (Graph.Vertex vertex : componentVertices) {
-      final Joba joba = jobaFor(vertex, props);
-      jobas.put(GraphManager.Destination.fromVertexId(vertex.id()), joba);
-      if (joba instanceof SourceJoba) {
-        sourceJoba = (SourceJoba) joba;
-        sourceDestination = GraphManager.Destination.fromVertexId(vertex.id());
-      } else if (joba instanceof SinkJoba) {
-        sinkJoba = (SinkJoba) joba;
+    {
+      jobas = new HashMap<>();
+      for (Graph.Vertex vertex : componentVertices) {
+        final Joba joba;
+        if (vertex instanceof Sink) {
+          joba = new SinkJoba(context());
+        } else if (vertex instanceof FlameMap) {
+          joba = new MapJoba((FlameMap<?, ?>) vertex);
+        } else if (vertex instanceof Grouping) {
+          final Grouping grouping = (Grouping) vertex;
+          final Collection<HashUnit> values = props.hashGroups()
+                  .values()
+                  .stream()
+                  .flatMap(g -> g.units().stream())
+                  .collect(Collectors.toSet());
+          joba = new GroupingJoba(grouping, stateByVertex.getOrDefault(vertex.id(), new GroupGroupingState(values)));
+        } else if (vertex instanceof Source) {
+          joba = new SourceJoba(props.maxElementsInGraph(), context());
+        } else {
+          throw new RuntimeException("Invalid vertex type");
+        }
+        jobas.put(GraphManager.Destination.fromVertexId(vertex.id()), joba);
+        if (joba instanceof SourceJoba) {
+          sourceJoba = (SourceJoba) joba;
+          sourceDestination = GraphManager.Destination.fromVertexId(vertex.id());
+        } else if (joba instanceof SinkJoba) {
+          sinkJoba = (SinkJoba) joba;
+        }
       }
     }
 
@@ -125,30 +147,14 @@ public class Component extends LoggingActor {
     }
   }
 
-  private Joba jobaFor(Graph.Vertex vertex, ComputationProps props) {
-    final Joba joba;
-    if (vertex instanceof Sink) {
-      joba = new SinkJoba(context());
-    } else if (vertex instanceof FlameMap) {
-      joba = new MapJoba((FlameMap<?, ?>) vertex);
-    } else if (vertex instanceof Grouping) {
-      final Grouping grouping = (Grouping) vertex;
-      joba = new GroupingJoba(grouping, new GroupingState(grouping.hash(), grouping.equalz()));
-    } else if (vertex instanceof Source) {
-      joba = new SourceJoba(props.maxElementsInGraph(), context());
-    } else {
-      throw new RuntimeException("Invalid vertex type");
-    }
-    return joba;
-  }
-
   public static Props props(Set<Graph.Vertex> componentVertices,
                             Graph graph,
-                            IntRangeMap<ActorRef> localManager,
+                            HashUnitMap<ActorRef> localManager,
                             ActorRef routes,
                             ActorRef acker,
-                            ComputationProps props) {
-    return Props.create(Component.class, componentVertices, graph, localManager, routes, acker, props);
+                            ComputationProps props,
+                            Map<String, GroupGroupingState> stateByVertex) {
+    return Props.create(Component.class, componentVertices, graph, localManager, routes, acker, props, stateByVertex);
   }
 
   @Override

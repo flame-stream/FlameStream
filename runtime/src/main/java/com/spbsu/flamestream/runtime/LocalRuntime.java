@@ -18,6 +18,7 @@ import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.state.InMemStateStorage;
 import com.typesafe.config.ConfigFactory;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
@@ -89,7 +90,8 @@ public class LocalRuntime implements FlameRuntime {
     final Registry registry = new InMemoryRegistry();
 
     final List<ActorRef> nodes = paths.keySet().stream()
-            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry)
+            // FIXME: 3/1/18 real storage
+            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry, new InMemStateStorage())
                     .withDispatcher("resolver-dispatcher"), id))
             .collect(Collectors.toList());
 

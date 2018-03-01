@@ -12,7 +12,15 @@ import java.util.stream.Stream;
  * Date: 01.11.2017
  */
 public class ArrayInvalidatingBucket implements InvalidatingBucket {
-  private final List<DataItem> innerList = new ArrayList<>();
+  private final List<DataItem> innerList;
+
+  public ArrayInvalidatingBucket() {
+    this(new ArrayList<>());
+  }
+
+  public ArrayInvalidatingBucket(List<DataItem> innerList) {
+    this.innerList = innerList;
+  }
 
   @Override
   public void insert(DataItem insertee) {

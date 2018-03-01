@@ -1,22 +1,24 @@
 package com.spbsu.flamestream.runtime.state;
 
-import org.agrona.collections.IntObjConsumer;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.runtime.config.HashUnit;
+import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class InMemStateStorage implements StateStorage {
-  private final SortedMap<String, byte[]> storage = new TreeMap<>();
+  private final Map<HashUnit, Map<GlobalTime, Map<String, GroupingState>>> inner = new ConcurrentHashMap<>();
 
   @Override
-  public void get(String opId, int from, int to, IntObjConsumer<byte[]> consumer) {
-    storage.subMap(String.valueOf(from) + "_" + opId, String.valueOf(to) + opId).forEach((s, bytes) -> {
-      consumer.accept(Integer.valueOf(s.split("_")[0]), bytes);
-    });
+  public Map<String, GroupingState> stateFor(HashUnit unit, GlobalTime time) {
+    return inner.getOrDefault(unit, Collections.emptyMap()).getOrDefault(time, Collections.emptyMap());
   }
 
   @Override
-  public void put(String opId, int hash, byte[] value) {
-    storage.put(String.valueOf(hash) + "_" + opId, value);
+  public void putState(HashUnit unit, GlobalTime time, Map<String, GroupingState> state) {
+    inner.putIfAbsent(unit, new ConcurrentHashMap<>());
+    inner.get(unit).put(time, state);
   }
 }

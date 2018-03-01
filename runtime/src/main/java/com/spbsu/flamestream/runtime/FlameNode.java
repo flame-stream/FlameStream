@@ -12,6 +12,7 @@ import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.graph.GraphManager;
 import com.spbsu.flamestream.runtime.edge.negitioator.Negotiator;
+import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -22,7 +23,7 @@ public class FlameNode extends LoggingActor {
   private final ActorRef edgeManager;
   private final ClusterConfig config;
 
-  private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, Registry registry) {
+  private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, Registry registry, StateStorage storage) {
     this.config = config;
     final ActorRef acker;
     if (id.equals(config.ackerLocation())) {
@@ -32,9 +33,11 @@ public class FlameNode extends LoggingActor {
     }
 
     final ActorRef graph = context().actorOf(GraphManager.props(
+            id,
             bootstrapGraph,
             acker,
-            config.props()
+            config.props(),
+            storage
     ), "graph");
     graph.tell(resolvedManagers(), self());
 
@@ -42,8 +45,8 @@ public class FlameNode extends LoggingActor {
     this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, graph), "edge");
   }
 
-  public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, Registry registry) {
-    return Props.create(FlameNode.class, id, initialGraph, initialConfig, registry);
+  public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, Registry registry, StateStorage stateStorage) {
+    return Props.create(FlameNode.class, id, initialGraph, initialConfig, registry, stateStorage);
   }
 
   @Override
