@@ -19,6 +19,7 @@ import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
+import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.IntRangeMap;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
@@ -131,7 +132,8 @@ public class Component extends LoggingActor {
     } else if (vertex instanceof FlameMap) {
       joba = new MapJoba((FlameMap<?, ?>) vertex);
     } else if (vertex instanceof Grouping) {
-      joba = new GroupingJoba((Grouping) vertex);
+      final Grouping grouping = (Grouping) vertex;
+      joba = new GroupingJoba(grouping, new GroupingState(grouping.hash(), grouping.equalz()));
     } else if (vertex instanceof Source) {
       joba = new SourceJoba(props.maxElementsInGraph(), context());
     } else {

@@ -11,7 +11,6 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,7 +31,7 @@ public class Grouping<T> extends Graph.Vertex.Stub {
     return hash;
   }
 
-  public BiPredicate<DataItem, DataItem> equalz() {
+  public Equalz equalz() {
     return equalz;
   }
 
