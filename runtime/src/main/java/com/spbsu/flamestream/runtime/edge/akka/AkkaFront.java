@@ -4,32 +4,32 @@ import akka.actor.ActorRef;
 import akka.actor.ActorRefFactory;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Front;
-import com.spbsu.flamestream.core.data.PayloadDataItem;
-import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
+import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
+import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
+import com.spbsu.flamestream.runtime.edge.api.Start;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.function.Consumer;
 
-public class AkkaFront extends Front.Stub {
+public class AkkaFront implements Front {
   private final ActorRef innerActor;
 
   public AkkaFront(EdgeContext edgeContext, ActorRefFactory refFactory) {
-    super(edgeContext.edgeId());
     this.innerActor = refFactory.actorOf(
-            InnerActor.props(edgeContext.edgeId(), this),
+            RemoteMediator.props(),
             edgeContext.edgeId().nodeId() + "-inner"
     );
   }
 
   @Override
   public void onStart(Consumer<Object> consumer, GlobalTime from) {
-    innerActor.tell(new AkkaStart(consumer, from), ActorRef.noSender());
+    innerActor.tell(new MediatorStart(consumer, from), ActorRef.noSender());
   }
 
   @Override
@@ -39,96 +39,83 @@ public class AkkaFront extends Front.Stub {
 
   @Override
   public void onCheckpoint(GlobalTime to) {
+    innerActor.tell(new Checkpoint(to), ActorRef.noSender());
   }
 
-  @Override
-  public GlobalTime currentTime() {
-    return super.currentTime();
-  }
-
-  private static class InnerActor extends LoggingActor {
-    private final EdgeId frontId;
-    private final AkkaFront akkaFront;
-
-    private ActorRef frontHandle = null;
+  private static class RemoteMediator extends LoggingActor {
+    private ActorRef remoteActor;
     private Consumer<Object> hole = null;
 
-    private InnerActor(EdgeId frontId, AkkaFront akkaFront) {
-      this.frontId = frontId;
-      this.akkaFront = akkaFront;
-    }
-
-    public static Props props(EdgeId frontId, AkkaFront akkaFront) {
-      return Props.create(InnerActor.class, frontId, akkaFront);
+    public static Props props() {
+      return Props.create(RemoteMediator.class);
     }
 
     @Override
     public Receive createReceive() {
       return ReceiveBuilder.create()
-              .match(RawData.class, this::onRaw)
-              .match(AkkaStart.class, this::onStart)
-              .match(RequestNext.class, this::onRequestNext)
-              .match(EOS.class, s -> onEos())
+              .match(ActorRef.class, r -> {
+                remoteActor = r;
+                unstashAll();
+                getContext().become(serving());
+              })
+              .matchAny(m -> stash())
               .build();
     }
 
-    private void onEos() {
-      if (hole != null) {
-        hole.accept(new Heartbeat(new GlobalTime(Long.MAX_VALUE, frontId)));
-      } else {
-        stash();
-      }
+    private Receive serving() {
+      return ReceiveBuilder.create()
+              .match(MediatorStart.class, s -> {
+                hole = s.hole;
+                remoteActor.tell(new Start(self(), s.from), self());
+              })
+              .match(DataItem.class, t2 -> hole.accept(t2))
+              .match(Heartbeat.class, t1 -> hole.accept(t1))
+              .match(UnregisterFront.class, t -> hole.accept(t))
+              .match(RequestNext.class, r -> remoteActor.tell(r, self()))
+              .match(Checkpoint.class, c -> remoteActor.tell(c, self()))
+              .build();
     }
 
-    private void onStart(AkkaStart start) {
-      this.hole = start.consumer;
-      unstashAll();
-    }
+  }
 
-    private void onRequestNext(RequestNext requestNext) {
-      if (frontHandle != null && !frontHandle.equals(context().system().deadLetters())) {
-        frontHandle.tell(requestNext, self());
-      }
-    }
+  public static class MediatorStart {
+    final Consumer<Object> hole;
+    final GlobalTime from;
 
-    private void onRaw(RawData<Object> data) {
-      if (hole != null) {
-        final PayloadDataItem dataItem = new PayloadDataItem(new Meta(akkaFront.currentTime()), data.data());
-        hole.accept(dataItem);
-        hole.accept(new Heartbeat(akkaFront.currentTime()));
-      } else {
-        stash();
-      }
-
-      if (frontHandle == null) {
-        frontHandle = sender();
-      }
+    public MediatorStart(Consumer<Object> hole, GlobalTime from) {
+      this.hole = hole;
+      this.from = from;
     }
   }
 
-  private static class AkkaStart {
-    private final Consumer<Object> consumer;
-    @SuppressWarnings("unused") //needs for replay
-    private final GlobalTime globalTime;
+  public static class LocalMediator extends LoggingActor {
+    private final Front front;
+    private final ActorRef remoteMediator;
 
-    private AkkaStart(Consumer<Object> consumer, GlobalTime globalTime) {
-      this.consumer = consumer;
-      this.globalTime = globalTime;
-    }
-  }
-
-  public static class RawData<T> {
-    private final T data;
-
-    public RawData(T data) {
-      this.data = data;
+    private LocalMediator(Front front, ActorRef remoteMediator) {
+      this.front = front;
+      this.remoteMediator = remoteMediator;
     }
 
-    public T data() {
-      return data;
+    public static Props props(Front front, ActorRef remoteActor) {
+      return Props.create(LocalMediator.class, front, remoteActor);
     }
-  }
 
-  static class EOS {
+    @Override
+    public void preStart() throws Exception {
+      super.preStart();
+      remoteMediator.tell(self(), self());
+    }
+
+    @Override
+    public Receive createReceive() {
+      return ReceiveBuilder.create()
+              .match(Start.class, s -> {
+                front.onStart(o -> s.hole().tell(o, self()), s.from());
+              })
+              .match(RequestNext.class, r -> front.onRequestNext())
+              .match(Checkpoint.class, c -> front.onCheckpoint(c.time()))
+              .build();
+    }
   }
 }

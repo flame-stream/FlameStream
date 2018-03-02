@@ -9,6 +9,7 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.edge.akka.LocalFront;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
@@ -54,8 +55,8 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
                 .collect(Collectors.toList()))
                 .limit(parallelism).collect(Collectors.toList());
         final Set<List<Long>> expected = GroupingAcceptanceTest.expected(source, window);
-        final List<AkkaFrontType.Handle<Long>> handles = flame
-                .attachFront("groupingAcceptanceFront", new AkkaFrontType<Long>(runtime.system(), false))
+        final List<LocalFront<Long>> handles = flame
+                .attachFront("groupingAcceptanceFront", AkkaFrontType.<Long>withLocalFront(runtime.system()))
                 .collect(Collectors.toList());
 
         final AwaitResultConsumer<List<Long>> consumer = new AwaitResultConsumer<>(source.stream().mapToInt(List::size).sum());

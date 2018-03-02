@@ -6,6 +6,7 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.edge.akka.LocalFront;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -43,8 +44,8 @@ public final class FilterAcceptanceTest extends FlameAkkaSuite {
     try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM)) {
       final FlameRuntime.Flame flame = runtime.run(multiGraph());
       {
-        final List<AkkaFrontType.Handle<Integer>> handles = flame
-                .attachFront("linearFilterFront", new AkkaFrontType<Integer>(runtime.system(), false))
+        final List<LocalFront<Integer>> handles = flame
+                .attachFront("linearFilterFront", AkkaFrontType.<Integer>withLocalFront(runtime.system()))
                 .collect(Collectors.toList());
         final int streamSize = 10000;
         final Queue<Integer> source = new Random()
