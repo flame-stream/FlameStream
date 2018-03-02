@@ -32,6 +32,11 @@ public class ClusterConfig {
   }
 
   @JsonProperty
+  public int defaultMinTime() {
+    return 0;
+  }
+
+  @JsonProperty
   public ComputationProps props() {
     return props;
   }
