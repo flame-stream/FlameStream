@@ -4,7 +4,6 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -13,7 +12,7 @@ public class InMemStateStorage implements StateStorage {
 
   @Override
   public Map<String, GroupingState> stateFor(HashUnit unit, GlobalTime time) {
-    return inner.getOrDefault(unit, Collections.emptyMap()).getOrDefault(time, Collections.emptyMap());
+    return inner.getOrDefault(unit, new ConcurrentHashMap<>()).getOrDefault(time, new ConcurrentHashMap<>());
   }
 
   @Override

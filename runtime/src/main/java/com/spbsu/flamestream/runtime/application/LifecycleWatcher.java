@@ -87,7 +87,8 @@ public class LifecycleWatcher extends LoggingActor {
     final Graph g = flameClient.graph();
     log().info("Creating node with watchGraphs: '{}', config: '{}'", g, config);
     // FIXME: 3/1/18 add real storage
-    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient, new InMemStateStorage()).withDispatcher("resolver-dispatcher"), flameClient.name());
+    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient, new InMemStateStorage())
+            .withDispatcher("util-dispatcher"), flameClient.name());
     nodes.put(flameClient.name(), node);
 
     final Set<AttachFront<?>> initialFronts = flameClient.fronts(newFronts ->

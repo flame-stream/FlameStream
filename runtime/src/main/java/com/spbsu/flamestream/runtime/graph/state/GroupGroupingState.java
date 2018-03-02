@@ -4,7 +4,6 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
-import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListHashUnitMap;
@@ -29,9 +28,5 @@ public class GroupGroupingState {
     final int hash = hashFunction.hash(item);
     final GroupingState state = unitStates.get(hash);
     return state.bucketFor(item, hashFunction, equalz);
-  }
-
-  public GroupingState substate(GlobalTime ceil, int window) {
-    throw new UnsupportedOperationException("Not implemented yet");
   }
 }

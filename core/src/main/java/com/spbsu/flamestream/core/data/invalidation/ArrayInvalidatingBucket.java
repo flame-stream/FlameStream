@@ -12,13 +12,13 @@ import java.util.stream.Stream;
  * Date: 01.11.2017
  */
 public class ArrayInvalidatingBucket implements InvalidatingBucket {
-  private final List<DataItem> innerList;
+  protected final List<DataItem> innerList;
 
   public ArrayInvalidatingBucket() {
     this(new ArrayList<>());
   }
 
-  public ArrayInvalidatingBucket(List<DataItem> innerList) {
+  protected ArrayInvalidatingBucket(List<DataItem> innerList) {
     this.innerList = innerList;
   }
 
@@ -83,5 +83,11 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
       }
     }
     return left;
+  }
+
+  @Override
+  public InvalidatingBucket subBucket(Meta meta, int window) {
+    final int start = lowerBound(meta);
+    return new ArrayInvalidatingBucket(new ArrayList<>(innerList.subList(Math.max(start - window + 1, 0), start)));
   }
 }

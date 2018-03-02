@@ -5,6 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.acker.LocalAcker;
@@ -27,13 +28,13 @@ import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListHashUnitMap;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class GraphManager extends LoggingActor {
@@ -49,7 +50,9 @@ public class GraphManager extends LoggingActor {
   private final HashUnitMap<ActorRef> routes = new ListHashUnitMap<>();
   private final Map<Destination, ActorRef> verticesComponents = new HashMap<>();
   private final Set<ActorRef> components = new HashSet<>();
-  private final ConcurrentMap<String, GroupGroupingState> stateByVertex = new ConcurrentHashMap<>();
+
+  private final Map<HashUnit, Map<String, GroupingState>> unitStates = new HashMap<>();
+  private final TObjectIntMap<String> groupingWindows = new TObjectIntHashMap<>();
 
   private GraphManager(String nodeId,
                        Graph graph,
@@ -79,11 +82,8 @@ public class GraphManager extends LoggingActor {
               log().info("Finishing constructor");
               final Map<HashUnit, ActorRef> routerMap = new HashMap<>();
               computationProps.hashGroups()
-                      .forEach((key, value) -> {
-                        value.units().forEach(unit -> {
-                          routerMap.put(unit, (ActorRef) managers.get(key));
-                        });
-                      });
+                      .forEach((key, value) -> value.units()
+                              .forEach(unit -> routerMap.put(unit, (ActorRef) managers.get(key))));
               routes.putAll(routerMap);
 
               acker.tell(new GimmeTime(), self());
@@ -97,16 +97,25 @@ public class GraphManager extends LoggingActor {
     return ReceiveBuilder.create()
             .match(LastCommit.class, lastCommit -> {
               log().info("Received last commit '{}'", lastCommit);
+              final Map<String, GroupGroupingState> stateByVertex = new HashMap<>();
               final HashGroup localGroup = computationProps.hashGroups().get(nodeId);
               for (final HashUnit unit : localGroup.units()) {
                 final Map<String, GroupingState> unitState = storage.stateFor(
                         unit,
                         lastCommit.globalTime()
                 );
+                graph.components()
+                        .flatMap(vertexStream -> vertexStream)
+                        .filter(vertex -> vertex instanceof Grouping)
+                        .forEach(vertex -> {
+                          unitState.putIfAbsent(vertex.id(), new GroupingState());
+                          groupingWindows.put(vertex.id(), ((Grouping) vertex).window());
+                        });
                 unitState.forEach((vertexId, groupingState) -> {
                   stateByVertex.putIfAbsent(vertexId, new GroupGroupingState());
                   stateByVertex.get(vertexId).addUnitState(unit, groupingState);
                 });
+                unitStates.put(unit, unitState);
               }
 
               graph.components().forEach(c -> {
@@ -166,7 +175,19 @@ public class GraphManager extends LoggingActor {
   }
 
   private void onPrepare(Prepare prepare) {
-    acker.tell(new Prepared(), self());
+    context().system().dispatchers().lookup("util-dispatcher").execute(() -> {
+      unitStates.forEach((hashUnit, stateMap) -> storage.putState(
+              hashUnit,
+              prepare.globalTime(),
+              stateMap.entrySet()
+                      .stream()
+                      .collect(Collectors.toMap(
+                              Map.Entry::getKey,
+                              e -> e.getValue().subState(prepare.globalTime(), groupingWindows.get(e.getKey()))
+                      ))
+      ));
+      acker.tell(new Prepared(), self());
+    });
   }
 
   public static class Destination {

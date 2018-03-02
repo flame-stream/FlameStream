@@ -92,7 +92,7 @@ public class LocalRuntime implements FlameRuntime {
     final List<ActorRef> nodes = paths.keySet().stream()
             // FIXME: 3/1/18 real storage
             .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry, new InMemStateStorage())
-                    .withDispatcher("resolver-dispatcher"), id))
+                    .withDispatcher("util-dispatcher"), id))
             .collect(Collectors.toList());
 
     return new Flame() {

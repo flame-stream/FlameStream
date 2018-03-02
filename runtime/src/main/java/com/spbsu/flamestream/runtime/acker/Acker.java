@@ -49,7 +49,7 @@ import java.util.Set;
 public class Acker extends LoggingActor {
   private static final int WINDOW = 1;
   private static final int SIZE = 100000;
-  private static final int MIN_TIMES_TO_COMMIT = 500;
+  private static final int MIN_TIMES_TO_COMMIT = 100;
   private final int managersCount;
 
   private final Set<ActorRef> managers = new HashSet<>();

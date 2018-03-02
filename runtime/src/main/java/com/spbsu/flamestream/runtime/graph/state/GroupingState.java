@@ -6,14 +6,24 @@ import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.SynchronizedArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
-public class GroupingState  {
-  private final ConcurrentMap<Integer, Object> buffers = new ConcurrentHashMap<>();
+public class GroupingState {
+  private final ConcurrentMap<Integer, Object> buffers;
+
+  public GroupingState() {
+    buffers = new ConcurrentHashMap<>();
+  }
+
+  private GroupingState(ConcurrentMap<Integer, Object> buffers) {
+    this.buffers = buffers;
+  }
 
   public InvalidatingBucket bucketFor(DataItem item, HashFunction hash, Equalz equalz) {
     final int hashValue = hash.applyAsInt(item);
@@ -51,7 +61,18 @@ public class GroupingState  {
     }
   }
 
-  public GroupingState substate(GlobalTime ceil, int window) {
-    throw new UnsupportedOperationException("Not implemented yet");
+  public GroupingState subState(GlobalTime ceil, int window) {
+    final ConcurrentMap<Integer, Object> subState = new ConcurrentHashMap<>();
+    buffers.forEach((integer, obj) -> {
+      if (obj instanceof List) {
+        //noinspection unchecked
+        subState.put(integer, ((List<InvalidatingBucket>) obj).stream()
+                .map(bucket -> bucket.subBucket(new Meta(ceil), window))
+                .collect(Collectors.toList()));
+      } else {
+        subState.put(integer, ((InvalidatingBucket) obj).subBucket(new Meta(ceil), window));
+      }
+    });
+    return new GroupingState(subState);
   }
 }

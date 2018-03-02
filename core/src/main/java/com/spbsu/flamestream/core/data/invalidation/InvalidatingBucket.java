@@ -57,4 +57,12 @@ public interface InvalidatingBucket {
    * min i : a[i] >= x
    */
   int lowerBound(Meta meta);
+
+  /**
+   *
+   * @param meta of last item in sub bucket
+   * @param window for offset
+   * @return bucket that contains [lowerBound(meta) - window + 1, lowerBound(meta)) items
+   */
+  InvalidatingBucket subBucket(Meta meta, int window);
 }
