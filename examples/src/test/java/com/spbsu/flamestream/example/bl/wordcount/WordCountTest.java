@@ -6,6 +6,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.edge.akka.LocalFront;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -54,8 +55,8 @@ public class WordCountTest extends FlameAkkaSuite {
         );
         flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordCounter.class))
                 .forEach(r -> r.addListener(awaitConsumer));
-        final List<AkkaFrontType.Handle<String>> handles = flame
-                .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system(), true))
+        final List<LocalFront<String>> handles = flame
+                .attachFront("wordCountFront", AkkaFrontType.<String>withLocalFront(runtime.system()))
                 .collect(Collectors.toList());
         applyDataToAllHandlesAsync(input, handles);
         awaitConsumer.await(5, TimeUnit.MINUTES);

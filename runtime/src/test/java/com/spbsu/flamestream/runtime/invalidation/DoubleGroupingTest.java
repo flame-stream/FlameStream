@@ -103,6 +103,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     doubleGroupingTest(4);
   }
 
+  // TODO: 3/2/18 Return non-backpressure mode
   private void doubleGroupingTest(int nodes) throws InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime(nodes)) {
       final FlameRuntime.Flame flame = runtime.run(graph());

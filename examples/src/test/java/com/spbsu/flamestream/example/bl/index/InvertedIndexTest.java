@@ -9,6 +9,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.edge.akka.LocalFront;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -42,14 +43,14 @@ public class InvertedIndexTest extends FlameAkkaSuite {
         flame.attachRear("Rear-" + invocationConfig, new AkkaRearType<>(runtime.system(), WordBase.class))
                 .forEach(r -> r.addListener(awaitConsumer));
 
-        final List<AkkaFrontType.Handle<Object>> consumers =
-                flame.attachFront("Front-" + invocationConfig, new AkkaFrontType<>(runtime.system(), backPressure))
+        final List<LocalFront<Object>> consumers =
+                flame.attachFront("Front-" + invocationConfig, AkkaFrontType.<Object>withLocalFront(runtime.system()))
                         .collect(Collectors.toList());
         for (int i = 1; i < consumers.size(); i++) {
           consumers.get(i).eos();
         }
 
-        final AkkaFrontType.Handle<Object> sink = consumers.get(0);
+        final LocalFront<Object> sink = consumers.get(0);
         validator.input().forEach(sink);
         sink.eos();
 
