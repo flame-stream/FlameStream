@@ -25,10 +25,7 @@ public interface Front {
     }
 
     protected synchronized GlobalTime currentTime() {
-      long globalTs = System.currentTimeMillis();
-      if (globalTs <= prevGlobalTs) {
-        globalTs = prevGlobalTs + 1;
-      }
+      long globalTs = prevGlobalTs + 1;
       prevGlobalTs = globalTs;
       return new GlobalTime(globalTs, edgeId);
     }

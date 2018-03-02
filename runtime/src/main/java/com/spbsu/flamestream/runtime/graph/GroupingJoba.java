@@ -33,7 +33,7 @@ public class GroupingJoba implements Joba {
     final InvalidatingBucket bucket = state.bucketFor(item, grouping.hash(), grouping.equalz());
     instance.apply(item, bucket).forEach(sink);
     { //clear outdated
-      final int position = Math.max(bucket.lowerBound(new Meta(currentMinTime)) - grouping.window(), 0);
+      final int position = Math.max(bucket.lowerBound(new Meta(currentMinTime)) - grouping.window() + 1, 0);
       bucket.clearRange(0, position);
     }
   }

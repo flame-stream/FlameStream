@@ -47,8 +47,9 @@ public class SocketFront extends Front.Stub {
       public void received(Connection connection, Object object) {
         if (Arrays.stream(classes).anyMatch(clazz -> clazz.isAssignableFrom(object.getClass()))) {
           //tracer.log(object.hashCode());
-          consumer.accept(new PayloadDataItem(new Meta(currentTime()), object));
-          consumer.accept(new Heartbeat(currentTime()));
+          final GlobalTime globalTime = currentTime();
+          consumer.accept(new PayloadDataItem(new Meta(globalTime), object));
+          consumer.accept(new Heartbeat(globalTime));
         }
       }
     });

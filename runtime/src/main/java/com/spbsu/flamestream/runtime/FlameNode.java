@@ -27,7 +27,7 @@ public class FlameNode extends LoggingActor {
     this.config = config;
     final ActorRef acker;
     if (id.equals(config.ackerLocation())) {
-      acker = context().actorOf(Acker.props(config.paths().size(), System.currentTimeMillis(), registry), "acker");
+      acker = context().actorOf(Acker.props(config.paths().size(), config.defaultMinTime(), registry), "acker");
     } else {
       acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
     }
