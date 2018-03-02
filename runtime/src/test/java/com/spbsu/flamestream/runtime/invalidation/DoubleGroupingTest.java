@@ -21,10 +21,10 @@ import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -92,7 +92,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
             .build(source, sink);
   }
 
-  @Test(invocationCount = 10)
+  @Test(invocationCount = 100)
   public void singleWorkerTest() throws InterruptedException {
     doubleGroupingTest(1);
   }
@@ -116,16 +116,16 @@ public class DoubleGroupingTest extends FlameStreamSuite {
         }
 
         final List<Integer> source = new Random()
-                .ints(1000)
+                .ints(10000)
                 .boxed().collect(Collectors.toList());
 
-        final Set<Integer> expected = semanticGrouping(
+        final List<Integer> expected = semanticGrouping(
                 semanticGrouping(
                         semanticGrouping(
                                 source
                         ).stream().map(List::hashCode).collect(Collectors.toList())
                 ).stream().map(List::hashCode).collect(Collectors.toList())
-        ).stream().map(List::hashCode).collect(Collectors.toSet());
+        ).stream().map(List::hashCode).collect(Collectors.toList());
 
         final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
         flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
@@ -134,7 +134,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
         sink.eos();
 
         consumer.await(10, TimeUnit.MINUTES);
-        Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+        Assert.assertEquals(consumer.result().collect(Collectors.toSet()), new HashSet<>(expected));
       }
     }
   }
