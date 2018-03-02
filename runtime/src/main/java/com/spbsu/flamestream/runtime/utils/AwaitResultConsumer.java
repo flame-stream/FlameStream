@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 public class AwaitResultConsumer<T> implements Consumer<T> {
   private final List<T> result = new ArrayList<>();
   private final int expectedSize;
+  private boolean finished = false;
 
   public AwaitResultConsumer(int expectedSize) {
     this.expectedSize = expectedSize;
@@ -18,8 +19,11 @@ public class AwaitResultConsumer<T> implements Consumer<T> {
   public void accept(T value) {
     synchronized (result) {
       result.add(value);
-      if (result.size() == expectedSize) {
+      if (result.size() == expectedSize && !finished) {
+        finished = true;
         result.notifyAll();
+      } else if (result.size() == expectedSize) {
+        throw new IllegalStateException("Accepted more than expected");
       }
     }
   }
@@ -27,7 +31,7 @@ public class AwaitResultConsumer<T> implements Consumer<T> {
   public void await(long timeout, TimeUnit unit) throws InterruptedException {
     final long stop = System.currentTimeMillis() + unit.toMillis(timeout);
     synchronized (result) {
-      while (result.size() < expectedSize && System.currentTimeMillis() < stop) {
+      while (result.size() < expectedSize && System.currentTimeMillis() < stop && !finished) {
         result.wait(unit.toMillis(timeout));
       }
     }
