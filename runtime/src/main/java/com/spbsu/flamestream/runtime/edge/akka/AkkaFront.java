@@ -93,9 +93,10 @@ public class AkkaFront extends Front.Stub {
 
     private void onRaw(RawData<Object> data) {
       if (hole != null) {
-        final PayloadDataItem dataItem = new PayloadDataItem(new Meta(akkaFront.currentTime()), data.data());
+        final GlobalTime time = akkaFront.currentTime();
+        final PayloadDataItem dataItem = new PayloadDataItem(new Meta(time), data.data());
         hole.accept(dataItem);
-        hole.accept(new Heartbeat(akkaFront.currentTime()));
+        hole.accept(new Heartbeat(time));
       } else {
         stash();
       }
