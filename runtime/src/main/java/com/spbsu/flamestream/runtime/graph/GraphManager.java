@@ -13,6 +13,7 @@ import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.acker.api.commit.GimmeTime;
 import com.spbsu.flamestream.runtime.acker.api.commit.LastCommit;
 import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
+import com.spbsu.flamestream.runtime.acker.api.commit.Prepared;
 import com.spbsu.flamestream.runtime.acker.api.commit.Ready;
 import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
@@ -31,6 +32,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class GraphManager extends LoggingActor {
@@ -46,6 +49,7 @@ public class GraphManager extends LoggingActor {
   private final HashUnitMap<ActorRef> routes = new ListHashUnitMap<>();
   private final Map<Destination, ActorRef> verticesComponents = new HashMap<>();
   private final Set<ActorRef> components = new HashSet<>();
+  private final ConcurrentMap<String, GroupGroupingState> stateByVertex = new ConcurrentHashMap<>();
 
   private GraphManager(String nodeId,
                        Graph graph,
@@ -82,7 +86,7 @@ public class GraphManager extends LoggingActor {
                       });
               routes.putAll(routerMap);
 
-              acker.tell(new GimmeTime(graph.components().count()), self());
+              acker.tell(new GimmeTime(), self());
               getContext().become(deploying());
             })
             .matchAny(m -> stash())
@@ -94,8 +98,6 @@ public class GraphManager extends LoggingActor {
             .match(LastCommit.class, lastCommit -> {
               log().info("Received last commit '{}'", lastCommit);
               final HashGroup localGroup = computationProps.hashGroups().get(nodeId);
-
-              final Map<String, GroupGroupingState> stateByVertex = new HashMap<>();
               for (final HashUnit unit : localGroup.units()) {
                 final Map<String, GroupingState> unitState = storage.stateFor(
                         unit,
@@ -109,15 +111,6 @@ public class GraphManager extends LoggingActor {
 
               graph.components().forEach(c -> {
                 final Set<Graph.Vertex> vertexSet = c.collect(Collectors.toSet());
-                final Set<String> vertexIds = vertexSet.stream().map(Graph.Vertex::id).collect(Collectors.toSet());
-
-                final Map<String, GroupGroupingState> componentState = new HashMap<>();
-                stateByVertex.forEach((vertexId, hashGroupState) -> {
-                  if (vertexIds.contains(vertexId)) {
-                    componentState.put(vertexId, hashGroupState);
-                  }
-                });
-
                 final ActorRef component = context().actorOf(Component.props(
                         vertexSet,
                         graph,
@@ -125,7 +118,7 @@ public class GraphManager extends LoggingActor {
                         self(),
                         acker,
                         computationProps,
-                        componentState
+                        stateByVertex
                 ));
 
                 vertexSet.stream()
@@ -165,14 +158,15 @@ public class GraphManager extends LoggingActor {
                     MinTimeUpdate.class,
                     minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
             )
-            .match(
-                    Prepare.class,
-                    prepare -> components.forEach(c -> c.forward(prepare, context()))
-            )
+            .match(Prepare.class, this::onPrepare)
             .match(NewRear.class, newRear -> sinkComponent.forward(newRear, context()))
             .match(Heartbeat.class, gt -> sourceComponent.forward(gt, context()))
             .match(UnregisterFront.class, u -> sourceComponent.forward(u, context()))
             .build();
+  }
+
+  private void onPrepare(Prepare prepare) {
+    acker.tell(new Prepared(), self());
   }
 
   public static class Destination {

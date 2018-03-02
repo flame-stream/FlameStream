@@ -13,8 +13,6 @@ import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
-import com.spbsu.flamestream.runtime.acker.api.commit.Committed;
-import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashUnit;
@@ -78,7 +76,8 @@ public class Component extends LoggingActor {
                   .stream()
                   .flatMap(g -> g.units().stream())
                   .collect(Collectors.toSet());
-          joba = new GroupingJoba(grouping, stateByVertex.getOrDefault(vertex.id(), new GroupGroupingState(values)));
+          stateByVertex.putIfAbsent(vertex.id(), new GroupGroupingState(values));
+          joba = new GroupingJoba(grouping, stateByVertex.get(vertex.id()));
         } else if (vertex instanceof Source) {
           joba = new SourceJoba(props.maxElementsInGraph(), context());
         } else {
@@ -163,7 +162,6 @@ public class Component extends LoggingActor {
             .match(AddressedItem.class, this::inject)
             .match(DataItem.class, this::accept)
             .match(MinTimeUpdate.class, this::onMinTime)
-            .match(Prepare.class, this::onPrepare)
             .match(NewRear.class, this::onNewRear)
             .match(Heartbeat.class, h -> acker.forward(h, context()))
             .match(UnregisterFront.class, u -> acker.forward(u, context()))
@@ -184,11 +182,6 @@ public class Component extends LoggingActor {
 
   private void onMinTime(MinTimeUpdate minTimeUpdate) {
     jobas.values().forEach(j -> j.onMinTime(minTimeUpdate.minTime()));
-  }
-
-  private void onPrepare(Prepare prepare) {
-    jobas.values().forEach(j -> j.onPrepareCommit(prepare.globalTime()));
-    acker.tell(new Committed(), self());
   }
 
   private void accept(DataItem item) {

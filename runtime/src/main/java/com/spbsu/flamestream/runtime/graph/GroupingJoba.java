@@ -37,9 +37,4 @@ public class GroupingJoba implements Joba {
       bucket.clearRange(0, position);
     }
   }
-
-  @Override
-  public void onPrepareCommit(GlobalTime globalTime) {
-    currentMinTime = globalTime;
-  }
 }

@@ -1,4 +1,4 @@
 package com.spbsu.flamestream.runtime.acker.api.commit;
 
-public class Committed {
+public class Prepared {
 }

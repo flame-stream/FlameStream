@@ -8,7 +8,7 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
-import com.spbsu.flamestream.runtime.acker.api.commit.Committed;
+import com.spbsu.flamestream.runtime.acker.api.commit.Prepared;
 import com.spbsu.flamestream.runtime.acker.api.commit.GimmeTime;
 import com.spbsu.flamestream.runtime.acker.api.commit.LastCommit;
 import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
@@ -58,8 +58,6 @@ public class Acker extends LoggingActor {
   private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
   private final Registry registry;
 
-  private long committers;
-
   private long defaultMinimalTime;
   private GlobalTime lastMinTime = GlobalTime.MIN;
   private int minTimesSinceLastCommit = 0;
@@ -82,7 +80,6 @@ public class Acker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(GimmeTime.class, gimmeTime -> {
               log().info("Got gimme '{}'", gimmeTime);
-              committers += gimmeTime.awaitCommittedCount();
               sender().tell(new LastCommit(new GlobalTime(registry.lastCommit(), EdgeId.MIN)), self());
             })
             .match(Ready.class, ready -> {
@@ -107,10 +104,10 @@ public class Acker extends LoggingActor {
 
   private Receive committing() {
     return acking().orElse(ReceiveBuilder.create()
-            .match(Committed.class, c -> {
+            .match(Prepared.class, c -> {
               committed++;
               log().info("Manager '{}' has prepared", sender());
-              if (committed == committers) {
+              if (committed == managersCount) {
                 log().info("All managers have prepared, committing");
                 registry.committed(lastPrepareTime.time());
                 committed = 0;

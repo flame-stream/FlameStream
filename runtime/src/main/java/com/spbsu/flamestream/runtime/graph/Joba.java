@@ -10,7 +10,4 @@ public interface Joba {
 
   default void onMinTime(GlobalTime time) {
   }
-
-  default void onPrepareCommit(GlobalTime time) {
-  }
 }
