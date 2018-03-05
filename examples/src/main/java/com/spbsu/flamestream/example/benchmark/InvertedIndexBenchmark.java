@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 public class InvertedIndexBenchmark {
   public static void main(String[] args) throws InterruptedException {
     final int parallelism = 4;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism, 1)) {
+    try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       final ConcurrentSkipListMap<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
       final AwaitCountConsumer awaitConsumer = new AwaitCountConsumer(65813);

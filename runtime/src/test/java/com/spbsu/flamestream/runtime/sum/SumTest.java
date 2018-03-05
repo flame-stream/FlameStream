@@ -73,7 +73,7 @@ public final class SumTest extends FlameAkkaSuite {
   @Test(invocationCount = 10)
   public void sumTest() throws InterruptedException {
     final int parallelism = DEFAULT_PARALLELISM;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism, 50)) {
+    try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
       final FlameRuntime.Flame flame = runtime.run(sumGraph());
       {
         final List<LocalFront<LongNumb>> handles = flame.attachFront(
