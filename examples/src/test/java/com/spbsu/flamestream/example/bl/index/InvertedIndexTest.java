@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class InvertedIndexTest extends FlameAkkaSuite {
   @DataProvider
   public static Object[][] provider() {
-    return new Object[][] {
+    return new Object[][]{
             {new SmallDumpValidator(), false},
             {new SmallDumpRankingValidator(), false},
             {new RankingValidator(), false},
@@ -35,7 +35,7 @@ public class InvertedIndexTest extends FlameAkkaSuite {
 
   @Test(dataProvider = "provider")
   public void test(InvertedIndexValidator validator, boolean backPressure) throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(10).build()) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       {
         final String invocationConfig = validator.getClass().getSimpleName() + "-bp-" + backPressure;

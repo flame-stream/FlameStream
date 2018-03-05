@@ -42,7 +42,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -302,9 +301,10 @@ public class BenchStand implements AutoCloseable {
 
     final FlameRuntime runtime;
     if (deployerConfig.hasPath("local")) {
-      runtime = new LocalRuntime(deployerConfig.getConfig("local").getInt("parallelism"));
+      runtime = new LocalRuntime.Builder().parallelism(deployerConfig.getConfig("local").getInt("parallelism")).build();
     } else if (deployerConfig.hasPath("local-cluster")) {
-      runtime = new LocalClusterRuntime(deployerConfig.getConfig("local-cluster").getInt("parallelism"));
+      runtime = new LocalClusterRuntime.Builder().parallelism(deployerConfig.getConfig("local-cluster")
+              .getInt("parallelism")).build();
     } else {
       runtime = new RemoteRuntime(deployerConfig.getConfig("remote").getString("zk"));
     }

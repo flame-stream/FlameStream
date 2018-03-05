@@ -33,7 +33,7 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
   @Test
   public void reorderingMultipleHash() throws InterruptedException {
     final int parallelism = DEFAULT_PARALLELISM;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(parallelism).build()) {
       final int window = 2;
       final Graph graph = groupGraph(
               window,

@@ -11,14 +11,17 @@ public class ClusterConfig {
   private final Map<String, ActorPath> paths;
   private final String ackerLocation;
   private final ComputationProps props;
+  private final int millisBetweenCommits;
 
   @JsonCreator
   public ClusterConfig(@JsonProperty("paths") Map<String, ActorPath> paths,
                        @JsonProperty("ackerLocation") String ackerLocation,
-                       @JsonProperty("props") ComputationProps props) {
+                       @JsonProperty("props") ComputationProps props,
+                       @JsonProperty("millisBetweenCommits") int millisBetweenCommits) {
     this.paths = paths;
     this.ackerLocation = ackerLocation;
     this.props = props;
+    this.millisBetweenCommits = millisBetweenCommits;
   }
 
   @JsonProperty
@@ -47,7 +50,7 @@ public class ClusterConfig {
     paths.forEach((s, path) -> {
       newPaths.put(s, path.child(childPath));
     });
-    return new ClusterConfig(newPaths, ackerLocation, props);
+    return new ClusterConfig(newPaths, ackerLocation, props, millisBetweenCommits);
   }
 
   @Override
@@ -57,5 +60,9 @@ public class ClusterConfig {
             ", ackerLocation='" + ackerLocation + '\'' +
             ", props=" + props +
             '}';
+  }
+
+  public int millisBetweenCommits() {
+    return this.millisBetweenCommits;
   }
 }

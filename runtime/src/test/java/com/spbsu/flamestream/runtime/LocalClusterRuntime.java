@@ -34,11 +34,7 @@ public class LocalClusterRuntime implements FlameRuntime {
   private final RemoteRuntime remoteRuntime;
   private final Set<WorkerApplication> workers = new HashSet<>();
 
-  public LocalClusterRuntime(int parallelism) throws IOException, InterruptedException {
-    this(parallelism, DEFAULT_MAX_ELEMENTS_IN_GRAPH);
-  }
-
-  public LocalClusterRuntime(int parallelism, int maxElementsInGraph) throws IOException {
+  private LocalClusterRuntime(int parallelism, int maxElementsInGraph, int millisBetweenCommits) throws IOException {
     final List<Integer> ports = new ArrayList<>(freePorts(parallelism + 1));
 
     this.zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
@@ -68,7 +64,7 @@ public class LocalClusterRuntime implements FlameRuntime {
       worker.run();
     }
 
-    final ClusterConfig config = config(workersAddresses, maxElementsInGraph);
+    final ClusterConfig config = config(workersAddresses, maxElementsInGraph, millisBetweenCommits);
     log.info("Pushing configuration {}", config);
     configClient.put(config);
     this.remoteRuntime = new RemoteRuntime(zkString);
@@ -85,7 +81,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     return remoteRuntime.run(g);
   }
 
-  private ClusterConfig config(Map<String, ActorPath> workers, int maxElementsInGraph) {
+  private ClusterConfig config(Map<String, ActorPath> workers, int maxElementsInGraph, int millisBetweenCommits) {
     final String ackerLocation = workers.keySet().stream().findAny().orElseThrow(IllegalArgumentException::new);
 
     final Map<String, HashGroup> rangeMap = new HashMap<>();
@@ -97,7 +93,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     assert ranges.isEmpty();
 
     final ComputationProps computationProps = new ComputationProps(rangeMap, maxElementsInGraph);
-    return new ClusterConfig(workers, ackerLocation, computationProps);
+    return new ClusterConfig(workers, ackerLocation, computationProps, millisBetweenCommits);
   }
 
   private Set<Integer> freePorts(int n) throws IOException {
@@ -115,5 +111,30 @@ public class LocalClusterRuntime implements FlameRuntime {
       }
     }
     return ports;
+  }
+
+  public static class Builder {
+    private int parallelism = DEFAULT_PARALLELISM;
+    private int maxElementsInGraph = DEFAULT_MAX_ELEMENTS_IN_GRAPH;
+    private int millisBetweenCommits = DEFAULT_MILLIS_BETWEEN_COMMITS;
+
+    public Builder parallelism(int parallelism) {
+      this.parallelism = parallelism;
+      return this;
+    }
+
+    public Builder maxElementsInGraph(int maxElementsInGraph) {
+      this.maxElementsInGraph = maxElementsInGraph;
+      return this;
+    }
+
+    public Builder millisBetweenCommits(int millisBetweenCommits) {
+      this.millisBetweenCommits = millisBetweenCommits;
+      return this;
+    }
+
+    public LocalClusterRuntime build() throws IOException {
+      return new LocalClusterRuntime(parallelism, maxElementsInGraph, millisBetweenCommits);
+    }
   }
 }

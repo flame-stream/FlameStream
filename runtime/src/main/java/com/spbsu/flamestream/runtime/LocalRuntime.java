@@ -34,31 +34,14 @@ import java.util.stream.Stream;
 public class LocalRuntime implements FlameRuntime {
   private final int parallelism;
   private final int maxElementsInGraph;
+  private final int millisBetweenCommits;
   private final ActorSystem system;
 
-  public LocalRuntime(int parallelism) {
-    this(
-            ActorSystem.create(
-                    "local-runtime",
-                    ConfigFactory.load("local")
-            ),
-            parallelism,
-            DEFAULT_MAX_ELEMENTS_IN_GRAPH
-    );
-  }
-
-  public LocalRuntime(int parallelism, int maxElementsInGraph) {
-    this(
-            ActorSystem.create("local-runtime", ConfigFactory.load("local")),
-            parallelism,
-            maxElementsInGraph
-    );
-  }
-
-  private LocalRuntime(ActorSystem system, int parallelism, int maxElementsInGraph) {
-    this.system = system;
+  private LocalRuntime(int parallelism, int maxElementsInGraph, int millisBetweenCommits) {
     this.parallelism = parallelism;
     this.maxElementsInGraph = maxElementsInGraph;
+    this.millisBetweenCommits = millisBetweenCommits;
+    system = ActorSystem.create("local-runtime", ConfigFactory.load("local"));
   }
 
   public ActorSystem system() {
@@ -85,7 +68,8 @@ public class LocalRuntime implements FlameRuntime {
     final ClusterConfig clusterConfig = new ClusterConfig(
             paths,
             "node-0",
-            new ComputationProps(ranges, maxElementsInGraph)
+            new ComputationProps(ranges, maxElementsInGraph),
+            millisBetweenCommits
     );
     final Registry registry = new InMemoryRegistry();
 
@@ -148,6 +132,31 @@ public class LocalRuntime implements FlameRuntime {
     @Override
     public long lastCommit() {
       return lastCommit;
+    }
+  }
+
+  public static class Builder {
+    private int parallelism = DEFAULT_PARALLELISM;
+    private int maxElementsInGraph = DEFAULT_MAX_ELEMENTS_IN_GRAPH;
+    private int millisBetweenCommits = DEFAULT_MILLIS_BETWEEN_COMMITS;
+
+    public Builder parallelism(int parallelism) {
+      this.parallelism = parallelism;
+      return this;
+    }
+
+    public Builder maxElementsInGraph(int maxElementsInGraph) {
+      this.maxElementsInGraph = maxElementsInGraph;
+      return this;
+    }
+
+    public Builder millisBetweenCommits(int millisBetweenCommits) {
+      this.millisBetweenCommits = millisBetweenCommits;
+      return this;
+    }
+
+    public LocalRuntime build() {
+      return new LocalRuntime(parallelism, maxElementsInGraph, millisBetweenCommits);
     }
   }
 }

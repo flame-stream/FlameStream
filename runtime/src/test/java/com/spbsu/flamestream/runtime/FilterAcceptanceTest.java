@@ -41,7 +41,7 @@ public final class FilterAcceptanceTest extends FlameAkkaSuite {
 
   @Test
   public void linearFilter() throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().build()) {
       final FlameRuntime.Flame flame = runtime.run(multiGraph());
       {
         final List<AkkaFront.FrontHandle<Integer>> handles = flame

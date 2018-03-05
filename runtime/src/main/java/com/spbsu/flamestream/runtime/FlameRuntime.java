@@ -9,6 +9,8 @@ import java.util.stream.Stream;
 
 public interface FlameRuntime extends AutoCloseable {
   int DEFAULT_MAX_ELEMENTS_IN_GRAPH = 10;
+  int DEFAULT_MILLIS_BETWEEN_COMMITS = 10;
+  int DEFAULT_PARALLELISM = 4;
 
   Flame run(Graph g);
 

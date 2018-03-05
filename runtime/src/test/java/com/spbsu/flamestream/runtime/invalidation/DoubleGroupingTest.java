@@ -105,7 +105,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
 
   // TODO: 3/2/18 Return non-backpressure mode
   private void doubleGroupingTest(int nodes) throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(nodes, 100)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(nodes).maxElementsInGraph(100).build()) {
       final FlameRuntime.Flame flame = runtime.run(graph());
       {
         final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront(
@@ -145,7 +145,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     ).limit(iterations).collect(Collectors.toList());
     final List<Integer> expected = expected(source.stream().flatMap(List::stream).collect(Collectors.toList()));
 
-    try (final LocalRuntime runtime = new LocalRuntime(4)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().build()) {
       final AkkaFrontType<Integer> front = new AkkaFrontType<>(runtime.system());
       final AkkaRearType<Integer> rear = new AkkaRearType<>(runtime.system(), Integer.class);
       final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());

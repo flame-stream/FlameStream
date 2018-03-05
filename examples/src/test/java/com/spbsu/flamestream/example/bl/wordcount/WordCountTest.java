@@ -34,7 +34,7 @@ import static java.util.stream.Collectors.toMap;
 public class WordCountTest extends FlameAkkaSuite {
   @Test(invocationCount = 10)
   public void localEnvironmentTest() throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM, 2)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2).build()) {
       final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
       {
         final int lineSize = 50;

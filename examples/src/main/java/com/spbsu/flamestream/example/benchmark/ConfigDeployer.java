@@ -61,7 +61,12 @@ public class ConfigDeployer {
     assert covering.isEmpty();
 
     final ComputationProps props = new ComputationProps(ranges, config.maxElementsInGraph);
-    final ClusterConfig clusterConfig = new ClusterConfig(paths, config.ackerLocation, props);
+    final ClusterConfig clusterConfig = new ClusterConfig(
+            paths,
+            config.ackerLocation,
+            props,
+            config.millisBetweenCommits
+    );
 
     final ConfigurationClient client = new ZooKeeperGraphClient(new ZooKeeper(config.zkString, 4000, event -> {}));
     client.put(clusterConfig);
@@ -72,15 +77,18 @@ public class ConfigDeployer {
     private final Map<String, DumbInetSocketAddress> workers;
     private final String ackerLocation;
     private final int maxElementsInGraph;
+    private final int millisBetweenCommits;
 
     public ConfigDeployerConfig(@JsonProperty("zkString") String zkString,
                                 @JsonProperty("workers") Map<String, DumbInetSocketAddress> workers,
                                 @JsonProperty("ackerLocation") String ackerLocation,
-                                @JsonProperty("maxElementsInGraph") int maxElementsInGraph) {
+                                @JsonProperty("maxElementsInGraph") int maxElementsInGraph,
+                                @JsonProperty("millisBetweenCommits") int millisBetweenCommits) {
       this.zkString = zkString;
       this.workers = workers;
       this.ackerLocation = ackerLocation;
       this.maxElementsInGraph = maxElementsInGraph;
+      this.millisBetweenCommits = millisBetweenCommits;
     }
   }
 }
