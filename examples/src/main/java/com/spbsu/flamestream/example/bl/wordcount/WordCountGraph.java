@@ -60,6 +60,8 @@ public class WordCountGraph implements Supplier<Graph> {
             .link(filter, counter)
             .link(counter, sink)
             .link(counter, grouping)
+            .colocate(source, splitter)
+            .colocate(grouping, filter, counter, sink)
             .build(source, sink);
   }
 }

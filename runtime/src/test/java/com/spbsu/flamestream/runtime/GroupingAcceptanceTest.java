@@ -7,6 +7,7 @@ import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
@@ -54,11 +55,13 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
                 .collect(Collectors.toList()))
                 .limit(parallelism).collect(Collectors.toList());
         final Set<List<Long>> expected = GroupingAcceptanceTest.expected(source, window);
-        final List<AkkaFrontType.Handle<Long>> handles = flame
+        final List<AkkaFront.FrontHandle<Long>> handles = flame
                 .attachFront("groupingAcceptanceFront", new AkkaFrontType<Long>(runtime.system(), false))
                 .collect(Collectors.toList());
 
-        final AwaitResultConsumer<List<Long>> consumer = new AwaitResultConsumer<>(source.stream().mapToInt(List::size).sum());
+        final AwaitResultConsumer<List<Long>> consumer = new AwaitResultConsumer<>(source.stream()
+                .mapToInt(List::size)
+                .sum());
         flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
                 .forEach(r -> r.addListener(consumer::accept));
         IntStream.range(0, parallelism).forEach(i -> applyDataToHandleAsync(source.get(i).stream(), handles.get(i)));
