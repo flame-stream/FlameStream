@@ -125,9 +125,9 @@ public class Acker extends LoggingActor {
     return acking().orElse(ReceiveBuilder.create()
             .match(Prepared.class, c -> {
               committed++;
-              log().info("Manager '{}' has prepared", sender());
+              //log().info("Manager '{}' has prepared", sender());
               if (committed == managersCount) {
-                log().info("All managers have prepared, committing");
+                //log().info("All managers have prepared, committing");
                 registry.committed(lastPrepareTime.time());
                 committed = 0;
                 commitRuns = false;
@@ -139,7 +139,7 @@ public class Acker extends LoggingActor {
 
   private void commit(GlobalTime time) {
     if (!commitRuns) {
-      log().info("Initiating commit for time '{}'", time);
+      //log().info("Initiating commit for time '{}'", time);
       managers.forEach(m -> m.tell(new Prepare(time), self()));
       lastPrepareTime = time;
       commitRuns = true;
