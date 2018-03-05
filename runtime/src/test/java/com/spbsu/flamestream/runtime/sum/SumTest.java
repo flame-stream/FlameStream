@@ -13,9 +13,9 @@ import com.spbsu.flamestream.runtime.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.edge.akka.LocalFront;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import com.typesafe.config.ConfigFactory;
 import org.testng.Assert;
@@ -76,9 +76,9 @@ public final class SumTest extends FlameAkkaSuite {
     try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
       final FlameRuntime.Flame flame = runtime.run(sumGraph());
       {
-        final List<LocalFront<LongNumb>> handles = flame.attachFront(
+        final List<AkkaFront.FrontHandle<LongNumb>> handles = flame.attachFront(
                 "sumFront",
-                AkkaFrontType.<LongNumb>withLocalFront(runtime.system())
+                new AkkaFrontType<LongNumb>(runtime.system())
         ).collect(Collectors.toList());
         final AtomicLong expected = new AtomicLong();
         final int inputSize = 5000;
@@ -120,14 +120,14 @@ public final class SumTest extends FlameAkkaSuite {
           expected.add(new Sum(currentSum));
         }
 
-        final List<LocalFront<LongNumb>> handles = flame.attachFront(
+        final List<AkkaFront.FrontHandle<LongNumb>> handles = flame.attachFront(
                 "totalOrderFront",
-                AkkaFrontType.<LongNumb>withLocalFront(runtime.system())
+                new AkkaFrontType<LongNumb>(runtime.system())
         ).collect(Collectors.toList());
         for (int i = 1; i < handles.size(); i++) {
-          handles.get(i).eos();
+          handles.get(i).unregister();
         }
-        final LocalFront<LongNumb> sink = handles.get(0);
+        final AkkaFront.FrontHandle<LongNumb> sink = handles.get(0);
 
         final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.size());
         flame.attachRear("totalOrderRear", new AkkaRearType<>(runtime.system(), Sum.class))
@@ -151,14 +151,14 @@ public final class SumTest extends FlameAkkaSuite {
                   .ints(1000)
                   .mapToObj(LongNumb::new)
                   .collect(Collectors.toList());
-          final List<LocalFront<LongNumb>> handles = flame.attachFront(
+          final List<AkkaFront.FrontHandle<LongNumb>> handles = flame.attachFront(
                   "totalOrderFront",
-                  AkkaFrontType.<LongNumb>withLocalFront(system)
+                  new AkkaFrontType<LongNumb>(system)
           ).collect(Collectors.toList());
           for (int i = 1; i < handles.size(); i++) {
-            handles.get(i).eos();
+            handles.get(i).unregister();
           }
-          final LocalFront<LongNumb> sink = handles.get(0);
+          final AkkaFront.FrontHandle<LongNumb> sink = handles.get(0);
 
           final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.size());
           flame.attachRear("totalOrderRear", new AkkaRearType<>(system, Sum.class))

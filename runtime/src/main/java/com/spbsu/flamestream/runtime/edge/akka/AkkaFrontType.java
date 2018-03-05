@@ -1,40 +1,36 @@
 package com.spbsu.flamestream.runtime.edge.akka;
 
-import akka.actor.ActorRef;
+import akka.actor.ActorPath;
 import akka.actor.ActorSystem;
-import com.spbsu.flamestream.core.Front;
+import akka.actor.Address;
+import akka.actor.RootActorPath;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
-public class AkkaFrontType<T extends Front> implements FlameRuntime.FrontType<AkkaFront, T> {
+public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaFront.FrontHandle<T>> {
   private final ActorSystem system;
+  private final boolean backPressure;
+  private final Map<EdgeContext, AkkaFront.FrontHandle<T>> localHandles = new HashMap<>();
 
-  private final Function<EdgeContext, T> localFronts;
-
-  public static <DATA_TYPE> AkkaFrontType<LocalFront<DATA_TYPE>> withLocalFront(ActorSystem system) {
-    return new AkkaFrontType<>(new Function<EdgeContext, LocalFront<DATA_TYPE>>() {
-      private final Map<EdgeContext, LocalFront<DATA_TYPE>> fronts = new HashMap<>();
-
-      @Override
-      public LocalFront<DATA_TYPE> apply(EdgeContext context) {
-        fronts.putIfAbsent(context, new LocalFront<>(context));
-        return fronts.get(context);
-      }
-    }, system);
+  public AkkaFrontType(ActorSystem system) {
+    this(system, true);
   }
 
-  public AkkaFrontType(Function<EdgeContext, T> localFronts, ActorSystem system) {
+  public AkkaFrontType(ActorSystem system, boolean backPressure) {
     this.system = system;
-    this.localFronts = localFronts;
+    this.backPressure = backPressure;
   }
 
   @Override
   public FlameRuntime.FrontInstance<AkkaFront> instance() {
+    final Address address = system.provider().getDefaultAddress();
+    final ActorPath path = RootActorPath.apply(address, "/").child("user");
+
     return new FlameRuntime.FrontInstance<AkkaFront>() {
       @Override
       public Class<AkkaFront> clazz() {
@@ -43,22 +39,20 @@ public class AkkaFrontType<T extends Front> implements FlameRuntime.FrontType<Ak
 
       @Override
       public String[] params() {
-        return new String[0];
+        return new String[]{path.toSerializationFormat()};
       }
     };
   }
 
   @Override
-  public T handle(EdgeContext context) {
-    final ActorRef frontRef = AwaitResolver.syncResolve(
-            context.nodePath()
-                    .child("edge")
-                    .child(context.edgeId().edgeName())
-                    .child(context.edgeId().nodeId() + "-inner"),
-            system
-    );
-    final T front = localFronts.apply(context);
-    system.actorOf(AkkaFront.LocalMediator.props(front, frontRef));
-    return front;
+  public AkkaFront.FrontHandle<T> handle(EdgeContext context) {
+    if (!localHandles.containsKey(context)) {
+      final BlockingQueue<Object> queue = new ArrayBlockingQueue<>(1);
+      system.actorOf(AkkaFront.LocalMediator.props(context, queue, backPressure), context.edgeId().nodeId() + "-local");
+
+      final AkkaFront.FrontHandle<T> frontHandle = new AkkaFront.FrontHandle<>(queue);
+      localHandles.put(context, frontHandle);
+    }
+    return localHandles.get(context);
   }
 }

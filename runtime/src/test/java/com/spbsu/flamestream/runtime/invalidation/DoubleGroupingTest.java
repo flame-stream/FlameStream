@@ -13,9 +13,9 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.edge.akka.LocalFront;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -93,28 +93,28 @@ public class DoubleGroupingTest extends FlameStreamSuite {
             .build(source, sink);
   }
 
-  @Test(invocationCount = 100)
+  @Test(invocationCount = 10)
   public void singleWorkerTest() throws InterruptedException {
     doubleGroupingTest(1);
   }
 
-  @Test(invocationCount = 100)
+  @Test(invocationCount = 10)
   public void multipleWorkersTest() throws InterruptedException {
     doubleGroupingTest(4);
   }
 
   // TODO: 3/2/18 Return non-backpressure mode
   private void doubleGroupingTest(int nodes) throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(nodes)) {
+    try (final LocalRuntime runtime = new LocalRuntime(nodes, 100)) {
       final FlameRuntime.Flame flame = runtime.run(graph());
       {
-        final List<LocalFront<Integer>> handles = flame.attachFront(
+        final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront(
                 "doubleGroupingFront",
-                AkkaFrontType.<Integer>withLocalFront(runtime.system())
+                new AkkaFrontType<Integer>(runtime.system(), false)
         ).collect(Collectors.toList());
-        final LocalFront<Integer> sink = handles.get(0);
+        final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
         for (int i = 1; i < handles.size(); i++) {
-          handles.get(i).eos();
+          handles.get(i).unregister();
         }
 
         final List<Integer> source = new Random()
@@ -147,17 +147,17 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     final List<Integer> expected = expected(source.stream().flatMap(List::stream).collect(Collectors.toList()));
 
     try (final LocalRuntime runtime = new LocalRuntime(4)) {
-      final AkkaFrontType<LocalFront<Integer>> front = AkkaFrontType.<Integer>withLocalFront(runtime.system());
+      final AkkaFrontType<Integer> front = new AkkaFrontType<>(runtime.system());
       final AkkaRearType<Integer> rear = new AkkaRearType<>(runtime.system(), Integer.class);
       final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
 
       for (int iter = 0; iter < iterations; ++iter) {
         try (FlameRuntime.Flame flame = runtime.run(graph())) {
-          final List<LocalFront<Integer>> handles = flame.attachFront("blinkFront", front)
+          final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront("blinkFront", front)
                   .collect(Collectors.toList());
-          final LocalFront<Integer> sink = handles.get(0);
+          final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
           for (int i = 1; i < handles.size(); i++) {
-            handles.get(i).eos();
+            handles.get(i).unregister();
           }
 
           flame.attachRear("doubleGroupingRear", rear).forEach(r -> r.addListener(consumer));

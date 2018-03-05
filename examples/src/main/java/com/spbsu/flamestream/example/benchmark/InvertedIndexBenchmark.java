@@ -8,9 +8,9 @@ import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.bl.index.utils.WikipeadiaInput;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.edge.akka.LocalFront;
 import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 
 import java.util.List;
@@ -41,10 +41,10 @@ public class InvertedIndexBenchmark {
                 }
               }));
 
-      final List<LocalFront<WikipediaPage>> handles = flame
-              .attachFront("Front", AkkaFrontType.<WikipediaPage>withLocalFront(runtime.system()))
+      final List<AkkaFront.FrontHandle<WikipediaPage>> handles = flame
+              .attachFront("Front", new AkkaFrontType<WikipediaPage>(runtime.system()))
               .collect(Collectors.toList());
-      final LocalFront<WikipediaPage> sink = handles.get(0);
+      final AkkaFront.FrontHandle<WikipediaPage> sink = handles.get(0);
       for (int i = 1; i < parallelism; i++) {
         handles.get(i).eos();
       }
