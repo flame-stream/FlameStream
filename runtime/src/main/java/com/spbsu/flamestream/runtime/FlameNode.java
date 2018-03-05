@@ -27,7 +27,12 @@ public class FlameNode extends LoggingActor {
     this.config = config;
     final ActorRef acker;
     if (id.equals(config.ackerLocation())) {
-      acker = context().actorOf(Acker.props(config.paths().size(), config.defaultMinTime(), registry), "acker");
+      acker = context().actorOf(Acker.props(
+              config.paths().size(),
+              config.defaultMinTime(),
+              config.millisBetweenCommits(),
+              registry
+      ), "acker");
     } else {
       acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
     }
@@ -45,7 +50,11 @@ public class FlameNode extends LoggingActor {
     this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, graph), "edge");
   }
 
-  public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, Registry registry, StateStorage stateStorage) {
+  public static Props props(String id,
+                            Graph initialGraph,
+                            ClusterConfig initialConfig,
+                            Registry registry,
+                            StateStorage stateStorage) {
     return Props.create(FlameNode.class, id, initialGraph, initialConfig, registry, stateStorage);
   }
 

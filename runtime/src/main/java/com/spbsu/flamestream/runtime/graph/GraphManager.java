@@ -176,6 +176,7 @@ public class GraphManager extends LoggingActor {
 
   private void onPrepare(Prepare prepare) {
     context().system().dispatchers().lookup("util-dispatcher").execute(() -> {
+      components.forEach(actorRef -> actorRef.forward(prepare, context()));
       unitStates.forEach((hashUnit, stateMap) -> storage.putState(
               hashUnit,
               prepare.globalTime(),

@@ -13,6 +13,7 @@ import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashUnit;
@@ -165,7 +166,12 @@ public class Component extends LoggingActor {
             .match(NewRear.class, this::onNewRear)
             .match(Heartbeat.class, h -> acker.forward(h, context()))
             .match(UnregisterFront.class, u -> acker.forward(u, context()))
+            .match(Prepare.class, this::onPrepare)
             .build();
+  }
+
+  private void onPrepare(Prepare prepare) {
+    jobas.values().forEach(joba -> joba.onPrepareCommit(prepare.globalTime()));
   }
 
   private void inject(AddressedItem addressedItem) {
