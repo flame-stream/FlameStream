@@ -9,19 +9,21 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 
-import java.util.NavigableMap;
-import java.util.TreeMap;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.Map;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class LocalFront<T> implements Front, Consumer<T> {
-  private final NavigableMap<GlobalTime, DataItem> log = new TreeMap<>();
-  private final BlockingQueue<DataItem> queue = new ArrayBlockingQueue<>(1);
+  private final ConcurrentNavigableMap<GlobalTime, DataItem> log = new ConcurrentSkipListMap<>();
   private final EdgeId frontId;
-  private boolean eos = false;
 
-  private Consumer<Object> hole;
+  private final AtomicInteger requestDebt = new AtomicInteger(0);
+  private volatile boolean eos = false;
+  private volatile Consumer<Object> hole;
+
+  private GlobalTime lastEmitted = GlobalTime.MIN;
 
   private long index = 0;
 
@@ -30,45 +32,45 @@ public class LocalFront<T> implements Front, Consumer<T> {
   }
 
   @Override
-  public synchronized void onStart(Consumer<Object> consumer, GlobalTime from) {
+  public void onStart(Consumer<Object> consumer, GlobalTime from) {
     if (eos) {
       consumer.accept(new Heartbeat(new GlobalTime(Long.MAX_VALUE, frontId)));
     }
     index = Math.max(index, from.time());
     this.hole = consumer;
-    queue.clear();
-    queue.addAll(log.tailMap(from).values());
   }
 
   @Override
-  public synchronized void onRequestNext() {
-    final DataItem item = queue.poll();
-    if (item != null) {
-      hole.accept(item);
-      hole.accept(new Heartbeat(item.meta().globalTime()));
+  public void onRequestNext() {
+    requestDebt.incrementAndGet();
+    tryPoll();
+  }
+
+  private void tryPoll() {
+    final Map.Entry<GlobalTime, DataItem> entry = log.higherEntry(lastEmitted);
+    if (entry != null) {
+      requestDebt.decrementAndGet();
+      hole.accept(entry.getValue());
+      hole.accept(new Heartbeat(entry.getKey()));
+      lastEmitted = entry.getKey();
     }
   }
 
   @Override
-  public synchronized void onCheckpoint(GlobalTime to) {
+  public void onCheckpoint(GlobalTime to) {
     log.headMap(to).clear();
   }
 
   @Override
-  public synchronized void accept(T value) {
-    try {
-      final DataItem item = new PayloadDataItem(new Meta(new GlobalTime(++index, frontId)), value);
-      log.put(item.meta().globalTime(), item);
-      queue.put(item);
-      if (queue.size() == 1) {
-        onRequestNext();
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+  public void accept(T value) {
+    final DataItem item = new PayloadDataItem(new Meta(new GlobalTime(++index, frontId)), value);
+    log.put(item.meta().globalTime(), item);
+    if (requestDebt.get() > 0) {
+      tryPoll();
     }
   }
 
-  public synchronized void eos() {
+  public void eos() {
     if (hole == null) {
       eos = true;
     } else {
