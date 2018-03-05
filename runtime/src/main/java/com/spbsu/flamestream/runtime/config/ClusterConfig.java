@@ -2,6 +2,7 @@ package com.spbsu.flamestream.runtime.config;
 
 import akka.actor.ActorPath;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashMap;
@@ -31,7 +32,7 @@ public class ClusterConfig {
     return ackerLocation;
   }
 
-  @JsonProperty
+  @JsonIgnore
   public int defaultMinTime() {
     return 0;
   }
