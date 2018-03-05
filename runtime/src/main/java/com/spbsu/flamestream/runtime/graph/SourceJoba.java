@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class SourceJoba implements Joba {
-  private final Collection<InFlightTime> inFlight = new ArrayList<>();
+  private final Collection<GlobalTime> inFlight = new ArrayList<>();
   private final Map<EdgeId, ActorRef> fronts = new HashMap<>();
   private final int maxInFlightItems;
   private final ActorContext context;
@@ -32,9 +32,7 @@ public class SourceJoba implements Joba {
       final GlobalTime globalTime = item.meta().globalTime();
       if (inFlight.size() < maxInFlightItems) {
         fronts.get(globalTime.frontId()).tell(new RequestNext(), context.self());
-        inFlight.add(new InFlightTime(globalTime, true));
-      } else {
-        inFlight.add(new InFlightTime(globalTime, false));
+        inFlight.add(globalTime);
       }
     }
   }
@@ -46,26 +44,13 @@ public class SourceJoba implements Joba {
 
   @Override
   public void onMinTime(GlobalTime minTime) {
-    final Iterator<InFlightTime> iterator = inFlight.iterator();
+    final Iterator<GlobalTime> iterator = inFlight.iterator();
     while (iterator.hasNext()) {
-      final InFlightTime next = iterator.next();
-      final GlobalTime nextTime = next.globalTime;
-      if (nextTime.compareTo(minTime) <= 0) {
+      final GlobalTime nextTime = iterator.next();
+      if (nextTime.compareTo(minTime) < 0) {
         iterator.remove();
-        if (!next.accepted) {
-          fronts.get(nextTime.frontId()).tell(new RequestNext(), context.self());
-        }
+        fronts.get(nextTime.frontId()).tell(new RequestNext(), context.self());
       }
-    }
-  }
-
-  private static class InFlightTime {
-    private final GlobalTime globalTime;
-    private final boolean accepted;
-
-    private InFlightTime(GlobalTime globalTime, boolean accepted) {
-      this.globalTime = globalTime;
-      this.accepted = accepted;
     }
   }
 }

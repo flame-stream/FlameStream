@@ -4,6 +4,7 @@ import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
 import com.spbsu.flamestream.runtime.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
@@ -31,9 +32,9 @@ import static java.util.stream.Collectors.toMap;
  * Date: 19.12.2017
  */
 public class WordCountTest extends FlameAkkaSuite {
-  @Test
+  @Test(invocationCount = 10)
   public void localEnvironmentTest() throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM, 50)) {
+    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM, 2)) {
       final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
       {
         final int lineSize = 50;
@@ -54,8 +55,8 @@ public class WordCountTest extends FlameAkkaSuite {
         );
         flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordCounter.class))
                 .forEach(r -> r.addListener(awaitConsumer));
-        final List<AkkaFrontType.Handle<String>> handles = flame
-                .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system(), true))
+        final List<AkkaFront.FrontHandle<String>> handles = flame
+                .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system()))
                 .collect(Collectors.toList());
         applyDataToAllHandlesAsync(input, handles);
         awaitConsumer.await(5, TimeUnit.MINUTES);

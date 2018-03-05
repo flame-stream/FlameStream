@@ -35,10 +35,12 @@ public class LocalRuntime implements FlameRuntime {
   private final ActorSystem system;
 
   public LocalRuntime(int parallelism) {
-    this(ActorSystem.create("local-runtime",
+    this(
+            ActorSystem.create("local-runtime",
             ConfigFactory.load("local")),
             parallelism,
-            DEFAULT_MAX_ELEMENTS_IN_GRAPH);
+            DEFAULT_MAX_ELEMENTS_IN_GRAPH
+    );
   }
 
   public LocalRuntime(int parallelism, int maxElementsInGraph) {

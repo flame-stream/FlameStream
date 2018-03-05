@@ -8,6 +8,7 @@ import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.bl.index.utils.WikipeadiaInput;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
@@ -26,7 +27,7 @@ import java.util.stream.Stream;
 public class InvertedIndexBenchmark {
   public static void main(String[] args) throws InterruptedException {
     final int parallelism = 4;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism, 1)) {
+    try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       final ConcurrentSkipListMap<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
       final AwaitCountConsumer awaitConsumer = new AwaitCountConsumer(65813);
@@ -40,10 +41,10 @@ public class InvertedIndexBenchmark {
                 }
               }));
 
-      final List<AkkaFrontType.Handle<WikipediaPage>> handles = flame
-              .attachFront("Front", new AkkaFrontType<WikipediaPage>(runtime.system(), true))
+      final List<AkkaFront.FrontHandle<WikipediaPage>> handles = flame
+              .attachFront("Front", new AkkaFrontType<WikipediaPage>(runtime.system()))
               .collect(Collectors.toList());
-      final AkkaFrontType.Handle<WikipediaPage> sink = handles.get(0);
+      final AkkaFront.FrontHandle<WikipediaPage> sink = handles.get(0);
       for (int i = 1; i < parallelism; i++) {
         handles.get(i).eos();
       }

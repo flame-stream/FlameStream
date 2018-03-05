@@ -11,7 +11,6 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +47,9 @@ public class SocketFront extends Front.Stub {
       public void received(Connection connection, Object object) {
         if (Arrays.stream(classes).anyMatch(clazz -> clazz.isAssignableFrom(object.getClass()))) {
           //tracer.log(object.hashCode());
-          consumer.accept(new PayloadDataItem(new Meta(currentTime()), object));
-          consumer.accept(new Heartbeat(currentTime()));
+          final GlobalTime globalTime = currentTime();
+          consumer.accept(new PayloadDataItem(new Meta(globalTime), object));
+          consumer.accept(new Heartbeat(globalTime));
         }
       }
     });
