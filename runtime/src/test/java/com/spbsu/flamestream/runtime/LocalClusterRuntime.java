@@ -93,7 +93,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     assert ranges.isEmpty();
 
     final ComputationProps computationProps = new ComputationProps(rangeMap, maxElementsInGraph);
-    return new ClusterConfig(workers, ackerLocation, computationProps, millisBetweenCommits);
+    return new ClusterConfig(workers, ackerLocation, computationProps, millisBetweenCommits, 0);
   }
 
   private Set<Integer> freePorts(int n) throws IOException {

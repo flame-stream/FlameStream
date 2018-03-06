@@ -69,7 +69,8 @@ public class LocalRuntime implements FlameRuntime {
             paths,
             "node-0",
             new ComputationProps(ranges, maxElementsInGraph),
-            millisBetweenCommits
+            millisBetweenCommits,
+            0
     );
     final Registry registry = new InMemoryRegistry();
 

@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.runtime.edge.akka;
 
+import akka.actor.ActorPath;
 import akka.actor.ActorPaths;
 import akka.actor.ActorRef;
 import akka.actor.ActorRefFactory;
@@ -33,7 +34,8 @@ public class AkkaFront implements Front {
 
   public AkkaFront(EdgeContext edgeContext, ActorRefFactory refFactory, String localMediatorPath) {
     this.innerActor = refFactory.actorOf(
-            RemoteMediator.props(localMediatorPath + "/" + edgeContext.edgeId().nodeId() + "-local"),
+            RemoteMediator.props(localMediatorPath + "/" + edgeContext.edgeId().nodeId() + "-local")
+                    .withDispatcher("util-dispatcher"),
             edgeContext.edgeId().nodeId() + "-inner"
     );
   }
@@ -69,7 +71,8 @@ public class AkkaFront implements Front {
     @Override
     public void preStart() throws Exception {
       super.preStart();
-      localMediator = AwaitResolver.resolve(ActorPaths.fromString(localMediatorPath), context())
+      final ActorPath path = ActorPaths.fromString(localMediatorPath);
+      localMediator = AwaitResolver.resolve(path, context())
               .toCompletableFuture()
               .get();
     }

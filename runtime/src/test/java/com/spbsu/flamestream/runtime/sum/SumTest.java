@@ -141,42 +141,41 @@ public final class SumTest extends FlameAkkaSuite {
     }
   }
 
-  @Test(enabled = false)
+  @Test(invocationCount = 10)
   public void integrationTest() throws Exception {
     try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(2).build()) {
-      for (int graph = 0; graph < 10; ++graph) {
-        final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
-        try (final FlameRuntime.Flame flame = runtime.run(sumGraph())) {
-          final List<LongNumb> source = new Random()
-                  .ints(1000)
-                  .mapToObj(LongNumb::new)
-                  .collect(Collectors.toList());
-          final List<AkkaFront.FrontHandle<LongNumb>> handles = flame.attachFront(
-                  "totalOrderFront",
-                  new AkkaFrontType<LongNumb>(system)
-          ).collect(Collectors.toList());
-          for (int i = 1; i < handles.size(); i++) {
-            handles.get(i).unregister();
-          }
-          final AkkaFront.FrontHandle<LongNumb> sink = handles.get(0);
-
-          final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.size());
-          flame.attachRear("totalOrderRear", new AkkaRearType<>(system, Sum.class))
-                  .forEach(r -> r.addListener(consumer));
-
-          final Set<Sum> expected = new HashSet<>();
-          long currentSum = 0;
-          for (LongNumb longNumb : source) {
-            currentSum += longNumb.value();
-            expected.add(new Sum(currentSum));
-          }
-
-          source.forEach(sink);
-          consumer.await(10, TimeUnit.MINUTES);
-
-          Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
-          Await.ready(system.terminate(), Duration.Inf());
+      final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
+      try (final FlameRuntime.Flame flame = runtime.run(sumGraph())) {
+        final List<LongNumb> source = new Random()
+                .ints(1000)
+                .mapToObj(LongNumb::new)
+                .collect(Collectors.toList());
+        final List<AkkaFront.FrontHandle<LongNumb>> handles = flame.attachFront(
+                "totalOrderFront",
+                new AkkaFrontType<LongNumb>(system)
+        ).collect(Collectors.toList());
+        for (int i = 1; i < handles.size(); i++) {
+          handles.get(i).unregister();
         }
+        final AkkaFront.FrontHandle<LongNumb> sink = handles.get(0);
+
+        final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.size());
+        flame.attachRear("totalOrderRear", new AkkaRearType<>(system, Sum.class))
+                .forEach(r -> r.addListener(consumer));
+
+        final Set<Sum> expected = new HashSet<>();
+        long currentSum = 0;
+        for (LongNumb longNumb : source) {
+          currentSum += longNumb.value();
+          expected.add(new Sum(currentSum));
+        }
+
+        source.forEach(sink);
+        sink.eos();
+        consumer.await(10, TimeUnit.MINUTES);
+
+        Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+        Await.ready(system.terminate(), Duration.Inf());
       }
     }
   }

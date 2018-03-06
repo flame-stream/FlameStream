@@ -65,7 +65,8 @@ public class ConfigDeployer {
             paths,
             config.ackerLocation,
             props,
-            config.millisBetweenCommits
+            config.millisBetweenCommits,
+            0
     );
 
     final ConfigurationClient client = new ZooKeeperGraphClient(new ZooKeeper(config.zkString, 4000, event -> {}));
