@@ -108,7 +108,7 @@ public class AkkaFront implements Front {
     private final NavigableMap<GlobalTime, DataItem> log = new TreeMap<>();
     private final EdgeContext edgeContext;
 
-    private boolean producerWait = false;
+    private GlobalTime producerWait = null;
     private GlobalTime lastEmitted = GlobalTime.MIN;
     private long time = 0;
 
@@ -144,25 +144,21 @@ public class AkkaFront implements Front {
 
     private Receive processing() {
       return ReceiveBuilder.create()
-              .match(Start.class, this::onStart)
+              .match(Start.class, start -> {
+                onStart(start);
+              })
               .match(RequestNext.class, r -> {
                 // Overflow protection
                 requestDebt = Math.max(requestDebt + 1, requestDebt);
-                if (producerWait) {
-                  process();
-                  producerWait = false;
-                }
+                tryProcess();
               })
               .match(Checkpoint.class, checkpoint -> log.headMap(checkpoint.time()).clear())
               .match(Raw.class, raw -> {
                 sender = sender();
                 final GlobalTime globalTime = new GlobalTime(++time, edgeContext.edgeId());
                 log.put(globalTime, new PayloadDataItem(new Meta(globalTime), raw.raw));
-                if (requestDebt > 0) {
-                  process();
-                } else {
-                  producerWait = true;
-                }
+                producerWait = globalTime;
+                tryProcess();
               })
               .match(
                       Command.class,
@@ -187,21 +183,30 @@ public class AkkaFront implements Front {
     }
 
     private void onStart(Start start) {
+      if (start.from().time() > 0) {
+        System.out.println("YEAHHH");
+      }
+
+      System.out.println("New on start");
       remoteMediator = start.hole();
       time = Math.max(start.from().time(), time);
-      lastEmitted = start.from();
+      lastEmitted = new GlobalTime(start.from().time() - 1, edgeContext.edgeId());
+      requestDebt = 0;
     }
 
-    private void process() {
-      assert requestDebt > 0;
-      requestDebt--;
-
+    private void tryProcess() {
       final Map.Entry<GlobalTime, DataItem> entry = log.higherEntry(lastEmitted);
-      remoteMediator.tell(entry.getValue(), self());
-      remoteMediator.tell(new Heartbeat(entry.getKey()), self());
+      if (entry != null && requestDebt > 0) {
+        requestDebt--;
+        remoteMediator.tell(entry.getValue(), self());
+        remoteMediator.tell(new Heartbeat(entry.getKey()), self());
 
-      lastEmitted = entry.getKey();
-      sender.tell(Command.OK, self());
+        lastEmitted = entry.getKey();
+        if (producerWait != null && lastEmitted.equals(producerWait)) {
+          sender.tell(Command.OK, self());
+          producerWait = null;
+        }
+      }
     }
   }
 

@@ -1,18 +1,24 @@
 package com.spbsu.flamestream.runtime.utils;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class AwaitResultConsumer<T> implements Consumer<T> {
-  private final List<T> result = new ArrayList<>();
+  private final Collection<T> result;
   private final int expectedSize;
   private boolean finished = false;
 
   public AwaitResultConsumer(int expectedSize) {
+    this(expectedSize, ArrayList::new);
+  }
+
+  public AwaitResultConsumer(int expectedSize, Supplier<Collection<T>> supplier) {
     this.expectedSize = expectedSize;
+    result = supplier.get();
   }
 
   @Override

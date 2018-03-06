@@ -4,7 +4,6 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Address;
-import akka.actor.PoisonPill;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.Graph;
@@ -19,6 +18,8 @@ import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.state.InMemStateStorage;
+import com.spbsu.flamestream.runtime.state.StateStorage;
+import com.spbsu.flamestream.runtime.utils.SyncKiller;
 import com.typesafe.config.ConfigFactory;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
@@ -36,6 +37,8 @@ public class LocalRuntime implements FlameRuntime {
   private final int maxElementsInGraph;
   private final int millisBetweenCommits;
   private final ActorSystem system;
+  private final Registry registry = new InMemoryRegistry();
+  private final StateStorage stateStorage = new InMemStateStorage();
 
   private LocalRuntime(int parallelism, int maxElementsInGraph, int millisBetweenCommits) {
     this.parallelism = parallelism;
@@ -72,18 +75,17 @@ public class LocalRuntime implements FlameRuntime {
             millisBetweenCommits,
             0
     );
-    final Registry registry = new InMemoryRegistry();
 
     final List<ActorRef> nodes = paths.keySet().stream()
             // FIXME: 3/1/18 real storage
-            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry, new InMemStateStorage())
+            .map(id -> system.actorOf(FlameNode.props(id, g, clusterConfig, registry, stateStorage)
                     .withDispatcher("util-dispatcher"), id))
             .collect(Collectors.toList());
 
     return new Flame() {
       @Override
       public void close() {
-        nodes.forEach(n -> n.tell(PoisonPill.getInstance(), ActorRef.noSender()));
+        nodes.forEach(n -> SyncKiller.syncKill(n, system));
       }
 
       @Override
@@ -112,7 +114,7 @@ public class LocalRuntime implements FlameRuntime {
   }
 
   private static class InMemoryRegistry implements Registry {
-    private final Map<EdgeId, Long> linearizableCollection = Collections.synchronizedMap(new HashMap<>());
+    private final Map<EdgeId, Long> linearizableCollection = new HashMap<>();
     private long lastCommit = 0;
 
     @Override

@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -143,24 +144,34 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     final List<List<Integer>> source = Stream.generate(() ->
             rd.ints(iterationSize).boxed().collect(Collectors.toList())
     ).limit(iterations).collect(Collectors.toList());
-    final List<Integer> expected = expected(source.stream().flatMap(List::stream).collect(Collectors.toList()));
+    final Set<Integer> expected = new HashSet<>(expected(source.stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toList())));
 
-    try (final LocalRuntime runtime = new LocalRuntime.Builder().build()) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(1).millisBetweenCommits(100).build()) {
       final AkkaFrontType<Integer> front = new AkkaFrontType<>(runtime.system());
       final AkkaRearType<Integer> rear = new AkkaRearType<>(runtime.system(), Integer.class);
-      final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
+      final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size(), HashSet::new);
+      final Graph graph = graph();
 
       for (int iter = 0; iter < iterations; ++iter) {
-        try (FlameRuntime.Flame flame = runtime.run(graph())) {
-          final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront("blinkFront", front)
-                  .collect(Collectors.toList());
-          final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
-          for (int i = 1; i < handles.size(); i++) {
-            handles.get(i).unregister();
-          }
+        System.out.println("ITERRR: " + iter);
+        FlameRuntime.Flame flame = runtime.run(graph);
+        final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront("blinkFront", front)
+                .collect(Collectors.toList());
+        final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
+        for (int i = 1; i < handles.size(); i++) {
+          handles.get(i).unregister();
+        }
 
-          flame.attachRear("doubleGroupingRear", rear).forEach(r -> r.addListener(consumer));
-          source.get(iter).forEach(sink);
+        flame.attachRear("doubleGroupingRear", rear).forEach(r -> r.addListener(consumer));
+        source.get(iter).forEach(sink);
+
+        if (iter != (iterations - 1)) {
+          Thread.sleep(500);
+          flame.close();
+          Thread.sleep(100);
+        } else {
           sink.eos();
         }
       }

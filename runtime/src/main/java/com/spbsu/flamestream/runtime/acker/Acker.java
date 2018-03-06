@@ -161,8 +161,9 @@ public class Acker extends LoggingActor {
     } else {
       final long startTime = Math.max(registeredTime, registry.lastCommit());
       log().info("Front '{}' has been registered already, starting from '{}'", frontId, startTime);
-
-      sender().tell(new FrontTicket(new GlobalTime(startTime, frontId)), self());
+      final GlobalTime globalTime = new GlobalTime(startTime, frontId);
+      maxHeartbeats.put(frontId, globalTime);
+      sender().tell(new FrontTicket(globalTime), self());
     }
   }
 
@@ -175,7 +176,7 @@ public class Acker extends LoggingActor {
   private void handleHeartBeat(Heartbeat heartbeat) {
     final GlobalTime time = heartbeat.time();
     final GlobalTime previousHeartbeat = maxHeartbeats.get(heartbeat.time().frontId());
-    if (heartbeat.time().compareTo(previousHeartbeat) <= 0) {
+    if (heartbeat.time().compareTo(previousHeartbeat) < 0) {
       throw new IllegalStateException("Non monotonic heartbeats");
     }
     maxHeartbeats.put(time.frontId(), heartbeat.time());
