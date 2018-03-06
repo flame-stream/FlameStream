@@ -3,9 +3,10 @@ package com.spbsu.flamestream.runtime.edge.akka;
 import akka.actor.ActorPaths;
 import akka.actor.ActorRef;
 import akka.actor.ActorRefFactory;
-import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.pattern.PatternsCS;
+import akka.util.Timeout;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
@@ -19,9 +20,11 @@ import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.edge.api.Start;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import scala.concurrent.duration.FiniteDuration;
 
-import java.util.concurrent.BlockingQueue;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -99,18 +102,19 @@ public class AkkaFront implements Front {
   }
 
   public static class LocalMediator extends LoggingActor {
+    private final NavigableMap<GlobalTime, DataItem> log = new TreeMap<>();
     private final EdgeContext edgeContext;
-    private final BlockingQueue<Object> queue;
 
+    private boolean producerWait = false;
+    private GlobalTime lastEmitted = GlobalTime.MIN;
     private long time = 0;
+
     private int requestDebt;
-
+    private ActorRef sender;
     private ActorRef remoteMediator;
-    private Cancellable ping;
 
-    private LocalMediator(EdgeContext edgeContext, BlockingQueue<Object> queue, boolean backPressure) {
+    private LocalMediator(EdgeContext edgeContext, boolean backPressure) {
       this.edgeContext = edgeContext;
-      this.queue = queue;
       if (backPressure) {
         requestDebt = 0;
       } else {
@@ -119,107 +123,130 @@ public class AkkaFront implements Front {
       }
     }
 
-    public static Props props(EdgeContext context, BlockingQueue<Object> queue, boolean backPressure) {
-      return Props.create(LocalMediator.class, context, queue, backPressure);
-    }
-
-    @Override
-    public void preStart() throws Exception {
-      super.preStart();
-      ping = context().system().scheduler().schedule(
-              FiniteDuration.apply(1, TimeUnit.SECONDS),
-              FiniteDuration.apply(1, TimeUnit.SECONDS),
-              self(),
-              "PING",
-              context().system().dispatcher(),
-              self()
-      );
-    }
-
-    @Override
-    public void postStop() {
-      super.postStop();
-      if (ping != null && !ping.isCancelled()) {
-        ping.cancel();
-      }
+    public static Props props(EdgeContext context, boolean backPressure) {
+      return Props.create(LocalMediator.class, context, backPressure);
     }
 
     @Override
     public Receive createReceive() {
       return ReceiveBuilder.create()
-              .match(Start.class, s -> {
-                remoteMediator = s.hole();
-                time = Math.max(time, s.from().time());
-                tryDequeue();
+              .match(Start.class, start -> {
+                onStart(start);
+                unstashAll();
+                getContext().become(processing());
               })
-              .match(RequestNext.class, r -> {
-                // Overflow protection
-                requestDebt = Math.max(requestDebt + 1, requestDebt);
-                tryDequeue();
-              })
-              .match(Checkpoint.class, c -> {})
-              .match(String.class, s -> s.equals("PING"), ping -> tryDequeue())
+              .matchAny(o -> stash())
               .build();
     }
 
-    private void tryDequeue() {
-      if (!queue.isEmpty() && remoteMediator != null && queue.peek() instanceof Command) {
-        if (queue.peek() == Command.EOS) {
-          queue.poll();
-          remoteMediator.tell(new Heartbeat(new GlobalTime(Long.MAX_VALUE, edgeContext.edgeId())), self());
-        } else if (queue.peek() == Command.UNREGISTER) {
-          queue.poll();
-          remoteMediator.tell(new UnregisterFront(edgeContext.edgeId()), self());
-        }
-      } else {
-        //Fix this code if you feel the power
-        while (requestDebt > 0 && !queue.isEmpty() && remoteMediator != null && !(queue.peek() instanceof Command)) {
-          final Object p = queue.poll();
-          final GlobalTime globalTime = new GlobalTime(++time, edgeContext.edgeId());
-          remoteMediator.tell(new PayloadDataItem(new Meta(globalTime), p), self());
-          remoteMediator.tell(new Heartbeat(globalTime), self());
+    private Receive processing() {
+      return ReceiveBuilder.create()
+              .match(Start.class, this::onStart)
+              .match(RequestNext.class, r -> {
+                // Overflow protection
+                requestDebt = Math.max(requestDebt + 1, requestDebt);
+                if (producerWait) {
+                  process();
+                  producerWait = false;
+                }
+              })
+              .match(Checkpoint.class, checkpoint -> log.headMap(checkpoint.time()).clear())
+              .match(Raw.class, raw -> {
+                sender = sender();
+                final GlobalTime globalTime = new GlobalTime(++time, edgeContext.edgeId());
+                log.put(globalTime, new PayloadDataItem(new Meta(globalTime), raw.raw));
+                if (requestDebt > 0) {
+                  process();
+                } else {
+                  producerWait = true;
+                }
+              })
+              .match(
+                      Command.class,
+                      command -> command == Command.EOS,
+                      command -> {
+                        remoteMediator.tell(new Heartbeat(new GlobalTime(
+                                Long.MAX_VALUE,
+                                edgeContext.edgeId()
+                        )), self());
+                        sender().tell(Command.OK, self());
+                      }
+              )
+              .match(
+                      Command.class,
+                      command -> command == Command.UNREGISTER,
+                      command -> {
+                        remoteMediator.tell(new UnregisterFront(edgeContext.edgeId()), self());
+                        sender().tell(Command.OK, self());
+                      }
+              )
+              .build();
+    }
 
-          requestDebt--;
-        }
-      }
+    private void onStart(Start start) {
+      remoteMediator = start.hole();
+      time = Math.max(start.from().time(), time);
+      lastEmitted = start.from();
+    }
+
+    private void process() {
+      assert requestDebt > 0;
+      requestDebt--;
+
+      final Map.Entry<GlobalTime, DataItem> entry = log.higherEntry(lastEmitted);
+      remoteMediator.tell(entry.getValue(), self());
+      remoteMediator.tell(new Heartbeat(entry.getKey()), self());
+
+      lastEmitted = entry.getKey();
+      sender.tell(Command.OK, self());
     }
   }
 
   public static class FrontHandle<T> implements Consumer<T> {
-    private final BlockingQueue<Object> localMediator;
+    private static final Timeout TIMEOUT = Timeout.apply(60, TimeUnit.SECONDS);
+    private final ActorRef localMediator;
 
-    public FrontHandle(BlockingQueue<Object> localMediator) {
+    public FrontHandle(ActorRef localMediator) {
       this.localMediator = localMediator;
     }
 
     @Override
     public void accept(T value) {
       try {
-        localMediator.put(value);
-      } catch (InterruptedException e) {
+        PatternsCS.ask(localMediator, new Raw(value), TIMEOUT).toCompletableFuture().get();
+      } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
     }
 
     public void eos() {
       try {
-        localMediator.put(Command.EOS);
-      } catch (InterruptedException e) {
+        PatternsCS.ask(localMediator, Command.EOS, TIMEOUT).toCompletableFuture().get();
+      } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
     }
 
     public void unregister() {
       try {
-        localMediator.put(Command.UNREGISTER);
-      } catch (InterruptedException e) {
+        PatternsCS.ask(localMediator, Command.UNREGISTER, TIMEOUT).toCompletableFuture().get();
+      } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
     }
   }
 
+  private static class Raw {
+    private final Object raw;
+
+    private Raw(Object raw) {
+      this.raw = raw;
+    }
+  }
+
   private enum Command {
     EOS,
-    UNREGISTER
+    UNREGISTER,
+    OK
   }
 }

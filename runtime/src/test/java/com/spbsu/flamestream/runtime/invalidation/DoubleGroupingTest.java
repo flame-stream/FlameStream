@@ -93,12 +93,12 @@ public class DoubleGroupingTest extends FlameStreamSuite {
             .build(source, sink);
   }
 
-  @Test(invocationCount = 10)
+  @Test(invocationCount = 100)
   public void singleWorkerTest() throws InterruptedException {
     doubleGroupingTest(1);
   }
 
-  @Test(invocationCount = 10)
+  @Test(invocationCount = 100)
   public void multipleWorkersTest() throws InterruptedException {
     doubleGroupingTest(4);
   }

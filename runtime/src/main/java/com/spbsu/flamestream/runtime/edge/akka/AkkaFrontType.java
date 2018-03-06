@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.edge.akka;
 
 import akka.actor.ActorPath;
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
@@ -9,8 +10,6 @@ import com.spbsu.flamestream.runtime.edge.EdgeContext;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaFront.FrontHandle<T>> {
   private final ActorSystem system;
@@ -47,10 +46,11 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaF
   @Override
   public AkkaFront.FrontHandle<T> handle(EdgeContext context) {
     if (!localHandles.containsKey(context)) {
-      final BlockingQueue<Object> queue = new ArrayBlockingQueue<>(1);
-      system.actorOf(AkkaFront.LocalMediator.props(context, queue, backPressure), context.edgeId().nodeId() + "-local");
-
-      final AkkaFront.FrontHandle<T> frontHandle = new AkkaFront.FrontHandle<>(queue);
+      final ActorRef localMediator = system.actorOf(
+              AkkaFront.LocalMediator.props(context, backPressure),
+              context.edgeId().nodeId() + "-local"
+      );
+      final AkkaFront.FrontHandle<T> frontHandle = new AkkaFront.FrontHandle<>(localMediator);
       localHandles.put(context, frontHandle);
     }
     return localHandles.get(context);
