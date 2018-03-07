@@ -108,6 +108,14 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     try (final LocalRuntime runtime = new LocalRuntime(nodes, 100)) {
       final FlameRuntime.Flame flame = runtime.run(graph());
       {
+        final List<Integer> source = new Random()
+                .ints(10000)
+                .boxed().collect(Collectors.toList());
+        final List<Integer> expected = expected(source);
+        final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
+        flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
+                .forEach(r -> r.addListener(consumer));
+
         final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront(
                 "doubleGroupingFront",
                 new AkkaFrontType<Integer>(runtime.system(), false)
@@ -117,15 +125,6 @@ public class DoubleGroupingTest extends FlameStreamSuite {
           handles.get(i).unregister();
         }
 
-        final List<Integer> source = new Random()
-                .ints(10000)
-                .boxed().collect(Collectors.toList());
-
-        final List<Integer> expected = expected(source);
-
-        final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
-        flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
-                .forEach(r -> r.addListener(consumer));
         source.forEach(sink);
         sink.eos();
 
