@@ -136,8 +136,17 @@ public class DoubleGroupingTest extends FlameStreamSuite {
   }
 
   @Test(invocationCount = 10)
-  public void blinkTest() throws Exception {
-    final int iterations = 5;
+  public void singleWorkerBlinkTest() throws Exception {
+    blinkTest(1);
+  }
+
+  @Test(invocationCount = 10)
+  public void multipleWorkersBlinkTest() throws Exception {
+    blinkTest(4);
+  }
+
+  private void blinkTest(int workers) throws Exception {
+    final int iterations = 10;
     final int iterationSize = 12345;
     final Random rd = new Random(1);
 
@@ -148,7 +157,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
             .flatMap(List::stream)
             .collect(Collectors.toList())));
 
-    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).millisBetweenCommits(5).build()) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(workers).millisBetweenCommits(5).build()) {
       final AkkaFrontType<Integer> front = new AkkaFrontType<>(runtime.system());
       final AkkaRearType<Integer> rear = new AkkaRearType<>(runtime.system(), Integer.class);
       final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size(), HashSet::new);
@@ -156,6 +165,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
 
       for (int iter = 0; iter < iterations; ++iter) {
         FlameRuntime.Flame flame = runtime.run(graph);
+        flame.attachRear("doubleGroupingRear", rear).forEach(r -> r.addListener(consumer));
         final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront("blinkFront", front)
                 .collect(Collectors.toList());
         final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
@@ -163,9 +173,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
           handles.get(i).unregister();
         }
 
-        flame.attachRear("doubleGroupingRear", rear).forEach(r -> r.addListener(consumer));
         source.get(iter).forEach(sink);
-
         if (iter != (iterations - 1)) {
           //Thread.sleep(10);
           flame.close();

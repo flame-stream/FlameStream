@@ -2,6 +2,8 @@ package com.spbsu.flamestream.runtime.graph;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class SinkJoba implements Joba {
+  private final LoggingAdapter log;
   private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
   private final List<ActorRef> rears = new ArrayList<>();
   private final ActorContext context;
@@ -22,6 +25,7 @@ public class SinkJoba implements Joba {
   private final Tracing.Tracer barrierSendTracer = Tracing.TRACING.forEvent("barrier-send");
 
   public SinkJoba(ActorContext context) {
+    log = Logging.getLogger(context.system(), context.self());
     this.context = context;
   }
 
@@ -39,6 +43,10 @@ public class SinkJoba implements Joba {
   public void onMinTime(GlobalTime minTime) {
     final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
     invalidatingBucket.forRange(0, pos, dataItem -> {
+      if (rears.isEmpty()) {
+        log.warning("Rears are not attached");
+      }
+
       barrierSendTracer.log(dataItem.xor());
       rears.forEach(rear -> rear.tell(dataItem, context.self()));
     });
