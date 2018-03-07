@@ -6,24 +6,30 @@ public class EdgeId implements Comparable<EdgeId> {
   public static final EdgeId MAX = new EdgeId("max", "max") {
     @Override
     public int compareTo(EdgeId o) {
+      if (o == MAX) {
+        return 0;
+      }
       return 1;
     }
 
     @Override
     public boolean equals(Object o) {
-      return false;
+      return o == MAX;
     }
   };
 
   public static final EdgeId MIN = new EdgeId("min", "min") {
     @Override
     public int compareTo(EdgeId o) {
+      if (o == MIN) {
+        return 0;
+      }
       return -1;
     }
 
     @Override
     public boolean equals(Object o) {
-      return false;
+      return o == MIN;
     }
   };
 

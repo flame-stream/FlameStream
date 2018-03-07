@@ -135,10 +135,10 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     }
   }
 
-  @Test(invocationCount = 100)
+  @Test(invocationCount = 10)
   public void blinkTest() throws Exception {
-    final int iterations = 10;
-    final int iterationSize = 10000;
+    final int iterations = 5;
+    final int iterationSize = 12345;
     final Random rd = new Random(1);
 
     final List<List<Integer>> source = Stream.generate(() ->
@@ -148,7 +148,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
             .flatMap(List::stream)
             .collect(Collectors.toList())));
 
-    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(1).millisBetweenCommits(10).build()) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).millisBetweenCommits(5).build()) {
       final AkkaFrontType<Integer> front = new AkkaFrontType<>(runtime.system());
       final AkkaRearType<Integer> rear = new AkkaRearType<>(runtime.system(), Integer.class);
       final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size(), HashSet::new);
@@ -169,7 +169,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
         if (iter != (iterations - 1)) {
           //Thread.sleep(10);
           flame.close();
-          Thread.sleep(50);
+          Thread.sleep(10);
         } else {
           sink.eos();
         }
