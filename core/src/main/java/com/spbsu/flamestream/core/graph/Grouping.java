@@ -11,7 +11,6 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Grouping<T> extends Graph.Vertex.Stub {
@@ -81,10 +80,9 @@ public class Grouping<T> extends Graph.Vertex.Stub {
       final List<DataItem> items = new ArrayList<>();
       for (int right = index + 1; right <= Math.min(index + window - (include ? 0 : 1), bucket.size()); ++right) {
         final int left = Math.max(right - window, 0);
+        final List<T> groupingResult = new ArrayList<>();
         //noinspection unchecked
-        final List<T> groupingResult = bucket.rangeStream(left, right)
-                .map(item -> item.payload((Class<T>) clazz))
-                .collect(Collectors.toList());
+        bucket.forRange(left, right, dataItem -> groupingResult.add(dataItem.payload((Class<T>) clazz)));
         final Meta meta = new Meta(bucket.get(right - 1).meta(), physicalId, areTombs);
         items.add(new PayloadDataItem(meta, groupingResult));
       }

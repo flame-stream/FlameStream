@@ -115,6 +115,7 @@ public class AkkaFront implements Front {
     private int requestDebt;
     private ActorRef sender;
     private ActorRef remoteMediator;
+    private boolean unregistered = false;
 
     private LocalMediator(EdgeContext edgeContext, boolean backPressure) {
       this.edgeContext = edgeContext;
@@ -144,9 +145,7 @@ public class AkkaFront implements Front {
 
     private Receive processing() {
       return ReceiveBuilder.create()
-              .match(Start.class, start -> {
-                onStart(start);
-              })
+              .match(Start.class, this::onStart)
               .match(RequestNext.class, r -> {
                 // Overflow protection
                 requestDebt = Math.max(requestDebt + 1, requestDebt);
@@ -176,6 +175,7 @@ public class AkkaFront implements Front {
                       command -> command == Command.UNREGISTER,
                       command -> {
                         remoteMediator.tell(new UnregisterFront(edgeContext.edgeId()), self());
+                        unregistered = true;
                         sender().tell(Command.OK, self());
                       }
               )
@@ -183,12 +183,11 @@ public class AkkaFront implements Front {
     }
 
     private void onStart(Start start) {
-      if (start.from().time() > 0) {
-        System.out.println("YEAHHH");
+      remoteMediator = start.hole();
+      if (unregistered) {
+        remoteMediator.tell(new UnregisterFront(edgeContext.edgeId()), self());
       }
 
-      System.out.println("New on start");
-      remoteMediator = start.hole();
       time = Math.max(start.from().time(), time);
       lastEmitted = new GlobalTime(start.from().time() - 1, edgeContext.edgeId());
       requestDebt = 0;

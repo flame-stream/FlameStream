@@ -119,7 +119,12 @@ public class LocalRuntime implements FlameRuntime {
 
     @Override
     public void register(EdgeId frontId, long attachTimestamp) {
-      linearizableCollection.put(frontId, attachTimestamp);
+      linearizableCollection.compute(frontId, (edgeId, aLong) -> {
+        if (aLong != null) {
+          throw new IllegalArgumentException("Front " + frontId + " has been already registered");
+        }
+        return attachTimestamp;
+      });
     }
 
     @Override
@@ -129,6 +134,9 @@ public class LocalRuntime implements FlameRuntime {
 
     @Override
     public void committed(long time) {
+      if (time < lastCommit) {
+        throw new IllegalArgumentException("Not monotonic last commit time, expected " + time + " < " + lastCommit);
+      }
       lastCommit = time;
     }
 

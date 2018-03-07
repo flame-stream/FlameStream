@@ -74,7 +74,10 @@ public class Acker extends LoggingActor {
     this.registry = registry;
 
     table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW);
-    pingActor = context().actorOf(PingActor.props(self(), StartCommit.START).withDispatcher("util-dispatcher"), "acker-ping");
+    pingActor = context().actorOf(
+            PingActor.props(self(), StartCommit.START).withDispatcher("util-dispatcher"),
+            "acker-ping"
+    );
   }
 
   public static Props props(int managersCount, long defaultMinimalTime, int millisBetweenCommits, Registry registry) {
@@ -85,6 +88,7 @@ public class Acker extends LoggingActor {
   public void preStart() throws Exception {
     super.preStart();
     pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(millisBetweenCommits)), self());
+    defaultMinimalTime = Math.max(registry.lastCommit(), defaultMinimalTime);
   }
 
   @Override
@@ -170,7 +174,10 @@ public class Acker extends LoggingActor {
   private void unregisterFront(EdgeId frontId) {
     log().info("Unregistering front {}", frontId);
     defaultMinimalTime = Math.max(defaultMinimalTime, maxHeartbeats.get(frontId).time());
-    maxHeartbeats.remove(frontId);
+    final GlobalTime removed = maxHeartbeats.remove(frontId);
+    if (removed == null) {
+      log().warning("Front " + frontId + " has been already unregistered");
+    }
   }
 
   private void handleHeartBeat(Heartbeat heartbeat) {

@@ -38,9 +38,9 @@ public class SinkJoba implements Joba {
   @Override
   public void onMinTime(GlobalTime minTime) {
     final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
-    invalidatingBucket.rangeStream(0, pos).forEach(di -> {
-      barrierSendTracer.log(di.xor());
-      rears.forEach(rear -> rear.tell(di, context.self()));
+    invalidatingBucket.forRange(0, pos, dataItem -> {
+      barrierSendTracer.log(dataItem.xor());
+      rears.forEach(rear -> rear.tell(dataItem, context.self()));
     });
     invalidatingBucket.clearRange(0, pos);
   }

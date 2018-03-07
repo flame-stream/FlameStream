@@ -3,7 +3,7 @@ package com.spbsu.flamestream.core.data.meta;
 import java.util.Objects;
 
 public class EdgeId implements Comparable<EdgeId> {
-  static final EdgeId MAX = new EdgeId("max", "max") {
+  public static final EdgeId MAX = new EdgeId("max", "max") {
     @Override
     public int compareTo(EdgeId o) {
       return 1;

@@ -4,12 +4,16 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class SynchronizedArrayInvalidatingBucket extends ArrayInvalidatingBucket {
   public SynchronizedArrayInvalidatingBucket() {
-    super(Collections.synchronizedList(new ArrayList<>()));
+    super(new ArrayList<>());
+  }
+
+  private SynchronizedArrayInvalidatingBucket(List<DataItem> list) {
+    super(list);
   }
 
   @Override
@@ -23,13 +27,8 @@ public class SynchronizedArrayInvalidatingBucket extends ArrayInvalidatingBucket
   }
 
   @Override
-  public synchronized Stream<DataItem> stream() {
-    return super.stream();
-  }
-
-  @Override
-  public synchronized Stream<DataItem> rangeStream(int fromIndex, int toIndex) {
-    return super.rangeStream(fromIndex, toIndex);
+  public synchronized void forRange(int fromIndex, int toIndex, Consumer<DataItem> consumer) {
+    super.forRange(fromIndex, toIndex, consumer);
   }
 
   @Override
@@ -55,7 +54,7 @@ public class SynchronizedArrayInvalidatingBucket extends ArrayInvalidatingBucket
   @Override
   public synchronized InvalidatingBucket subBucket(Meta meta, int window) {
     final int start = lowerBound(meta);
-    return new ArrayInvalidatingBucket(Collections.synchronizedList(new ArrayList<>(innerList.subList(Math.max(
-            start - window + 1, 0), start))));
+    return new SynchronizedArrayInvalidatingBucket(new ArrayList<>(innerList.subList(Math.max(
+            start - window + 1, 0), start)));
   }
 }
