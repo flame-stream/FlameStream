@@ -76,13 +76,15 @@ public class AkkaRear implements Rear {
     public Receive createReceive() {
       return ReceiveBuilder.create()
               .match(Batch.class, b -> {
+                final ActorRef sender = sender();
                 PatternsCS.ask(localMediator, b, TimeUnit.SECONDS.toMillis(10))
-                        .thenRun(() -> sender().tell(new Accept(), self()));
+                        .thenRun(() -> sender.tell(new Accept(), self()));
               })
               .match(GimmeLastBatch.class, g -> {
+                final ActorRef sender = sender();
                 PatternsCS.ask(localMediator, g, TimeUnit.SECONDS.toMillis(10))
                         .thenApply(a -> (Batch) a)
-                        .thenAccept(batch -> sender().tell(batch, self()));
+                        .thenAccept(batch -> sender.tell(batch, self()));
               })
               .build();
     }
