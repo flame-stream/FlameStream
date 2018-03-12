@@ -123,6 +123,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
                 .boxed().collect(Collectors.toList());
 
         final List<Integer> expected = expected(source);
+
         final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
         flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
                 .forEach(r -> r.addListener(consumer));

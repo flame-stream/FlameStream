@@ -4,3 +4,5 @@
 .idea
 benchmark/ansible/aws.yml
 wiki.xml
+.terraform/
+results/
