@@ -1,11 +1,14 @@
 package com.spbsu.flamestream.runtime.edge;
 
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.Batch;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRear;
+import com.spbsu.flamestream.runtime.edge.api.Accept;
+import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.lang.reflect.InvocationTargetException;
@@ -14,9 +17,9 @@ public class RearActor extends LoggingActor {
   private final Rear rear;
 
   private RearActor(EdgeContext edgeContext, FlameRuntime.RearInstance<?> rearInstance) throws
-          IllegalAccessException,
-          InvocationTargetException,
-          InstantiationException {
+                                                                                        IllegalAccessException,
+                                                                                        InvocationTargetException,
+                                                                                        InstantiationException {
     final Object[] params;
     //handle AkkaRear in order to not create yet another actor system
     if (rearInstance.clazz().equals(AkkaRear.class)) {
@@ -39,7 +42,11 @@ public class RearActor extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(DataItem.class, rear::accept)
+            .match(Batch.class, b -> {
+              rear.accept(b);
+              sender().tell(new Accept(), self());
+            })
+            .match(GimmeLastBatch.class, l -> sender().tell(rear.last(), ActorRef.noSender()))
             .build();
   }
 }
