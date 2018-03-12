@@ -1,5 +1,8 @@
 flamestream.retry
-/flink.retry
-/roles/flamestream-bench/files/wiki.xml
-/roles/flink-bench/files/wiki.xml
+flink.retry
+roles/flamestream-common/files/lib/
+roles/flamestream-bench/files/wiki.xml
+roles/flink-bench/files/wiki.xml
 terraform.tfvars
+terraform.tfstate
+terraform.tfstate.backup

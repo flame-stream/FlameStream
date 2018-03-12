@@ -1,6 +1,9 @@
 variable "access_key" {}
 variable "secret_key" {}
 variable "key_pair" {}
+variable "cluster_size" {
+  default = 10
+}
 variable "region" {
   default = "us-east-2"
 }
@@ -81,7 +84,7 @@ resource "aws_security_group" "workers" {
 }
 
 resource "aws_instance" "worker" {
-  count = "2"
+  count = "${var.cluster_size}"
   ami = "ami-965e6bf3"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.nikita.key_name}"
