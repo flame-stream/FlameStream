@@ -12,6 +12,7 @@ import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;
+import com.spbsu.flamestream.runtime.graph.api.SinkPrepared;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.util.ArrayList;
@@ -60,6 +61,12 @@ public class SinkJoba implements Joba {
   }
 
   @Override
+  public void onPrepareCommit(GlobalTime time) {
+    //send prepared to GraphManager
+    context.parent().tell(new SinkPrepared(time), context.self());
+  }
+
+  @Override
   public void onMinTime(GlobalTime minTime) {
     if (lastEmitted.compareTo(minTime) < 0) {
       final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
@@ -73,7 +80,6 @@ public class SinkJoba implements Joba {
         }
 
         final BatchImpl batch = new BatchImpl(minTime, data);
-
         try {
           PatternsCS.ask(rears.get(0), batch, TimeUnit.SECONDS.toMillis(10)).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {

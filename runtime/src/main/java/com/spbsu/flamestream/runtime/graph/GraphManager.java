@@ -22,6 +22,7 @@ import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
+import com.spbsu.flamestream.runtime.graph.api.SinkPrepared;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 import com.spbsu.flamestream.runtime.state.StateStorage;
@@ -167,6 +168,7 @@ public class GraphManager extends LoggingActor {
                     MinTimeUpdate.class,
                     minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
             )
+            .match(SinkPrepared.class, this::onSinkPrepared)
             .match(Prepare.class, this::onPrepare)
             .match(NewRear.class, newRear -> sinkComponent.forward(newRear, context()))
             .match(Heartbeat.class, gt -> sourceComponent.forward(gt, context()))
@@ -174,21 +176,25 @@ public class GraphManager extends LoggingActor {
             .build();
   }
 
-  private void onPrepare(Prepare prepare) {
+  private void onSinkPrepared(SinkPrepared sinkPrepared) {
     context().system().dispatchers().lookup("util-dispatcher").execute(() -> {
-      components.forEach(actorRef -> actorRef.forward(prepare, context()));
       unitStates.forEach((hashUnit, stateMap) -> storage.putState(
               hashUnit,
-              prepare.globalTime(),
+              sinkPrepared.globalTime(),
               stateMap.entrySet()
                       .stream()
                       .collect(Collectors.toMap(
                               Map.Entry::getKey,
-                              e -> e.getValue().subState(prepare.globalTime(), groupingWindows.get(e.getKey()))
+                              e -> e.getValue()
+                                      .subState(sinkPrepared.globalTime(), groupingWindows.get(e.getKey()))
                       ))
       ));
       acker.tell(new Prepared(), self());
     });
+  }
+
+  private void onPrepare(Prepare prepare) {
+    components.forEach(actorRef -> actorRef.forward(prepare, context()));
   }
 
   public static class Destination {
