@@ -7,7 +7,7 @@ import com.spbsu.flamestream.core.Batch;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRear;
-import com.spbsu.flamestream.runtime.edge.api.Accept;
+import com.spbsu.flamestream.runtime.edge.api.BatchAccepted;
 import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -44,7 +44,7 @@ public class RearActor extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Batch.class, b -> {
               rear.accept(b);
-              sender().tell(new Accept(), self());
+              sender().tell(new BatchAccepted(), self());
             })
             .match(GimmeLastBatch.class, l -> sender().tell(rear.last(), ActorRef.noSender()))
             .build();

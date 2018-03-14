@@ -10,7 +10,7 @@ import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.Batch;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import com.spbsu.flamestream.runtime.edge.api.Accept;
+import com.spbsu.flamestream.runtime.edge.api.BatchAccepted;
 import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
@@ -77,7 +77,7 @@ public class AkkaRear implements Rear {
               .match(Batch.class, b -> {
                 final ActorRef sender = sender();
                 PatternsCS.ask(localMediator, b, FlameConfig.config.smallTimeout())
-                        .thenRun(() -> sender.tell(new Accept(), self()));
+                        .thenRun(() -> sender.tell(new BatchAccepted(), self()));
               })
               .match(GimmeLastBatch.class, g -> {
                 final ActorRef sender = sender();
@@ -93,7 +93,7 @@ public class AkkaRear implements Rear {
     private final Class<T> clazz;
     private Consumer<T> consumer = null;
 
-    private Batch lastBatch = Batch.EMPTY_BATCH;
+    private Batch lastBatch = Batch.Default.EMPTY;
 
     private LocalMediator(Class<T> clazz) {
       this.clazz = clazz;
@@ -125,7 +125,7 @@ public class AkkaRear implements Rear {
               .match(Batch.class, b -> {
                 lastBatch = b;
                 b.payload(clazz).forEach(consumer);
-                sender().tell(new Accept(), self());
+                sender().tell(new BatchAccepted(), self());
               })
               .match(GimmeLastBatch.class, g -> sender().tell(lastBatch, self()))
               .build();

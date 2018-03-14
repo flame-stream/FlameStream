@@ -47,7 +47,7 @@ public class SinkJoba implements Joba {
       final Batch batch = PatternsCS.ask(rear, new GimmeLastBatch(), FlameConfig.config.smallTimeout())
               .thenApply(e -> (Batch) e)
               .toCompletableFuture().get();
-      if (batch == Batch.EMPTY_BATCH) {
+      if (batch == Batch.Default.EMPTY) {
         this.lastEmitted = GlobalTime.MIN;
       } else {
         this.lastEmitted = ((BatchImpl) batch).time();

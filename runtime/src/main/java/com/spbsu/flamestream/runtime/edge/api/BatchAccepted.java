@@ -1,4 +1,4 @@
 package com.spbsu.flamestream.runtime.edge.api;
 
-public class Accept {
+public class BatchAccepted {
 }
