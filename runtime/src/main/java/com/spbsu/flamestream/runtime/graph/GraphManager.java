@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime.graph;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.Grouping;
@@ -22,10 +23,10 @@ import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
-import com.spbsu.flamestream.runtime.graph.api.SinkPrepared;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 import com.spbsu.flamestream.runtime.state.StateStorage;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListHashUnitMap;
@@ -168,7 +169,6 @@ public class GraphManager extends LoggingActor {
                     MinTimeUpdate.class,
                     minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
             )
-            .match(SinkPrepared.class, this::onSinkPrepared)
             .match(Prepare.class, this::onPrepare)
             .match(NewRear.class, newRear -> sinkComponent.forward(newRear, context()))
             .match(Heartbeat.class, gt -> sourceComponent.forward(gt, context()))
@@ -176,25 +176,21 @@ public class GraphManager extends LoggingActor {
             .build();
   }
 
-  private void onSinkPrepared(SinkPrepared sinkPrepared) {
-    context().system().dispatchers().lookup("util-dispatcher").execute(() -> {
+  private void onPrepare(Prepare prepare) {
+    PatternsCS.ask(sinkComponent, prepare, FlameConfig.config.smallTimeout()).thenRun(() -> {
       unitStates.forEach((hashUnit, stateMap) -> storage.putState(
               hashUnit,
-              sinkPrepared.globalTime(),
+              prepare.globalTime(),
               stateMap.entrySet()
                       .stream()
                       .collect(Collectors.toMap(
                               Map.Entry::getKey,
                               e -> e.getValue()
-                                      .subState(sinkPrepared.globalTime(), groupingWindows.get(e.getKey()))
+                                      .subState(prepare.globalTime(), groupingWindows.get(e.getKey()))
                       ))
       ));
       acker.tell(new Prepared(), self());
     });
-  }
-
-  private void onPrepare(Prepare prepare) {
-    components.forEach(actorRef -> actorRef.forward(prepare, context()));
   }
 
   public static class Destination {

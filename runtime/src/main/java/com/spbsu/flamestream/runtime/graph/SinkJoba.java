@@ -12,13 +12,12 @@ import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;
-import com.spbsu.flamestream.runtime.graph.api.SinkPrepared;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -26,16 +25,14 @@ public class SinkJoba implements Joba {
   private final LoggingAdapter log;
   private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
   private final List<ActorRef> rears = new ArrayList<>();
-  private final ActorContext context;
 
   private final Tracing.Tracer barrierReceiveTracer = Tracing.TRACING.forEvent("barrier-receive");
   private final Tracing.Tracer barrierSendTracer = Tracing.TRACING.forEvent("barrier-send");
 
   private GlobalTime lastEmitted = GlobalTime.MIN;
 
-  public SinkJoba(ActorContext context) {
+  SinkJoba(ActorContext context) {
     log = Logging.getLogger(context.system(), context.self());
-    this.context = context;
   }
 
   @Override
@@ -47,7 +44,7 @@ public class SinkJoba implements Joba {
   public void attachRear(ActorRef rear) {
     rears.add(rear);
     try {
-      final Batch batch = PatternsCS.ask(rear, new GimmeLastBatch(), TimeUnit.SECONDS.toMillis(10))
+      final Batch batch = PatternsCS.ask(rear, new GimmeLastBatch(), FlameConfig.config.smallTimeout())
               .thenApply(e -> (Batch) e)
               .toCompletableFuture().get();
       if (batch == Batch.EMPTY_BATCH) {
@@ -58,12 +55,6 @@ public class SinkJoba implements Joba {
     } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  @Override
-  public void onPrepareCommit(GlobalTime time) {
-    //send prepared to GraphManager
-    context.parent().tell(new SinkPrepared(time), context.self());
   }
 
   @Override
@@ -81,7 +72,7 @@ public class SinkJoba implements Joba {
 
         final BatchImpl batch = new BatchImpl(minTime, data);
         try {
-          PatternsCS.ask(rears.get(0), batch, TimeUnit.SECONDS.toMillis(10)).toCompletableFuture().get();
+          PatternsCS.ask(rears.get(0), batch, FlameConfig.config.smallTimeout()).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
           throw new RuntimeException(e);
         }

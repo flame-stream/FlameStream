@@ -9,7 +9,6 @@ import akka.actor.Status;
 import akka.actor.Terminated;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
-import akka.util.Timeout;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -22,7 +21,8 @@ public class SyncKiller extends AbstractActor {
 
   public static void syncKill(ActorRef ref, ActorRefFactory context) {
     try {
-      kill(ref, context).toCompletableFuture().get(10, TimeUnit.SECONDS);
+      kill(ref, context).toCompletableFuture()
+              .get(FlameConfig.config.bigTimeout().duration().toSeconds(), TimeUnit.SECONDS);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new RuntimeException("Failed to kill " + ref, e);
     }
@@ -30,7 +30,7 @@ public class SyncKiller extends AbstractActor {
 
   public static CompletionStage<Void> kill(ActorRef ref, ActorRefFactory context) {
     final ActorRef resolver = context.actorOf(SyncKiller.props(ref).withDispatcher("util-dispatcher"));
-    return PatternsCS.ask(resolver, "KILL", Timeout.apply(100, TimeUnit.SECONDS)).thenApply(a -> null);
+    return PatternsCS.ask(resolver, "KILL", FlameConfig.config.bigTimeout()).thenApply(a -> null);
   }
 
   private SyncKiller(ActorRef ref) {this.ref = ref;}

@@ -19,6 +19,7 @@ import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
+import com.spbsu.flamestream.runtime.graph.api.ComponentPrepared;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
@@ -172,6 +173,7 @@ public class Component extends LoggingActor {
 
   private void onPrepare(Prepare prepare) {
     jobas.values().forEach(joba -> joba.onPrepareCommit(prepare.globalTime()));
+    sender().tell(new ComponentPrepared(), self());
   }
 
   private void inject(AddressedItem addressedItem) {

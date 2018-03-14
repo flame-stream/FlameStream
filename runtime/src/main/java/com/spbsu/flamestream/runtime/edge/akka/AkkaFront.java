@@ -7,7 +7,6 @@ import akka.actor.ActorRefFactory;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
-import akka.util.Timeout;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
@@ -19,6 +18,7 @@ import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.edge.api.Start;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class AkkaFront implements Front {
@@ -210,7 +209,6 @@ public class AkkaFront implements Front {
   }
 
   public static class FrontHandle<T> implements Consumer<T> {
-    private static final Timeout TIMEOUT = Timeout.apply(60, TimeUnit.SECONDS);
     private final ActorRef localMediator;
 
     public FrontHandle(ActorRef localMediator) {
@@ -220,7 +218,7 @@ public class AkkaFront implements Front {
     @Override
     public void accept(T value) {
       try {
-        PatternsCS.ask(localMediator, new Raw(value), TIMEOUT).toCompletableFuture().get();
+        PatternsCS.ask(localMediator, new Raw(value), FlameConfig.config.bigTimeout()).toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
@@ -228,7 +226,7 @@ public class AkkaFront implements Front {
 
     public void eos() {
       try {
-        PatternsCS.ask(localMediator, Command.EOS, TIMEOUT).toCompletableFuture().get();
+        PatternsCS.ask(localMediator, Command.EOS, FlameConfig.config.bigTimeout()).toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
@@ -236,7 +234,7 @@ public class AkkaFront implements Front {
 
     public void unregister() {
       try {
-        PatternsCS.ask(localMediator, Command.UNREGISTER, TIMEOUT).toCompletableFuture().get();
+        PatternsCS.ask(localMediator, Command.UNREGISTER, FlameConfig.config.bigTimeout()).toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }

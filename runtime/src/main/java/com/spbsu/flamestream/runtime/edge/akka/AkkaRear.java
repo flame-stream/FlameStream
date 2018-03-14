@@ -12,11 +12,11 @@ import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.Accept;
 import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class AkkaRear implements Rear {
@@ -33,8 +33,7 @@ public class AkkaRear implements Rear {
   @Override
   public void accept(Batch batch) {
     try {
-      PatternsCS.ask(innerActor, batch, TimeUnit.SECONDS.toMillis(10))
-              .toCompletableFuture().get();
+      PatternsCS.ask(innerActor, batch, FlameConfig.config.smallTimeout()).toCompletableFuture().get();
     } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     }
@@ -43,7 +42,7 @@ public class AkkaRear implements Rear {
   @Override
   public Batch last() {
     try {
-      return PatternsCS.ask(innerActor, new GimmeLastBatch(), TimeUnit.SECONDS.toMillis(10))
+      return PatternsCS.ask(innerActor, new GimmeLastBatch(), FlameConfig.config.smallTimeout())
               .thenApply(Batch.class::cast)
               .toCompletableFuture().get();
     } catch (InterruptedException | ExecutionException e) {
@@ -77,12 +76,12 @@ public class AkkaRear implements Rear {
       return ReceiveBuilder.create()
               .match(Batch.class, b -> {
                 final ActorRef sender = sender();
-                PatternsCS.ask(localMediator, b, TimeUnit.SECONDS.toMillis(10))
+                PatternsCS.ask(localMediator, b, FlameConfig.config.smallTimeout())
                         .thenRun(() -> sender.tell(new Accept(), self()));
               })
               .match(GimmeLastBatch.class, g -> {
                 final ActorRef sender = sender();
-                PatternsCS.ask(localMediator, g, TimeUnit.SECONDS.toMillis(10))
+                PatternsCS.ask(localMediator, g, FlameConfig.config.smallTimeout())
                         .thenApply(a -> (Batch) a)
                         .thenAccept(batch -> sender.tell(batch, self()));
               })
@@ -108,6 +107,7 @@ public class AkkaRear implements Rear {
     public Receive createReceive() {
       return ReceiveBuilder.create()
               .match(Consumer.class, c -> {
+                //noinspection unchecked
                 this.consumer = c;
                 unstashAll();
                 getContext().become(serving());
@@ -119,6 +119,7 @@ public class AkkaRear implements Rear {
     private Receive serving() {
       return ReceiveBuilder.create()
               .match(Consumer.class, c -> {
+                //noinspection unchecked
                 consumer = c;
               })
               .match(Batch.class, b -> {
@@ -134,7 +135,7 @@ public class AkkaRear implements Rear {
   public static class Handle<T> {
     private final ActorRef localMediator;
 
-    public Handle(ActorRef localMediator) {
+    Handle(ActorRef localMediator) {
       this.localMediator = localMediator;
     }
 
