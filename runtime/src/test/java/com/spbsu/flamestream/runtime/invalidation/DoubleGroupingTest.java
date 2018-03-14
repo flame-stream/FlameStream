@@ -1,5 +1,8 @@
 package com.spbsu.flamestream.runtime.invalidation;
 
+import akka.actor.ActorSystem;
+import akka.serialization.Serialization;
+import akka.serialization.SerializationExtension;
 import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.core.Graph;
@@ -16,7 +19,9 @@ import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.state.RedisStateStorage;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
+import com.typesafe.config.ConfigFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -138,15 +143,35 @@ public class DoubleGroupingTest extends FlameStreamSuite {
 
   @Test(invocationCount = 10)
   public void singleWorkerBlinkTest() throws Exception {
-    blinkTest(1);
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(1).millisBetweenCommits(5).build()) {
+      blinkTest(runtime);
+    }
   }
 
   @Test(invocationCount = 10)
   public void multipleWorkersBlinkTest() throws Exception {
-    blinkTest(4);
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).millisBetweenCommits(5).build()) {
+      blinkTest(runtime);
+    }
   }
 
-  private void blinkTest(int workers) throws Exception {
+  @Test(invocationCount = 10, enabled = false)
+  public void redisMultipleWorkersBlinkTest() throws Exception {
+    final ActorSystem system = ActorSystem.create("local-runtime", ConfigFactory.load("local"));
+    final Serialization serialization = SerializationExtension.get(system);
+    final RedisStateStorage redisStateStorage = new RedisStateStorage("localhost", 6379, serialization);
+    redisStateStorage.clear();
+
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4)
+            .millisBetweenCommits(5)
+            .system(system)
+            .stateStorage(redisStateStorage)
+            .build()) {
+      blinkTest(runtime);
+    }
+  }
+
+  private void blinkTest(LocalRuntime runtime) throws Exception {
     final int iterations = 10;
     final int iterationSize = 12345;
     final Random rd = new Random(1);
@@ -158,34 +183,32 @@ public class DoubleGroupingTest extends FlameStreamSuite {
             .flatMap(List::stream)
             .collect(Collectors.toList())));
 
-    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(workers).millisBetweenCommits(5).build()) {
-      final AkkaFrontType<Integer> front = new AkkaFrontType<>(runtime.system());
-      final AkkaRearType<Integer> rear = new AkkaRearType<>(runtime.system(), Integer.class);
-      final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size(), HashSet::new);
-      final Graph graph = graph();
+    final AkkaFrontType<Integer> front = new AkkaFrontType<>(runtime.system());
+    final AkkaRearType<Integer> rear = new AkkaRearType<>(runtime.system(), Integer.class);
+    final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size(), HashSet::new);
+    final Graph graph = graph();
 
-      for (int iter = 0; iter < iterations; ++iter) {
-        FlameRuntime.Flame flame = runtime.run(graph);
-        flame.attachRear("doubleGroupingRear", rear).forEach(r -> r.addListener(consumer));
-        final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront("blinkFront", front)
-                .collect(Collectors.toList());
-        final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
-        for (int i = 1; i < handles.size(); i++) {
-          handles.get(i).unregister();
-        }
-
-        source.get(iter).forEach(sink);
-        if (iter != (iterations - 1)) {
-          //Thread.sleep(10);
-          flame.close();
-          Thread.sleep(10);
-        } else {
-          sink.eos();
-        }
+    for (int iter = 0; iter < iterations; ++iter) {
+      FlameRuntime.Flame flame = runtime.run(graph);
+      flame.attachRear("doubleGroupingRear", rear).forEach(r -> r.addListener(consumer));
+      final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront("blinkFront", front)
+              .collect(Collectors.toList());
+      final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
+      for (int i = 1; i < handles.size(); i++) {
+        handles.get(i).unregister();
       }
-      consumer.await(10, TimeUnit.MINUTES);
-      Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
+
+      source.get(iter).forEach(sink);
+      if (iter != (iterations - 1)) {
+        //Thread.sleep(10);
+        flame.close();
+        Thread.sleep(10);
+      } else {
+        sink.eos();
+      }
     }
+    consumer.await(10, TimeUnit.MINUTES);
+    Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
   }
 
   private List<Integer> expected(List<Integer> source) {

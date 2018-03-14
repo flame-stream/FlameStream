@@ -70,7 +70,7 @@
             <artifactId>zookeeper</artifactId>
         </dependency>
 
-        <!--LevelDB-->
+        <!--State-->
         <dependency>
             <groupId>org.iq80.leveldb</groupId>
             <artifactId>leveldb</artifactId>
@@ -78,6 +78,10 @@
         <dependency>
             <groupId>org.fusesource.leveldbjni</groupId>
             <artifactId>leveldbjni-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
         </dependency>
 
         <!--Utils-->

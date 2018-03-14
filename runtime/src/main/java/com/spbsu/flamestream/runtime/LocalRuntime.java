@@ -38,13 +38,17 @@ public class LocalRuntime implements FlameRuntime {
   private final int millisBetweenCommits;
   private final ActorSystem system;
   private final Registry registry = new InMemoryRegistry();
-  private final StateStorage stateStorage = new InMemStateStorage();
-
-  private LocalRuntime(int parallelism, int maxElementsInGraph, int millisBetweenCommits) {
+  private final StateStorage stateStorage;
+  private LocalRuntime(int parallelism,
+                       int maxElementsInGraph,
+                       int millisBetweenCommits,
+                       ActorSystem system,
+                       StateStorage stateStorage) {
     this.parallelism = parallelism;
     this.maxElementsInGraph = maxElementsInGraph;
     this.millisBetweenCommits = millisBetweenCommits;
-    system = ActorSystem.create("local-runtime", ConfigFactory.load("local"));
+    this.system = system;
+    this.stateStorage = stateStorage;
   }
 
   public ActorSystem system() {
@@ -150,6 +154,8 @@ public class LocalRuntime implements FlameRuntime {
     private int parallelism = DEFAULT_PARALLELISM;
     private int maxElementsInGraph = DEFAULT_MAX_ELEMENTS_IN_GRAPH;
     private int millisBetweenCommits = DEFAULT_MILLIS_BETWEEN_COMMITS;
+    private StateStorage stateStorage = null;
+    private ActorSystem system = null;
 
     public Builder parallelism(int parallelism) {
       this.parallelism = parallelism;
@@ -166,8 +172,24 @@ public class LocalRuntime implements FlameRuntime {
       return this;
     }
 
+    public Builder system(ActorSystem system) {
+      this.system = system;
+      return this;
+    }
+
+    public Builder stateStorage(StateStorage stateStorage) {
+      this.stateStorage = stateStorage;
+      return this;
+    }
+
     public LocalRuntime build() {
-      return new LocalRuntime(parallelism, maxElementsInGraph, millisBetweenCommits);
+      if (stateStorage == null) {
+        stateStorage = new InMemStateStorage();
+      }
+      if (system == null) {
+        system = ActorSystem.create("local-runtime", ConfigFactory.load("local"));
+      }
+      return new LocalRuntime(parallelism, maxElementsInGraph, millisBetweenCommits, system, stateStorage);
     }
   }
 }
