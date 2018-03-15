@@ -15,10 +15,10 @@ import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.local.LocalRuntime;
 import com.spbsu.flamestream.runtime.state.RedisStateStorage;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import com.typesafe.config.ConfigFactory;
@@ -31,7 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -101,114 +100,76 @@ public class DoubleGroupingTest extends FlameStreamSuite {
 
   @Test(invocationCount = 10)
   public void singleWorkerTest() throws InterruptedException {
-    doubleGroupingTest(1);
+    try (LocalRuntime runtime = new LocalRuntime.Builder().parallelism(1).build()) {
+      doubleGroupingTest(runtime, 10000, false);
+    }
   }
 
   @Test(invocationCount = 10)
   public void multipleWorkersTest() throws InterruptedException {
-    doubleGroupingTest(4);
-  }
-
-  // TODO: 3/2/18 Return non-backpressure mode
-  private void doubleGroupingTest(int nodes) throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(nodes).maxElementsInGraph(100).build()) {
-      final FlameRuntime.Flame flame = runtime.run(graph());
-      {
-        final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront(
-                "doubleGroupingFront",
-                new AkkaFrontType<Integer>(runtime.system(), false)
-        ).collect(Collectors.toList());
-        final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
-        for (int i = 1; i < handles.size(); i++) {
-          handles.get(i).unregister();
-        }
-
-        final List<Integer> source = new Random()
-                .ints(10000)
-                .boxed().collect(Collectors.toList());
-
-        final List<Integer> expected = expected(source);
-
-        final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
-        flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
-                .forEach(r -> r.addListener(consumer));
-        source.forEach(sink);
-        sink.eos();
-
-        consumer.await(10, TimeUnit.MINUTES);
-        Assert.assertEquals(consumer.result().collect(Collectors.toSet()), new HashSet<>(expected));
-      }
+    try (LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).build()) {
+      doubleGroupingTest(runtime, 10000,  false);
     }
   }
 
-  @Test(invocationCount = 10)
-  public void singleWorkerBlinkTest() throws Exception {
-    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(1).millisBetweenCommits(5).build()) {
-      blinkTest(runtime);
+  @Test
+  public void singleWorkerBlinkTest() throws InterruptedException {
+    try (LocalRuntime runtime = new LocalRuntime.Builder().parallelism(1).withBlink().build()) {
+      doubleGroupingTest(runtime, 500_000, true);
     }
   }
 
-  @Test(invocationCount = 10)
-  public void multipleWorkersBlinkTest() throws Exception {
-    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).millisBetweenCommits(5).build()) {
-      blinkTest(runtime);
+  @Test
+  public void multipleWorkersBlinkTest() throws InterruptedException {
+    try (LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).withBlink().build()) {
+      doubleGroupingTest(runtime, 500_000, true);
     }
   }
 
   @Test(invocationCount = 10, enabled = false)
-  public void redisMultipleWorkersBlinkTest() throws Exception {
+  public void redisMultipleWorkersBlinkTest() throws InterruptedException {
     final ActorSystem system = ActorSystem.create("local-runtime", ConfigFactory.load("local"));
     final Serialization serialization = SerializationExtension.get(system);
     final RedisStateStorage redisStateStorage = new RedisStateStorage("localhost", 6379, serialization);
     redisStateStorage.clear();
 
     try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4)
-            .millisBetweenCommits(5)
-            .system(system)
-            .stateStorage(redisStateStorage)
+            .millisBetweenCommits(50)
+            .withSystem(system)
+            .withStateStorage(redisStateStorage)
             .build()) {
-      blinkTest(runtime);
+      doubleGroupingTest(runtime, 10000, true);
     }
   }
 
-  private void blinkTest(LocalRuntime runtime) throws Exception {
-    final int iterations = 10;
-    final int iterationSize = 12345;
-    final Random rd = new Random(1);
+  private void doubleGroupingTest(LocalRuntime runtime, long inputSize, boolean backpressure) throws InterruptedException {
+    final FlameRuntime.Flame flame = runtime.run(graph());
+    {
+      final List<Integer> source = new Random()
+              .ints(inputSize)
+              .boxed().collect(Collectors.toList());
 
-    final List<List<Integer>> source = Stream.generate(() ->
-            rd.ints(iterationSize).boxed().collect(Collectors.toList())
-    ).limit(iterations).collect(Collectors.toList());
-    final Set<Integer> expected = new HashSet<>(expected(source.stream()
-            .flatMap(List::stream)
-            .collect(Collectors.toList())));
+      final List<Integer> expected = expected(source);
+      final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
+      flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
+              .forEach(r -> r.addListener(consumer));
 
-    final AkkaFrontType<Integer> front = new AkkaFrontType<>(runtime.system());
-    final AkkaRearType<Integer> rear = new AkkaRearType<>(runtime.system(), Integer.class);
-    final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size(), HashSet::new);
-    final Graph graph = graph();
-
-    for (int iter = 0; iter < iterations; ++iter) {
-      FlameRuntime.Flame flame = runtime.run(graph);
-      flame.attachRear("doubleGroupingRear", rear).forEach(r -> r.addListener(consumer));
-      final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront("blinkFront", front)
-              .collect(Collectors.toList());
+      final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront(
+              "doubleGroupingFront",
+              new AkkaFrontType<Integer>(runtime.system(), backpressure)
+      ).collect(Collectors.toList());
       final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
+
       for (int i = 1; i < handles.size(); i++) {
         handles.get(i).unregister();
       }
 
-      source.get(iter).forEach(sink);
-      if (iter != (iterations - 1)) {
-        //Thread.sleep(10);
-        flame.close();
-        Thread.sleep(10);
-      } else {
-        sink.eos();
-      }
+      source.forEach(sink);
+      sink.eos();
+
+      consumer.await(10, TimeUnit.MINUTES);
+      Assert.assertEquals(consumer.result().collect(Collectors.toSet()), new HashSet<>(expected));
     }
-    consumer.await(10, TimeUnit.MINUTES);
-    Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
   }
 
   private List<Integer> expected(List<Integer> source) {
@@ -228,7 +189,10 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     for (T item : toBeGrouped) {
       final List<T> currentGroup = groups.getOrDefault(new Wrapper<>(item), new ArrayList<>());
       currentGroup.add(item);
-      result.add(new ArrayList<>(currentGroup.subList(Math.max(0, currentGroup.size() - WINDOW), currentGroup.size())));
+      result.add(new ArrayList<>(currentGroup.subList(
+              Math.max(0, currentGroup.size() - WINDOW),
+              currentGroup.size()
+      )));
       groups.put(new Wrapper<>(item), currentGroup);
     }
 

@@ -16,7 +16,9 @@ import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -24,12 +26,12 @@ import java.util.stream.Stream;
 public class SinkJoba implements Joba {
   private final LoggingAdapter log;
   private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
-  private final List<ActorRef> rears = new ArrayList<>();
+  private final Map<ActorRef, GlobalTime> rears = new HashMap<>();
 
   private final Tracing.Tracer barrierReceiveTracer = Tracing.TRACING.forEvent("barrier-receive");
   private final Tracing.Tracer barrierSendTracer = Tracing.TRACING.forEvent("barrier-send");
 
-  private GlobalTime lastEmitted = GlobalTime.MIN;
+  private GlobalTime minTime = GlobalTime.MIN;
 
   SinkJoba(ActorContext context) {
     log = Logging.getLogger(context.system(), context.self());
@@ -42,16 +44,19 @@ public class SinkJoba implements Joba {
   }
 
   public void attachRear(ActorRef rear) {
-    rears.add(rear);
     try {
       final Batch batch = PatternsCS.ask(rear, new GimmeLastBatch(), FlameConfig.config.smallTimeout())
               .thenApply(e -> (Batch) e)
               .toCompletableFuture().get();
       if (batch == Batch.Default.EMPTY) {
-        this.lastEmitted = GlobalTime.MIN;
+        rears.put(rear, GlobalTime.MIN);
       } else {
-        this.lastEmitted = ((BatchImpl) batch).time();
+        final GlobalTime time = ((BatchImpl) batch).time();
+        rears.put(rear, time);
       }
+
+      tryEmmit(minTime);
+      log.info("Attached rear to graph {}", rears.get(rear));
     } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     }
@@ -59,33 +64,41 @@ public class SinkJoba implements Joba {
 
   @Override
   public void onMinTime(GlobalTime minTime) {
-    if (lastEmitted.compareTo(minTime) < 0) {
-      final int pos = invalidatingBucket.lowerBound(new Meta(minTime));
+    this.minTime = minTime;
+    tryEmmit(minTime);
+  }
 
+  private void tryEmmit(GlobalTime upTo) {
+    final int pos = invalidatingBucket.lowerBound(new Meta(upTo));
+
+    rears.forEach((rear, lastEmmit) -> {
       final List<DataItem> data = new ArrayList<>();
-      invalidatingBucket.forRange(0, pos, data::add);
-
-      if (!data.isEmpty()) {
-        if (rears.size() != 1) {
-          throw new IllegalStateException("There should be exactly one rear:)");
+      invalidatingBucket.forRange(0, pos, item -> {
+        if (item.meta().globalTime().compareTo(lastEmmit) > 0) {
+          data.add(item);
         }
+      });
 
-        final BatchImpl batch = new BatchImpl(minTime, data);
-        try {
-          PatternsCS.ask(rears.get(0), batch, FlameConfig.config.smallTimeout()).toCompletableFuture().get();
-        } catch (InterruptedException | ExecutionException e) {
-          throw new RuntimeException(e);
-        }
-
-        barrierSendTracer.log(batch.time().time());
-        invalidatingBucket.clearRange(0, pos);
+      final BatchImpl batch = new BatchImpl(upTo, data);
+      try {
+        PatternsCS.ask(rear, batch, FlameConfig.config.smallTimeout()).toCompletableFuture().get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
       }
-    } else {
-      log.warning("Barrier has already emitted for the time '{}'", minTime);
+
+      barrierSendTracer.log(batch.time().time());
+    });
+
+    // Clearing barrier only if elements were emitted somewhere.
+    // It is temporary fix of the "sending elements to /dev/null" problem
+    //
+    // https://github.com/flame-stream/FlameStream/issues/139
+    if (!rears.isEmpty()) {
+      invalidatingBucket.clearRange(0, pos);
     }
   }
 
-  private static class BatchImpl implements Batch {
+  public static class BatchImpl implements Batch {
     private final List<DataItem> items;
     private final GlobalTime time;
 

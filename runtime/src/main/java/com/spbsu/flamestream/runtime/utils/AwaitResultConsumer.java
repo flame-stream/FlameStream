@@ -28,7 +28,7 @@ public class AwaitResultConsumer<T> implements Consumer<T> {
       if (result.size() == expectedSize && !finished) {
         finished = true;
         result.notifyAll();
-      } else if (result.size() == expectedSize) {
+      } else if (result.size() > expectedSize) {
         throw new IllegalStateException("Accepted more than expected");
       }
     }
