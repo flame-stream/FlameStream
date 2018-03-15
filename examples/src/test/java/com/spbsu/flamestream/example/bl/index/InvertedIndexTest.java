@@ -33,9 +33,9 @@ public class InvertedIndexTest extends FlameAkkaSuite {
     };
   }
 
-  @Test(dataProvider = "provider")
+  @Test(invocationCount = 5, dataProvider = "provider")
   public void test(InvertedIndexValidator validator, boolean backPressure) throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(10).build()) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().build()) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       {
         final String invocationConfig = validator.getClass().getSimpleName() + "-bp-" + backPressure;
@@ -44,7 +44,7 @@ public class InvertedIndexTest extends FlameAkkaSuite {
                 .forEach(r -> r.addListener(awaitConsumer));
 
         final List<AkkaFront.FrontHandle<Object>> consumers =
-                flame.attachFront("Front-" + invocationConfig, new AkkaFrontType<>(runtime.system()))
+                flame.attachFront("Front-" + invocationConfig, new AkkaFrontType<>(runtime.system(), backPressure))
                         .collect(Collectors.toList());
         for (int i = 1; i < consumers.size(); i++) {
           consumers.get(i).eos();
