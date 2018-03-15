@@ -171,6 +171,11 @@ public class BenchStand implements AutoCloseable {
 
     consumer.addListener(new Listener() {
       @Override
+      public void connected(Connection connection) {
+        LOG.info("Consumer has been connected {}, {}", connection, connection.getRemoteAddressTCP());
+      }
+
+      @Override
       public void disconnected(Connection connection) {
         LOG.info("Consumer has been disconnected {}", connection);
       }
@@ -303,8 +308,10 @@ public class BenchStand implements AutoCloseable {
     if (deployerConfig.hasPath("local")) {
       runtime = new LocalRuntime.Builder().parallelism(deployerConfig.getConfig("local").getInt("parallelism")).build();
     } else if (deployerConfig.hasPath("local-cluster")) {
-      runtime = new LocalClusterRuntime.Builder().parallelism(deployerConfig.getConfig("local-cluster")
-              .getInt("parallelism")).build();
+      runtime = new LocalClusterRuntime.Builder()
+              .parallelism(deployerConfig.getConfig("local-cluster").getInt("parallelism"))
+              .millisBetweenCommits(10000)
+              .build();
     } else {
       runtime = new RemoteRuntime(deployerConfig.getConfig("remote").getString("zk"));
     }

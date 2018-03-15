@@ -68,7 +68,6 @@ public class SocketRear implements Rear {
     } else {
       LOG.warn("{}: writing to closed log", edgeId);
     }
-
   }
 
   @Override
