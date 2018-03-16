@@ -4,14 +4,13 @@ import com.spbsu.benchmark.flink.index.ops.IndexFunction;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSink;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSource;
 import com.spbsu.benchmark.flink.index.ops.OrderEnforcer;
-import com.spbsu.benchmark.flink.index.ops.TotalOrderEnforcer;
 import com.spbsu.benchmark.flink.index.ops.WikipediaPageToWordPositions;
 import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
-import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.flink.api.java.functions.KeySelector;
+import org.apache.flink.runtime.state.memory.MemoryStateBackend;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.jooq.lambda.Unchecked;
@@ -51,6 +50,13 @@ public class FlinkBench {
         environment.setBufferTimeout(0);
         environment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
+        //checkpoints every second
+        environment.enableCheckpointing(1000);
+        environment.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+        environment.getCheckpointConfig().setMinPauseBetweenCheckpoints(1000);
+        environment.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
+        environment.setStateBackend(new MemoryStateBackend(20 * 1024 * 1024));
+
         environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))
                 .setParallelism(parallelism)
@@ -59,6 +65,7 @@ public class FlinkBench {
                 .setParallelism(parallelism)
                 .keyBy(0)
                 .process(new OrderEnforcer())
+                .keyBy(0)
                 .process(new IndexFunction())
                 .setParallelism(parallelism)
                 //.keyBy((KeySelector<Result, Integer>) value
@@ -68,7 +75,7 @@ public class FlinkBench {
                 .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort()))
                 .setParallelism(parallelism);
         new Thread(Unchecked.runnable(environment::execute)).start();
-        
+
       }
 
       @Override
