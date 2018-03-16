@@ -8,8 +8,11 @@ import com.spbsu.benchmark.flink.index.Result;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
+import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.java.typeutils.GenericTypeInfo;
+import org.apache.flink.api.java.typeutils.ListTypeInfo;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
+import org.apache.flink.streaming.api.functions.sink.TwoPhaseCommitSinkFunction;
 import org.jetbrains.annotations.Nullable;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
@@ -17,15 +20,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
-public class KryoSocketSink extends RichSinkFunction<Result> {
+public class KryoSocketSink extends TwoPhaseCommitSinkFunction<Result, List<Result>, Object> {
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOG = LoggerFactory.getLogger(KryoSocketSink.class);
-  public static final int OUTPUT_BUFFER_SIZE = 1_000_000;
-  public static final int CONNECTION_AWAIT_TIMEOUT = 5000;
+  private static final int OUTPUT_BUFFER_SIZE = 1_000_000;
+  private static final int CONNECTION_AWAIT_TIMEOUT = 5000;
 
   private final String hostName;
   private final int port;
@@ -35,7 +38,11 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
 
   //private transient Tracing.Tracer tracer;
 
-  public KryoSocketSink(String hostName, int port) {
+  public KryoSocketSink(String hostName, int port, ExecutionConfig config) {
+    super(
+            new ListTypeInfo<>(Result.class).createSerializer(config),
+            new GenericTypeInfo<>(Object.class).createSerializer(config)
+    );
     this.hostName = hostName;
     this.port = port;
   }
@@ -64,19 +71,37 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
     LOG.info("Connected to {}:{}", hostName, port);
   }
 
-  private final Set<Long> hashes = new HashSet<>();
+  @Override
+  protected void invoke(List<Result> transaction, Result value, Context context) {
+    transaction.add(value);
+  }
 
   @Override
-  public void invoke(Result value) {
-    if (client != null && client.isConnected()) {
-      //tracer.log(value.wordIndexAdd().hash());
-      client.sendTCP(value.wordIndexAdd());
-      if (value.wordIndexRemove() != null) {
-        client.sendTCP(value.wordIndexRemove());
+  protected List<Result> beginTransaction() {
+    return new ArrayList<>();
+  }
+
+  @Override
+  protected void preCommit(List<Result> transaction) {
+  }
+
+  @Override
+  protected void commit(List<Result> transaction) {
+    transaction.forEach(result -> {
+      if (client != null && client.isConnected()) {
+        //tracer.log(value.wordIndexAdd().hash());
+        client.sendTCP(result.wordIndexAdd());
+        if (result.wordIndexRemove() != null) {
+          client.sendTCP(result.wordIndexRemove());
+        }
+      } else {
+        throw new RuntimeException("Writing to the closed log");
       }
-    } else {
-      throw new RuntimeException("Writing to the closed log");
-    }
+    });
+  }
+
+  @Override
+  protected void abort(List<Result> transaction) {
   }
 
   @Override

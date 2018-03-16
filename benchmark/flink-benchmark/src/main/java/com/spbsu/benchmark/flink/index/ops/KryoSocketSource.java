@@ -6,6 +6,9 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
+import org.apache.flink.runtime.state.FunctionSnapshotContext;
+import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.jetbrains.annotations.Nullable;
@@ -13,7 +16,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> {
+public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> implements CheckpointedFunction {
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOG = LoggerFactory.getLogger(KryoSocketSource.class);
@@ -78,6 +81,16 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
     synchronized (hostname) {
       hostname.wait();
     }
+  }
+
+  @Override
+  public void snapshotState(FunctionSnapshotContext context) {
+    //do nothing
+  }
+
+  @Override
+  public void initializeState(FunctionInitializationContext context) {
+    //do nothing
   }
 
   private synchronized long currentTime() {
