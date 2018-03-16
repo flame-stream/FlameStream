@@ -5,9 +5,9 @@ import akka.util.Timeout;
 import java.util.concurrent.TimeUnit;
 
 public class FlameConfig {
-  public final static FlameConfig config = new FlameConfig(
-          Timeout.apply(10, TimeUnit.SECONDS),
-          Timeout.apply(20, TimeUnit.SECONDS)
+  public static final FlameConfig config = new FlameConfig(
+          Timeout.apply(1, TimeUnit.SECONDS),
+          Timeout.apply(10, TimeUnit.SECONDS)
   );
   private final Timeout smallTimeout;
   private final Timeout bigTimeout;
@@ -18,10 +18,10 @@ public class FlameConfig {
   }
 
   public Timeout smallTimeout() {
-    return this.smallTimeout;
+    return smallTimeout;
   }
 
   public Timeout bigTimeout() {
-    return this.bigTimeout;
+    return bigTimeout;
   }
 }
