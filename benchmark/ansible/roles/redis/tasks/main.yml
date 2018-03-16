@@ -1,0 +1,41 @@
+---
+- name: Create redis dir
+  file:
+    path: "{{ redis_dir }}"
+    state: directory
+
+- name: Create tarball dir
+  file:
+    path: "{{ tarball_dir }}"
+    state: directory
+
+- name: Download redis tarball
+  get_url: 
+    url: "{{ redis_url }}"
+    dest: "{{ tarball_dir }}/redis.tar.gz"
+
+- name: Unpack the redis tarball
+  command: tar -xf {{ tarball_dir }}/redis.tar.gz --strip-components=1
+  args: 
+    chdir: "{{ redis_dir }}"
+    creates: "{{ redis_dir }}/src"
+
+- name: Make redis deps
+  make:
+    chdir: "{{ redis_dir }}/deps"
+    target: "{{ item }}"
+  with_items:
+    - jemalloc
+    - hiredis
+    - lua
+    - linenoise
+
+- name: Make redis
+  make:
+    chdir: "{{ redis_dir }}"
+
+- name: Run redis server
+  command: "{{ redis_dir }}/src/redis-server --daemonize yes --protected-mode no"
+
+- name: Clean redis
+  command: "{{ redis_dir }}/src/redis-cli flushall"

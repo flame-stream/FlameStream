@@ -18,7 +18,7 @@ public class HashUnit {
   public HashUnit(@JsonProperty("from") int from, @JsonProperty("to") int to) {
     this.from = from;
     this.to = to;
-    id = "[" + from + ";" + to + "]";
+    id = from + "_" + to;
   }
 
   @JsonProperty("from")

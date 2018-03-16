@@ -137,8 +137,9 @@ public class DoubleGroupingTest extends FlameStreamSuite {
             .millisBetweenCommits(50)
             .withSystem(system)
             .withStateStorage(redisStateStorage)
+            .withBlink()
             .build()) {
-      doubleGroupingTest(runtime, 10000, true);
+      doubleGroupingTest(runtime, 500_000, true);
     }
   }
 

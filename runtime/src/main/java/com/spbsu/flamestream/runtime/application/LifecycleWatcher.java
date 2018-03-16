@@ -3,12 +3,15 @@ package com.spbsu.flamestream.runtime.application;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.serialization.SerializationExtension;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.FlameNode;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.state.InMemStateStorage;
+import com.spbsu.flamestream.runtime.state.RedisStateStorage;
+import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
@@ -24,19 +27,21 @@ import static org.apache.zookeeper.Watcher.Event;
 public class LifecycleWatcher extends LoggingActor {
   private static final int SESSION_TIMEOUT = 5000;
   private final String zkConnectString;
+  private final String redisHost;
   private final String id;
 
   private ZooKeeperGraphClient client = null;
 
   private final Map<String, ActorRef> nodes = new HashMap<>();
 
-  private LifecycleWatcher(String id, String zkConnectString) {
+  private LifecycleWatcher(String id, String zkConnectString, String redisHost) {
     this.zkConnectString = zkConnectString;
+    this.redisHost = redisHost;
     this.id = id;
   }
 
-  public static Props props(String id, String zkConnectString) {
-    return Props.create(LifecycleWatcher.class, id, zkConnectString);
+  public static Props props(String id, String zkConnectString, String redisHost) {
+    return Props.create(LifecycleWatcher.class, id, zkConnectString, redisHost);
   }
 
   @Override
@@ -87,7 +92,15 @@ public class LifecycleWatcher extends LoggingActor {
     final Graph g = flameClient.graph();
     log().info("Creating node with watchGraphs: '{}', config: '{}'", g, config);
     // FIXME: 3/1/18 add real storage
-    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient, new InMemStateStorage())
+    final StateStorage stateStorage;
+    if (redisHost != null) {
+      log().info("Using redis state storage, host: {}", redisHost);
+      stateStorage = new RedisStateStorage(redisHost, 6379, SerializationExtension.get(context().system()));
+    } else {
+      log().info("State redis host is null, using in-mem state storage");
+      stateStorage = new InMemStateStorage();
+    }
+    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient, stateStorage)
             .withDispatcher("util-dispatcher"), flameClient.name());
     nodes.put(flameClient.name(), node);
 

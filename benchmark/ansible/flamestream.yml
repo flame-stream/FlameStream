@@ -13,6 +13,11 @@
   roles:
     - { role: common-packages }
 
+- name: Deploy redis
+  hosts: redis
+  roles:
+    - { role: redis }
+
 - name: Setup zookeeper
   hosts: manager
   roles:

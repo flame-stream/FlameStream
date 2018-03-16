@@ -2,7 +2,7 @@ variable "access_key" {}
 variable "secret_key" {}
 variable "key_pair" {}
 variable "cluster_size" {
-  default = 10
+  default = 11
 }
 variable "region" {
   default = "us-east-2"

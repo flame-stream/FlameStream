@@ -6,16 +6,16 @@
 
 - name: Create tarball dir
   file:
-    path: "{{ zookeeper_tarball_dir }}"
+    path: "{{ tarball_dir }}"
     state: directory
 
 - name: Download ZK tarball
   get_url: 
     url: "{{ zookeeper_url }}"
-    dest: "{{ zookeeper_tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz"
+    dest: "{{ tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz"
 
 - name: Unpack the tarball
-  command: tar -xf {{ zookeeper_tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz --strip-components=1
+  command: tar -xf {{ tarball_dir }}/zookeeper-{{ zookeeper_version }}.tar.gz --strip-components=1
   args: 
     chdir: "{{ zookeeper_dir }}" 
     creates: "{{ zookeeper_dir }}/bin"

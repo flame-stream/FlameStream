@@ -20,12 +20,13 @@ public_list = [ip.strip() for ip in public_ips.split(',')]
 assert len(private_list) >= 2
 assert len(public_list) >= 2
 
-manager, *workers = zip(private_list, public_list)
+manager, redis, *workers = zip(private_list, public_list)
 
 result = {'all': {
     'children': {
         'manager': group([manager]),
         'workers': group(workers),
+        'redis': group([redis]),
         'bench': group([manager]),
         'acker': group([workers[0]]),
         'input': group([workers[1] if len(workers) > 1 else workers[0]])

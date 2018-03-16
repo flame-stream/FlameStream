@@ -9,6 +9,7 @@ import redis.clients.jedis.JedisPool;
 import scala.util.Try;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RedisStateStorage implements StateStorage {
@@ -23,7 +24,7 @@ public class RedisStateStorage implements StateStorage {
   @Override
   public Map<String, GroupingState> stateFor(HashUnit unit, GlobalTime time) {
     try (final Jedis jedis = jedisPool.getResource()) {
-      final String key = unit.id() + time.toString();
+      final String key = unit.id() + '@' + time.toString();
       final byte[] data = jedis.get(key.getBytes());
       if (data != null) {
         final Try<Map> trie = serialization.deserialize(data, Map.class);
@@ -38,7 +39,13 @@ public class RedisStateStorage implements StateStorage {
   @Override
   public void putState(HashUnit unit, GlobalTime time, Map<String, GroupingState> state) {
     try (final Jedis jedis = jedisPool.getResource()) {
-      final String key = unit.id() + time.toString();
+      final Set<String> keys = jedis.keys(unit.id() + '*');
+      if (keys.size() == 2) {
+        final String min = keys.stream().min(String::compareTo).get();
+        jedis.del(min);
+      }
+
+      final String key = unit.id() + '@' + time.toString();
       final byte[] data = serialization.serialize(state).get();
       jedis.set(key.getBytes(), data);
     }
