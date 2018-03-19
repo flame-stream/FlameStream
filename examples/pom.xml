@@ -70,6 +70,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
+                            <excludeClassifiers>tests</excludeClassifiers>
                             <outputDirectory>
                                 ${project.build.directory}/lib
                             </outputDirectory>
