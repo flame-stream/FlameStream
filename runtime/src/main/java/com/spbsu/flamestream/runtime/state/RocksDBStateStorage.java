@@ -13,6 +13,7 @@ import org.rocksdb.RocksDBException;
 import scala.util.Try;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RocksDBStateStorage implements StateStorage {
   private final RocksDB rocksDB;
   private final Serialization serialization;
+  private final Map<HashUnit, GlobalTime> prevTimeForUnit = new HashMap<>();
 
   static {
     RocksDB.loadLibrary();
@@ -43,7 +45,7 @@ public class RocksDBStateStorage implements StateStorage {
 
   @Override
   public Map<String, GroupingState> stateFor(HashUnit unit, GlobalTime time) {
-    final String key = unit.id() + '@' + time.toString();
+    final String key = key(unit, time);
     try {
       final byte[] data = rocksDB.get(key.getBytes());
       if (data != null) {
@@ -60,13 +62,23 @@ public class RocksDBStateStorage implements StateStorage {
 
   @Override
   public void putState(HashUnit unit, GlobalTime time, Map<String, GroupingState> state) {
-    final String key = unit.id() + '@' + time.toString();
+    final String key = key(unit, time);
     final byte[] data = serialization.serialize(state).get();
     try {
       rocksDB.put(key.getBytes(), data);
+
+      final GlobalTime prevTime = prevTimeForUnit.get(unit);
+      if (prevTime != null) {
+        rocksDB.deleteRange(unit.toString().getBytes(), key(unit, prevTime).getBytes());
+      }
+      prevTimeForUnit.put(unit, time);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static String key(HashUnit hashUnit, GlobalTime globalTime) {
+    return hashUnit.id() + '@' + globalTime.toString();
   }
 
   public void close() {
