@@ -6,8 +6,8 @@ import java.util.concurrent.TimeUnit;
 
 public class FlameConfig {
   public static final FlameConfig config = new FlameConfig(
-          Timeout.apply(2, TimeUnit.SECONDS),
-          Timeout.apply(10, TimeUnit.SECONDS)
+          Timeout.apply(5, TimeUnit.SECONDS),
+          Timeout.apply(20, TimeUnit.SECONDS)
   );
   private final Timeout smallTimeout;
   private final Timeout bigTimeout;
