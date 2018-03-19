@@ -9,7 +9,7 @@ import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.flink.runtime.state.memory.MemoryStateBackend;
+import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -55,7 +55,13 @@ public class FlinkBench {
         environment.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
         environment.getCheckpointConfig().setMinPauseBetweenCheckpoints(1000);
         environment.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
-        environment.setStateBackend(new MemoryStateBackend(20 * 1024 * 1024));
+
+        final String rocksDbPath = deployerConfig.getString("rocksdb-path");
+        try {
+          environment.setStateBackend(new RocksDBStateBackend("file:///" + rocksDbPath, false));
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
 
         environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))

@@ -271,6 +271,11 @@
                 <artifactId>flink-streaming-java_2.11</artifactId>
                 <version>${flink.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-statebackend-rocksdb_2.11</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
 
             <!--Testing-->
             <dependency>
