@@ -33,8 +33,7 @@ public class AkkaFront implements Front {
 
   public AkkaFront(EdgeContext edgeContext, ActorRefFactory refFactory, String localMediatorPath) {
     this.innerActor = refFactory.actorOf(
-            RemoteMediator.props(localMediatorPath + "/" + edgeContext.edgeId().nodeId() + "-local")
-                    .withDispatcher("util-dispatcher"),
+            RemoteMediator.props(localMediatorPath + "/" + edgeContext.edgeId().nodeId() + "-local"),
             edgeContext.edgeId().nodeId() + "-inner"
     );
   }

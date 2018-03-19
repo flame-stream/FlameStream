@@ -35,7 +35,7 @@ public class AwaitResolver extends AbstractActor {
   }
 
   public static CompletionStage<ActorRef> resolve(ActorPath path, ActorRefFactory context) {
-    final ActorRef resolver = context.actorOf(AwaitResolver.props().withDispatcher("util-dispatcher"));
+    final ActorRef resolver = context.actorOf(AwaitResolver.props());
     return PatternsCS.ask(resolver, path, FlameConfig.config.bigTimeout())
             .thenApply(a -> (ActorRef) a);
   }

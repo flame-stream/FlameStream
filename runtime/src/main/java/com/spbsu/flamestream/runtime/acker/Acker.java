@@ -75,13 +75,14 @@ public class Acker extends LoggingActor {
 
     table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW);
     pingActor = context().actorOf(
-            PingActor.props(self(), StartCommit.START).withDispatcher("util-dispatcher"),
+            PingActor.props(self(), StartCommit.START),
             "acker-ping"
     );
   }
 
   public static Props props(int managersCount, long defaultMinimalTime, int millisBetweenCommits, Registry registry) {
-    return Props.create(Acker.class, managersCount, defaultMinimalTime, millisBetweenCommits, registry);
+    return Props.create(Acker.class, managersCount, defaultMinimalTime, millisBetweenCommits, registry)
+            .withDispatcher("processing-dispatcher");
   }
 
   @Override

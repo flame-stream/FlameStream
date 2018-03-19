@@ -30,11 +30,11 @@ public class LocalAcker extends LoggingActor {
 
   public LocalAcker(ActorRef globalAcker) {
     this.globalAcker = globalAcker;
-    pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH).withDispatcher("util-dispatcher"));
+    pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH));
   }
 
   public static Props props(ActorRef globalAcker) {
-    return Props.create(LocalAcker.class, globalAcker);
+    return Props.create(LocalAcker.class, globalAcker).withDispatcher("processing-dispatcher");
   }
 
   @Override

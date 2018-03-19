@@ -100,8 +100,10 @@ public class LifecycleWatcher extends LoggingActor {
       log().info("State redis host is null, using in-mem state storage");
       stateStorage = new InMemStateStorage();
     }
-    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient, stateStorage)
-            .withDispatcher("util-dispatcher"), flameClient.name());
+    final ActorRef node = context().actorOf(
+            FlameNode.props(id, g, config, flameClient, stateStorage),
+            flameClient.name()
+    );
     nodes.put(flameClient.name(), node);
 
     final Set<AttachFront<?>> initialFronts = flameClient.fronts(newFronts ->

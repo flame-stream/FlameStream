@@ -155,7 +155,8 @@ public class Component extends LoggingActor {
                             ActorRef acker,
                             ComputationProps props,
                             Map<String, GroupGroupingState> stateByVertex) {
-    return Props.create(Component.class, componentVertices, graph, localManager, routes, acker, props, stateByVertex);
+    return Props.create(Component.class, componentVertices, graph, localManager, routes, acker, props, stateByVertex)
+            .withDispatcher("processing-dispatcher");
   }
 
   @Override

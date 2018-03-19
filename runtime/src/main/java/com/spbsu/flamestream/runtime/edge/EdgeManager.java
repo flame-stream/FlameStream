@@ -35,14 +35,14 @@ public class EdgeManager extends LoggingActor {
               final ActorRef frontRef = context().actorOf(FrontActor.props(
                       new SystemEdgeContext(nodePath, nodeId, attachFront.id()),
                       attachFront.instance()
-              ).withDispatcher("edge-dispatcher"), attachFront.id());
+              ), attachFront.id());
               negotiator.tell(new NewFront(new EdgeId(attachFront.id(), nodeId), frontRef), self());
             })
             .match(AttachRear.class, attachRear -> {
               final ActorRef rearRef = context().actorOf(RearActor.props(
                       new SystemEdgeContext(nodePath, nodeId, attachRear.id()),
                       attachRear.instance()
-              ).withDispatcher("edge-dispatcher"), attachRear.id());
+              ), attachRear.id());
               graphManager.tell(new NewRear(rearRef), self());
             })
             .build();

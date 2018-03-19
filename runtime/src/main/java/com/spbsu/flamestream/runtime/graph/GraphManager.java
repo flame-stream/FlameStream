@@ -74,7 +74,8 @@ public class GraphManager extends LoggingActor {
           ActorRef acker,
           ComputationProps layout,
           StateStorage storage) {
-    return Props.create(GraphManager.class, nodeId, graph, acker, layout, storage);
+    return Props.create(GraphManager.class, nodeId, graph, acker, layout, storage)
+            .withDispatcher("processing-dispatcher");
   }
 
   @Override

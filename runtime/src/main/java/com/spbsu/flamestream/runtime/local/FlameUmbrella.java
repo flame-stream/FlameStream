@@ -76,8 +76,7 @@ class Cluster extends LoggingActor {
     final Registry registry = new InMemoryRegistry();
     final Map<String, Props> nodeProps = new HashMap<>();
     paths.keySet().forEach(id -> {
-      final Props props = FlameNode.props(id, g, clusterConfig, registry, stateStorage)
-              .withDispatcher("util-dispatcher");
+      final Props props = FlameNode.props(id, g, clusterConfig, registry, stateStorage);
       nodeProps.put(id, props);
     });
     inner = context().actorOf(FlameUmbrella.props(nodeProps, paths), "cluster");

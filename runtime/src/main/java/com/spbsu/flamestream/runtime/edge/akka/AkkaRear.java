@@ -24,8 +24,7 @@ public class AkkaRear implements Rear {
 
   public AkkaRear(EdgeContext edgeContext, ActorRefFactory refFactory, String localMediatorPath) {
     this.innerActor = refFactory.actorOf(
-            RemoteMediator.props(localMediatorPath + '/' + edgeContext.edgeId().nodeId() + "-localrear")
-                    .withDispatcher("util-dispatcher"),
+            RemoteMediator.props(localMediatorPath + '/' + edgeContext.edgeId().nodeId() + "-localrear"),
             edgeContext.edgeId().nodeId() + "-inner"
     );
   }

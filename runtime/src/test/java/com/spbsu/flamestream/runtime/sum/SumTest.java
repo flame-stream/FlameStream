@@ -141,7 +141,7 @@ public final class SumTest extends FlameAkkaSuite {
     }
   }
 
-  @Test
+  @Test(invocationCount = 10)
   public void integrationTest() throws Exception {
     try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(2).build()) {
       final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));

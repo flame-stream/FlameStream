@@ -29,7 +29,7 @@ public class SyncKiller extends AbstractActor {
   }
 
   public static CompletionStage<Void> kill(ActorRef ref, ActorRefFactory context) {
-    final ActorRef resolver = context.actorOf(SyncKiller.props(ref).withDispatcher("util-dispatcher"));
+    final ActorRef resolver = context.actorOf(SyncKiller.props(ref));
     return PatternsCS.ask(resolver, "KILL", FlameConfig.config.bigTimeout()).thenApply(a -> null);
   }
 
