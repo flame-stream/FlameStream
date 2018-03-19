@@ -1,9 +1,11 @@
-package com.spbsu.flamestream.runtime;
+package com.spbsu.flamestream.runtime.local;
 
 import akka.actor.ActorPath;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.runtime.FlameRuntime;
+import com.spbsu.flamestream.runtime.RemoteRuntime;
 import com.spbsu.flamestream.runtime.application.WorkerApplication;
 import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;

@@ -11,7 +11,7 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.LocalClusterRuntime;
+import com.spbsu.flamestream.runtime.local.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.local.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
@@ -141,7 +141,7 @@ public final class SumTest extends FlameAkkaSuite {
     }
   }
 
-  @Test(invocationCount = 10)
+  @Test
   public void integrationTest() throws Exception {
     try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(2).build()) {
       final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));

@@ -45,7 +45,7 @@ public class SinkJoba implements Joba {
 
   public void attachRear(ActorRef rear) {
     try {
-      final Batch batch = PatternsCS.ask(rear, new GimmeLastBatch(), FlameConfig.config.smallTimeout())
+      final Batch batch = PatternsCS.ask(rear, new GimmeLastBatch(), FlameConfig.config.bigTimeout())
               .thenApply(e -> (Batch) e)
               .toCompletableFuture().get();
       if (batch == Batch.Default.EMPTY) {

@@ -16,7 +16,7 @@ import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.bl.index.utils.WikipeadiaInput;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.LocalClusterRuntime;
+import com.spbsu.flamestream.runtime.local.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.local.LocalRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
