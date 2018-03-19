@@ -4,8 +4,8 @@
 
 - name: Copy the worker config
   template:
-    src: worker.json
-    dest: "{{ flamestream_dir }}"
+    src: worker.json.j2
+    dest: "{{ flamestream_dir }}/worker.json"
 
 - name: Run flamstream
   shell: "cd {{ flamestream_dir }} && bash entrypoint.sh restart worker.json"

@@ -39,13 +39,16 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient {
+public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient, Registry {
   private static final int MAX_BUFFER_SIZE = 20000;
   private static final int BUFFER_SIZE = 1000;
 
   private final ZooKeeper zooKeeper;
   private final Kryo kryo;
   private final ObjectMapper mapper = new ObjectMapper();
+
+  private final Set<String> seenFronts = Collections.synchronizedSet(new HashSet<>());
+  private final Set<String> seenRears = Collections.synchronizedSet(new HashSet<>());
 
   public ZooKeeperGraphClient(ZooKeeper zooKeeper) {
     this.zooKeeper = zooKeeper;
@@ -65,41 +68,232 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient 
     zooKeeper.close();
   }
 
-  /**
-   * Fetch graph, if present, and set watcher that would be called on updates
-   */
-  public List<ZooKeeperFlameClient> watchGraphs(Consumer<List<ZooKeeperFlameClient>> watcher) {
+  public void push(Graph graph) {
     try {
-      createIfNotExists("/graphs");
-      final List<String> children = zooKeeper.getChildren(
-              "/graphs",
-              event -> {
-                if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
-                  watcher.accept(watchGraphs(watcher));
-                }
-              }
+      final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
+      kryo.writeClassAndObject(o, graph);
+      zooKeeper.create(
+              "/graph",
+              o.toBytes(),
+              ZKUtil.parseACLs("world:anyone:crd"),
+              CreateMode.PERSISTENT
       );
-      return children.stream()
-              .map(c -> new ZooKeeperFlameClient("/graphs/" + c))
-              .collect(Collectors.toList());
+    } catch (InterruptedException | KeeperException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Watcher is called when the graph appears
+   */
+  public void watchGraph(Consumer<Boolean> watcher) {
+    try {
+      final Stat exists = zooKeeper.exists("/graph", event -> {
+        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
+          watcher.accept(true);
+        }
+      });
+      if (exists != null) {
+        watcher.accept(true);
+      }
     } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public ZooKeeperFlameClient push(Graph graph) {
+  public Graph graph() {
     try {
-      createIfNotExists("/graphs");
+      final byte[] data = zooKeeper.getData(
+              "/graph",
+              false,
+              null
+      );
+      final ByteBufferInput input = new ByteBufferInput(data);
+      return (Graph) kryo.readClassAndObject(input);
+    } catch (InterruptedException | KeeperException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void attachFront(String name, FlameRuntime.FrontInstance<?> instance) {
+    try {
+      createIfNotExists("/graph/fronts");
       final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
-      kryo.writeClassAndObject(o, graph);
-      final String s = zooKeeper.create(
-              "/graphs/graph",
+      kryo.writeClassAndObject(o, instance);
+
+      zooKeeper.create(
+              "/graph/fronts/" + name,
               o.toBytes(),
               ZKUtil.parseACLs("world:anyone:crd"),
-              CreateMode.PERSISTENT_SEQUENTIAL
+              CreateMode.PERSISTENT
       );
-      return new ZooKeeperFlameClient(s);
     } catch (InterruptedException | KeeperException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void attachRear(String name, FlameRuntime.RearInstance<?> instance) {
+    try {
+      createIfNotExists("/graph/rears");
+      final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
+      kryo.writeClassAndObject(o, instance);
+
+      zooKeeper.create(
+              "/graph/rears/" + name,
+              o.toBytes(),
+              ZKUtil.parseACLs("world:anyone:crd"),
+              CreateMode.PERSISTENT
+      );
+    } catch (InterruptedException | KeeperException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public Set<AttachFront<?>> fronts(Consumer<Set<AttachFront<?>>> watcher) {
+    try {
+      final Stat exists = zooKeeper.exists("/graph/fronts", event -> {
+        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
+          final Set<AttachFront<?>> fronts = fronts(watcher);
+          watcher.accept(fronts);
+        }
+      });
+      if (exists != null) {
+        return zooKeeper.getChildren(
+                "/graph/fronts",
+                event -> {
+                  if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+                    watcher.accept(fronts(watcher));
+                  }
+                },
+                null
+        )
+                .stream()
+                .filter(name -> !seenFronts.contains(name))
+                .peek(seenFronts::add)
+                .map(name -> new AttachFront<>(name, frontBy(name)))
+                .collect(Collectors.toSet());
+      } else {
+        return Collections.emptySet();
+      }
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private FlameRuntime.FrontInstance<?> frontBy(String name) {
+    try {
+      final byte[] data = zooKeeper.getData("/graph/fronts/" + name, false, null);
+      final ByteBufferInput input = new ByteBufferInput(data);
+      return (FlameRuntime.FrontInstance<?>) kryo.readClassAndObject(input);
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public Set<AttachRear<?>> rears(Consumer<Set<AttachRear<?>>> watcher) {
+    try {
+      final Stat exists = zooKeeper.exists("/graph/rears", event -> {
+        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
+          final Set<AttachRear<?>> rears = rears(watcher);
+          watcher.accept(rears);
+        }
+      });
+      if (exists != null) {
+        final List<String> children = zooKeeper.getChildren("/graph/rears", event -> {
+                  if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+                    watcher.accept(rears(watcher));
+                  }
+                },
+                null
+        );
+
+        return children.stream()
+                .filter(name -> !seenRears.contains(name))
+                .peek(seenFronts::add)
+                .map(name -> new AttachRear<>(name, rearBy(name)))
+                .collect(Collectors.toSet());
+      } else {
+        return Collections.emptySet();
+      }
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private FlameRuntime.RearInstance<?> rearBy(String name) {
+    try {
+      // There is no watcher because fronts are immutable
+      final byte[] data = zooKeeper.getData("/graph/rears/" + name, false, null);
+      final ByteBufferInput input = new ByteBufferInput(data);
+      return (FlameRuntime.RearInstance<?>) kryo.readClassAndObject(input);
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void register(EdgeId frontId, long attachTimestamp) {
+    try {
+      zooKeeper.create(
+              "/graph/fronts/" + frontId.edgeName() + '/' + frontId.nodeId(),
+              new byte[0],
+              ZKUtil.parseACLs("world:anyone:crd"),
+              CreateMode.PERSISTENT
+      );
+
+      final byte[] attachTs = new byte[8];
+      ByteBuffer.wrap(attachTs).putLong(attachTimestamp);
+      zooKeeper.create(
+              "/graph/fronts/" + frontId.edgeName() + '/' + frontId.nodeId() + "/attachTs",
+              attachTs,
+              ZKUtil.parseACLs("world:anyone:crd"),
+              CreateMode.PERSISTENT
+      );
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public long registeredTime(EdgeId frontId) {
+    try {
+      final String frontPath = "/graph/fronts/" + frontId.edgeName() + '/' + frontId.nodeId();
+      final Stat exists = zooKeeper.exists(frontPath, false);
+      if (exists != null) {
+        final byte[] data = zooKeeper.getData(frontPath, false, null);
+        return ByteBuffer.wrap(data).getLong();
+      } else {
+        return -1;
+      }
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void committed(long time) {
+    try {
+      final String lastCommitPath = "/graph/last-commit";
+      createIfNotExists(lastCommitPath);
+      final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).putLong(time);
+      zooKeeper.setData(lastCommitPath, buffer.array(), -1);
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public long lastCommit() {
+    try {
+      final String lastCommitPath = "/graph/last-commit";
+      final Stat exists = zooKeeper.exists(lastCommitPath, false);
+      if (exists != null) {
+        final byte[] data = zooKeeper.getData(lastCommitPath, false, null);
+        return ByteBuffer.wrap(data).getLong();
+      } else {
+        return 0;
+      }
+    } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
@@ -124,215 +318,11 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient 
       zooKeeper.create(
               "/config",
               mapper.writeValueAsBytes(config),
-              ZKUtil.parseACLs("world:anyone:cr"),
+              ZKUtil.parseACLs("world:anyone:crd"),
               CreateMode.PERSISTENT
       );
     } catch (JsonProcessingException | InterruptedException | KeeperException e) {
       throw new RuntimeException(e);
-    }
-  }
-
-  public class ZooKeeperFlameClient implements Registry {
-    private final String graphPath;
-    private final Set<String> seenFronts = Collections.synchronizedSet(new HashSet<>());
-    private final Set<String> seenRears = Collections.synchronizedSet(new HashSet<>());
-
-    public ZooKeeperFlameClient(String graphPath) {
-      this.graphPath = graphPath;
-    }
-
-    public String name() {
-      return graphPath.split("/")[graphPath.split("/").length - 1];
-    }
-
-    public Graph graph() {
-      try {
-        final byte[] data = zooKeeper.getData(
-                graphPath,
-                false,
-                null
-        );
-        final ByteBufferInput input = new ByteBufferInput(data);
-        return (Graph) kryo.readClassAndObject(input);
-      } catch (InterruptedException | KeeperException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    public void removeGraph() {
-      try {
-        org.apache.zookeeper.ZKUtil.deleteRecursive(zooKeeper, graphPath);
-      } catch (KeeperException | InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    public void attachFront(String name, FlameRuntime.FrontInstance<?> instance) {
-      try {
-        createIfNotExists(graphPath + "/fronts");
-        final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
-        kryo.writeClassAndObject(o, instance);
-
-        zooKeeper.create(
-                graphPath + "/fronts/" + name,
-                o.toBytes(),
-                ZKUtil.parseACLs("world:anyone:crd"),
-                CreateMode.PERSISTENT
-        );
-      } catch (InterruptedException | KeeperException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    public void attachRear(String name, FlameRuntime.RearInstance<?> instance) {
-      try {
-        createIfNotExists(graphPath + "/rears");
-        final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
-        kryo.writeClassAndObject(o, instance);
-
-        zooKeeper.create(
-                graphPath + "/rears/" + name,
-                o.toBytes(),
-                ZKUtil.parseACLs("world:anyone:crd"),
-                CreateMode.PERSISTENT
-        );
-      } catch (InterruptedException | KeeperException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    public Set<AttachFront<?>> fronts(Consumer<Set<AttachFront<?>>> watcher) {
-      try {
-        final Stat exists = zooKeeper.exists(graphPath + "/fronts", event -> {
-          if (event.getType() == Watcher.Event.EventType.NodeCreated) {
-            final Set<AttachFront<?>> fronts = fronts(watcher);
-            watcher.accept(fronts);
-          }
-        });
-        if (exists != null) {
-          return zooKeeper.getChildren(
-                  graphPath + "/fronts",
-                  event -> {
-                    if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
-                      watcher.accept(fronts(watcher));
-                    }
-                  },
-                  null
-          )
-                  .stream()
-                  .filter(name -> !seenFronts.contains(name))
-                  .peek(seenFronts::add)
-                  .map(name -> new AttachFront<>(name, frontBy(name)))
-                  .collect(Collectors.toSet());
-        } else {
-          return Collections.emptySet();
-        }
-      } catch (KeeperException | InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    private FlameRuntime.FrontInstance<?> frontBy(String name) {
-      try {
-        final byte[] data = zooKeeper.getData(graphPath + "/fronts/" + name, false, null);
-        final ByteBufferInput input = new ByteBufferInput(data);
-        return (FlameRuntime.FrontInstance<?>) kryo.readClassAndObject(input);
-      } catch (KeeperException | InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    public Set<AttachRear<?>> rears(Consumer<Set<AttachRear<?>>> watcher) {
-      try {
-        final Stat exists = zooKeeper.exists(graphPath + "/rears", event -> {
-          if (event.getType() == Watcher.Event.EventType.NodeCreated) {
-            final Set<AttachRear<?>> rears = rears(watcher);
-            watcher.accept(rears);
-          }
-        });
-        if (exists != null) {
-          final List<String> children = zooKeeper.getChildren(
-                  graphPath + "/rears",
-                  event -> {
-                    if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
-                      watcher.accept(rears(watcher));
-                    }
-                  },
-                  null
-          );
-
-          return children.stream()
-                  .filter(name -> !seenRears.contains(name))
-                  .peek(seenFronts::add)
-                  .map(name -> new AttachRear<>(name, rearBy(name)))
-                  .collect(Collectors.toSet());
-        } else {
-          return Collections.emptySet();
-        }
-      } catch (KeeperException | InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    private FlameRuntime.RearInstance<?> rearBy(String name) {
-      try {
-        // There is no watcher because fronts are immutable
-        final byte[] data = zooKeeper.getData(graphPath + "/rears/" + name, false, null);
-        final ByteBufferInput input = new ByteBufferInput(data);
-        return (FlameRuntime.RearInstance<?>) kryo.readClassAndObject(input);
-      } catch (KeeperException | InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public void register(EdgeId frontId, long attachTimestamp) {
-      try {
-        zooKeeper.create(
-                graphPath + "/fronts/" + frontId.edgeName() + '/' + frontId.nodeId(),
-                new byte[0],
-                ZKUtil.parseACLs("world:anyone:crd"),
-                CreateMode.PERSISTENT
-        );
-
-        final byte[] attachTs = new byte[8];
-        ByteBuffer.wrap(attachTs).putLong(attachTimestamp);
-        zooKeeper.create(
-                graphPath + "/fronts/" + frontId.edgeName() + '/' + frontId.nodeId() + "/attachTs",
-                attachTs,
-                ZKUtil.parseACLs("world:anyone:crd"),
-                CreateMode.PERSISTENT
-        );
-      } catch (KeeperException | InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public long registeredTime(EdgeId frontId) {
-      try {
-        final String frontPath = graphPath + "/fronts/" + frontId.edgeName() + '/' + frontId.nodeId();
-        final Stat exists = zooKeeper.exists(frontPath, false);
-        if (exists != null) {
-          final byte[] data = zooKeeper.getData(frontPath, false, null);
-          return ByteBuffer.wrap(data).getLong();
-        } else {
-          return -1;
-        }
-      } catch (KeeperException | InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public void committed(long time) {
-      // TODO: 2/28/18
-    }
-
-    @Override
-    public long lastCommit() {
-      // TODO: 2/28/18
-      return 0;
     }
   }
 
@@ -341,7 +331,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient 
       zooKeeper.create(
               path,
               new byte[0],
-              ZKUtil.parseACLs("world:anyone:crd"),
+              ZKUtil.parseACLs("world:anyone:crdw"),
               CreateMode.PERSISTENT
       );
     } catch (KeeperException k) {

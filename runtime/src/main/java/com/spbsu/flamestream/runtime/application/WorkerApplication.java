@@ -28,20 +28,12 @@ public class WorkerApplication implements Runnable {
   private final String id;
 
   @Nullable
-  private final String redisHost;
-
-  @Nullable
   private ActorSystem system = null;
 
   public WorkerApplication(String id, DumbInetSocketAddress host, String zkString) {
-    this(id, host, zkString, null);
-  }
-
-  public WorkerApplication(String id, DumbInetSocketAddress host, String zkString, String redisHost) {
     this.id = id;
     this.host = host;
     this.zkString = zkString;
-    this.redisHost = redisHost;
   }
 
 
@@ -60,7 +52,7 @@ public class WorkerApplication implements Runnable {
     final String id = workerConfig.id();
     final DumbInetSocketAddress socketAddress = workerConfig.localAddress();
     final String zkString = workerConfig.zkString();
-    new WorkerApplication(id, socketAddress, zkString, workerConfig.redisHost()).run();
+    new WorkerApplication(id, socketAddress, zkString).run();
   }
 
   @Override
@@ -73,7 +65,7 @@ public class WorkerApplication implements Runnable {
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
 
     this.system = ActorSystem.create("worker", config);
-    system.actorOf(LifecycleWatcher.props(id, zkString, redisHost), "watcher");
+    system.actorOf(LifecycleWatcher.props(id, zkString), "watcher");
 
     system.registerOnTermination(() -> {
       try {
@@ -98,20 +90,13 @@ public class WorkerApplication implements Runnable {
     private final String id;
     private final DumbInetSocketAddress localAddress;
     private final String zkString;
-    private final String redisHost;
 
     private WorkerConfig(@JsonProperty("id") String id,
                          @JsonProperty("localAddress") String localAddress,
-                         @JsonProperty("zkString") String zkString,
-                         @JsonProperty("redisHost") String redisHost) {
-      this.redisHost = redisHost;
+                         @JsonProperty("zkString") String zkString) {
       this.id = id;
       this.localAddress = new DumbInetSocketAddress(localAddress);
       this.zkString = zkString;
-    }
-
-    public String redisHost() {
-      return redisHost;
     }
 
     String id() {

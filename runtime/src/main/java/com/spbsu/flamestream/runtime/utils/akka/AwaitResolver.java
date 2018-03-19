@@ -73,6 +73,5 @@ public class AwaitResolver extends AbstractActor {
                     )
             )
             .build();
-
   }
 }

@@ -43,7 +43,7 @@ public class ConfigDeployer {
     final Map<String, ActorPath> paths = new HashMap<>();
     config.workers.forEach((s, address) -> {
       final Address a = new Address("akka", "worker", address.host(), address.port());
-      final ActorPath path = RootActorPath.apply(a, "/").child("user").child("watcher");
+      final ActorPath path = RootActorPath.apply(a, "/").child("user").child("watcher").child("graph");
       paths.put(s, path);
     });
 

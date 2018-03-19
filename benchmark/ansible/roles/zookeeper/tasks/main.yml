@@ -29,7 +29,7 @@
   shell: "{{ zookeeper_dir }}/bin/zkServer.sh restart"
 
 - name: Clean graphs
-  shell: "{{ zookeeper_cli }} rmr /graphs"
+  shell: "{{ zookeeper_cli }} rmr /graph"
 
 - name: Clean configs
   shell: "{{ zookeeper_cli }} rmr /config"
