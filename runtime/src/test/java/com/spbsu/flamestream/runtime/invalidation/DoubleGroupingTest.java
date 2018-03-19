@@ -20,11 +20,15 @@ import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.local.LocalRuntime;
 import com.spbsu.flamestream.runtime.state.RedisStateStorage;
+import com.spbsu.flamestream.runtime.state.RocksDBStateStorage;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import com.typesafe.config.ConfigFactory;
+import org.apache.commons.io.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -108,7 +112,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
   @Test(invocationCount = 10)
   public void multipleWorkersTest() throws InterruptedException {
     try (LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).build()) {
-      doubleGroupingTest(runtime, 10000,  false);
+      doubleGroupingTest(runtime, 10000, false);
     }
   }
 
@@ -126,7 +130,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     }
   }
 
-  @Test(invocationCount = 10, enabled = false)
+  @Test(enabled = false)
   public void redisMultipleWorkersBlinkTest() throws InterruptedException {
     final ActorSystem system = ActorSystem.create("local-runtime", ConfigFactory.load("local"));
     final Serialization serialization = SerializationExtension.get(system);
@@ -143,7 +147,27 @@ public class DoubleGroupingTest extends FlameStreamSuite {
     }
   }
 
-  private void doubleGroupingTest(LocalRuntime runtime, long inputSize, boolean backpressure) throws InterruptedException {
+  @Test
+  public void rocksDBMultipleWorkersBlinkTest() throws InterruptedException, IOException {
+    final ActorSystem system = ActorSystem.create("local-runtime", ConfigFactory.load("local"));
+    final Serialization serialization = SerializationExtension.get(system);
+    final String pathToDb = "./rocksdb";
+    final RocksDBStateStorage rocksDBStateStorage = new RocksDBStateStorage(pathToDb, serialization);
+
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4)
+            .withSystem(system)
+            .withStateStorage(rocksDBStateStorage)
+            .withBlink()
+            .build()) {
+      doubleGroupingTest(runtime, 500_000, true);
+    }
+
+    rocksDBStateStorage.close();
+    FileUtils.deleteDirectory(new File(pathToDb));
+  }
+
+  private void doubleGroupingTest(LocalRuntime runtime, long inputSize, boolean backpressure) throws
+                                                                                              InterruptedException {
     final FlameRuntime.Flame flame = runtime.run(graph());
     {
       final List<Integer> source = new Random()

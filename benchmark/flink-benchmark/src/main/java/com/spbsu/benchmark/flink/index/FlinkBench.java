@@ -58,7 +58,8 @@ public class FlinkBench {
 
         final String rocksDbPath = deployerConfig.getString("rocksdb-path");
         try {
-          environment.setStateBackend(new RocksDBStateBackend("file:///" + rocksDbPath, false));
+          final RocksDBStateBackend backend = new RocksDBStateBackend("file:///" + rocksDbPath, false);
+          environment.setStateBackend(backend);
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
