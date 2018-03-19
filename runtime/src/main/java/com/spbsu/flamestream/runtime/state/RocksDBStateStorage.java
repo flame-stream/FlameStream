@@ -4,11 +4,16 @@ import akka.serialization.Serialization;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.graph.state.GroupingState;
-import org.rocksdb.Options;
+import org.rocksdb.ColumnFamilyDescriptor;
+import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.ColumnFamilyOptions;
+import org.rocksdb.DBOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import scala.util.Try;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,9 +27,15 @@ public class RocksDBStateStorage implements StateStorage {
 
   public RocksDBStateStorage(String pathToDb, Serialization serialization) {
     this.serialization = serialization;
-    final Options options = new Options().setCreateIfMissing(true);
+
+    //Flink's default parameters
+    final DBOptions dbOptions = new DBOptions().setUseFsync(false).setCreateIfMissing(true);
+    final List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>(1);
+    columnFamilyDescriptors.add(new ColumnFamilyDescriptor("default".getBytes(), new ColumnFamilyOptions()));
+    final List<ColumnFamilyHandle> stateColumnFamilyHandles = new ArrayList<>();
+
     try {
-      rocksDB = RocksDB.open(options, pathToDb);
+      rocksDB = RocksDB.open(dbOptions, pathToDb, columnFamilyDescriptors, stateColumnFamilyHandles);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
