@@ -1,5 +1,5 @@
 rate: 50
-semantics: AT_MOST_ONCE
+guarantees: AT_MOST_ONCE
 millis_between_commits: 1000
 base_dir: /opt
 

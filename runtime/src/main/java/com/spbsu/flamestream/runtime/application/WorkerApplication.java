@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
 
 public class WorkerApplication implements Runnable {
@@ -33,7 +32,7 @@ public class WorkerApplication implements Runnable {
   private ActorSystem system = null;
 
   public WorkerApplication(String id, DumbInetSocketAddress host, String zkString) {
-    this(id, host, zkString, "/tmp/snapshot" + ThreadLocalRandom.current().nextLong());
+    this(id, host, zkString, null);
   }
 
   public WorkerApplication(String id, DumbInetSocketAddress host, String zkString, String snapshotPath) {
@@ -59,7 +58,11 @@ public class WorkerApplication implements Runnable {
     final String id = workerConfig.id();
     final DumbInetSocketAddress socketAddress = workerConfig.localAddress();
     final String zkString = workerConfig.zkString();
-    new WorkerApplication(id, socketAddress, zkString, workerConfig.snapshotPath()).run();
+    if (workerConfig.guarantees() == WorkerConfig.Guarantees.AT_MOST_ONCE) {
+      new WorkerApplication(id, socketAddress, zkString).run();
+    } else {
+      new WorkerApplication(id, socketAddress, zkString, workerConfig.snapshotPath()).run();
+    }
   }
 
   @Override
@@ -98,15 +101,22 @@ public class WorkerApplication implements Runnable {
     private final DumbInetSocketAddress localAddress;
     private final String zkString;
     private final String  snapshotPath;
+    private final Guarantees guarantees;
 
     private WorkerConfig(@JsonProperty("id") String id,
                          @JsonProperty("localAddress") String localAddress,
                          @JsonProperty("zkString") String zkString,
-                         @JsonProperty("snapshotPath") String snapshotPath) {
+                         @JsonProperty("snapshotPath") String snapshotPath,
+                         @JsonProperty("guarantees") Guarantees guarantees) {
+      this.guarantees = guarantees;
       this.id = id;
       this.localAddress = new DumbInetSocketAddress(localAddress);
       this.zkString = zkString;
       this.snapshotPath = snapshotPath;
+    }
+
+    Guarantees guarantees() {
+      return guarantees;
     }
 
     String snapshotPath() {
@@ -123,6 +133,12 @@ public class WorkerApplication implements Runnable {
 
     String zkString() {
       return zkString;
+    }
+
+    enum Guarantees {
+      AT_MOST_ONCE,
+      AT_LEAST_ONCE,
+      EXACTLY_ONCE
     }
   }
 }

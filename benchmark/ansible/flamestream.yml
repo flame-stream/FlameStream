@@ -63,7 +63,7 @@
     - name: Fetch traces
       fetch:
         src: /tmp/trace.csv
-        dest: "{{ results_dir }}flamestream/traces/{{ inventory_hostname }}.csv"
+        dest: "{{ results_dir }}/flamestream/traces/{{ inventory_hostname }}.csv"
         flat: true
   tags:
     - lat

@@ -61,4 +61,9 @@ public class RedisStateStorage implements StateStorage {
       }
     }
   }
+
+  @Override
+  public void close() throws Exception {
+    jedisPool.close();
+  }
 }

@@ -81,6 +81,7 @@ public class RocksDBStateStorage implements StateStorage {
     return hashUnit.id() + '@' + globalTime.toString();
   }
 
+  @Override
   public void close() {
     rocksDB.close();
   }

@@ -6,7 +6,7 @@ import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 
 import java.util.Map;
 
-public interface StateStorage {
+public interface StateStorage extends AutoCloseable {
   /**
    * @return map from vertexId to its state
    */

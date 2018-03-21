@@ -26,4 +26,9 @@ public class InMemStateStorage implements StateStorage {
     }
     timeMap.put(time, state);
   }
+
+  @Override
+  public void close() throws Exception {
+
+  }
 }

@@ -9,7 +9,9 @@ import com.spbsu.flamestream.runtime.FlameNode;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.state.InMemStateStorage;
 import com.spbsu.flamestream.runtime.state.RocksDBStateStorage;
+import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
@@ -24,6 +26,7 @@ public class LifecycleWatcher extends LoggingActor {
   private final String id;
   private final String snapshotPath;
 
+  private StateStorage stateStorage = null;
   private ZooKeeperGraphClient client = null;
 
   private LifecycleWatcher(String id, String zkConnectString, String snapshotPath) {
@@ -44,12 +47,18 @@ public class LifecycleWatcher extends LoggingActor {
             SESSION_TIMEOUT,
             event -> self().tell(event, self())
     ));
+    if (snapshotPath == null) {
+      stateStorage = new InMemStateStorage();
+    } else {
+      stateStorage = new RocksDBStateStorage(snapshotPath, SerializationExtension.get(context().system()));
+    }
   }
 
   @Override
   public void postStop() {
     super.postStop();
     try {
+      stateStorage.close();
       client.close();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -69,14 +78,15 @@ public class LifecycleWatcher extends LoggingActor {
     final Graph g = client.graph();
     log().info("Creating node with watchGraphs: '{}', config: '{}'", g, config);
 
+
     final ActorRef node = context().actorOf(
             FlameNode.props(
                     id,
                     g,
                     config,
                     client,
-                    new RocksDBStateStorage(snapshotPath, SerializationExtension.get(context().system()))
-            ),
+                    stateStorage
+                    ),
             "graph"
     );
 

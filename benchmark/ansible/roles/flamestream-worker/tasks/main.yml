@@ -4,7 +4,7 @@
 
 - name: Clean data dir
   file:
-    path: "{{ flamestream_dir }}/data"
+    path: "{{ flamestream_dir }}/data/"
     state: absent
 
 - name: Copy the worker config
