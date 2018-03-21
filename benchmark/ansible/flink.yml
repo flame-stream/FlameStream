@@ -48,5 +48,5 @@
     - name: Fetch traces
       fetch:
         src: /tmp/trace.csv
-        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/traces/{{ inventory_hostname }}.csv
+        dest: "{{ results_dir }}/flink/traces/{{ inventory_hostname }}.csv"
         flat: true

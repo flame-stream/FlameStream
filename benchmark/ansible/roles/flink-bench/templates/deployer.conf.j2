@@ -6,6 +6,6 @@ deployer {
   }
   parallelism = {{ groups['workers'] | length }}
   rocksdb-path = "{{ flink_dir }}/data"
-  guarantees = "EXACTLY_ONCE"
+  guarantees = "{{ semantics }}"
   millis-between-commits = {{ millis_between_commits }}
 }

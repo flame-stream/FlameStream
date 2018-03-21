@@ -7,6 +7,11 @@
     path: "{{ flink_dir }}/data"
     state: absent
 
+- name: Create data dir
+  file:
+    path: "{{ flink_dir }}/data"
+    state: directory
+
 - name: Stoping previously started flink jobmanager
   shell: nohup bash {{ flink_dir }}/bin/taskmanager.sh stop-all
 
