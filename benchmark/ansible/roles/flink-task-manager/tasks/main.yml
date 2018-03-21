@@ -2,6 +2,11 @@
 - name: Clean shm
   shell: rm -rf /dev/shm/aeron*
 
+- name: Clean data dir
+  file:
+    path: "{{ flink_dir }}/data"
+    state: absent
+
 - name: Stoping previously started flink jobmanager
   shell: nohup bash {{ flink_dir }}/bin/taskmanager.sh stop-all
 

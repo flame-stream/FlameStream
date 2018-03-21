@@ -3,12 +3,13 @@ package com.spbsu.flamestream.runtime.application;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.serialization.SerializationExtension;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.FlameNode;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
-import com.spbsu.flamestream.runtime.state.InMemStateStorage;
+import com.spbsu.flamestream.runtime.state.RocksDBStateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
@@ -21,16 +22,18 @@ public class LifecycleWatcher extends LoggingActor {
   private static final int SESSION_TIMEOUT = 5000;
   private final String zkConnectString;
   private final String id;
+  private final String snapshotPath;
 
   private ZooKeeperGraphClient client = null;
 
-  private LifecycleWatcher(String id, String zkConnectString) {
+  private LifecycleWatcher(String id, String zkConnectString, String snapshotPath) {
     this.zkConnectString = zkConnectString;
     this.id = id;
+    this.snapshotPath = snapshotPath;
   }
 
-  public static Props props(String id, String zkConnectString) {
-    return Props.create(LifecycleWatcher.class, id, zkConnectString);
+  public static Props props(String id, String zkConnectString, String snapshotPath) {
+    return Props.create(LifecycleWatcher.class, id, zkConnectString, snapshotPath);
   }
 
   @Override
@@ -67,7 +70,13 @@ public class LifecycleWatcher extends LoggingActor {
     log().info("Creating node with watchGraphs: '{}', config: '{}'", g, config);
 
     final ActorRef node = context().actorOf(
-            FlameNode.props(id, g, config, client, new InMemStateStorage()),
+            FlameNode.props(
+                    id,
+                    g,
+                    config,
+                    client,
+                    new RocksDBStateStorage(snapshotPath, SerializationExtension.get(context().system()))
+            ),
             "graph"
     );
 

@@ -2,6 +2,11 @@
 - name: Clean shm
   shell: rm -rf /dev/shm/aeron*
 
+- name: Clean data dir
+  file:
+    path: "{{ flamestream_dir }}/data"
+    state: absent
+
 - name: Copy the worker config
   template:
     src: worker.json.j2

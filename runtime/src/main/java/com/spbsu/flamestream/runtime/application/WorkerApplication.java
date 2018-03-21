@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
 
 public class WorkerApplication implements Runnable {
@@ -26,14 +27,20 @@ public class WorkerApplication implements Runnable {
   private final DumbInetSocketAddress host;
   private final String zkString;
   private final String id;
+  private final String snapshotPath;
 
   @Nullable
   private ActorSystem system = null;
 
   public WorkerApplication(String id, DumbInetSocketAddress host, String zkString) {
+    this(id, host, zkString, "/tmp/snapshot" + ThreadLocalRandom.current().nextLong());
+  }
+
+  public WorkerApplication(String id, DumbInetSocketAddress host, String zkString, String snapshotPath) {
     this.id = id;
     this.host = host;
     this.zkString = zkString;
+    this.snapshotPath = snapshotPath;
   }
 
 
@@ -52,7 +59,7 @@ public class WorkerApplication implements Runnable {
     final String id = workerConfig.id();
     final DumbInetSocketAddress socketAddress = workerConfig.localAddress();
     final String zkString = workerConfig.zkString();
-    new WorkerApplication(id, socketAddress, zkString).run();
+    new WorkerApplication(id, socketAddress, zkString, workerConfig.snapshotPath()).run();
   }
 
   @Override
@@ -65,7 +72,7 @@ public class WorkerApplication implements Runnable {
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
 
     this.system = ActorSystem.create("worker", config);
-    system.actorOf(LifecycleWatcher.props(id, zkString), "watcher");
+    system.actorOf(LifecycleWatcher.props(id, zkString, snapshotPath), "watcher");
 
     system.registerOnTermination(() -> {
       try {
@@ -90,13 +97,20 @@ public class WorkerApplication implements Runnable {
     private final String id;
     private final DumbInetSocketAddress localAddress;
     private final String zkString;
+    private final String  snapshotPath;
 
     private WorkerConfig(@JsonProperty("id") String id,
                          @JsonProperty("localAddress") String localAddress,
-                         @JsonProperty("zkString") String zkString) {
+                         @JsonProperty("zkString") String zkString,
+                         @JsonProperty("snapshotPath") String snapshotPath) {
       this.id = id;
       this.localAddress = new DumbInetSocketAddress(localAddress);
       this.zkString = zkString;
+      this.snapshotPath = snapshotPath;
+    }
+
+    String snapshotPath() {
+      return snapshotPath;
     }
 
     String id() {
