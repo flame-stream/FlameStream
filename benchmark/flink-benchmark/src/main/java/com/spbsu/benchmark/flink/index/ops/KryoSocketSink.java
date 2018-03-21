@@ -8,11 +8,8 @@ import com.spbsu.benchmark.flink.index.Result;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexRemove;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.java.typeutils.GenericTypeInfo;
-import org.apache.flink.api.java.typeutils.ListTypeInfo;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.sink.TwoPhaseCommitSinkFunction;
+import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.jetbrains.annotations.Nullable;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
@@ -20,12 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
-public class KryoSocketSink extends TwoPhaseCommitSinkFunction<Result, List<Result>, Object> {
+public class KryoSocketSink extends RichSinkFunction<Result> {
   private static final long serialVersionUID = 1L;
-
   private static final Logger LOG = LoggerFactory.getLogger(KryoSocketSink.class);
   private static final int OUTPUT_BUFFER_SIZE = 1_000_000;
   private static final int CONNECTION_AWAIT_TIMEOUT = 5000;
@@ -38,11 +32,7 @@ public class KryoSocketSink extends TwoPhaseCommitSinkFunction<Result, List<Resu
 
   //private transient Tracing.Tracer tracer;
 
-  public KryoSocketSink(String hostName, int port, ExecutionConfig config) {
-    super(
-            new ListTypeInfo<>(Result.class).createSerializer(config),
-            new GenericTypeInfo<>(Object.class).createSerializer(config)
-    );
+  public KryoSocketSink(String hostName, int port) {
     this.hostName = hostName;
     this.port = port;
   }
@@ -72,36 +62,16 @@ public class KryoSocketSink extends TwoPhaseCommitSinkFunction<Result, List<Resu
   }
 
   @Override
-  protected void invoke(List<Result> transaction, Result value, Context context) {
-    transaction.add(value);
-  }
-
-  @Override
-  protected List<Result> beginTransaction() {
-    return new ArrayList<>();
-  }
-
-  @Override
-  protected void preCommit(List<Result> transaction) {
-  }
-
-  @Override
-  protected void commit(List<Result> transaction) {
-    transaction.forEach(result -> {
-      if (client != null && client.isConnected()) {
-        //tracer.log(value.wordIndexAdd().hash());
-        client.sendTCP(result.wordIndexAdd());
-        if (result.wordIndexRemove() != null) {
-          client.sendTCP(result.wordIndexRemove());
-        }
-      } else {
-        throw new RuntimeException("Writing to the closed log");
+  public void invoke(Result value, Context context) {
+    if (client != null && client.isConnected()) {
+      //tracer.log(value.wordIndexAdd().hash());
+      client.sendTCP(value.wordIndexAdd());
+      if (value.wordIndexRemove() != null) {
+        client.sendTCP(value.wordIndexRemove());
       }
-    });
-  }
-
-  @Override
-  protected void abort(List<Result> transaction) {
+    } else {
+      throw new RuntimeException("Writing to the closed log");
+    }
   }
 
   @Override

@@ -1,4 +1,5 @@
 rate: 70
+millis_between_commits: 1000
 base_dir: /opt
 
 flamestream_dir: "{{ base_dir }}/flamestream"

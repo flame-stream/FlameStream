@@ -4,6 +4,7 @@ import com.spbsu.benchmark.flink.index.ops.IndexFunction;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSink;
 import com.spbsu.benchmark.flink.index.ops.KryoSocketSource;
 import com.spbsu.benchmark.flink.index.ops.OrderEnforcer;
+import com.spbsu.benchmark.flink.index.ops.TwoPCKryoSocketSink;
 import com.spbsu.benchmark.flink.index.ops.WikipediaPageToWordPositions;
 import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
@@ -13,6 +14,7 @@ import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.jooq.lambda.Unchecked;
 
 import java.io.IOException;
@@ -50,11 +52,26 @@ public class FlinkBench {
         environment.setBufferTimeout(0);
         environment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        //checkpoints every second
-        environment.enableCheckpointing(1000);
-        environment.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
-        environment.getCheckpointConfig().setMinPauseBetweenCheckpoints(1000);
-        environment.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
+        final String guarantees = deployerConfig.getString("guarantees");
+        final SinkFunction<Result> sinkFunction;
+        if (guarantees.equals("EXACTLY_ONCE")) {
+          sinkFunction = new TwoPCKryoSocketSink(
+                  standConfig.benchHost(),
+                  standConfig.rearPort(),
+                  environment.getConfig()
+          );
+        } else {
+          sinkFunction = new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort());
+        }
+
+        if (guarantees.equals("EXACTLY_ONCE") || guarantees.equals("AT_LEAST_ONCE")) {
+          final int millisBetweenCommits = deployerConfig.getInt("millis-between-commits");
+          environment.enableCheckpointing(millisBetweenCommits);
+          environment.getCheckpointConfig().setMinPauseBetweenCheckpoints(millisBetweenCommits);
+          environment.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
+          environment.getCheckpointConfig()
+                  .setCheckpointingMode(guarantees.equals("EXACTLY_ONCE") ? CheckpointingMode.EXACTLY_ONCE : CheckpointingMode.AT_LEAST_ONCE);
+        }
 
         final String rocksDbPath = deployerConfig.getString("rocksdb-path");
         try {
@@ -79,7 +96,7 @@ public class FlinkBench {
                 //        -> IndexItemInLong.pageId(value.wordIndexAdd().positions()[0]))
                 //.process(new TotalOrderEnforcer())
                 .setParallelism(parallelism)
-                .addSink(new KryoSocketSink(standConfig.benchHost(), standConfig.rearPort(), environment.getConfig()))
+                .addSink(sinkFunction)
                 .setParallelism(parallelism);
         new Thread(Unchecked.runnable(environment::execute)).start();
 
