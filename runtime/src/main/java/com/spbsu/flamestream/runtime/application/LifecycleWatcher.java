@@ -48,8 +48,10 @@ public class LifecycleWatcher extends LoggingActor {
             event -> self().tell(event, self())
     ));
     if (snapshotPath == null) {
+      log().info("No backend is provided, using in-mem");
       stateStorage = new InMemStateStorage();
     } else {
+      log().info("Initializing rocksDB backend");
       stateStorage = new RocksDBStateStorage(snapshotPath, SerializationExtension.get(context().system()));
     }
   }
