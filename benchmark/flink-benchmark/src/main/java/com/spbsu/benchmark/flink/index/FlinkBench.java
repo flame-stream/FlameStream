@@ -71,15 +71,15 @@ public class FlinkBench {
           environment.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
           environment.getCheckpointConfig()
                   .setCheckpointingMode(guarantees.equals("EXACTLY_ONCE") ? CheckpointingMode.EXACTLY_ONCE : CheckpointingMode.AT_LEAST_ONCE);
+          final String rocksDbPath = deployerConfig.getString("rocksdb-path");
+          try {
+            final RocksDBStateBackend backend = new RocksDBStateBackend("file:///" + rocksDbPath, false);
+            environment.setStateBackend(backend);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
         }
 
-        final String rocksDbPath = deployerConfig.getString("rocksdb-path");
-        try {
-          final RocksDBStateBackend backend = new RocksDBStateBackend("file:///" + rocksDbPath, false);
-          environment.setStateBackend(backend);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
 
         environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))
@@ -90,7 +90,7 @@ public class FlinkBench {
                 .keyBy(0)
                 .process(new OrderEnforcer())
                 .keyBy(0)
-                .process(new IndexFunction())
+                .map(new IndexFunction())
                 .setParallelism(parallelism)
                 //.keyBy((KeySelector<Result, Integer>) value
                 //        -> IndexItemInLong.pageId(value.wordIndexAdd().positions()[0]))
