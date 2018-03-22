@@ -9,7 +9,7 @@ import com.spbsu.flamestream.runtime.FlameNode;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
-import com.spbsu.flamestream.runtime.state.InMemStateStorage;
+import com.spbsu.flamestream.runtime.state.DevNullStateStorage;
 import com.spbsu.flamestream.runtime.state.RocksDBStateStorage;
 import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -48,8 +48,8 @@ public class LifecycleWatcher extends LoggingActor {
             event -> self().tell(event, self())
     ));
     if (snapshotPath == null) {
-      log().info("No backend is provided, using in-mem");
-      stateStorage = new InMemStateStorage();
+      log().info("No backend is provided, using /dev/null");
+      stateStorage = new DevNullStateStorage();
     } else {
       log().info("Initializing rocksDB backend");
       stateStorage = new RocksDBStateStorage(snapshotPath, SerializationExtension.get(context().system()));
