@@ -36,10 +36,8 @@ public class IndexFunction extends RichMapFunction<Tuple2<String, long[]>, Resul
     if (sta == null) {
       sta = new InvertedIndexState();
     }
-    System.out.println(sta);
 
     final long prevValue = sta.updateOrInsert(value.f1);
-
     final WordIndexAdd wordIndexAdd = new WordIndexAdd(value.f0, value.f1);
     WordIndexRemove wordIndexRemove = null;
     if (prevValue != InvertedIndexState.PREV_VALUE_NOT_FOUND) {

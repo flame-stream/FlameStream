@@ -10,7 +10,7 @@ import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
+import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -71,15 +71,15 @@ public class FlinkBench {
           environment.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
           environment.getCheckpointConfig()
                   .setCheckpointingMode(guarantees.equals("EXACTLY_ONCE") ? CheckpointingMode.EXACTLY_ONCE : CheckpointingMode.AT_LEAST_ONCE);
-          final String rocksDbPath = deployerConfig.getString("rocksdb-path");
-          try {
-            final RocksDBStateBackend backend = new RocksDBStateBackend("file:///" + rocksDbPath, false);
-            environment.setStateBackend(backend);
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
         }
 
+        final String rocksDbPath = deployerConfig.getString("rocksdb-path");
+        try {
+          final FsStateBackend backend = new FsStateBackend("file:///" + rocksDbPath, true);
+          environment.setStateBackend(backend);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
 
         environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))
