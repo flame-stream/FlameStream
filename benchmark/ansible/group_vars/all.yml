@@ -9,7 +9,7 @@ bench_dir: "{{ base_dir }}/flamestream"
 flink_dir: "{{ base_dir }}/flink"
 tarball_dir: /opt/src
 
-results_dir: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/{{ guarantees }}
+results_dir: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/{{ guarantees }}/{{ millis_between_commits }}
 
 zookeeper_version: 3.4.10
 zookeeper_client_port: 2181
