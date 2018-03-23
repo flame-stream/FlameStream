@@ -10,6 +10,7 @@ import com.spbsu.flamestream.example.benchmark.BenchStand;
 import com.spbsu.flamestream.example.benchmark.GraphDeployer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -51,6 +52,7 @@ public class FlinkBench {
         }
         environment.setBufferTimeout(0);
         environment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        environment.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
 
         final String guarantees = deployerConfig.getString("guarantees");
         final SinkFunction<Result> sinkFunction;
@@ -67,7 +69,6 @@ public class FlinkBench {
         if (guarantees.equals("EXACTLY_ONCE") || guarantees.equals("AT_LEAST_ONCE")) {
           final int millisBetweenCommits = deployerConfig.getInt("millis-between-commits");
           environment.enableCheckpointing(millisBetweenCommits);
-          environment.getCheckpointConfig().setMinPauseBetweenCheckpoints(millisBetweenCommits);
           environment.getCheckpointConfig().setMaxConcurrentCheckpoints(30);
           environment.getCheckpointConfig()
                   .setCheckpointingMode(guarantees.equals("EXACTLY_ONCE") ? CheckpointingMode.EXACTLY_ONCE : CheckpointingMode.AT_LEAST_ONCE);

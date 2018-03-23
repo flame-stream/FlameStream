@@ -11,6 +11,7 @@ import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.state.CheckpointListener;
 
 import java.io.IOException;
 
@@ -18,7 +19,7 @@ import java.io.IOException;
  * User: Artem
  * Date: 04.01.2018
  */
-public class IndexFunction extends RichMapFunction<Tuple2<String, long[]>, Result> {
+public class IndexFunction extends RichMapFunction<Tuple2<String, long[]>, Result> implements CheckpointListener {
   private transient ValueState<InvertedIndexState> checkpointedState;
 
   @Override
@@ -47,7 +48,19 @@ public class IndexFunction extends RichMapFunction<Tuple2<String, long[]>, Resul
               IndexItemInLong.range(prevValue)
       );
     }
+    checkpointedState.clear();
     checkpointedState.update(sta);
     return new Result(wordIndexAdd, wordIndexRemove);
+  }
+
+  @Override
+  public void notifyCheckpointComplete(long checkpointId) {
+    new Thread(() -> {
+      try {
+        Runtime.getRuntime().exec("find /opt/flink/data -type f -ctime -0.2 -delete");
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }).start();
   }
 }
