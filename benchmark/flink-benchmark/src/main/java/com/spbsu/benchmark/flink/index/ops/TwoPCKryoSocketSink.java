@@ -2,21 +2,26 @@ package com.spbsu.benchmark.flink.index.ops;
 
 import com.spbsu.benchmark.flink.index.Result;
 import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.common.typeutils.base.StringSerializer;
 import org.apache.flink.api.java.typeutils.GenericTypeInfo;
-import org.apache.flink.api.java.typeutils.ListTypeInfo;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.TwoPhaseCommitSinkFunction;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-public class TwoPCKryoSocketSink extends TwoPhaseCommitSinkFunction<Result, List<Result>, Object> {
+public class TwoPCKryoSocketSink extends TwoPhaseCommitSinkFunction<Result, String, Object> {
   private static final long serialVersionUID = 1L;
   private final KryoSocketSink socketSink;
 
+  private final Map<String, Collection<Result>> openedTransactions = new HashMap<>();
+
   public TwoPCKryoSocketSink(String hostName, int port, ExecutionConfig config) {
     super(
-            new ListTypeInfo<>(Result.class).createSerializer(config),
+            new StringSerializer(),
             new GenericTypeInfo<>(Object.class).createSerializer(config)
     );
     socketSink = new KryoSocketSink(hostName, port);
@@ -28,26 +33,30 @@ public class TwoPCKryoSocketSink extends TwoPhaseCommitSinkFunction<Result, List
   }
 
   @Override
-  protected void invoke(List<Result> transaction, Result value, Context context) {
-    transaction.add(value);
+  protected void invoke(String transaction, Result value, Context context) {
+    openedTransactions.get(transaction).add(value);
   }
 
   @Override
-  protected List<Result> beginTransaction() {
-    return new ArrayList<>();
+  protected String beginTransaction() {
+    final String s = UUID.randomUUID().toString();
+    openedTransactions.put(s, new ArrayList<>());
+    return s;
   }
 
   @Override
-  protected void preCommit(List<Result> transaction) {
+  protected void preCommit(String transaction) {
   }
 
   @Override
-  protected void commit(List<Result> transaction) {
-    transaction.forEach(result -> socketSink.invoke(result, null));
+  protected void commit(String transaction) {
+    openedTransactions.get(transaction).forEach(result -> socketSink.invoke(result, null));
+    openedTransactions.remove(transaction);
   }
 
   @Override
-  protected void abort(List<Result> transaction) {
+  protected void abort(String transaction) {
+    openedTransactions.remove(transaction);
   }
 
   @Override
