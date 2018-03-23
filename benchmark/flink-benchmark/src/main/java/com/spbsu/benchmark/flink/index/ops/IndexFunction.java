@@ -14,6 +14,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.CheckpointListener;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: Artem
@@ -29,6 +30,18 @@ public class IndexFunction extends RichMapFunction<Tuple2<String, long[]>, Resul
             "index_state",
             new GenericTypeInfo<>(InvertedIndexState.class)
     ));
+    new Thread(() -> {
+      while (true) {
+        try {
+          Runtime.getRuntime()
+                  .exec("find /opt/flink/data -mindepth 2 -type d -cmin +0.2 -exec rm -rf {} +")
+                  .waitFor();
+          TimeUnit.SECONDS.sleep(10);
+        } catch (IOException | InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }).start();
   }
 
   @Override
@@ -51,16 +64,5 @@ public class IndexFunction extends RichMapFunction<Tuple2<String, long[]>, Resul
     checkpointedState.clear();
     checkpointedState.update(sta);
     return new Result(wordIndexAdd, wordIndexRemove);
-  }
-
-  @Override
-  public void notifyCheckpointComplete(long checkpointId) {
-    new Thread(() -> {
-      try {
-        Runtime.getRuntime().exec("find /opt/flink/data -mindepth 2 -type d -cmin +0.2 -exec rm -rf {} +");
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }).start();
   }
 }
