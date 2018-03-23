@@ -69,7 +69,7 @@ public class FlinkBench {
         if (guarantees.equals("EXACTLY_ONCE") || guarantees.equals("AT_LEAST_ONCE")) {
           final int millisBetweenCommits = deployerConfig.getInt("millis-between-commits");
           environment.enableCheckpointing(millisBetweenCommits);
-          environment.getCheckpointConfig().setMaxConcurrentCheckpoints(30);
+          environment.getCheckpointConfig().setMinPauseBetweenCheckpoints(1);
           environment.getCheckpointConfig()
                   .setCheckpointingMode(guarantees.equals("EXACTLY_ONCE") ? CheckpointingMode.EXACTLY_ONCE : CheckpointingMode.AT_LEAST_ONCE);
         }

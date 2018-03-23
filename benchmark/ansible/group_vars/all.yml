@@ -1,6 +1,6 @@
 rate: 50
 guarantees: AT_MOST_ONCE
-millis_between_commits: 500
+millis_between_commits: 50
 base_dir: /opt
 
 flamestream_dir: "{{ base_dir }}/flamestream"
