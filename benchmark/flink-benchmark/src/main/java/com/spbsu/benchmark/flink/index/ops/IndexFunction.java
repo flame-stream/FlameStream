@@ -57,7 +57,7 @@ public class IndexFunction extends RichMapFunction<Tuple2<String, long[]>, Resul
   public void notifyCheckpointComplete(long checkpointId) {
     new Thread(() -> {
       try {
-        Runtime.getRuntime().exec("find /opt/flink/data -type f -ctime -0.2 -delete");
+        Runtime.getRuntime().exec("find /opt/flink/data -mindepth 2 -type d -cmin +0.2 -exec rm -rf {} +");
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
