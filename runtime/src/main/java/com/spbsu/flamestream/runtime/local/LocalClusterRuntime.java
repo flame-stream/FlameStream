@@ -69,6 +69,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     final ClusterConfig config = config(workersAddresses, maxElementsInGraph, millisBetweenCommits);
     log.info("Pushing configuration {}", config);
     configClient.put(config);
+    configClient.setEpoch(0);
     this.remoteRuntime = new RemoteRuntime(zkString);
   }
 

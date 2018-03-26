@@ -27,6 +27,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -37,11 +38,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
 public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient, Registry {
   private static final int MAX_BUFFER_SIZE = 20000;
   private static final int BUFFER_SIZE = 1000;
+  private static final List<ACL> DEFAULT_ACL = ZKUtil.parseACLs("world:anyone:crwd");
 
   private final ZooKeeper zooKeeper;
   private final Kryo kryo;
@@ -75,7 +78,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
       zooKeeper.create(
               "/graph",
               o.toBytes(),
-              ZKUtil.parseACLs("world:anyone:crd"),
+              DEFAULT_ACL,
               CreateMode.PERSISTENT
       );
     } catch (InterruptedException | KeeperException e) {
@@ -124,7 +127,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
       zooKeeper.create(
               "/graph/fronts/" + name,
               o.toBytes(),
-              ZKUtil.parseACLs("world:anyone:crd"),
+              DEFAULT_ACL,
               CreateMode.PERSISTENT
       );
     } catch (InterruptedException | KeeperException e) {
@@ -141,7 +144,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
       zooKeeper.create(
               "/graph/rears/" + name,
               o.toBytes(),
-              ZKUtil.parseACLs("world:anyone:crd"),
+              DEFAULT_ACL,
               CreateMode.PERSISTENT
       );
     } catch (InterruptedException | KeeperException e) {
@@ -174,6 +177,45 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
                 .collect(Collectors.toSet());
       } else {
         return Collections.emptySet();
+      }
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public int epoch(IntConsumer epochWatcher) {
+    try {
+      final Stat exists = zooKeeper.exists("/epoch", event -> {
+        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
+          epochWatcher.accept(epoch(epochWatcher));
+        }
+      });
+
+      if (exists == null) {
+        return -1;
+      }
+
+      final byte[] data = zooKeeper.getData("/epoch", event -> {
+        if (event.getType() == Watcher.Event.EventType.NodeDataChanged) {
+          epochWatcher.accept(epoch(epochWatcher));
+        }
+      }, null);
+      return Integer.parseInt(new String(data));
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void setEpoch(int epoch) {
+    try {
+      final Stat exists = zooKeeper.exists("/epoch", false);
+      final byte[] bytes = Integer.toString(epoch).getBytes();
+      if (exists != null) {
+        zooKeeper.setData("/epoch", bytes, exists.getVersion());
+      } else {
+        zooKeeper.create("/epoch", bytes, DEFAULT_ACL, CreateMode.PERSISTENT);
       }
     } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
@@ -237,7 +279,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
       zooKeeper.create(
               "/graph/fronts/" + frontId.edgeName() + '/' + frontId.nodeId(),
               new byte[0],
-              ZKUtil.parseACLs("world:anyone:crd"),
+              DEFAULT_ACL,
               CreateMode.PERSISTENT
       );
 
@@ -246,7 +288,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
       zooKeeper.create(
               "/graph/fronts/" + frontId.edgeName() + '/' + frontId.nodeId() + "/attachTs",
               attachTs,
-              ZKUtil.parseACLs("world:anyone:crd"),
+              DEFAULT_ACL,
               CreateMode.PERSISTENT
       );
     } catch (KeeperException | InterruptedException e) {
@@ -318,7 +360,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
       zooKeeper.create(
               "/config",
               mapper.writeValueAsBytes(config),
-              ZKUtil.parseACLs("world:anyone:crd"),
+              DEFAULT_ACL,
               CreateMode.PERSISTENT
       );
     } catch (JsonProcessingException | InterruptedException | KeeperException e) {
@@ -331,7 +373,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
       zooKeeper.create(
               path,
               new byte[0],
-              ZKUtil.parseACLs("world:anyone:crdw"),
+              DEFAULT_ACL,
               CreateMode.PERSISTENT
       );
     } catch (KeeperException k) {

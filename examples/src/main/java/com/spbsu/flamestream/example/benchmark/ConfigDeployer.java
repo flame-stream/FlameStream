@@ -70,6 +70,7 @@ public class ConfigDeployer {
     );
 
     final ConfigurationClient client = new ZooKeeperGraphClient(new ZooKeeper(config.zkString, 4000, event -> {}));
+    client.setEpoch(0);
     client.put(clusterConfig);
   }
 

@@ -26,6 +26,8 @@ public class LifecycleWatcher extends LoggingActor {
   private final String id;
   private final String snapshotPath;
 
+  private int epoch;
+
   private StateStorage stateStorage = null;
   private ZooKeeperGraphClient client = null;
 
@@ -47,6 +49,7 @@ public class LifecycleWatcher extends LoggingActor {
             SESSION_TIMEOUT,
             event -> self().tell(event, self())
     ));
+    epoch = client.epoch(newEpoch -> self().tell(newEpoch, self()));
     if (snapshotPath == null) {
       log().info("No backend is provided, using /dev/null");
       stateStorage = new DevNullStateStorage();
@@ -72,6 +75,15 @@ public class LifecycleWatcher extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Boolean.class, graphs -> initGraph())
             .match(WatchedEvent.class, this::onWatchedEvent)
+            .match(Integer.class, newEpoch -> {
+              if (epoch != -1 && newEpoch != epoch) {
+                log().warning("There is new epoch '{}', restarting", epoch);
+                System.exit(12);
+              } else {
+                epoch = newEpoch;
+                log().warning("There is new epoch appeared");
+              }
+            })
             .build();
   }
 
@@ -88,7 +100,7 @@ public class LifecycleWatcher extends LoggingActor {
                     config,
                     client,
                     stateStorage
-                    ),
+            ),
             "graph"
     );
 
