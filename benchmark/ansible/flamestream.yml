@@ -41,7 +41,7 @@
 - name: Run the benchmark
   hosts: bench
   roles:
-    - { role: flamestream-bench }
+    - { role: flamestream-bench , bench_class: com.spbsu.flamestream.example.benchmark.blink.BlinkBenchStand }
 
 - name: Destroy flamestream
   hosts: workers

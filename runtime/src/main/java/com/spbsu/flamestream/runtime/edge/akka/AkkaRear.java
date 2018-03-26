@@ -68,6 +68,7 @@ public class AkkaRear implements Rear {
       localMediator = AwaitResolver.resolve(path, context())
               .toCompletableFuture()
               .get();
+      log().info("Local mediator has been resolved");
     }
 
     @Override

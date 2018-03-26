@@ -14,11 +14,15 @@
     src: bench.conf.j2
     dest: "{{ flamestream_dir }}/bench.conf"
 
+- name: Clean shm
+  shell: rm -rf /dev/shm/aeron*
+
 - name: Start the flamestream bench
   shell: >
-    java -Xms500m -Xmx500m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError
+    java
+    -Daeron.term.buffer.length=4194304 -Xms500m -Xmx500m -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+HeapDumpOnOutOfMemoryError
     -cp '{{ flamestream_dir }}/lib/*'
-    com.spbsu.flamestream.example.benchmark.BenchStand
+    {{ bench_class }}
     {{ flamestream_dir }}/bench.conf {{ flamestream_dir }}/deployer.conf > {{ flamestream_dir }}/bench.log 2>&1
 
 - name: Fetch bench logs

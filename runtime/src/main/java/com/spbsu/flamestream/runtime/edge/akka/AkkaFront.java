@@ -73,6 +73,7 @@ public class AkkaFront implements Front {
       localMediator = AwaitResolver.resolve(path, context())
               .toCompletableFuture()
               .get();
+      log().info("Local mediator has been resolved");
     }
 
     @Override
@@ -181,6 +182,7 @@ public class AkkaFront implements Front {
     }
 
     private void onStart(Start start) {
+      log().info("Got new hole '{}'", start);
       remoteMediator = start.hole();
       if (unregistered) {
         remoteMediator.tell(new UnregisterFront(edgeContext.edgeId()), self());

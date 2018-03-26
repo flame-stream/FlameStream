@@ -14,7 +14,7 @@ public interface FlameRuntime extends AutoCloseable {
 
   Flame run(Graph g);
 
-  interface Flame extends AutoCloseable{
+  interface Flame extends AutoCloseable {
     <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type);
 
     <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type);
