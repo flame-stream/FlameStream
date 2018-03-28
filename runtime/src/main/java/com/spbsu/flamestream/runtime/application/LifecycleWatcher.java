@@ -97,11 +97,11 @@ public class LifecycleWatcher extends LoggingActor {
             FlameNode.props(
                     id,
                     g,
-                    config,
+                    config.withChildPath("graph_at_" + epoch),
                     client,
                     stateStorage
             ),
-            "graph"
+            "graph_at_" + epoch
     );
 
     final Set<AttachFront<?>> initialFronts = client.fronts(newFronts ->

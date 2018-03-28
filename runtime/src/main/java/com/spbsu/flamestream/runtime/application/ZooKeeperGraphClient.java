@@ -32,7 +32,6 @@ import org.apache.zookeeper.data.Stat;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -283,11 +282,9 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
               CreateMode.PERSISTENT
       );
 
-      final byte[] attachTs = new byte[8];
-      ByteBuffer.wrap(attachTs).putLong(attachTimestamp);
       zooKeeper.create(
               "/graph/fronts/" + frontId.edgeName() + '/' + frontId.nodeId() + "/attachTs",
-              attachTs,
+              Long.toString(attachTimestamp).getBytes(),
               DEFAULT_ACL,
               CreateMode.PERSISTENT
       );
@@ -299,11 +296,10 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
   @Override
   public long registeredTime(EdgeId frontId) {
     try {
-      final String frontPath = "/graph/fronts/" + frontId.edgeName() + '/' + frontId.nodeId();
+      final String frontPath = "/graph/fronts/" + frontId.edgeName() + '/' + frontId.nodeId() + "/attachTs";
       final Stat exists = zooKeeper.exists(frontPath, false);
       if (exists != null) {
-        final byte[] data = zooKeeper.getData(frontPath, false, null);
-        return ByteBuffer.wrap(data).getLong();
+        return Long.parseLong(new String(zooKeeper.getData(frontPath, false, null)));
       } else {
         return -1;
       }
@@ -317,8 +313,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
     try {
       final String lastCommitPath = "/graph/last-commit";
       createIfNotExists(lastCommitPath);
-      final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).putLong(time);
-      zooKeeper.setData(lastCommitPath, buffer.array(), -1);
+      zooKeeper.setData(lastCommitPath, Long.toString(time).getBytes(), -1);
     } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -330,8 +325,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
       final String lastCommitPath = "/graph/last-commit";
       final Stat exists = zooKeeper.exists(lastCommitPath, false);
       if (exists != null) {
-        final byte[] data = zooKeeper.getData(lastCommitPath, false, null);
-        return ByteBuffer.wrap(data).getLong();
+        return Long.parseLong(new String(zooKeeper.getData(lastCommitPath, false, null)));
       } else {
         return 0;
       }

@@ -50,6 +50,11 @@ public class FlameNode extends LoggingActor {
     this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, graph), "edge");
   }
 
+  @Override
+  public void preStart() {
+    log().info("Starting FlameNode with config '{}'", config);
+  }
+
   public static Props props(String id,
                             Graph initialGraph,
                             ClusterConfig initialConfig,

@@ -60,7 +60,7 @@ public class LocalClusterRuntime implements FlameRuntime {
               "worker",
               address.host(),
               address.port()
-      ), "/").child("user").child("watcher").child("graph");
+      ), "/").child("user").child("watcher");
       workersAddresses.put(name, path);
       workers.add(worker);
       worker.run();
