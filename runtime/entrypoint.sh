@@ -25,6 +25,7 @@ stop() {
   fi
   local pid=$(cat flamestream.pid)
   echo "Pid=$pid"
+  # Kill the whole process group
   kill -- "-$pid"
 }
 
