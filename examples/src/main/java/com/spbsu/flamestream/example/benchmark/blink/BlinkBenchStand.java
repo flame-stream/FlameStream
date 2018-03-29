@@ -35,10 +35,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.math.Quantiles.percentiles;
 
@@ -105,18 +106,27 @@ public class BlinkBenchStand implements AutoCloseable {
         consumers.get(i).unregister();
       }
 
-      final Stream<WikipediaPage> input = Seq.seq(WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath()))
-              .limit(validator.inputLimit())
-              .shuffle(new Random(1));
+      final BlockingQueue<WikipediaPage> queue = new LinkedBlockingQueue<>();
+      new Thread(() -> {
+        final int[] i = {0};
+        Seq.seq(WikipeadiaInput.dumpStreamFromFile(standConfig.wikiDumpPath()))
+                .limit(validator.inputLimit())
+                .shuffle(new Random(1))
+                .forEach(page -> {
+                  measuresByDoc.put(page.id(), new LatencyMeasurer());
+                  LOG.info("Sending: {}", i[0]++);
 
-      final int[] i = {0};
-      input.forEach(page -> {
-        measuresByDoc.put(page.id(), new LatencyMeasurer());
-        LOG.info("Sending: {}", i[0]++);
-        final long v = (long) (nextExp(1.0 / standConfig.sleepBetweenDocs()) * 1.0e6);
+                  queue.add(page);
+
+                  final long v = (long) (nextExp(1.0 / standConfig.sleepBetweenDocs()) * 1.0e6);
+                  LockSupport.parkNanos(v);
+                });
+      }).start();
+
+      for (int j = 0; j < validator.inputLimit(); ++j) {
+        final WikipediaPage page = queue.take();
         consumers.get(0).accept(page);
-        LockSupport.parkNanos(v);
-      });
+      }
 
       final AkkaFront.FrontHandle<Object> sink = consumers.get(0);
       sink.eos();
