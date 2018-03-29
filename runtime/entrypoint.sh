@@ -10,7 +10,8 @@ start() {
   local java_ops="-Daeron.term.buffer.length=4194304 -Xms500m -Xmx500m -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+HeapDumpOnOutOfMemoryError"
   echo "java_ops=$java_ops"
   local main="com.spbsu.flamestream.runtime.application.WorkerApplication"
-  nohup $(while :; do java $java_ops -cp lib/*:flamestream-runtime-1.0-SNAPSHOT.jar "$main" "$config" > worker.log 2>&1; done) &
+  local command="while :; do java $java_ops -cp lib/*:flamestream-runtime-1.0-SNAPSHOT.jar $main $config > worker.log 2>&1; done"
+  nohup bash -c "${command}" &
   local pid=$!
   echo "Pid=$pid"
   echo $pid > flamestream.pid
@@ -24,7 +25,7 @@ stop() {
   fi
   local pid=$(cat flamestream.pid)
   echo "Pid=$pid"
-  kill "$pid"
+  kill -- "-$pid"
 }
 
 main() {
