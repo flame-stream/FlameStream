@@ -78,7 +78,8 @@ public class LifecycleWatcher extends LoggingActor {
             .match(Integer.class, newEpoch -> {
               if (epoch != -1 && newEpoch != epoch) {
                 log().warning("There is new epoch '{}', restarting", epoch);
-                System.exit(12);
+                // To skip shutdown hooks
+                Runtime.getRuntime().halt(12);
               } else {
                 epoch = newEpoch;
                 log().warning("There is new epoch appeared");
