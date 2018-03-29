@@ -7,13 +7,16 @@ import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,10 +71,17 @@ public class WorkerApplication implements Runnable {
   @Override
   public void run() {
     log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
+    final String aeronDir = "/dev/shm/aeron-" + id;
+    try {
+      FileUtils.deleteDirectory(new File(aeronDir));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
 
     final Map<String, String> props = new HashMap<>();
     props.put("akka.remote.artery.canonical.hostname", host.host());
     props.put("akka.remote.artery.canonical.port", String.valueOf(host.port()));
+    props.put("akka.remote.artery.advanced.aeron-dir", aeronDir);
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
 
     this.system = ActorSystem.create("worker", config);
