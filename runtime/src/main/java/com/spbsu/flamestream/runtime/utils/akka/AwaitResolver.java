@@ -27,9 +27,8 @@ public class AwaitResolver extends AbstractActor {
 
   public static ActorRef syncResolve(ActorPath path, ActorRefFactory context) {
     try {
-      return resolve(path, context).toCompletableFuture()
-              .get(FlameConfig.config.bigTimeout().duration().toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      return resolve(path, context).toCompletableFuture().get();
+    } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException("Failed to resolve " + path, e);
     }
   }

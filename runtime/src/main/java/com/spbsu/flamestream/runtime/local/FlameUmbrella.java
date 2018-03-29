@@ -113,8 +113,8 @@ class Cluster extends LoggingActor {
       context().system()
               .scheduler()
               .schedule(
-                      FiniteDuration.apply(4, TimeUnit.SECONDS),
-                      FiniteDuration.apply(4, TimeUnit.SECONDS),
+                      FiniteDuration.apply(10, TimeUnit.SECONDS),
+                      FiniteDuration.apply(10, TimeUnit.SECONDS),
                       inner,
                       Kill.getInstance(),
                       context().system().dispatcher(),
