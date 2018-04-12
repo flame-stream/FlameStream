@@ -6,8 +6,6 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.acker.api.Ack;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.acker.api.RegisterFront;
-import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 
@@ -32,11 +30,11 @@ public class LocalAcker extends LoggingActor {
 
   public LocalAcker(ActorRef globalAcker) {
     this.globalAcker = globalAcker;
-    pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH).withDispatcher("resolver-dispatcher"));
+    pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH));
   }
 
   public static Props props(ActorRef globalAcker) {
-    return Props.create(LocalAcker.class, globalAcker);
+    return Props.create(LocalAcker.class, globalAcker).withDispatcher("processing-dispatcher");
   }
 
   @Override
@@ -56,9 +54,8 @@ public class LocalAcker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, heartbeatCache::add)
-            .match(RegisterFront.class, registerFront -> globalAcker.forward(registerFront, context()))
-            .match(UnregisterFront.class, unregisterFront -> globalAcker.forward(unregisterFront, context()))
             .match(Flush.class, flush -> flush())
+            .matchAny(m -> globalAcker.forward(m, context()))
             .build();
   }
 

@@ -3,7 +3,7 @@ package com.spbsu.flamestream.example.bl.wordcount;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
 import com.spbsu.flamestream.runtime.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.local.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
@@ -34,7 +34,9 @@ import static java.util.stream.Collectors.toMap;
 public class WordCountTest extends FlameAkkaSuite {
   @Test(invocationCount = 10)
   public void localEnvironmentTest() throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM, 2)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
+            .millisBetweenCommits(500)
+            .build()) {
       final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
       {
         final int lineSize = 50;

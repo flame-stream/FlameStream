@@ -41,7 +41,7 @@
 - name: Run the benchmark
   hosts: bench
   roles:
-    - { role: flamestream-bench }
+    - { role: flamestream-bench , bench_class: com.spbsu.flamestream.example.benchmark.BenchStand }
 
 - name: Destroy flamestream
   hosts: workers
@@ -63,7 +63,7 @@
     - name: Fetch traces
       fetch:
         src: /tmp/trace.csv
-        dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/traces/{{ inventory_hostname }}.csv
+        dest: "{{ results_dir }}/flamestream/traces/{{ inventory_hostname }}.csv"
         flat: true
   tags:
     - lat

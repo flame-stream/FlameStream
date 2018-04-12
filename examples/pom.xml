@@ -49,6 +49,7 @@
             <artifactId>flamestream-runtime</artifactId>
             <version>1.0-SNAPSHOT</version>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -69,6 +70,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
+                            <excludeClassifiers>tests</excludeClassifiers>
                             <outputDirectory>
                                 ${project.build.directory}/lib
                             </outputDirectory>

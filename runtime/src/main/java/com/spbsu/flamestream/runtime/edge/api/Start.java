@@ -19,4 +19,12 @@ public class Start {
   public GlobalTime from() {
     return globalTime;
   }
+
+  @Override
+  public String toString() {
+    return "Start{" +
+            "consumer=" + consumer +
+            ", globalTime=" + globalTime +
+            '}';
+  }
 }

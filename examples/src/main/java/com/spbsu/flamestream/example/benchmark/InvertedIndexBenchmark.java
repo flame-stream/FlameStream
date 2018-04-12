@@ -7,7 +7,7 @@ import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.bl.index.utils.WikipeadiaInput;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.local.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 public class InvertedIndexBenchmark {
   public static void main(String[] args) throws InterruptedException {
     final int parallelism = 4;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(parallelism).build()) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       final ConcurrentSkipListMap<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
       final AwaitCountConsumer awaitConsumer = new AwaitCountConsumer(65813);

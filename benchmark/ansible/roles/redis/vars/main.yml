@@ -1,0 +1,3 @@
+---
+redis_dir: "{{ base_dir }}/redis"
+redis_url: http://download.redis.io/releases/redis-4.0.8.tar.gz

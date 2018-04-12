@@ -3,7 +3,7 @@ package com.spbsu.flamestream.core.data.invalidation;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
 
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
 public interface InvalidatingBucket {
 
@@ -20,17 +20,12 @@ public interface InvalidatingBucket {
   DataItem get(int index);
 
   /**
-   * @return stream consists of elements in this bucket
-   */
-  Stream<DataItem> stream();
-
-  /**
    * @param fromIndex low endpoint (inclusive) of the range
    * @param toIndex   high endpoint (exclusive) of the range
-   * @return a stream of the specified range within this bucket
+   * @param consumer for emitting items
    * @throws IndexOutOfBoundsException if at least one index is out of range
    */
-  Stream<DataItem> rangeStream(int fromIndex, int toIndex);
+  void forRange(int fromIndex, int toIndex, Consumer<DataItem> consumer);
 
   /**
    * Removes the elements of bucket between fromIndex and toIndex
@@ -57,4 +52,12 @@ public interface InvalidatingBucket {
    * min i : a[i] >= x
    */
   int lowerBound(Meta meta);
+
+  /**
+   *
+   * @param meta of last item in sub bucket
+   * @param window for offset
+   * @return bucket that contains [lowerBound(meta) - window + 1, lowerBound(meta)) items
+   */
+  InvalidatingBucket subBucket(Meta meta, int window);
 }

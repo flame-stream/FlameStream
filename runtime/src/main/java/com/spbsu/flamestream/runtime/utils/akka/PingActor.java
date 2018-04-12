@@ -70,7 +70,7 @@ public class PingActor extends LoggingActor {
               actorToPing,
               objectForPing,
               context().system().dispatcher(),
-              context().parent()
+              self()
       );
     } else {
       self().tell(InnerPing.PING, self());
@@ -84,7 +84,7 @@ public class PingActor extends LoggingActor {
   }
 
   private void handleInnerPing() {
-    actorToPing.tell(objectForPing, context().parent());
+    actorToPing.tell(objectForPing, self());
     LockSupport.parkNanos(delayInNanos);
     self().tell(InnerPing.PING, self());
   }

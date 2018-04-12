@@ -29,7 +29,7 @@
 - name: Fetch bench logs
   fetch:
     src: "{{ flink_dir }}/bench.log"
-    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/bench.log
+    dest: "{{ results_dir }}/flink/bench.log"
     flat: true
   tags:
     - lat
@@ -37,7 +37,7 @@
 - name: Fetch latencies
   fetch:
     src: /tmp/lat.data
-    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flink/latency/lat.data
+    dest: "{{ results_dir }}/flink/latency/lat.data"
     flat: true
   tags:
     - lat

@@ -6,7 +6,7 @@ import com.spbsu.flamestream.example.bl.index.validators.SmallDumpRankingValidat
 import com.spbsu.flamestream.example.bl.index.validators.SmallDumpValidator;
 import com.spbsu.flamestream.runtime.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.local.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class InvertedIndexTest extends FlameAkkaSuite {
   @DataProvider
   public static Object[][] provider() {
-    return new Object[][] {
+    return new Object[][]{
             {new SmallDumpValidator(), false},
             {new SmallDumpRankingValidator(), false},
             {new RankingValidator(), false},
@@ -33,9 +33,9 @@ public class InvertedIndexTest extends FlameAkkaSuite {
     };
   }
 
-  @Test(dataProvider = "provider")
+  @Test(invocationCount = 5, dataProvider = "provider")
   public void test(InvertedIndexValidator validator, boolean backPressure) throws InterruptedException {
-    try (final LocalRuntime runtime = new LocalRuntime(DEFAULT_PARALLELISM)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().build()) {
       final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
       {
         final String invocationConfig = validator.getClass().getSimpleName() + "-bp-" + backPressure;
@@ -44,7 +44,7 @@ public class InvertedIndexTest extends FlameAkkaSuite {
                 .forEach(r -> r.addListener(awaitConsumer));
 
         final List<AkkaFront.FrontHandle<Object>> consumers =
-                flame.attachFront("Front-" + invocationConfig, new AkkaFrontType<>(runtime.system()))
+                flame.attachFront("Front-" + invocationConfig, new AkkaFrontType<>(runtime.system(), backPressure))
                         .collect(Collectors.toList());
         for (int i = 1; i < consumers.size(); i++) {
           consumers.get(i).eos();

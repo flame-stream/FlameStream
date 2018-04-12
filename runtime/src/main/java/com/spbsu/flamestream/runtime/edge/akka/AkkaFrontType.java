@@ -29,18 +29,7 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaF
   public FlameRuntime.FrontInstance<AkkaFront> instance() {
     final Address address = system.provider().getDefaultAddress();
     final ActorPath path = RootActorPath.apply(address, "/").child("user");
-
-    return new FlameRuntime.FrontInstance<AkkaFront>() {
-      @Override
-      public Class<AkkaFront> clazz() {
-        return AkkaFront.class;
-      }
-
-      @Override
-      public String[] params() {
-        return new String[]{path.toSerializationFormat()};
-      }
-    };
+    return new AkkaFrontInstance(path);
   }
 
   @Override
@@ -54,5 +43,23 @@ public class AkkaFrontType<T> implements FlameRuntime.FrontType<AkkaFront, AkkaF
       localHandles.put(context, frontHandle);
     }
     return localHandles.get(context);
+  }
+
+  private static class AkkaFrontInstance implements FlameRuntime.FrontInstance<AkkaFront> {
+    private final ActorPath path;
+
+    private AkkaFrontInstance(ActorPath path) {
+      this.path = path;
+    }
+
+    @Override
+    public Class<AkkaFront> clazz() {
+      return AkkaFront.class;
+    }
+
+    @Override
+    public Object[] params() {
+      return new Object[]{path.toSerializationFormat()};
+    }
   }
 }

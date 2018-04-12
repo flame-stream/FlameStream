@@ -9,7 +9,7 @@ import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
+import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;

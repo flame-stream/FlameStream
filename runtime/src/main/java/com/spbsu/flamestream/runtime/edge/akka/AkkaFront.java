@@ -1,23 +1,24 @@
 package com.spbsu.flamestream.runtime.edge.akka;
 
+import akka.actor.ActorPath;
 import akka.actor.ActorPaths;
 import akka.actor.ActorRef;
 import akka.actor.ActorRefFactory;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
-import akka.util.Timeout;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.acker.api.UnregisterFront;
+import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.edge.api.Start;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -25,7 +26,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class AkkaFront implements Front {
@@ -69,9 +69,11 @@ public class AkkaFront implements Front {
     @Override
     public void preStart() throws Exception {
       super.preStart();
-      localMediator = AwaitResolver.resolve(ActorPaths.fromString(localMediatorPath), context())
+      final ActorPath path = ActorPaths.fromString(localMediatorPath);
+      localMediator = AwaitResolver.resolve(path, context())
               .toCompletableFuture()
               .get();
+      log().info("Local mediator has been resolved");
     }
 
     @Override
@@ -105,13 +107,14 @@ public class AkkaFront implements Front {
     private final NavigableMap<GlobalTime, DataItem> log = new TreeMap<>();
     private final EdgeContext edgeContext;
 
-    private boolean producerWait = false;
+    private GlobalTime producerWait = null;
     private GlobalTime lastEmitted = GlobalTime.MIN;
     private long time = 0;
 
     private int requestDebt;
     private ActorRef sender;
     private ActorRef remoteMediator;
+    private boolean unregistered = false;
 
     private LocalMediator(EdgeContext edgeContext, boolean backPressure) {
       this.edgeContext = edgeContext;
@@ -145,21 +148,15 @@ public class AkkaFront implements Front {
               .match(RequestNext.class, r -> {
                 // Overflow protection
                 requestDebt = Math.max(requestDebt + 1, requestDebt);
-                if (producerWait) {
-                  process();
-                  producerWait = false;
-                }
+                tryProcess();
               })
               .match(Checkpoint.class, checkpoint -> log.headMap(checkpoint.time()).clear())
               .match(Raw.class, raw -> {
                 sender = sender();
                 final GlobalTime globalTime = new GlobalTime(++time, edgeContext.edgeId());
                 log.put(globalTime, new PayloadDataItem(new Meta(globalTime), raw.raw));
-                if (requestDebt > 0) {
-                  process();
-                } else {
-                  producerWait = true;
-                }
+                producerWait = globalTime;
+                tryProcess();
               })
               .match(
                       Command.class,
@@ -177,6 +174,7 @@ public class AkkaFront implements Front {
                       command -> command == Command.UNREGISTER,
                       command -> {
                         remoteMediator.tell(new UnregisterFront(edgeContext.edgeId()), self());
+                        unregistered = true;
                         sender().tell(Command.OK, self());
                       }
               )
@@ -184,26 +182,34 @@ public class AkkaFront implements Front {
     }
 
     private void onStart(Start start) {
+      log().info("Got new hole '{}'", start);
       remoteMediator = start.hole();
+      if (unregistered) {
+        remoteMediator.tell(new UnregisterFront(edgeContext.edgeId()), self());
+      }
+
       time = Math.max(start.from().time(), time);
-      lastEmitted = start.from();
+      lastEmitted = new GlobalTime(start.from().time() - 1, edgeContext.edgeId());
+      requestDebt = 0;
     }
 
-    private void process() {
-      assert requestDebt > 0;
-      requestDebt--;
-
+    private void tryProcess() {
       final Map.Entry<GlobalTime, DataItem> entry = log.higherEntry(lastEmitted);
-      remoteMediator.tell(entry.getValue(), self());
-      remoteMediator.tell(new Heartbeat(entry.getKey()), self());
+      if (entry != null && requestDebt > 0) {
+        requestDebt--;
+        remoteMediator.tell(entry.getValue(), self());
+        remoteMediator.tell(new Heartbeat(new GlobalTime(entry.getKey().time() + 1, entry.getKey().frontId())), self());
 
-      lastEmitted = entry.getKey();
-      sender.tell(Command.OK, self());
+        lastEmitted = entry.getKey();
+        if (producerWait != null && lastEmitted.equals(producerWait)) {
+          sender.tell(Command.OK, self());
+          producerWait = null;
+        }
+      }
     }
   }
 
   public static class FrontHandle<T> implements Consumer<T> {
-    private static final Timeout TIMEOUT = Timeout.apply(60, TimeUnit.SECONDS);
     private final ActorRef localMediator;
 
     public FrontHandle(ActorRef localMediator) {
@@ -213,7 +219,7 @@ public class AkkaFront implements Front {
     @Override
     public void accept(T value) {
       try {
-        PatternsCS.ask(localMediator, new Raw(value), TIMEOUT).toCompletableFuture().get();
+        PatternsCS.ask(localMediator, new Raw(value), FlameConfig.config.bigTimeout()).toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
@@ -221,7 +227,7 @@ public class AkkaFront implements Front {
 
     public void eos() {
       try {
-        PatternsCS.ask(localMediator, Command.EOS, TIMEOUT).toCompletableFuture().get();
+        PatternsCS.ask(localMediator, Command.EOS, FlameConfig.config.bigTimeout()).toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
@@ -229,7 +235,7 @@ public class AkkaFront implements Front {
 
     public void unregister() {
       try {
-        PatternsCS.ask(localMediator, Command.UNREGISTER, TIMEOUT).toCompletableFuture().get();
+        PatternsCS.ask(localMediator, Command.UNREGISTER, FlameConfig.config.bigTimeout()).toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
