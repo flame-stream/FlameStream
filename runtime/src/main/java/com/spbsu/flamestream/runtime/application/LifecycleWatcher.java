@@ -3,20 +3,20 @@ package com.spbsu.flamestream.runtime.application;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.serialization.SerializationExtension;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.FlameNode;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.state.DevNullStateStorage;
+import com.spbsu.flamestream.runtime.state.RocksDBStateStorage;
+import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.apache.zookeeper.Watcher.Event;
 
@@ -24,18 +24,21 @@ public class LifecycleWatcher extends LoggingActor {
   private static final int SESSION_TIMEOUT = 5000;
   private final String zkConnectString;
   private final String id;
+  private final String snapshotPath;
 
+  private int epoch;
+
+  private StateStorage stateStorage = null;
   private ZooKeeperGraphClient client = null;
 
-  private final Map<String, ActorRef> nodes = new HashMap<>();
-
-  private LifecycleWatcher(String id, String zkConnectString) {
+  private LifecycleWatcher(String id, String zkConnectString, String snapshotPath) {
     this.zkConnectString = zkConnectString;
     this.id = id;
+    this.snapshotPath = snapshotPath;
   }
 
-  public static Props props(String id, String zkConnectString) {
-    return Props.create(LifecycleWatcher.class, id, zkConnectString);
+  public static Props props(String id, String zkConnectString, String snapshotPath) {
+    return Props.create(LifecycleWatcher.class, id, zkConnectString, snapshotPath);
   }
 
   @Override
@@ -46,12 +49,21 @@ public class LifecycleWatcher extends LoggingActor {
             SESSION_TIMEOUT,
             event -> self().tell(event, self())
     ));
+    epoch = client.epoch(newEpoch -> self().tell(newEpoch, self()));
+    if (snapshotPath == null) {
+      log().info("No backend is provided, using /dev/null");
+      stateStorage = new DevNullStateStorage();
+    } else {
+      log().info("Initializing rocksDB backend");
+      stateStorage = new RocksDBStateStorage(snapshotPath, SerializationExtension.get(context().system()));
+    }
   }
 
   @Override
   public void postStop() {
     super.postStop();
     try {
+      stateStorage.close();
       client.close();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -61,39 +73,44 @@ public class LifecycleWatcher extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(List.class, graphs -> {
-              final List<ZooKeeperGraphClient.ZooKeeperFlameClient> clients =
-                      (List<ZooKeeperGraphClient.ZooKeeperFlameClient>) graphs;
-
-              final Set<String> activeNames = clients.stream().map(s -> s.name()).collect(Collectors.toSet());
-              final Set<String> toBeKilled = nodes.keySet()
-                      .stream()
-                      .filter(n -> !activeNames.contains(n))
-                      .collect(Collectors.toSet());
-              toBeKilled.forEach(name -> {
-                context().stop(nodes.get(name));
-                nodes.remove(name);
-              });
-
-              clients.stream().filter(n -> !nodes.keySet().contains(n.name())).forEach(this::initGraph);
-            })
+            .match(Boolean.class, graphs -> initGraph())
             .match(WatchedEvent.class, this::onWatchedEvent)
+            .match(Integer.class, newEpoch -> {
+              if (epoch != -1 && newEpoch != epoch) {
+                log().warning("There is new epoch '{}', restarting", epoch);
+                // To skip shutdown hooks
+                Runtime.getRuntime().halt(12);
+              } else {
+                epoch = newEpoch;
+                log().warning("There is new epoch appeared");
+              }
+            })
             .build();
   }
 
-  private void initGraph(ZooKeeperGraphClient.ZooKeeperFlameClient flameClient) {
-    final ClusterConfig config = client.config().withChildPath(flameClient.name());
-    final Graph g = flameClient.graph();
+  private void initGraph() {
+    final ClusterConfig config = client.config();
+    final Graph g = client.graph();
     log().info("Creating node with watchGraphs: '{}', config: '{}'", g, config);
-    final ActorRef node = context().actorOf(FlameNode.props(id, g, config, flameClient).withDispatcher("resolver-dispatcher"), flameClient.name());
-    nodes.put(flameClient.name(), node);
 
-    final Set<AttachFront<?>> initialFronts = flameClient.fronts(newFronts ->
+
+    final ActorRef node = context().actorOf(
+            FlameNode.props(
+                    id,
+                    g,
+                    config.withChildPath("graph_at_" + epoch),
+                    client,
+                    stateStorage
+            ),
+            "graph_at_" + epoch
+    );
+
+    final Set<AttachFront<?>> initialFronts = client.fronts(newFronts ->
             newFronts.forEach(front -> node.tell(front, self()))
     );
     initialFronts.forEach(f -> node.tell(f, self()));
 
-    final Set<AttachRear<?>> initialRears = flameClient.rears(newRears ->
+    final Set<AttachRear<?>> initialRears = client.rears(newRears ->
             newRears.forEach(rear -> node.tell(rear, self()))
     );
     initialRears.forEach(r -> node.tell(r, self()));
@@ -106,13 +123,7 @@ public class LifecycleWatcher extends LoggingActor {
       switch (state) {
         case SyncConnected:
           log().info("Connected to ZK");
-          final List<ZooKeeperGraphClient.ZooKeeperFlameClient> graphs = client.watchGraphs(g -> self().tell(
-                  g,
-                  ActorRef.noSender()
-          ));
-          if (!graphs.isEmpty()) {
-            self().tell(graphs, ActorRef.noSender());
-          }
+          client.watchGraph(created -> self().tell(true, self()));
           break;
         case Expired:
           log().info("Session expired");

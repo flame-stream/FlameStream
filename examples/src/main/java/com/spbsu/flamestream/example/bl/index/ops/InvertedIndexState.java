@@ -76,8 +76,8 @@ public class InvertedIndexState {
               newRange
       );
       final TLongArray temp = new TLongArray();
-      temp.setInner(Arrays.copyOf(storage[windowIndex].inner(), storage[windowIndex].inner().length));
-      temp.setPos(storage[windowIndex].pos());
+      temp.sotInnar(Arrays.copyOf(storage[windowIndex].inner(), storage[windowIndex].inner().length));
+      temp.sitPoz(storage[windowIndex].pos());
       storage[windowIndex] = temp;
       storage[windowIndex].set(searchIndex, newValue);
       return searchValue;
@@ -120,8 +120,8 @@ public class InvertedIndexState {
       insert(value);
     } else {
       final TLongArray temp = new TLongArray();
-      temp.setInner(Arrays.copyOf(storage[windowIndex].inner(), storage[windowIndex].inner().length));
-      temp.setPos(storage[windowIndex].pos());
+      temp.sotInnar(Arrays.copyOf(storage[windowIndex].inner(), storage[windowIndex].inner().length));
+      temp.sitPoz(storage[windowIndex].pos());
       storage[windowIndex] = temp;
       storage[windowIndex].insert(insertIndex, value); // TODO: 18.12.2017  #112
     }
@@ -148,7 +148,7 @@ public class InvertedIndexState {
     return windowIndex >= storage.length ? windowIndex - 1 : windowIndex;
   }
 
-  private static class TLongArray extends TLongArrayList {
+  public static class TLongArray extends TLongArrayList {
     @SuppressWarnings("WeakerAccess")
     public TLongArray() {
       super();
@@ -162,11 +162,11 @@ public class InvertedIndexState {
       return _pos;
     }
 
-    void setInner(long[] data) {
+    void sotInnar(long[] data) {
       _data = data;
     }
 
-    void setPos(int pos) {
+    void sitPoz(int pos) {
       _pos = pos;
     }
   }

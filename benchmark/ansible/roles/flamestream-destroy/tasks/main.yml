@@ -2,6 +2,11 @@
 - name: Destroy flamstream
   shell: "cd {{ flamestream_dir }} && bash entrypoint.sh stop"
 
+- name: Clean data dir
+  file:
+    path: "{{ flamestream_dir }}/data/"
+    state: absent
+
 - name: Fetch replay times
   fetch:
     src: /tmp/elements.cnt

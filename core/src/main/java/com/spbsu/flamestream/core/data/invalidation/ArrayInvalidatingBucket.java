@@ -5,14 +5,22 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
 /**
  * User: Artem
  * Date: 01.11.2017
  */
 public class ArrayInvalidatingBucket implements InvalidatingBucket {
-  private final List<DataItem> innerList = new ArrayList<>();
+  protected final List<DataItem> innerList;
+
+  public ArrayInvalidatingBucket() {
+    this(new ArrayList<>());
+  }
+
+  protected ArrayInvalidatingBucket(List<DataItem> innerList) {
+    this.innerList = innerList;
+  }
 
   @Override
   public void insert(DataItem insertee) {
@@ -34,13 +42,10 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
   }
 
   @Override
-  public Stream<DataItem> stream() {
-    return innerList.stream();
-  }
-
-  @Override
-  public Stream<DataItem> rangeStream(int fromIndex, int toIndex) {
-    return innerList.subList(fromIndex, toIndex).stream();
+  public void forRange(int fromIndex, int toIndex, Consumer<DataItem> consumer) {
+    for (int i = fromIndex; i < toIndex; i++) {
+      consumer.accept(innerList.get(i));
+    }
   }
 
   @Override
@@ -75,5 +80,11 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
       }
     }
     return left;
+  }
+
+  @Override
+  public InvalidatingBucket subBucket(Meta meta, int window) {
+    final int start = lowerBound(meta);
+    return new ArrayInvalidatingBucket(new ArrayList<>(innerList.subList(Math.max(start - window + 1, 0), start)));
   }
 }

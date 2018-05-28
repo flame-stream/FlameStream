@@ -53,6 +53,6 @@ public final class GlobalTime implements Comparable<GlobalTime> {
 
   @Override
   public String toString() {
-    return "(" + time + ", " + frontId + ')';
+    return String.format("(%07d, %s)", time, frontId);
   }
 }

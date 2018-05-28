@@ -2,7 +2,7 @@ variable "access_key" {}
 variable "secret_key" {}
 variable "key_pair" {}
 variable "cluster_size" {
-  default = 10
+  default = 11
 }
 variable "region" {
   default = "us-east-2"
@@ -86,7 +86,7 @@ resource "aws_security_group" "workers" {
 resource "aws_instance" "worker" {
   count = "${var.cluster_size}"
   ami = "ami-965e6bf3"
-  instance_type = "t2.micro"
+  instance_type = "t2.small"
   key_name = "${aws_key_pair.nikita.key_name}"
   subnet_id = "${aws_subnet.workers.id}"
   vpc_security_group_ids = [
