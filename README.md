@@ -18,6 +18,6 @@ The implementation is based on the following grounds:
 
 Our road to exactly-once in comparison with other approaches:
 
-![roadmap](https://github.com/flame-stream/FlameStream/raw/docs/docs/roadmap.png)
+![roadmap](https://raw.githubusercontent.com/flame-stream/FlameStream/master/docs/roadmap.png)
 
 Unlike common models, FlameStream has reduced set of operations: windowed grouping and stateless map, which are enough to implement any stateful pipelines. Such limitation allows achieving strong ordering with low overhead using the lightweight optimistic techniques.
