@@ -2,6 +2,12 @@ package com.spbsu.flamestream.runtime.acker;
 
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 
-public interface AttachRegistry {
+public interface Registry {
   void register(EdgeId frontId, long attachTimestamp);
+
+  long registeredTime(EdgeId frontId);
+
+  void committed(long time);
+
+  long lastCommit();
 }

@@ -17,15 +17,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Set;
 
 public class KryoSocketSink extends RichSinkFunction<Result> {
   private static final long serialVersionUID = 1L;
-
   private static final Logger LOG = LoggerFactory.getLogger(KryoSocketSink.class);
-  public static final int OUTPUT_BUFFER_SIZE = 1_000_000;
-  public static final int CONNECTION_AWAIT_TIMEOUT = 5000;
+  private static final int OUTPUT_BUFFER_SIZE = 1_000_000;
+  private static final int CONNECTION_AWAIT_TIMEOUT = 5000;
 
   private final String hostName;
   private final int port;
@@ -64,10 +61,8 @@ public class KryoSocketSink extends RichSinkFunction<Result> {
     LOG.info("Connected to {}:{}", hostName, port);
   }
 
-  private final Set<Long> hashes = new HashSet<>();
-
   @Override
-  public void invoke(Result value) {
+  public void invoke(Result value, Context context) {
     if (client != null && client.isConnected()) {
       //tracer.log(value.wordIndexAdd().hash());
       client.sendTCP(value.wordIndexAdd());

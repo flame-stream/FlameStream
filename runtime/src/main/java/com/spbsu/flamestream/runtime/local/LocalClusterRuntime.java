@@ -1,15 +1,18 @@
-package com.spbsu.flamestream.runtime;
+package com.spbsu.flamestream.runtime.local;
 
 import akka.actor.ActorPath;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.runtime.FlameRuntime;
+import com.spbsu.flamestream.runtime.RemoteRuntime;
 import com.spbsu.flamestream.runtime.application.WorkerApplication;
 import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
-import com.spbsu.flamestream.runtime.config.HashRange;
+import com.spbsu.flamestream.runtime.config.HashGroup;
+import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.server.ZooKeeperApplication;
@@ -19,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,11 +36,7 @@ public class LocalClusterRuntime implements FlameRuntime {
   private final RemoteRuntime remoteRuntime;
   private final Set<WorkerApplication> workers = new HashSet<>();
 
-  public LocalClusterRuntime(int parallelism) throws IOException, InterruptedException {
-    this(parallelism, DEFAULT_MAX_ELEMENTS_IN_GRAPH);
-  }
-
-  public LocalClusterRuntime(int parallelism, int maxElementsInGraph) throws IOException {
+  private LocalClusterRuntime(int parallelism, int maxElementsInGraph, int millisBetweenCommits) throws IOException {
     final List<Integer> ports = new ArrayList<>(freePorts(parallelism + 1));
 
     this.zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
@@ -66,9 +66,10 @@ public class LocalClusterRuntime implements FlameRuntime {
       worker.run();
     }
 
-    final ClusterConfig config = config(workersAddresses, maxElementsInGraph);
+    final ClusterConfig config = config(workersAddresses, maxElementsInGraph, millisBetweenCommits);
     log.info("Pushing configuration {}", config);
     configClient.put(config);
+    configClient.setEpoch(0);
     this.remoteRuntime = new RemoteRuntime(zkString);
   }
 
@@ -83,19 +84,19 @@ public class LocalClusterRuntime implements FlameRuntime {
     return remoteRuntime.run(g);
   }
 
-  private ClusterConfig config(Map<String, ActorPath> workers, int maxElementsInGraph) {
+  private ClusterConfig config(Map<String, ActorPath> workers, int maxElementsInGraph, int millisBetweenCommits) {
     final String ackerLocation = workers.keySet().stream().findAny().orElseThrow(IllegalArgumentException::new);
 
-    final Map<String, HashRange> rangeMap = new HashMap<>();
-    final List<HashRange> ranges = HashRange.covering(workers.size()).collect(Collectors.toList());
+    final Map<String, HashGroup> rangeMap = new HashMap<>();
+    final List<HashUnit> ranges = HashUnit.covering(workers.size()).collect(Collectors.toList());
     workers.keySet().forEach(name -> {
-      rangeMap.put(name, ranges.get(0));
+      rangeMap.put(name, new HashGroup(Collections.singleton(ranges.get(0))));
       ranges.remove(0);
     });
     assert ranges.isEmpty();
 
     final ComputationProps computationProps = new ComputationProps(rangeMap, maxElementsInGraph);
-    return new ClusterConfig(workers, ackerLocation, computationProps);
+    return new ClusterConfig(workers, ackerLocation, computationProps, millisBetweenCommits, 0);
   }
 
   private Set<Integer> freePorts(int n) throws IOException {
@@ -113,5 +114,30 @@ public class LocalClusterRuntime implements FlameRuntime {
       }
     }
     return ports;
+  }
+
+  public static class Builder {
+    private int parallelism = DEFAULT_PARALLELISM;
+    private int maxElementsInGraph = DEFAULT_MAX_ELEMENTS_IN_GRAPH;
+    private int millisBetweenCommits = DEFAULT_MILLIS_BETWEEN_COMMITS;
+
+    public Builder parallelism(int parallelism) {
+      this.parallelism = parallelism;
+      return this;
+    }
+
+    public Builder maxElementsInGraph(int maxElementsInGraph) {
+      this.maxElementsInGraph = maxElementsInGraph;
+      return this;
+    }
+
+    public Builder millisBetweenCommits(int millisBetweenCommits) {
+      this.millisBetweenCommits = millisBetweenCommits;
+      return this;
+    }
+
+    public LocalClusterRuntime build() throws IOException {
+      return new LocalClusterRuntime(parallelism, maxElementsInGraph, millisBetweenCommits);
+    }
   }
 }

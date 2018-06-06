@@ -2,12 +2,22 @@
 
 # FlameStream
 
-FlameStream is a project which consists of distributed stream processing model and its implementation.
+FlameStream is a distributed stream processing model, that has the following properties:
 
-Key ideas:
+- _Pure streaming_: records are processed one at a time
+- _Deterministic_: results are determined only by input and not changed between independent runs
+- _Consistency_: model provides for exactly-once semantics
 
-- MapReduce complete
-- Independent processing of distinct hashes
-- Ability to scale-out at runtime
+The distributed implementation of FlameStream model is written in Java and uses the Akka Actors framework for messaging.
 
-Runtime is written in Java using Akka Actors framework.
+The implementation is based on the following grounds:
+
+- Determinism is achieved via strong ordering
+- Idempotence via determinism
+- Exactly-once via idempotence
+
+Our road to exactly-once in comparison with other approaches:
+
+![roadmap](https://raw.githubusercontent.com/flame-stream/FlameStream/master/docs/roadmap.png)
+
+Unlike common models, FlameStream has reduced set of operations: windowed grouping and stateless map, which are enough to implement any stateful pipelines. Such limitation allows achieving strong ordering with low overhead using the lightweight optimistic techniques.

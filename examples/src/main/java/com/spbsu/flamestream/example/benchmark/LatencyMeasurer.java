@@ -10,15 +10,15 @@ public class LatencyMeasurer {
   private final long start;
   private final LongSummaryStatistics statistics = new LongSummaryStatistics();
 
-  LatencyMeasurer() {
+  public LatencyMeasurer() {
     this.start = System.nanoTime();
   }
 
-  void finish() {
+  public void finish() {
     statistics.accept(System.nanoTime() - start);
   }
 
-  LongSummaryStatistics statistics() {
+  public LongSummaryStatistics statistics() {
     return statistics;
   }
 }

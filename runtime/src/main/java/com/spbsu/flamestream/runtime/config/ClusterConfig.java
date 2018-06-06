@@ -12,14 +12,20 @@ public class ClusterConfig {
   private final Map<String, ActorPath> paths;
   private final String ackerLocation;
   private final ComputationProps props;
+  private final int millisBetweenCommits;
+  private final int defaultMinTime;
 
   @JsonCreator
   public ClusterConfig(@JsonProperty("paths") Map<String, ActorPath> paths,
                        @JsonProperty("ackerLocation") String ackerLocation,
-                       @JsonProperty("props") ComputationProps props) {
+                       @JsonProperty("props") ComputationProps props,
+                       @JsonProperty("millisBetweenCommits") int millisBetweenCommits,
+                       @JsonProperty("defaultMinTime") int defaultMinTime) {
     this.paths = paths;
     this.ackerLocation = ackerLocation;
     this.props = props;
+    this.millisBetweenCommits = millisBetweenCommits;
+    this.defaultMinTime = defaultMinTime;
   }
 
   @JsonProperty
@@ -34,7 +40,7 @@ public class ClusterConfig {
 
   @JsonIgnore
   public int defaultMinTime() {
-    return 0;
+    return defaultMinTime;
   }
 
   @JsonProperty
@@ -42,13 +48,17 @@ public class ClusterConfig {
     return props;
   }
 
+  @JsonProperty
+  public int millisBetweenCommits() {
+    return this.millisBetweenCommits;
+  }
 
   public ClusterConfig withChildPath(String childPath) {
     final Map<String, ActorPath> newPaths = new HashMap<>();
     paths.forEach((s, path) -> {
       newPaths.put(s, path.child(childPath));
     });
-    return new ClusterConfig(newPaths, ackerLocation, props);
+    return new ClusterConfig(newPaths, ackerLocation, props, millisBetweenCommits, 0);
   }
 
   @Override

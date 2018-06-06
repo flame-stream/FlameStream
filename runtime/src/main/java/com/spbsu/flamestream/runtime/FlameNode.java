@@ -5,13 +5,14 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.acker.Acker;
-import com.spbsu.flamestream.runtime.acker.AttachRegistry;
+import com.spbsu.flamestream.runtime.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.graph.GraphManager;
 import com.spbsu.flamestream.runtime.edge.negitioator.Negotiator;
+import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
@@ -22,19 +23,26 @@ public class FlameNode extends LoggingActor {
   private final ActorRef edgeManager;
   private final ClusterConfig config;
 
-  private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, AttachRegistry attachRegistry) {
+  private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, Registry registry, StateStorage storage) {
     this.config = config;
     final ActorRef acker;
     if (id.equals(config.ackerLocation())) {
-      acker = context().actorOf(Acker.props(config.defaultMinTime(), attachRegistry), "acker");
+      acker = context().actorOf(Acker.props(
+              config.paths().size(),
+              config.defaultMinTime(),
+              config.millisBetweenCommits(),
+              registry
+      ), "acker");
     } else {
       acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
     }
 
     final ActorRef graph = context().actorOf(GraphManager.props(
+            id,
             bootstrapGraph,
             acker,
-            config.props()
+            config.props(),
+            storage
     ), "graph");
     graph.tell(resolvedManagers(), self());
 
@@ -42,8 +50,17 @@ public class FlameNode extends LoggingActor {
     this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, graph), "edge");
   }
 
-  public static Props props(String id, Graph initialGraph, ClusterConfig initialConfig, AttachRegistry attachRegistry) {
-    return Props.create(FlameNode.class, id, initialGraph, initialConfig, attachRegistry);
+  @Override
+  public void preStart() {
+    log().info("Starting FlameNode with config '{}'", config);
+  }
+
+  public static Props props(String id,
+                            Graph initialGraph,
+                            ClusterConfig initialConfig,
+                            Registry registry,
+                            StateStorage stateStorage) {
+    return Props.create(FlameNode.class, id, initialGraph, initialConfig, registry, stateStorage);
   }
 
   @Override

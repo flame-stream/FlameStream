@@ -10,6 +10,7 @@ import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.local.LocalRuntime;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
@@ -33,7 +34,7 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
   @Test
   public void reorderingMultipleHash() throws InterruptedException {
     final int parallelism = DEFAULT_PARALLELISM;
-    try (final LocalRuntime runtime = new LocalRuntime(parallelism)) {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(parallelism).build()) {
       final int window = 2;
       final Graph graph = groupGraph(
               window,

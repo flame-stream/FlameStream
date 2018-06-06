@@ -21,8 +21,7 @@ public class RemoteRuntime implements FlameRuntime {
     this.client = new ZooKeeperGraphClient(new ZooKeeper(
             zkString,
             5000,
-            (e) -> {
-            }
+            (e) -> {}
     ));
   }
 
@@ -34,30 +33,27 @@ public class RemoteRuntime implements FlameRuntime {
   @Override
   public Flame run(Graph g) {
     log.info("Pushing graph {}", g);
-    final ZooKeeperGraphClient.ZooKeeperFlameClient graphClient = client.push(g);
+    client.push(g);
     final ClusterConfig config = client.config();
-    return new RemoteFlame(config.withChildPath(graphClient.name()), graphClient);
+    return new RemoteFlame(config);
   }
 
   private class RemoteFlame implements Flame {
     private final ClusterConfig clusterConfig;
-    private final ZooKeeperGraphClient.ZooKeeperFlameClient graphClient;
 
-    private RemoteFlame(ClusterConfig config, ZooKeeperGraphClient.ZooKeeperFlameClient graphClient) {
+    private RemoteFlame(ClusterConfig config) {
       this.clusterConfig = config;
-      this.graphClient = graphClient;
     }
 
     @Override
     public void close() {
       log.info("Extinguishing graph");
-      graphClient.removeGraph();
     }
 
     @Override
     public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type) {
       log.info("Attaching front id: '{}', type: '{}'", id, type);
-      graphClient.attachFront(id, type.instance());
+      client.attachFront(id, type.instance());
       return clusterConfig.paths()
               .entrySet()
               .stream()
@@ -67,7 +63,7 @@ public class RemoteRuntime implements FlameRuntime {
     @Override
     public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
       log.info("Attaching rear id: '{}', type: '{}'", id, type);
-      graphClient.attachRear(id, type.instance());
+      client.attachRear(id, type.instance());
       return clusterConfig.paths()
               .entrySet()
               .stream()

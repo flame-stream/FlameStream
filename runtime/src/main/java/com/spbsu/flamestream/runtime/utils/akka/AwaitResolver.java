@@ -9,7 +9,7 @@ import akka.actor.Identify;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
-import akka.util.Timeout;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import scala.concurrent.duration.Duration;
 
 import java.util.concurrent.CompletionStage;
@@ -27,15 +27,15 @@ public class AwaitResolver extends AbstractActor {
 
   public static ActorRef syncResolve(ActorPath path, ActorRefFactory context) {
     try {
-      return resolve(path, context).toCompletableFuture().get(10, TimeUnit.SECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      return resolve(path, context).toCompletableFuture().get();
+    } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException("Failed to resolve " + path, e);
     }
   }
 
   public static CompletionStage<ActorRef> resolve(ActorPath path, ActorRefFactory context) {
-    final ActorRef resolver = context.actorOf(AwaitResolver.props().withDispatcher("resolver-dispatcher"));
-    return PatternsCS.ask(resolver, path, Timeout.apply(100, TimeUnit.SECONDS))
+    final ActorRef resolver = context.actorOf(AwaitResolver.props());
+    return PatternsCS.ask(resolver, path, FlameConfig.config.bigTimeout())
             .thenApply(a -> (ActorRef) a);
   }
 
@@ -57,6 +57,7 @@ public class AwaitResolver extends AbstractActor {
                     ActorIdentity.class,
                     id -> id.getActorRef().isPresent(),
                     id -> {
+                      //noinspection ConstantConditions
                       requester.tell(id.getActorRef().get(), self());
                       context().stop(self());
                     }
@@ -71,6 +72,5 @@ public class AwaitResolver extends AbstractActor {
                     )
             )
             .build();
-
   }
 }

@@ -1,10 +1,26 @@
 # Benchmarks
 
-#### Measurements
+#### General performance
 
 1. Inverted index of 1, 2, 4, 8, 10 workers
 2. Single filter
 3. Single grouping test (suffling) `// there shouldn't be any replay with window 1`
+
+#### Fault tolerance
+
+_At most once:_ REUSE
+
+_At least once:_
+
+Flink with `AT_LEAST_ONCE` + simple sink
+
+1. Min snapshot freq | adequate latency
+2. .5 sec, 1 sec
+
+_Exactly once:_
+
+1. Min snapshot freq | adequate latency
+2. .5 sec, 1 sec (чтобы было видно, что у флинка латентность зависит от частоты снэпшотов)
 
 #### Benchmarks structure
 

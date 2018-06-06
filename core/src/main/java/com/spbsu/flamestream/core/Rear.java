@@ -1,10 +1,14 @@
 package com.spbsu.flamestream.core;
 
-import java.util.function.Consumer;
-
 /**
  * User: Artem
  * Date: 27.11.2017
  */
-public interface Rear extends Consumer<DataItem> {
+public interface Rear {
+  /**
+   * Sync call, return mean accept
+   */
+  void accept(Batch batch);
+
+  Batch last();
 }

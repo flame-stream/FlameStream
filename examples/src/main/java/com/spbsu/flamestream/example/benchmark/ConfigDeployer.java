@@ -9,7 +9,8 @@ import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;
-import com.spbsu.flamestream.runtime.config.HashRange;
+import com.spbsu.flamestream.runtime.config.HashGroup;
+import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,23 +47,30 @@ public class ConfigDeployer {
       paths.put(s, path);
     });
 
-    final Map<String, HashRange> ranges = new HashMap<>();
-    final List<HashRange> covering = HashRange.covering(paths.size() - 1)
+    final Map<String, HashGroup> ranges = new HashMap<>();
+    final List<HashUnit> covering = HashUnit.covering(paths.size() - 1)
             .collect(Collectors.toCollection(ArrayList::new));
     paths.keySet().forEach(s -> {
       if (s.equals(config.ackerLocation)) {
-        ranges.put(s, new HashRange(0, 0));
+        ranges.put(s, new HashGroup(Collections.singleton(new HashUnit(0, 0))));
       } else {
-        ranges.put(s, covering.get(0));
+        ranges.put(s, new HashGroup(Collections.singleton(covering.get(0))));
         covering.remove(0);
       }
     });
     assert covering.isEmpty();
 
     final ComputationProps props = new ComputationProps(ranges, config.maxElementsInGraph);
-    final ClusterConfig clusterConfig = new ClusterConfig(paths, config.ackerLocation, props);
+    final ClusterConfig clusterConfig = new ClusterConfig(
+            paths,
+            config.ackerLocation,
+            props,
+            config.millisBetweenCommits,
+            0
+    );
 
     final ConfigurationClient client = new ZooKeeperGraphClient(new ZooKeeper(config.zkString, 4000, event -> {}));
+    client.setEpoch(0);
     client.put(clusterConfig);
   }
 
@@ -70,15 +79,18 @@ public class ConfigDeployer {
     private final Map<String, DumbInetSocketAddress> workers;
     private final String ackerLocation;
     private final int maxElementsInGraph;
+    private final int millisBetweenCommits;
 
     public ConfigDeployerConfig(@JsonProperty("zkString") String zkString,
                                 @JsonProperty("workers") Map<String, DumbInetSocketAddress> workers,
                                 @JsonProperty("ackerLocation") String ackerLocation,
-                                @JsonProperty("maxElementsInGraph") int maxElementsInGraph) {
+                                @JsonProperty("maxElementsInGraph") int maxElementsInGraph,
+                                @JsonProperty("millisBetweenCommits") int millisBetweenCommits) {
       this.zkString = zkString;
       this.workers = workers;
       this.ackerLocation = ackerLocation;
       this.maxElementsInGraph = maxElementsInGraph;
+      this.millisBetweenCommits = millisBetweenCommits;
     }
   }
 }

@@ -1,20 +1,20 @@
 package com.spbsu.flamestream.runtime.edge.akka;
 
+import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.core.DataItem;
+import akka.actor.Address;
+import akka.actor.RootActorPath;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
-import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
 
-public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRearType<T>.Handle> {
+public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear.Handle<T>> {
   private final ActorSystem system;
   private final Class<T> clazz;
+  private final Map<EdgeContext, AkkaRear.Handle<T>> localHandles = new HashMap<>();
 
   public AkkaRearType(ActorSystem system, Class<T> clazz) {
     this.system = system;
@@ -23,58 +23,39 @@ public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear
 
   @Override
   public FlameRuntime.RearInstance<AkkaRear> instance() {
-    return new FlameRuntime.RearInstance<AkkaRear>() {
-      @Override
-      public Class<AkkaRear> clazz() {
-        return AkkaRear.class;
-      }
-
-      @Override
-      public String[] params() {
-        return new String[0];
-      }
-    };
+    final Address address = system.provider().getDefaultAddress();
+    final ActorPath path = RootActorPath.apply(address, "/").child("user");
+    return new AkkaRearInstance(path);
   }
 
   @Override
-  public Handle handle(EdgeContext context) {
-    return new Handle(context);
+  public AkkaRear.Handle<T> handle(EdgeContext context) {
+    if (!localHandles.containsKey(context)) {
+      final ActorRef localMediator = system.actorOf(
+              AkkaRear.LocalMediator.props(clazz),
+              context.edgeId().nodeId() + "-localrear"
+      );
+      final AkkaRear.Handle<T> rearHandle = new AkkaRear.Handle<>(localMediator);
+      localHandles.put(context, rearHandle);
+    }
+    return localHandles.get(context);
   }
 
-  public class Handle {
-    private final ActorRef rear;
+  private static class AkkaRearInstance implements FlameRuntime.RearInstance<AkkaRear> {
+    private final ActorPath path;
 
-    Handle(EdgeContext context) {
-      this.rear = AwaitResolver.syncResolve(context.nodePath()
-              .child("edge")
-              .child(context.edgeId().edgeName())
-              .child(context.edgeId().nodeId() + "-inner"), system);
-    }
-
-    public void addListener(Consumer<T> consumer) {
-      final ActorRef rearConsumer = system.actorOf(InnerActor.props(consumer, clazz));
-      rear.tell(rearConsumer, ActorRef.noSender());
-    }
-  }
-
-  private static class InnerActor<T> extends LoggingActor {
-    private final Consumer<T> consumer;
-    private final Class<T> clazz;
-
-    private InnerActor(Consumer<T> consumer, Class<T> clazz) {
-      this.consumer = consumer;
-      this.clazz = clazz;
-    }
-
-    static <T> Props props(Consumer<T> consumer, Class<T> clazz) {
-      return Props.create(InnerActor.class, consumer, clazz);
+    private AkkaRearInstance(ActorPath path) {
+      this.path = path;
     }
 
     @Override
-    public Receive createReceive() {
-      return ReceiveBuilder.create()
-              .match(DataItem.class, dataItem -> consumer.accept(dataItem.payload(clazz)))
-              .build();
+    public Class<AkkaRear> clazz() {
+      return AkkaRear.class;
+    }
+
+    @Override
+    public Object[] params() {
+      return new Object[]{path.toSerializationFormat()};
     }
   }
 }
