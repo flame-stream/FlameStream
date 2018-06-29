@@ -14,8 +14,8 @@ provider "aws" {
   region = "${var.region}"
 }
 
-resource "aws_key_pair" "nikita" {
-  key_name = "nikita"
+resource "aws_key_pair" "mega-benchmarker" {
+  key_name = "mega-benchmarker"
   public_key = "${var.key_pair}"
 }
 
@@ -87,7 +87,7 @@ resource "aws_instance" "worker" {
   count = "${var.cluster_size}"
   ami = "ami-965e6bf3"
   instance_type = "t2.small"
-  key_name = "${aws_key_pair.nikita.key_name}"
+  key_name = "${aws_key_pair.mega-benchmarker.key_name}"
   subnet_id = "${aws_subnet.workers.id}"
   vpc_security_group_ids = [
     "${aws_security_group.workers.id}"]
