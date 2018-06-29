@@ -22,7 +22,7 @@
 5. Run `bash init_inventory.sh` to create Ansible inventory from terraform output
 6. Run `ansible-playbook -v -i aws.yml hosts.yml` to setup local hostname on each node __THIS IS IMPORTANT FOR AKKA_
 7. Do some benchmarking...
-8. Destroy cluster via `terrafrom destroy`
+8. Destroy cluster via `terraform destroy`
 9. You can start next benchmarking session from 4th step
 
 #### How to run benchmarks
@@ -46,6 +46,6 @@ All this steps are automated with script in the root of the project. On the last
 
 Caveats:
 
-- If something goes wrong you need to manually kill bench. I ssh into a host and `sudo pkill -f spbsu` (To run on every host: `sudo ansible -v -i aws.yml all -a 'sudo pkill -f spb'`
+- If something goes wrong you need to manually kill bench. I ssh into a host and `sudo pkill -f spbsu` (To run on every host: `ansible -v -i aws.yml all -a 'sudo pkill -f spb'`
 - You need to manually check resources on each host. So I suggest to ssh into _bench_ and _input_ hosts and random worker. Run `vmstat -Sm 1`. To monitor memory and cpu usage.
 - When you are copying hosts to inventory from aws console check twice

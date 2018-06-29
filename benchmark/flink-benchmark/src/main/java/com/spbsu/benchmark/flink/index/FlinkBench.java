@@ -11,6 +11,7 @@ import com.spbsu.flamestream.example.benchmark.GraphDeployer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -75,12 +76,9 @@ public class FlinkBench {
         }
 
         final String rocksDbPath = deployerConfig.getString("rocksdb-path");
-        try {
-          final FsStateBackend backend = new FsStateBackend("file:///" + rocksDbPath, true);
-          environment.setStateBackend(backend);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
+        final StateBackend backend = new FsStateBackend("file:///" + rocksDbPath, true);
+        environment.setStateBackend(backend);
+
 
         environment
                 .addSource(new KryoSocketSource(standConfig.benchHost(), standConfig.frontPort()))
