@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.application;
+package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorSystem;
 import com.fasterxml.jackson.annotation.JsonProperty;

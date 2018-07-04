@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.acker;
+package com.spbsu.flamestream.runtime.master.acker;
 
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 

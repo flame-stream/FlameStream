@@ -1,11 +1,11 @@
-package com.spbsu.flamestream.runtime.acker;
+package com.spbsu.flamestream.runtime.master.acker;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.acker.api.Ack;
-import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
+import com.spbsu.flamestream.runtime.master.acker.api.Ack;
+import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 

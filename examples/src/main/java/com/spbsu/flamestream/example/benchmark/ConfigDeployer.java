@@ -5,7 +5,7 @@ import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
+import com.spbsu.flamestream.runtime.zk.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;

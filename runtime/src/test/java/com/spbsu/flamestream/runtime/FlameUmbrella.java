@@ -14,7 +14,7 @@ import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
-import com.spbsu.flamestream.runtime.acker.Registry;
+import com.spbsu.flamestream.runtime.master.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashGroup;

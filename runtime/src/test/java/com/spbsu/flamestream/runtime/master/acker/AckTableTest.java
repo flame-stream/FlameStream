@@ -1,8 +1,8 @@
-package com.spbsu.flamestream.runtime.acker;
+package com.spbsu.flamestream.runtime.master.acker;
 
 import com.spbsu.flamestream.core.FlameStreamSuite;
-import com.spbsu.flamestream.runtime.acker.table.AckTable;
-import com.spbsu.flamestream.runtime.acker.table.ArrayAckTable;
+import com.spbsu.flamestream.runtime.master.acker.table.AckTable;
+import com.spbsu.flamestream.runtime.master.acker.table.ArrayAckTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;

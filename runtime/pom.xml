@@ -143,7 +143,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.spbsu.flamestream.runtime.application.WorkerApplication</mainClass>
+                            <mainClass>com.spbsu.flamestream.runtime.WorkerApplication</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

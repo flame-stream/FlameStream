@@ -1,11 +1,11 @@
-package com.spbsu.flamestream.runtime.acker.api.commit;
+package com.spbsu.flamestream.runtime.master.acker.api.commit;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
-public class LastCommit {
+public class Prepare {
   private final GlobalTime globalTime;
 
-  public LastCommit(GlobalTime globalTime) {
+  public Prepare(GlobalTime globalTime) {
     this.globalTime = globalTime;
   }
 
@@ -15,7 +15,7 @@ public class LastCommit {
 
   @Override
   public String toString() {
-    return "LastCommit{" +
+    return "Prepare{" +
             "globalTime=" + globalTime +
             '}';
   }

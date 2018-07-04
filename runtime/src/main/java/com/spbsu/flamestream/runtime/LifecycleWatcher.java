@@ -1,11 +1,11 @@
-package com.spbsu.flamestream.runtime.application;
+package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.serialization.SerializationExtension;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.FlameNode;
+import com.spbsu.flamestream.runtime.zk.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;

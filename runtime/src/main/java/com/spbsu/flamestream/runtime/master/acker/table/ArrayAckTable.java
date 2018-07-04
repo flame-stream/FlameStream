@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.acker.table;
+package com.spbsu.flamestream.runtime.master.acker.table;
 
 public final class ArrayAckTable implements AckTable {
   private final long[] xors;

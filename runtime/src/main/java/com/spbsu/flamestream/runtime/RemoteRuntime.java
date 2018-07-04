@@ -3,7 +3,7 @@ package com.spbsu.flamestream.runtime;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Rear;
-import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
+import com.spbsu.flamestream.runtime.zk.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import org.apache.zookeeper.ZooKeeper;

@@ -1,11 +1,11 @@
-package com.spbsu.flamestream.runtime.acker.api.registry;
+package com.spbsu.flamestream.runtime.master.acker.api.registry;
 
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 
-public class UnregisterFront {
+public class RegisterFront {
   private final EdgeId frontId;
 
-  public UnregisterFront(EdgeId frontId) {
+  public RegisterFront(EdgeId frontId) {
     this.frontId = frontId;
   }
 

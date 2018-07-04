@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.acker.api.registry;
+package com.spbsu.flamestream.runtime.master.acker.api.registry;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
