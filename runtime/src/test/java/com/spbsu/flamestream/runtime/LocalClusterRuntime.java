@@ -1,11 +1,9 @@
-package com.spbsu.flamestream.runtime.local;
+package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorPath;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.RemoteRuntime;
 import com.spbsu.flamestream.runtime.application.WorkerApplication;
 import com.spbsu.flamestream.runtime.application.ZooKeeperGraphClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
@@ -43,6 +41,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     zooKeeperApplication.run();
 
     final String zkString = "localhost:" + ports.get(0);
+    log.info("ZK string: {}", zkString);
     final ConfigurationClient configClient = new ZooKeeperGraphClient(new ZooKeeper(
             zkString,
             1000,

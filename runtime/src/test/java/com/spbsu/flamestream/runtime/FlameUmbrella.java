@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.local;
+package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorKilledException;
 import akka.actor.ActorPath;
@@ -14,8 +14,6 @@ import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Rear;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
-import com.spbsu.flamestream.runtime.FlameNode;
-import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;

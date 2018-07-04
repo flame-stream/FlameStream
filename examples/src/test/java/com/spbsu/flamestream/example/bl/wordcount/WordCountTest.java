@@ -1,9 +1,9 @@
 package com.spbsu.flamestream.example.bl.wordcount;
 
 import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
-import com.spbsu.flamestream.runtime.FlameAkkaSuite;
+import com.spbsu.flamestream.runtime.acceptance.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.local.LocalRuntime;
+import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;

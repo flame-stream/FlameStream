@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.local;
+package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -6,7 +6,6 @@ import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Rear;
-import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.state.InMemStateStorage;
 import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;

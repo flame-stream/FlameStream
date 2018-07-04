@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime;
+package com.spbsu.flamestream.runtime.acceptance;
 
 import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
