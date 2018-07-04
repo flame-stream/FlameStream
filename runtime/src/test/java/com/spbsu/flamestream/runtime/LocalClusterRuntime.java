@@ -33,6 +33,7 @@ public class LocalClusterRuntime implements FlameRuntime {
   private final ZooKeeperApplication zooKeeperApplication;
   private final RemoteRuntime remoteRuntime;
   private final Set<WorkerApplication> workers = new HashSet<>();
+  private final String zkString;
 
   private LocalClusterRuntime(int parallelism, int maxElementsInGraph, int millisBetweenCommits) throws IOException {
     final List<Integer> ports = new ArrayList<>(freePorts(parallelism + 1));
@@ -40,7 +41,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     this.zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
     zooKeeperApplication.run();
 
-    final String zkString = "localhost:" + ports.get(0);
+    zkString = "localhost:" + ports.get(0);
     log.info("ZK string: {}", zkString);
     final ConfigurationClient configClient = new ZooKeeperGraphClient(new ZooKeeper(
             zkString,
@@ -81,6 +82,10 @@ public class LocalClusterRuntime implements FlameRuntime {
   @Override
   public Flame run(Graph g) {
     return remoteRuntime.run(g);
+  }
+
+  public String zkString() {
+    return zkString;
   }
 
   private ClusterConfig config(Map<String, ActorPath> workers, int maxElementsInGraph, int millisBetweenCommits) {

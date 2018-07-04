@@ -72,7 +72,7 @@ public interface Graph {
         throw new IllegalStateException("Source must not have inputs");
       }
       if (adjLists.keySet().contains(sink)) {
-        throw new IllegalStateException("Source must not have outputs");
+        throw new IllegalStateException("Sink must not have outputs");
       }
 
       final Set<Vertex> v = new HashSet<>(adjLists.keySet());
@@ -84,7 +84,7 @@ public interface Graph {
       return new MyGraph(adjLists, source, sink, components, shuffles);
     }
 
-    public static class MyGraph implements Graph {
+    private static class MyGraph implements Graph {
       private final List<Vertex> allVertices;
       private final Source source;
       private final Sink sink;
@@ -93,11 +93,11 @@ public interface Graph {
       private final List<Tuple2<Vertex, Vertex>> shuffles;
       private final Set<Set<Vertex>> components;
 
-      public MyGraph(Multimap<Vertex, Vertex> adjLists,
-                     Source source,
-                     Sink sink,
-                     Set<Set<Vertex>> components,
-                     List<Tuple2<Vertex, Vertex>> shuffles) {
+      MyGraph(Multimap<Vertex, Vertex> adjLists,
+              Source source,
+              Sink sink,
+              Set<Set<Vertex>> components,
+              List<Tuple2<Vertex, Vertex>> shuffles) {
         this.allVertices = new ArrayList<>(adjLists.keySet());
         this.components = components;
         this.shuffles = shuffles;
