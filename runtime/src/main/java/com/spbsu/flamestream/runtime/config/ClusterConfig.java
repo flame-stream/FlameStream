@@ -10,19 +10,19 @@ import java.util.Map;
 
 public class ClusterConfig {
   private final Map<String, ActorPath> paths;
-  private final String ackerLocation;
+  private final String masterLocation;
   private final ComputationProps props;
   private final int millisBetweenCommits;
   private final int defaultMinTime;
 
   @JsonCreator
   public ClusterConfig(@JsonProperty("paths") Map<String, ActorPath> paths,
-                       @JsonProperty("ackerLocation") String ackerLocation,
+                       @JsonProperty("masterLocation") String masterLocation,
                        @JsonProperty("props") ComputationProps props,
                        @JsonProperty("millisBetweenCommits") int millisBetweenCommits,
                        @JsonProperty("defaultMinTime") int defaultMinTime) {
     this.paths = paths;
-    this.ackerLocation = ackerLocation;
+    this.masterLocation = masterLocation;
     this.props = props;
     this.millisBetweenCommits = millisBetweenCommits;
     this.defaultMinTime = defaultMinTime;
@@ -34,8 +34,8 @@ public class ClusterConfig {
   }
 
   @JsonProperty
-  public String ackerLocation() {
-    return ackerLocation;
+  public String masterLocation() {
+    return masterLocation;
   }
 
   @JsonIgnore
@@ -55,17 +55,15 @@ public class ClusterConfig {
 
   public ClusterConfig withChildPath(String childPath) {
     final Map<String, ActorPath> newPaths = new HashMap<>();
-    paths.forEach((s, path) -> {
-      newPaths.put(s, path.child(childPath));
-    });
-    return new ClusterConfig(newPaths, ackerLocation, props, millisBetweenCommits, 0);
+    paths.forEach((s, path) -> newPaths.put(s, path.child(childPath)));
+    return new ClusterConfig(newPaths, masterLocation, props, millisBetweenCommits, 0);
   }
 
   @Override
   public String toString() {
     return "ClusterConfig{" +
             "paths=" + paths +
-            ", ackerLocation='" + ackerLocation + '\'' +
+            ", masterLocation='" + masterLocation + '\'' +
             ", props=" + props +
             '}';
   }

@@ -5,7 +5,7 @@ import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.flamestream.runtime.zk.ZooKeeperGraphClient;
+import com.spbsu.flamestream.runtime.zk.ZooKeeperInnerClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class ConfigDeployer {
   private final ConfigDeployerConfig config;
 
-  public ConfigDeployer(ConfigDeployerConfig config) {
+  private ConfigDeployer(ConfigDeployerConfig config) {
     this.config = config;
   }
 
@@ -51,7 +51,7 @@ public class ConfigDeployer {
     final List<HashUnit> covering = HashUnit.covering(paths.size() - 1)
             .collect(Collectors.toCollection(ArrayList::new));
     paths.keySet().forEach(s -> {
-      if (s.equals(config.ackerLocation)) {
+      if (s.equals(config.masterLocation)) {
         ranges.put(s, new HashGroup(Collections.singleton(new HashUnit(0, 0))));
       } else {
         ranges.put(s, new HashGroup(Collections.singleton(covering.get(0))));
@@ -63,13 +63,13 @@ public class ConfigDeployer {
     final ComputationProps props = new ComputationProps(ranges, config.maxElementsInGraph);
     final ClusterConfig clusterConfig = new ClusterConfig(
             paths,
-            config.ackerLocation,
+            config.masterLocation,
             props,
             config.millisBetweenCommits,
             0
     );
 
-    final ConfigurationClient client = new ZooKeeperGraphClient(new ZooKeeper(config.zkString, 4000, event -> {}));
+    final ConfigurationClient client = new ZooKeeperInnerClient(new ZooKeeper(config.zkString, 4000, event -> {}));
     client.setEpoch(0);
     client.put(clusterConfig);
   }
@@ -77,18 +77,18 @@ public class ConfigDeployer {
   public static class ConfigDeployerConfig {
     private final String zkString;
     private final Map<String, DumbInetSocketAddress> workers;
-    private final String ackerLocation;
+    private final String masterLocation;
     private final int maxElementsInGraph;
     private final int millisBetweenCommits;
 
     public ConfigDeployerConfig(@JsonProperty("zkString") String zkString,
                                 @JsonProperty("workers") Map<String, DumbInetSocketAddress> workers,
-                                @JsonProperty("ackerLocation") String ackerLocation,
+                                @JsonProperty("masterLocation") String masterLocation,
                                 @JsonProperty("maxElementsInGraph") int maxElementsInGraph,
                                 @JsonProperty("millisBetweenCommits") int millisBetweenCommits) {
       this.zkString = zkString;
       this.workers = workers;
-      this.ackerLocation = ackerLocation;
+      this.masterLocation = masterLocation;
       this.maxElementsInGraph = maxElementsInGraph;
       this.millisBetweenCommits = millisBetweenCommits;
     }

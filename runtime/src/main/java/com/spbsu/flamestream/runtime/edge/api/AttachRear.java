@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.runtime.edge.api;
 
-import com.spbsu.flamestream.core.Rear;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 
 public class AttachRear<R extends Rear> {

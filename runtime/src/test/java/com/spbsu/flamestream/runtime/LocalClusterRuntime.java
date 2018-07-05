@@ -4,7 +4,7 @@ import akka.actor.ActorPath;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.zk.ZooKeeperGraphClient;
+import com.spbsu.flamestream.runtime.zk.ZooKeeperInnerClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
@@ -42,7 +42,7 @@ public class LocalClusterRuntime implements FlameRuntime {
 
     zkString = "localhost:" + ports.get(0);
     log.info("ZK string: {}", zkString);
-    final ConfigurationClient configClient = new ZooKeeperGraphClient(new ZooKeeper(
+    final ConfigurationClient configClient = new ZooKeeperInnerClient(new ZooKeeper(
             zkString,
             1000,
             (w) -> {
@@ -88,7 +88,7 @@ public class LocalClusterRuntime implements FlameRuntime {
   }
 
   private ClusterConfig config(Map<String, ActorPath> workers, int maxElementsInGraph, int millisBetweenCommits) {
-    final String ackerLocation = workers.keySet().stream().findAny().orElseThrow(IllegalArgumentException::new);
+    final String masterLocation = workers.keySet().stream().findAny().orElseThrow(IllegalArgumentException::new);
 
     final Map<String, HashGroup> rangeMap = new HashMap<>();
     final List<HashUnit> ranges = HashUnit.covering(workers.size()).collect(Collectors.toList());
@@ -99,7 +99,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     assert ranges.isEmpty();
 
     final ComputationProps computationProps = new ComputationProps(rangeMap, maxElementsInGraph);
-    return new ClusterConfig(workers, ackerLocation, computationProps, millisBetweenCommits, 0);
+    return new ClusterConfig(workers, masterLocation, computationProps, millisBetweenCommits, 0);
   }
 
   private Set<Integer> freePorts(int n) throws IOException {

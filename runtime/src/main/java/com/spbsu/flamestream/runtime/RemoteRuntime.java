@@ -1,9 +1,9 @@
 package com.spbsu.flamestream.runtime;
 
-import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.Rear;
-import com.spbsu.flamestream.runtime.zk.ZooKeeperGraphClient;
+import com.spbsu.flamestream.runtime.edge.Rear;
+import com.spbsu.flamestream.runtime.zk.ZooKeeperInnerClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import org.apache.zookeeper.ZooKeeper;
@@ -15,10 +15,10 @@ import java.util.stream.Stream;
 
 public class RemoteRuntime implements FlameRuntime {
   private final Logger log = LoggerFactory.getLogger(RemoteRuntime.class);
-  private final ZooKeeperGraphClient client;
+  private final ZooKeeperInnerClient client;
 
   public RemoteRuntime(String zkString) throws IOException {
-    this.client = new ZooKeeperGraphClient(new ZooKeeper(
+    this.client = new ZooKeeperInnerClient(new ZooKeeper(
             zkString,
             5000,
             (e) -> {}

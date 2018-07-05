@@ -2,7 +2,6 @@ package com.spbsu.flamestream.runtime.zk;
 
 import akka.actor.ActorPath;
 import akka.actor.ActorPaths;
-import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -17,19 +16,16 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.master.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
-import org.apache.hadoop.util.ZKUtil;
+import com.spbsu.flamestream.runtime.master.acker.Registry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -40,34 +36,18 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
-public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient, Registry {
-  private static final int MAX_BUFFER_SIZE = 20000;
-  private static final int BUFFER_SIZE = 1000;
-  private static final List<ACL> DEFAULT_ACL = ZKUtil.parseACLs("world:anyone:crwd");
-
-  private final ZooKeeper zooKeeper;
-  private final Kryo kryo;
+public class ZooKeeperInnerClient extends ZooKeeperBaseClient implements ConfigurationClient, Registry {
   private final ObjectMapper mapper = new ObjectMapper();
-
   private final Set<String> seenFronts = Collections.synchronizedSet(new HashSet<>());
   private final Set<String> seenRears = Collections.synchronizedSet(new HashSet<>());
 
-  public ZooKeeperGraphClient(ZooKeeper zooKeeper) {
-    this.zooKeeper = zooKeeper;
+  public ZooKeeperInnerClient(ZooKeeper zooKeeper) {
+    super(zooKeeper);
 
     final SimpleModule module = new SimpleModule();
     module.addSerializer(ActorPath.class, new ActorPathSerializer(ActorPath.class));
     module.addDeserializer(ActorPath.class, new ActorPathDes(ActorPath.class));
     mapper.registerModule(module);
-
-    this.kryo = new Kryo();
-    ((Kryo.DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy())
-            .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
-  }
-
-  @Override
-  public void close() throws Exception {
-    zooKeeper.close();
   }
 
   public void push(Graph graph) {
@@ -344,6 +324,24 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
     }
   }
 
+  /**
+   * Watcher is called when the config appears
+   */
+  public void watchConfig(Consumer<ClusterConfig> watcher) {
+    try {
+      final Stat exists = zooKeeper.exists("/config", event -> {
+        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
+          watcher.accept(config());
+        }
+      });
+      if (exists != null) {
+        watcher.accept(config());
+      }
+    } catch (KeeperException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   @Override
   public void put(ClusterConfig config) {
     try {
@@ -362,24 +360,9 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
     }
   }
 
-  private void createIfNotExists(String path) throws KeeperException, InterruptedException {
-    try {
-      zooKeeper.create(
-              path,
-              new byte[0],
-              DEFAULT_ACL,
-              CreateMode.PERSISTENT
-      );
-    } catch (KeeperException k) {
-      if (k.code() != KeeperException.Code.NODEEXISTS) {
-        throw k;
-      }
-    }
-  }
-
   @SuppressWarnings("serial")
   private static class ActorPathDes extends StdDeserializer<ActorPath> {
-    protected ActorPathDes(Class<?> vc) {
+    ActorPathDes(Class<?> vc) {
       super(vc);
     }
 
@@ -391,7 +374,7 @@ public class ZooKeeperGraphClient implements AutoCloseable, ConfigurationClient,
 
   @SuppressWarnings("serial")
   private static class ActorPathSerializer extends StdSerializer<ActorPath> {
-    protected ActorPathSerializer(Class<ActorPath> t) {
+    ActorPathSerializer(Class<ActorPath> t) {
       super(t);
     }
 

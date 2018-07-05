@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
-import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;

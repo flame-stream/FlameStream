@@ -1,12 +1,10 @@
-package com.spbu.flamestream.client;
-
-import com.spbsu.flamestream.core.Graph;
+package com.spbsu.flamestream.core;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-@SuppressWarnings("WeakerAccess")
 public interface Job {
   Graph graph();
 
@@ -18,11 +16,13 @@ public interface Job {
     private final String id;
     private final String host;
     private final int port;
+    private final Class<?>[] inputClasses;
 
-    public Front(String id, String host, int port) {
+    public Front(String id, String host, int port, Class<?>... inputClasses) {
       this.id = id;
       this.host = host;
       this.port = port;
+      this.inputClasses = Arrays.copyOf(inputClasses, inputClasses.length);
     }
 
     public String id() {
@@ -35,6 +35,10 @@ public interface Job {
 
     public int port() {
       return this.port;
+    }
+
+    public Stream<Class<?>> inputClasses() {
+      return Arrays.stream(inputClasses);
     }
   }
 
@@ -42,11 +46,13 @@ public interface Job {
     private final String id;
     private final String host;
     private final int port;
+    private final Class<?>[] outputClasses;
 
-    public Rear(String id, String host, int port) {
+    public Rear(String id, String host, int port, Class<?>... outputClasses) {
       this.id = id;
       this.host = host;
       this.port = port;
+      this.outputClasses = Arrays.copyOf(outputClasses, outputClasses.length);
     }
 
     public String id() {
@@ -59,6 +65,10 @@ public interface Job {
 
     public int port() {
       return this.port;
+    }
+
+    public Stream<Class<?>> outputClasses() {
+      return Arrays.stream(outputClasses);
     }
   }
 

@@ -4,8 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.Job;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
@@ -13,41 +13,54 @@ import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ZkFlameClientTest {
   private static final Logger LOG = LoggerFactory.getLogger(ZkFlameClientTest.class);
 
-  @Test(enabled = false)
-  public void test() throws InterruptedException, IOException {
+  @Test
+  public void testPushJobWorks() throws InterruptedException, IOException {
     final int inputSize = 100;
     final int frontPort = 4567;
     final int rearPort = 5678;
 
-    final Server front = front(inputSize, frontPort);
-    final CountDownLatch latch = new CountDownLatch(inputSize);
-    final Server rear = rear(latch, rearPort);
+    final List<String> input = Stream.generate(() -> UUID.randomUUID().toString())
+            .limit(inputSize)
+            .collect(Collectors.toList());
+    final Server front = front(input, frontPort);
 
-    try (final LocalClusterRuntime localClusterRuntime = new LocalClusterRuntime.Builder().parallelism(1).build()) {
+    final List<String> result = new ArrayList<>();
+    final CountDownLatch latch = new CountDownLatch(inputSize);
+    final Server rear = rear(latch, result, rearPort);
+
+    try (final LocalClusterRuntime localClusterRuntime = new LocalClusterRuntime.Builder().parallelism(4).build()) {
       final FlameClient flameClient = new ZkFlameClient(localClusterRuntime.zkString(), 5000);
-      flameClient.push(new Job.Builder(testGraph()).addFront(new Job.Front("socket-front", "localhost", frontPort))
-              .addRear(new Job.Rear("socket-rear", "localhost", rearPort))
+      flameClient.push(new Job.Builder(testGraph())
+              .addFront(new Job.Front("socket-front", "localhost", frontPort, String.class))
+              .addRear(new Job.Rear("socket-rear", "localhost", rearPort, String.class))
               .build());
-      latch.await(1, TimeUnit.MINUTES);
+
+      latch.await(5, TimeUnit.MINUTES);
+      Assert.assertEquals(result, input.stream().map(s -> ("prefix_" + s)).collect(Collectors.toList()));
     }
 
     front.close();
     rear.close();
   }
 
-  private static Server front(int messagesNum, int port) {
+  private static Server front(List<String> input, int port) {
     final Server producer = new Server(1_000_000, 1000);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy())
             .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
@@ -61,14 +74,13 @@ public class ZkFlameClientTest {
           throw new RuntimeException(e);
         }
       }
-      for (int j = 0; j < messagesNum; j++) {
-        final String item = UUID.randomUUID().toString();
+      input.forEach(s -> {
         synchronized (connection) {
-          connection[0].sendTCP(item);
-          LOG.info("Sending: {}", j);
-          LockSupport.parkNanos((long) (100 * 1.0e6)); //100 ms
+          connection[0].sendTCP(s);
+          LOG.info("Sending: {}", s);
+          LockSupport.parkNanos((long) (50 * 1.0e6));
         }
-      }
+      });
     }).start();
 
     producer.addListener(new Listener() {
@@ -97,7 +109,7 @@ public class ZkFlameClientTest {
     return producer;
   }
 
-  private static Server rear(CountDownLatch latch, int port) {
+  private static Server rear(CountDownLatch latch, List<String> result, int port) {
     final Server consumer = new Server(2000, 1_000_000);
     ((Kryo.DefaultInstantiatorStrategy) consumer.getKryo()
             .getInstantiatorStrategy())
@@ -118,9 +130,9 @@ public class ZkFlameClientTest {
     consumer.addListener(new Listener() {
       @Override
       public void received(Connection connection, Object o) {
-        if (o instanceof DataItem) {
-          final DataItem dataItem = (DataItem) o;
-          LOG.info("Received: {}", dataItem.payload(String.class));
+        if (o instanceof String) {
+          LOG.info("Received: {}", o);
+          result.add((String) o);
           latch.countDown();
         }
       }
@@ -139,7 +151,13 @@ public class ZkFlameClientTest {
     final Source source = new Source();
     final Sink sink = new Sink();
 
-    final FlameMap<String, String> dumbMap = new FlameMap<>(s -> Stream.of("prefix_" + s), String.class);
+    //noinspection Convert2Lambda
+    final FlameMap<String, String> dumbMap = new FlameMap<>(new Function<String, Stream<String>>() {
+      @Override
+      public Stream<String> apply(String s) {
+        return Stream.of("prefix_" + s);
+      }
+    }, String.class);
     return new Graph.Builder().link(source, dumbMap).link(dumbMap, sink).build(source, sink);
   }
 }

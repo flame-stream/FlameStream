@@ -1,8 +1,8 @@
 package com.spbsu.flamestream.runtime;
 
-import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.Rear;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 
 import java.util.stream.Stream;

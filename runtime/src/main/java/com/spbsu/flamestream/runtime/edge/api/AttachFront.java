@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.runtime.edge.api;
 
-import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 
 public class AttachFront<F extends Front> {

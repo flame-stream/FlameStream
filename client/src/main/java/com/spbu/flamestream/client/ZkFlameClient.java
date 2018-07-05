@@ -2,6 +2,7 @@ package com.spbu.flamestream.client;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
+import com.spbsu.flamestream.core.Job;
 import org.apache.hadoop.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -11,7 +12,6 @@ import org.jooq.lambda.Unchecked;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.List;
 
 public class ZkFlameClient implements FlameClient {
@@ -37,23 +37,14 @@ public class ZkFlameClient implements FlameClient {
   @Override
   public void push(Job job) {
     try {
-      { //push graph
-        final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
-        kryo.writeClassAndObject(o, job.graph());
-        zooKeeper.create(
-                "/client_graph",
-                o.toBytes(),
-                DEFAULT_ACL,
-                CreateMode.PERSISTENT
-        );
-      }
+      createIfNotExists("/job");
       { //push fronts
-        createIfNotExists("/client_graph/client_fronts");
+        createIfNotExists("/job/fronts");
         job.fronts().forEach(Unchecked.consumer(front -> {
           final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
-          kryo.writeObject(o, new InetSocketAddress(front.host(), front.port()));
+          kryo.writeClassAndObject(o, front);
           zooKeeper.create(
-                  "/client_graph/client_fronts/" + front.id(),
+                  "/job/fronts/" + front.id(),
                   o.toBytes(),
                   DEFAULT_ACL,
                   CreateMode.PERSISTENT
@@ -61,17 +52,27 @@ public class ZkFlameClient implements FlameClient {
         }));
       }
       { //push rears
-        createIfNotExists("/client_graph/client_rears");
+        createIfNotExists("/job/rears");
         job.rears().forEach(Unchecked.consumer(rear -> {
           final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
-          kryo.writeClassAndObject(o, new InetSocketAddress(rear.host(), rear.port()));
+          kryo.writeClassAndObject(o, rear);
           zooKeeper.create(
-                  "/client_graph/client_rears/" + rear.id(),
+                  "/job/rears/" + rear.id(),
                   o.toBytes(),
                   DEFAULT_ACL,
                   CreateMode.PERSISTENT
           );
         }));
+      }
+      { //push graph
+        final ByteBufferOutput o = new ByteBufferOutput(BUFFER_SIZE, MAX_BUFFER_SIZE);
+        kryo.writeClassAndObject(o, job.graph());
+        zooKeeper.create(
+                "/job/graph",
+                o.toBytes(),
+                DEFAULT_ACL,
+                CreateMode.PERSISTENT
+        );
       }
     } catch (InterruptedException | KeeperException e) {
       throw new RuntimeException(e);

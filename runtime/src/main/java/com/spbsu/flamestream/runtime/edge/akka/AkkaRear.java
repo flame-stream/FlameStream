@@ -8,7 +8,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.Batch;
-import com.spbsu.flamestream.core.Rear;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.BatchAccepted;
 import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;

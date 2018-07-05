@@ -5,7 +5,8 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.serialization.SerializationExtension;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.zk.ZooKeeperGraphClient;
+import com.spbsu.flamestream.runtime.master.ClientWatcher;
+import com.spbsu.flamestream.runtime.zk.ZooKeeperInnerClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
@@ -29,7 +30,7 @@ public class LifecycleWatcher extends LoggingActor {
   private int epoch;
 
   private StateStorage stateStorage = null;
-  private ZooKeeperGraphClient client = null;
+  private ZooKeeperInnerClient client = null;
 
   private LifecycleWatcher(String id, String zkConnectString, String snapshotPath) {
     this.zkConnectString = zkConnectString;
@@ -44,7 +45,7 @@ public class LifecycleWatcher extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    client = new ZooKeeperGraphClient(new ZooKeeper(
+    client = new ZooKeeperInnerClient(new ZooKeeper(
             zkConnectString,
             SESSION_TIMEOUT,
             event -> self().tell(event, self())
@@ -73,7 +74,6 @@ public class LifecycleWatcher extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(Boolean.class, graphs -> initGraph())
             .match(WatchedEvent.class, this::onWatchedEvent)
             .match(Integer.class, newEpoch -> {
               if (epoch != -1 && newEpoch != epoch) {
@@ -88,8 +88,13 @@ public class LifecycleWatcher extends LoggingActor {
             .build();
   }
 
-  private void initGraph() {
-    final ClusterConfig config = client.config();
+  private void initMaster(ClusterConfig config) {
+    if (id.equals(config.masterLocation())) {
+      context().actorOf(ClientWatcher.props(zkConnectString), "client-watcher");
+    }
+  }
+
+  private void initGraph(ClusterConfig config) {
     final Graph g = client.graph();
     log().info("Creating node with watchGraphs: '{}', config: '{}'", g, config);
 
@@ -123,7 +128,10 @@ public class LifecycleWatcher extends LoggingActor {
       switch (state) {
         case SyncConnected:
           log().info("Connected to ZK");
-          client.watchGraph(created -> self().tell(true, self()));
+          client.watchConfig(config -> {
+            initMaster(config);
+            client.watchGraph(created -> initGraph(config));
+          });
           break;
         case Expired:
           log().info("Session expired");

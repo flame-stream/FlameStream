@@ -8,7 +8,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;

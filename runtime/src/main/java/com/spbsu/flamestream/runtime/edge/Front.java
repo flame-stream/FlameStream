@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.core;
+package com.spbsu.flamestream.runtime.edge;
 
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;

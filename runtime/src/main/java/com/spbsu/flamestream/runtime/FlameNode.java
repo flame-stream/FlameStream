@@ -26,7 +26,7 @@ public class FlameNode extends LoggingActor {
   private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, Registry registry, StateStorage storage) {
     this.config = config;
     final ActorRef acker;
-    if (id.equals(config.ackerLocation())) {
+    if (id.equals(config.masterLocation())) {
       acker = context().actorOf(Acker.props(
               config.paths().size(),
               config.defaultMinTime(),
@@ -34,7 +34,7 @@ public class FlameNode extends LoggingActor {
               registry
       ), "acker");
     } else {
-      acker = AwaitResolver.syncResolve(config.paths().get(config.ackerLocation()).child("acker"), context());
+      acker = AwaitResolver.syncResolve(config.paths().get(config.masterLocation()).child("acker"), context());
     }
 
     final ActorRef graph = context().actorOf(GraphManager.props(

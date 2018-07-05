@@ -3,9 +3,9 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.pattern.PatternsCS;
-import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.Rear;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.state.InMemStateStorage;
 import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;
@@ -61,6 +61,7 @@ public class LocalRuntime implements FlameRuntime {
       @Override
       public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type) {
         try {
+          //noinspection unchecked
           return PatternsCS.ask(cluster, new FlameUmbrella.FrontTypeWithId<>(id, type), FlameConfig.config.bigTimeout())
                   .thenApply(a -> (List<H>) a).toCompletableFuture().get().stream();
         } catch (InterruptedException | ExecutionException e) {
@@ -71,6 +72,7 @@ public class LocalRuntime implements FlameRuntime {
       @Override
       public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
         try {
+          //noinspection unchecked
           return PatternsCS.ask(cluster, new FlameUmbrella.RearTypeWithId<>(id, type), FlameConfig.config.bigTimeout())
                   .thenApply(a -> (List<H>) a).toCompletableFuture().get().stream();
         } catch (InterruptedException | ExecutionException e) {
