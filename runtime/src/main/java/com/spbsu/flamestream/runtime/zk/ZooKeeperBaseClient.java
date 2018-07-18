@@ -24,6 +24,7 @@ public class ZooKeeperBaseClient implements AutoCloseable {
     this.kryo = new Kryo();
     ((Kryo.DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy())
             .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+    kryo.getFieldSerializerConfig().setIgnoreSyntheticFields(false);
   }
 
   protected void createIfNotExists(String path) throws KeeperException, InterruptedException {

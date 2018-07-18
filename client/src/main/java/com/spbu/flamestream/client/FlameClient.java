@@ -2,6 +2,10 @@ package com.spbu.flamestream.client;
 
 import com.spbsu.flamestream.core.Job;
 
-public interface FlameClient {
+import java.io.Closeable;
+
+public interface FlameClient extends Closeable {
   void push(Job job);
+
+  void close();
 }

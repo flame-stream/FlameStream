@@ -34,11 +34,11 @@ public class WorkerApplication implements Runnable {
   @Nullable
   private ActorSystem system = null;
 
-  public WorkerApplication(String id, DumbInetSocketAddress host, String zkString) {
+  WorkerApplication(String id, DumbInetSocketAddress host, String zkString) {
     this(id, host, zkString, null);
   }
 
-  public WorkerApplication(String id, DumbInetSocketAddress host, String zkString, String snapshotPath) {
+  private WorkerApplication(String id, DumbInetSocketAddress host, String zkString, String snapshotPath) {
     this.id = id;
     this.host = host;
     this.zkString = zkString;
@@ -85,7 +85,8 @@ public class WorkerApplication implements Runnable {
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
 
     this.system = ActorSystem.create("worker", config);
-    system.actorOf(LifecycleWatcher.props(id, zkString, snapshotPath), "watcher");
+    //noinspection ConstantConditions
+    system.actorOf(StartupWatcher.props(id, zkString, snapshotPath), "watcher");
 
     system.registerOnTermination(() -> {
       try {
@@ -145,6 +146,7 @@ public class WorkerApplication implements Runnable {
       return zkString;
     }
 
+    @SuppressWarnings("unused")
     enum Guarantees {
       AT_MOST_ONCE,
       AT_LEAST_ONCE,

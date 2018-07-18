@@ -18,28 +18,16 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ConfigurationClient;
-import com.spbsu.flamestream.runtime.edge.api.AttachFront;
-import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.master.acker.Registry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.stream.Collectors;
 
 public class ZooKeeperInnerClient extends ZooKeeperBaseClient implements ConfigurationClient, Registry {
   private final ObjectMapper mapper = new ObjectMapper();
-  private final Set<String> seenFronts = Collections.synchronizedSet(new HashSet<>());
-  private final Set<String> seenRears = Collections.synchronizedSet(new HashSet<>());
 
   public ZooKeeperInnerClient(ZooKeeper zooKeeper) {
     super(zooKeeper);
@@ -61,24 +49,6 @@ public class ZooKeeperInnerClient extends ZooKeeperBaseClient implements Configu
               CreateMode.PERSISTENT
       );
     } catch (InterruptedException | KeeperException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Watcher is called when the graph appears
-   */
-  public void watchGraph(Consumer<Boolean> watcher) {
-    try {
-      final Stat exists = zooKeeper.exists("/graph", event -> {
-        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
-          watcher.accept(true);
-        }
-      });
-      if (exists != null) {
-        watcher.accept(true);
-      }
-    } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
@@ -127,127 +97,6 @@ public class ZooKeeperInnerClient extends ZooKeeperBaseClient implements Configu
               CreateMode.PERSISTENT
       );
     } catch (InterruptedException | KeeperException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public Set<AttachFront<?>> fronts(Consumer<Set<AttachFront<?>>> watcher) {
-    try {
-      final Stat exists = zooKeeper.exists("/graph/fronts", event -> {
-        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
-          final Set<AttachFront<?>> fronts = fronts(watcher);
-          watcher.accept(fronts);
-        }
-      });
-      if (exists != null) {
-        return zooKeeper.getChildren(
-                "/graph/fronts",
-                event -> {
-                  if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
-                    watcher.accept(fronts(watcher));
-                  }
-                },
-                null
-        )
-                .stream()
-                .filter(name -> !seenFronts.contains(name))
-                .peek(seenFronts::add)
-                .map(name -> new AttachFront<>(name, frontBy(name)))
-                .collect(Collectors.toSet());
-      } else {
-        return Collections.emptySet();
-      }
-    } catch (KeeperException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public int epoch(IntConsumer epochWatcher) {
-    try {
-      final Stat exists = zooKeeper.exists("/epoch", event -> {
-        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
-          epochWatcher.accept(epoch(epochWatcher));
-        }
-      });
-
-      if (exists == null) {
-        return -1;
-      }
-
-      final byte[] data = zooKeeper.getData("/epoch", event -> {
-        if (event.getType() == Watcher.Event.EventType.NodeDataChanged) {
-          epochWatcher.accept(epoch(epochWatcher));
-        }
-      }, null);
-      return Integer.parseInt(new String(data));
-    } catch (KeeperException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public void setEpoch(int epoch) {
-    try {
-      final Stat exists = zooKeeper.exists("/epoch", false);
-      final byte[] bytes = Integer.toString(epoch).getBytes();
-      if (exists != null) {
-        zooKeeper.setData("/epoch", bytes, exists.getVersion());
-      } else {
-        zooKeeper.create("/epoch", bytes, DEFAULT_ACL, CreateMode.PERSISTENT);
-      }
-    } catch (KeeperException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private FlameRuntime.FrontInstance<?> frontBy(String name) {
-    try {
-      final byte[] data = zooKeeper.getData("/graph/fronts/" + name, false, null);
-      final ByteBufferInput input = new ByteBufferInput(data);
-      return (FlameRuntime.FrontInstance<?>) kryo.readClassAndObject(input);
-    } catch (KeeperException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public Set<AttachRear<?>> rears(Consumer<Set<AttachRear<?>>> watcher) {
-    try {
-      final Stat exists = zooKeeper.exists("/graph/rears", event -> {
-        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
-          final Set<AttachRear<?>> rears = rears(watcher);
-          watcher.accept(rears);
-        }
-      });
-      if (exists != null) {
-        final List<String> children = zooKeeper.getChildren("/graph/rears", event -> {
-                  if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
-                    watcher.accept(rears(watcher));
-                  }
-                },
-                null
-        );
-
-        return children.stream()
-                .filter(name -> !seenRears.contains(name))
-                .peek(seenFronts::add)
-                .map(name -> new AttachRear<>(name, rearBy(name)))
-                .collect(Collectors.toSet());
-      } else {
-        return Collections.emptySet();
-      }
-    } catch (KeeperException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private FlameRuntime.RearInstance<?> rearBy(String name) {
-    try {
-      // There is no watcher because fronts are immutable
-      final byte[] data = zooKeeper.getData("/graph/rears/" + name, false, null);
-      final ByteBufferInput input = new ByteBufferInput(data);
-      return (FlameRuntime.RearInstance<?>) kryo.readClassAndObject(input);
-    } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
@@ -320,24 +169,6 @@ public class ZooKeeperInnerClient extends ZooKeeperBaseClient implements Configu
       final byte[] data = zooKeeper.getData("/config", false, null);
       return mapper.readValue(data, ClusterConfig.class);
     } catch (KeeperException | InterruptedException | IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Watcher is called when the config appears
-   */
-  public void watchConfig(Consumer<ClusterConfig> watcher) {
-    try {
-      final Stat exists = zooKeeper.exists("/config", event -> {
-        if (event.getType() == Watcher.Event.EventType.NodeCreated) {
-          watcher.accept(config());
-        }
-      });
-      if (exists != null) {
-        watcher.accept(config());
-      }
-    } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }

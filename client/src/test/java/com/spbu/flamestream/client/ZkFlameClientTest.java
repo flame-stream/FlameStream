@@ -46,7 +46,7 @@ public class ZkFlameClientTest {
     final Server rear = rear(latch, result, rearPort);
 
     try (final LocalClusterRuntime localClusterRuntime = new LocalClusterRuntime.Builder().parallelism(4).build()) {
-      final FlameClient flameClient = new ZkFlameClient(localClusterRuntime.zkString(), 5000);
+      final FlameClient flameClient = new ZkFlameClient(localClusterRuntime.zkString());
       flameClient.push(new Job.Builder(testGraph())
               .addFront(new Job.Front("socket-front", "localhost", frontPort, String.class))
               .addRear(new Job.Rear("socket-rear", "localhost", rearPort, String.class))

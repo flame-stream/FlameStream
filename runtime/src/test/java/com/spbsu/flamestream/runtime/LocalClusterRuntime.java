@@ -44,7 +44,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     log.info("ZK string: {}", zkString);
     final ConfigurationClient configClient = new ZooKeeperInnerClient(new ZooKeeper(
             zkString,
-            1000,
+            30000,
             (w) -> {
             }
     ));
@@ -68,7 +68,6 @@ public class LocalClusterRuntime implements FlameRuntime {
     final ClusterConfig config = config(workersAddresses, maxElementsInGraph, millisBetweenCommits);
     log.info("Pushing configuration {}", config);
     configClient.put(config);
-    configClient.setEpoch(0);
     this.remoteRuntime = new RemoteRuntime(zkString);
   }
 
