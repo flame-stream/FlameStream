@@ -1,11 +1,11 @@
 package com.spbsu.flamestream.runtime;
 
-import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.edge.Rear;
-import com.spbsu.flamestream.runtime.zk.ZooKeeperInnerClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.edge.Front;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
+import com.spbsu.flamestream.runtime.zk.ZooKeeperInnerClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,13 +16,15 @@ import java.util.stream.Stream;
 public class RemoteRuntime implements FlameRuntime {
   private final Logger log = LoggerFactory.getLogger(RemoteRuntime.class);
   private final ZooKeeperInnerClient client;
+  private final ClusterConfig config;
 
-  public RemoteRuntime(String zkString) throws IOException {
+  public RemoteRuntime(String zkString, ClusterConfig config) throws IOException {
     this.client = new ZooKeeperInnerClient(new ZooKeeper(
             zkString,
             5000,
             (e) -> {}
     ));
+    this.config = config;
   }
 
   @Override
@@ -34,7 +36,6 @@ public class RemoteRuntime implements FlameRuntime {
   public Flame run(Graph g) {
     log.info("Pushing graph {}", g);
     client.push(g);
-    final ClusterConfig config = client.config();
     return new RemoteFlame(config);
   }
 

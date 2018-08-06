@@ -101,7 +101,7 @@ public class StartupWatcher extends LoggingActor {
 
     this.config = config;
     if (id.equals(config.masterLocation())) {
-      context().actorOf(ClientWatcher.props(curator, kryoSerializer), "client-watcher");
+      context().actorOf(ClientWatcher.props(curator, kryoSerializer, config), "client-watcher");
     }
     context().actorOf(ProcessingWatcher.props(id, curator, config, stateStorage, kryoSerializer), "processing-watcher");
   }

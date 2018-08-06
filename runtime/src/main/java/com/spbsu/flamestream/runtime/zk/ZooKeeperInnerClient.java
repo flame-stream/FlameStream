@@ -1,41 +1,19 @@
 package com.spbsu.flamestream.runtime.zk;
 
-import akka.actor.ActorPath;
-import akka.actor.ActorPaths;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.runtime.FlameRuntime;
-import com.spbsu.flamestream.runtime.config.ClusterConfig;
-import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.master.acker.Registry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
-import java.io.IOException;
-
-public class ZooKeeperInnerClient extends ZooKeeperBaseClient implements ConfigurationClient, Registry {
-  private final ObjectMapper mapper = new ObjectMapper();
-
+public class ZooKeeperInnerClient extends ZooKeeperBaseClient implements Registry {
   public ZooKeeperInnerClient(ZooKeeper zooKeeper) {
     super(zooKeeper);
-
-    final SimpleModule module = new SimpleModule();
-    module.addSerializer(ActorPath.class, new ActorPathSerializer(ActorPath.class));
-    module.addDeserializer(ActorPath.class, new ActorPathDes(ActorPath.class));
-    mapper.registerModule(module);
   }
 
   public void push(Graph graph) {
@@ -160,58 +138,6 @@ public class ZooKeeperInnerClient extends ZooKeeperBaseClient implements Configu
       }
     } catch (KeeperException | InterruptedException e) {
       throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public ClusterConfig config() {
-    try {
-      final byte[] data = zooKeeper.getData("/config", false, null);
-      return mapper.readValue(data, ClusterConfig.class);
-    } catch (KeeperException | InterruptedException | IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public void put(ClusterConfig config) {
-    try {
-      final Stat exists = zooKeeper.exists("/config", false);
-      if (exists != null) {
-        zooKeeper.delete("/config", exists.getVersion());
-      }
-      zooKeeper.create(
-              "/config",
-              mapper.writeValueAsBytes(config),
-              DEFAULT_ACL,
-              CreateMode.PERSISTENT
-      );
-    } catch (JsonProcessingException | InterruptedException | KeeperException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @SuppressWarnings("serial")
-  private static class ActorPathDes extends StdDeserializer<ActorPath> {
-    ActorPathDes(Class<?> vc) {
-      super(vc);
-    }
-
-    @Override
-    public ActorPath deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-      return ActorPaths.fromString(p.getText());
-    }
-  }
-
-  @SuppressWarnings("serial")
-  private static class ActorPathSerializer extends StdSerializer<ActorPath> {
-    ActorPathSerializer(Class<ActorPath> t) {
-      super(t);
-    }
-
-    @Override
-    public void serialize(ActorPath value, JsonGenerator gen, SerializerProvider provider) throws IOException {
-      gen.writeString(value.toSerializationFormat());
     }
   }
 }

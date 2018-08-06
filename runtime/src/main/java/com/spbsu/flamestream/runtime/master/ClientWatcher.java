@@ -4,6 +4,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Job;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
+import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
 import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
@@ -21,24 +22,26 @@ import java.util.List;
 public class ClientWatcher extends LoggingActor {
   private final CuratorFramework curator;
   private final FlameSerializer serializer;
+  private final ClusterConfig config;
 
   private PathChildrenCache jobsCache = null;
   private RemoteRuntime remoteRuntime = null;
 
-  private ClientWatcher(CuratorFramework curator, FlameSerializer serializer) {
+  private ClientWatcher(CuratorFramework curator, FlameSerializer serializer, ClusterConfig config) {
     this.curator = curator;
     this.serializer = serializer;
+    this.config = config;
   }
 
-  public static Props props(CuratorFramework curator, FlameSerializer serializer) {
-    return Props.create(ClientWatcher.class, curator, serializer);
+  public static Props props(CuratorFramework curator, FlameSerializer serializer, ClusterConfig config) {
+    return Props.create(ClientWatcher.class, curator, serializer, config);
   }
 
   @Override
   public void preStart() throws Exception {
     super.preStart();
     // TODO: 17.07.18 pass curator to runtime
-    remoteRuntime = new RemoteRuntime(curator.getZookeeperClient().getCurrentConnectionString());
+    remoteRuntime = new RemoteRuntime(curator.getZookeeperClient().getCurrentConnectionString(), config);
 
     jobsCache = new PathChildrenCache(curator, "/jobs", false);
     final boolean[] init = {false};

@@ -5,14 +5,15 @@ import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spbsu.flamestream.runtime.zk.ZooKeeperInnerClient;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
-import com.spbsu.flamestream.runtime.config.ConfigurationClient;
 import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
+import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class ConfigDeployer {
     }
   }
 
-  private void run() throws IOException {
+  private void run() {
     final Map<String, ActorPath> paths = new HashMap<>();
     config.workers.forEach((s, address) -> {
       final Address a = new Address("akka", "worker", address.host(), address.port());
@@ -69,8 +70,16 @@ public class ConfigDeployer {
             0
     );
 
-    final ConfigurationClient client = new ZooKeeperInnerClient(new ZooKeeper(config.zkString, 4000, event -> {}));
-    client.put(clusterConfig);
+    final CuratorFramework curator = CuratorFrameworkFactory.newClient(
+            config.zkString,
+            new ExponentialBackoffRetry(1000, 3)
+    );
+    curator.start();
+    try {
+      curator.create().orSetData().forPath("/config", new JacksonSerializer().serialize(clusterConfig));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static class ConfigDeployerConfig {

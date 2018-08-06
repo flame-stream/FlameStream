@@ -19,12 +19,17 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
+import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
 import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
+import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.jooq.lambda.Seq;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
@@ -313,7 +318,22 @@ public class BenchStand implements AutoCloseable {
               .millisBetweenCommits(10000)
               .build();
     } else {
-      runtime = new RemoteRuntime(deployerConfig.getConfig("remote").getString("zk"));
+      // temporary solution to keep bench stand in working state
+      final String zkString = deployerConfig.getConfig("remote").getString("zk");
+      final CuratorFramework curator = CuratorFrameworkFactory.newClient(
+              zkString,
+              new ExponentialBackoffRetry(1000, 3)
+      );
+      curator.start();
+      try {
+        final ClusterConfig config = new JacksonSerializer().deserialize(
+                curator.getData().forPath("/config"),
+                ClusterConfig.class
+        );
+        runtime = new RemoteRuntime(zkString, config);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
 
     final GraphDeployer graphDeployer = new FlameGraphDeployer(
