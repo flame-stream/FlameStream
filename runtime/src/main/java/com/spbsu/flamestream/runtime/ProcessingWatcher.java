@@ -19,6 +19,7 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 
@@ -67,39 +68,14 @@ public class ProcessingWatcher extends LoggingActor {
     });
     graphCache.start();
 
-    curator.checkExists().usingWatcher((CuratorWatcher) watchedEvent -> {
+    final Stat stat = curator.checkExists().usingWatcher((CuratorWatcher) watchedEvent -> {
       if (watchedEvent.getType() == Watcher.Event.EventType.NodeCreated) {
-        frontsCache = new PathChildrenCache(curator, "/graph/fronts", false);
-        frontsCache.getListenable().addListener((client, event) -> {
-          if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
-            final FlameRuntime.FrontInstance<?> front = serializer.deserialize(
-                    curator.getData().forPath(event.getData().getPath()),
-                    FlameRuntime.FrontInstance.class
-            );
-            self().tell(
-                    new AttachFront<>(StringUtils.substringAfterLast(event.getData().getPath(), "/"), front),
-                    self()
-            );
-          }
-        });
-        frontsCache.start();
-
-        rearsCache = new PathChildrenCache(curator, "/graph/rears", false);
-        rearsCache.getListenable().addListener((client, event) -> {
-          if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
-            final FlameRuntime.RearInstance<?> rear = serializer.deserialize(
-                    curator.getData().forPath(event.getData().getPath()),
-                    FlameRuntime.RearInstance.class
-            );
-            self().tell(
-                    new AttachRear<>(StringUtils.substringAfterLast(event.getData().getPath(), "/"), rear),
-                    self()
-            );
-          }
-        });
-        rearsCache.start();
+        startEdgeCaches();
       }
     }).forPath("/graph");
+    if (stat != null) {
+      startEdgeCaches();
+    }
   }
 
   @Override
@@ -160,5 +136,37 @@ public class ProcessingWatcher extends LoggingActor {
 
     unstashAll();
     getContext().become(running());
+  }
+
+  private void startEdgeCaches() throws Exception {
+    frontsCache = new PathChildrenCache(curator, "/graph/fronts", false);
+    frontsCache.getListenable().addListener((client, event) -> {
+      if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
+        final FlameRuntime.FrontInstance<?> front = serializer.deserialize(
+                curator.getData().forPath(event.getData().getPath()),
+                FlameRuntime.FrontInstance.class
+        );
+        self().tell(
+                new AttachFront<>(StringUtils.substringAfterLast(event.getData().getPath(), "/"), front),
+                self()
+        );
+      }
+    });
+    frontsCache.start();
+
+    rearsCache = new PathChildrenCache(curator, "/graph/rears", false);
+    rearsCache.getListenable().addListener((client, event) -> {
+      if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
+        final FlameRuntime.RearInstance<?> rear = serializer.deserialize(
+                curator.getData().forPath(event.getData().getPath()),
+                FlameRuntime.RearInstance.class
+        );
+        self().tell(
+                new AttachRear<>(StringUtils.substringAfterLast(event.getData().getPath(), "/"), rear),
+                self()
+        );
+      }
+    });
+    rearsCache.start();
   }
 }

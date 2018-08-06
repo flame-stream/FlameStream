@@ -143,8 +143,8 @@ public final class SumTest extends FlameAkkaSuite {
 
   @Test(invocationCount = 10)
   public void integrationTest() throws Exception {
+    final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
     try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(2).build()) {
-      final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
       try (final FlameRuntime.Flame flame = runtime.run(sumGraph())) {
         final List<LongNumb> source = new Random()
                 .ints(1000)
@@ -173,10 +173,9 @@ public final class SumTest extends FlameAkkaSuite {
         source.forEach(sink);
         sink.eos();
         consumer.await(10, TimeUnit.MINUTES);
-
         Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
-        Await.ready(system.terminate(), Duration.Inf());
       }
+      Await.ready(system.terminate(), Duration.Inf());
     }
   }
 }
