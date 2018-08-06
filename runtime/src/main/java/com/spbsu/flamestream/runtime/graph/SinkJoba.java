@@ -79,14 +79,15 @@ public class SinkJoba implements Joba {
         }
       });
 
-      final BatchImpl batch = new BatchImpl(upTo, data);
-      try {
-        PatternsCS.ask(rear, batch, FlameConfig.config.smallTimeout()).toCompletableFuture().get();
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
+      if (!data.isEmpty()) {
+        final BatchImpl batch = new BatchImpl(upTo, data);
+        try {
+          PatternsCS.ask(rear, batch, FlameConfig.config.smallTimeout()).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+          throw new RuntimeException(e);
+        }
+        barrierSendTracer.log(batch.time().time());
       }
-
-      barrierSendTracer.log(batch.time().time());
     });
 
     // Clearing barrier only if elements were emitted somewhere.
