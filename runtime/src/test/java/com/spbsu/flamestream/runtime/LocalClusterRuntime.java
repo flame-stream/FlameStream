@@ -44,7 +44,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     log.info("ZK string: {}", zkString);
     final ConfigurationClient configClient = new ZooKeeperInnerClient(new ZooKeeper(
             zkString,
-            30000,
+            1000,
             (w) -> {
             }
     ));
@@ -73,8 +73,14 @@ public class LocalClusterRuntime implements FlameRuntime {
 
   @Override
   public void close() {
-    workers.forEach(WorkerApplication::close);
-    zooKeeperApplication.shutdown();
+    try {
+      remoteRuntime.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    } finally {
+      workers.forEach(WorkerApplication::close);
+      zooKeeperApplication.shutdown();
+    }
   }
 
   @Override
