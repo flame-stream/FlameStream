@@ -7,10 +7,10 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import com.spbsu.flamestream.runtime.zk.ZooKeeperInnerClient;
 import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.CuratorWatcher;
@@ -18,7 +18,6 @@ import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
@@ -112,27 +111,18 @@ public class ProcessingWatcher extends LoggingActor {
     if (this.graph != null) {
       throw new RuntimeException("Graph updating is not supported yet");
     }
-    this.graph = graph;
 
-    try {
-      flameNode = context().actorOf(
-              FlameNode.props(
-                      id,
-                      graph,
-                      config.withChildPath("processing-watcher").withChildPath("graph"),
-                      // FIXME: 17.07.18 implement config client based on curator
-                      new ZooKeeperInnerClient(new ZooKeeper(
-                              curator.getZookeeperClient().getCurrentConnectionString(),
-                              5000,
-                              event -> {}
-                      )),
-                      stateStorage
-              ),
-              "graph"
-      );
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    this.graph = graph;
+    this.flameNode = context().actorOf(
+            FlameNode.props(
+                    id,
+                    graph,
+                    config.withChildPath("processing-watcher").withChildPath("graph"),
+                    new ZkRegistry(curator),
+                    stateStorage
+            ),
+            "graph"
+    );
 
     unstashAll();
     getContext().become(running());
