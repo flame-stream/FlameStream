@@ -137,7 +137,7 @@ public class Component extends LoggingActor {
           for (Consumer<DataItem> sink : sinks) {
             final Meta newMeta = new Meta(item.meta(), 0, childId[0]);
             final DataItem newItem = new BroadcastDataItem(item, newMeta);
-            sink.accept(new BroadcastDataItem(newItem, newMeta));
+            sink.accept(newItem);
             childId[0]++;
           }
         };
