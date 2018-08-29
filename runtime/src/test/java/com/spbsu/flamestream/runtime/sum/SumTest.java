@@ -177,5 +177,6 @@ public final class SumTest extends FlameAkkaSuite {
       }
       Await.ready(system.terminate(), Duration.Inf());
     }
+    Await.ready(system.terminate(), Duration.Inf());
   }
 }
