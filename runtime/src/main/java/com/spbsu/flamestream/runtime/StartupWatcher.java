@@ -11,6 +11,7 @@ import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.state.DevNullStateStorage;
 import com.spbsu.flamestream.runtime.state.RocksDBStateStorage;
 import com.spbsu.flamestream.runtime.state.StateStorage;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -21,8 +22,10 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import java.util.concurrent.TimeUnit;
 
 public class StartupWatcher extends LoggingActor {
-  private static final int TIMEOUT_IN_MILLIS = 30000;
-  private static final RetryPolicy CURATOR_RETRY_POLICY = new ExponentialBackoffRetry(1000, 3);
+  private static final RetryPolicy CURATOR_RETRY_POLICY = new ExponentialBackoffRetry(Math.toIntExact(FlameConfig.config
+          .smallTimeout()
+          .duration()
+          .toMillis()), 3);
 
   private final FlameSerializer kryoSerializer = new KryoSerializer();
   private final FlameSerializer jacksonSerializer = new JacksonSerializer();
@@ -51,7 +54,10 @@ public class StartupWatcher extends LoggingActor {
     super.preStart();
     curator = CuratorFrameworkFactory.newClient(zkConnectString, CURATOR_RETRY_POLICY);
     curator.start();
-    curator.blockUntilConnected(TIMEOUT_IN_MILLIS, TimeUnit.MILLISECONDS);
+    curator.blockUntilConnected(
+            Math.toIntExact(FlameConfig.config.bigTimeout().duration().toMillis()),
+            TimeUnit.MILLISECONDS
+    );
 
     configCache = new NodeCache(curator, "/config");
     configCache.getListenable().addListener(() -> {

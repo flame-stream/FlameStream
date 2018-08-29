@@ -5,37 +5,33 @@ import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
-import com.spbsu.flamestream.runtime.zk.ZooKeeperInnerClient;
-import org.apache.zookeeper.ZooKeeper;
+import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
+import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.stream.Stream;
 
 public class RemoteRuntime implements FlameRuntime {
   private final Logger log = LoggerFactory.getLogger(RemoteRuntime.class);
-  private final ZooKeeperInnerClient client;
+  private final FlameSerializer serializer;
   private final ClusterConfig config;
+  private final CuratorFramework curator;
 
-  public RemoteRuntime(String zkString, ClusterConfig config) throws IOException {
-    this.client = new ZooKeeperInnerClient(new ZooKeeper(
-            zkString,
-            5000,
-            (e) -> {}
-    ));
+  public RemoteRuntime(CuratorFramework curator, FlameSerializer serializer, ClusterConfig config) {
+    this.curator = curator;
+    this.serializer = serializer;
     this.config = config;
-  }
-
-  @Override
-  public void close() throws Exception {
-    client.close();
   }
 
   @Override
   public Flame run(Graph g) {
     log.info("Pushing graph {}", g);
-    client.push(g);
+    try {
+      curator.create().orSetData().forPath("/graph", serializer.serialize(g));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
     return new RemoteFlame(config);
   }
 
@@ -54,7 +50,14 @@ public class RemoteRuntime implements FlameRuntime {
     @Override
     public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type) {
       log.info("Attaching front id: '{}', type: '{}'", id, type);
-      client.attachFront(id, type.instance());
+      try {
+        curator.create()
+                .orSetData()
+                .creatingParentsIfNeeded()
+                .forPath("/graph/fronts/" + id, serializer.serialize(type.instance()));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
       return clusterConfig.paths()
               .entrySet()
               .stream()
@@ -64,7 +67,14 @@ public class RemoteRuntime implements FlameRuntime {
     @Override
     public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
       log.info("Attaching rear id: '{}', type: '{}'", id, type);
-      client.attachRear(id, type.instance());
+      try {
+        curator.create()
+                .orSetData()
+                .creatingParentsIfNeeded()
+                .forPath("/graph/rears/" + id, serializer.serialize(type.instance()));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
       return clusterConfig.paths()
               .entrySet()
               .stream()

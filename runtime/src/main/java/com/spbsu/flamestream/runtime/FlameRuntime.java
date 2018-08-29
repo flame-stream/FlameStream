@@ -14,6 +14,10 @@ public interface FlameRuntime extends AutoCloseable {
 
   Flame run(Graph g);
 
+  @Override
+  default void close() {
+  }
+
   interface Flame extends AutoCloseable {
     <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type);
 

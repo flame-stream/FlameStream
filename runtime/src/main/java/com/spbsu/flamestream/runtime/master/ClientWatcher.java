@@ -40,8 +40,7 @@ public class ClientWatcher extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    // TODO: 17.07.18 pass curator to runtime
-    remoteRuntime = new RemoteRuntime(curator.getZookeeperClient().getCurrentConnectionString(), config);
+    remoteRuntime = new RemoteRuntime(curator, serializer, config);
 
     jobsCache = new PathChildrenCache(curator, "/jobs", false);
     final boolean[] init = {false};

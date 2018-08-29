@@ -18,6 +18,7 @@ import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
+import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -243,7 +244,7 @@ public class BlinkBenchStand implements AutoCloseable {
                 curator.getData().forPath("/config"),
                 ClusterConfig.class
         );
-        runtime = new RemoteRuntime(zkString, config);
+        runtime = new RemoteRuntime(curator, new KryoSerializer(), config);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }

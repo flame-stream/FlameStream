@@ -9,6 +9,7 @@ import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
+import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -75,7 +76,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     curator.start();
     try {
       curator.create().orSetData().forPath("/config", new JacksonSerializer().serialize(config));
-      this.remoteRuntime = new RemoteRuntime(zkString, config);
+      this.remoteRuntime = new RemoteRuntime(curator, new KryoSerializer(), config);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

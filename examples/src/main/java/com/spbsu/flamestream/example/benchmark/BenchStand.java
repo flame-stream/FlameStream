@@ -23,6 +23,7 @@ import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
 import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
+import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
@@ -330,7 +331,7 @@ public class BenchStand implements AutoCloseable {
                 curator.getData().forPath("/config"),
                 ClusterConfig.class
         );
-        runtime = new RemoteRuntime(zkString, config);
+        runtime = new RemoteRuntime(curator, new KryoSerializer(), config);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
