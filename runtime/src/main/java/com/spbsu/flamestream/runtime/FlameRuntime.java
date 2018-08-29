@@ -1,8 +1,8 @@
 package com.spbsu.flamestream.runtime;
 
-import com.spbsu.flamestream.core.Front;
+import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.Rear;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 
 import java.util.stream.Stream;
@@ -13,6 +13,10 @@ public interface FlameRuntime extends AutoCloseable {
   int DEFAULT_PARALLELISM = 4;
 
   Flame run(Graph g);
+
+  @Override
+  default void close() {
+  }
 
   interface Flame extends AutoCloseable {
     <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type);

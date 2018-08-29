@@ -10,11 +10,11 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.runtime.acker.api.Ack;
-import com.spbsu.flamestream.runtime.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.acker.api.MinTimeUpdate;
-import com.spbsu.flamestream.runtime.acker.api.commit.Prepare;
-import com.spbsu.flamestream.runtime.acker.api.registry.UnregisterFront;
+import com.spbsu.flamestream.runtime.master.acker.api.Ack;
+import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
+import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
+import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
@@ -137,7 +137,7 @@ public class Component extends LoggingActor {
           for (Consumer<DataItem> sink : sinks) {
             final Meta newMeta = new Meta(item.meta(), 0, childId[0]);
             final DataItem newItem = new BroadcastDataItem(item, newMeta);
-            sink.accept(new BroadcastDataItem(newItem, newMeta));
+            sink.accept(newItem);
             childId[0]++;
           }
         };

@@ -48,6 +48,7 @@
         <flink.version>1.5.0</flink.version>
         <jedis.version>2.9.0</jedis.version>
         <rocksdb.version>5.5.1</rocksdb.version>
+        <curator.version>4.0.1</curator.version>
         <maven-surefire-plugin.version>2.20.1</maven-surefire-plugin.version>
     </properties>
 
@@ -144,6 +145,13 @@
                         <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!--Curator-->
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-recipes</artifactId>
+                <version>${curator.version}</version>
             </dependency>
 
             <!--Logging-->

@@ -6,7 +6,7 @@
     "worker3": "akka.tcp://worker@localhost:39221/user/watcher/node",
     "worker4": "akka.tcp://worker@localhost:37029/user/watcher/node"
   },
-  "ackerLocation": "worker0",
+  "masterLocation": "worker0",
   "props": {
     "ranges": {
       "worker0": {
