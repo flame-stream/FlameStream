@@ -71,19 +71,22 @@ public class WorkerApplication implements Runnable {
   @Override
   public void run() {
     log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
-    final String aeronDir = "/dev/shm/aeron-" + id;
-    try {
-      FileUtils.deleteDirectory(new File(aeronDir));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
 
     final Map<String, String> props = new HashMap<>();
     props.put("akka.remote.artery.canonical.hostname", host.host());
     props.put("akka.remote.artery.canonical.port", String.valueOf(host.port()));
-    props.put("akka.remote.artery.advanced.aeron-dir", aeronDir);
-    final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
+    try {
+      final File shm = new File(("/dev/shm"));
+      if (shm.exists() && shm.isDirectory()) {
+        final String aeronDir = "/dev/shm/aeron-" + id;
+        FileUtils.deleteDirectory(new File(aeronDir));
+        props.put("akka.remote.artery.advanced.aeron-dir", aeronDir);
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
 
+    final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);
     //noinspection ConstantConditions
     system.actorOf(StartupWatcher.props(id, zkString, snapshotPath), "watcher");
@@ -111,7 +114,7 @@ public class WorkerApplication implements Runnable {
     private final String id;
     private final DumbInetSocketAddress localAddress;
     private final String zkString;
-    private final String  snapshotPath;
+    private final String snapshotPath;
     private final Guarantees guarantees;
 
     private WorkerConfig(@JsonProperty("id") String id,

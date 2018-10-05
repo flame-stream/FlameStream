@@ -22,6 +22,10 @@ public interface FlameRuntime extends AutoCloseable {
     <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type);
 
     <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type);
+
+    @Override
+    default void close() {
+    }
   }
 
   interface FrontType<F extends Front, H> {

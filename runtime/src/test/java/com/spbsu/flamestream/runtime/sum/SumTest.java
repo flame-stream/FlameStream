@@ -175,7 +175,6 @@ public final class SumTest extends FlameAkkaSuite {
         consumer.await(10, TimeUnit.MINUTES);
         Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
       }
-      Await.ready(system.terminate(), Duration.Inf());
     }
     Await.ready(system.terminate(), Duration.Inf());
   }

@@ -36,8 +36,7 @@ public class InvertedIndexTest extends FlameAkkaSuite {
   @Test(invocationCount = 5, dataProvider = "provider")
   public void test(InvertedIndexValidator validator, boolean backPressure) throws InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().build()) {
-      final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get());
-      {
+      try (final FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get())) {
         final String invocationConfig = validator.getClass().getSimpleName() + "-bp-" + backPressure;
         final AwaitResultConsumer<WordBase> awaitConsumer = new AwaitResultConsumer<>(validator.expectedOutputSize());
         flame.attachRear("Rear-" + invocationConfig, new AkkaRearType<>(runtime.system(), WordBase.class))
