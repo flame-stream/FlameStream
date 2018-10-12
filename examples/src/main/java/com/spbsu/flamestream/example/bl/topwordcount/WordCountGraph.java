@@ -27,10 +27,18 @@ public class WordCountGraph implements Supplier<Graph> {
   private final HashFunction wordHash = HashFunction.uniformHash(HashFunction.objectHash(WordContainer.class));
 
   @SuppressWarnings("Convert2Lambda")
-  private final Equalz equalz = new Equalz() {
+  private final Equalz wordEqualz = new Equalz() {
     @Override
     public boolean test(DataItem o1, DataItem o2) {
       return o1.payload(WordContainer.class).word().equals(o2.payload(WordContainer.class).word());
+    }
+  };
+
+  @SuppressWarnings("Convert2Lambda")
+  private final Equalz allEqualz = new Equalz() {
+    @Override
+    public boolean test(DataItem o1, DataItem o2) {
+      return true;
     }
   };
 
@@ -45,7 +53,7 @@ public class WordCountGraph implements Supplier<Graph> {
         return Arrays.stream(pattern.split(s)).map(WordEntry::new);
       }
     }, String.class);
-    final Grouping<WordContainer> wordGrouping = new Grouping<>(wordHash, equalz, 2, WordContainer.class);
+    final Grouping<WordContainer> wordGrouping = new Grouping<>(wordHash, wordEqualz, 2, WordContainer.class);
     final FlameMap<List<WordContainer>, List<WordContainer>> wordFilter = new FlameMap<>(
             new WordContainerOrderingFilter(),
             List.class
@@ -54,7 +62,7 @@ public class WordCountGraph implements Supplier<Graph> {
             new CountWordEntries(),
             List.class
     );
-    final Grouping<Object> topGrouping = new Grouping<>(HashFunction.constantHash(0), (o1, o2) -> true, 2, Object.class);
+    final Grouping<Object> topGrouping = new Grouping<>(HashFunction.constantHash(0), allEqualz, 2, Object.class);
     final FlameMap<List<Object>, List<Object>> topFilter = new FlameMap<>(
             new WordsTopOrderingFilter(),
             List.class
@@ -76,7 +84,8 @@ public class WordCountGraph implements Supplier<Graph> {
             .link(topCounter, sink)
             .link(topCounter, topGrouping)
             .colocate(source, splitter)
-            .colocate(wordGrouping, wordFilter, wordCounter, topGrouping, topFilter, topCounter, sink)
+            .colocate(wordGrouping, wordFilter, wordCounter)
+            .colocate(topGrouping, topFilter, topCounter, sink)
             .build(source, sink);
   }
 }
