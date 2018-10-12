@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.example.bl.topwordcount.ops;
 
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordsTop;
 
 import java.util.List;
 import java.util.function.Function;
@@ -14,11 +15,12 @@ public class WordsTopOrderingFilter implements Function<List<Object>, Stream<Lis
     }
 
     if (objects.size() == 1 && !(objects.get(0) instanceof WordCounter)) {
-      throw new IllegalStateException("The only element in group should be WordCounter");
+      return Stream.empty();
     }
 
-    if (objects.size() == 1 || (objects.get(0) instanceof CountWordsTop
+    if (objects.size() == 1 || (objects.get(0) instanceof WordsTop
             && objects.get(1) instanceof WordCounter)) {
+      //System.out.println(objects);
       return Stream.of(objects);
     } else {
       return Stream.empty();

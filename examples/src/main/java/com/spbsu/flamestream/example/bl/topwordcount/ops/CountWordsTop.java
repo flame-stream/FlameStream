@@ -24,33 +24,29 @@ public class CountWordsTop implements Function<List<Object>, Stream<Object>> {
       final WordCounter wordCounter = (WordCounter) wordContainers.get(0);
       final HashMap<String, Integer> wordCounters = new HashMap<>();
       wordCounters.put(wordCounter.word(), wordCounter.count());
-      return Stream.of(new WordsTop(wordCounters));
+      final WordsTop t = new WordsTop(wordCounters);
+      return Stream.of(t);
     } else {
       final WordsTop wordsTop = (WordsTop) wordContainers.get(0);
       final WordCounter counter = (WordCounter) wordContainers.get(1);
       if (wordsTop.wordCounters().containsKey(counter.word()) || wordsTop.wordCounters().size() < limit) {
         final HashMap<String, Integer> newWordCounters = new HashMap<>(wordsTop.wordCounters());
         newWordCounters.put(counter.word(), counter.count());
-        return Stream.of(new WordsTop(newWordCounters));
+        final WordsTop t = new WordsTop(newWordCounters);
+        return Stream.of(t);
       } else {
-        final Optional<Map.Entry<String, Integer>> maybeMinWordCounter = wordsTop.wordCounters()
+        final Map.Entry<String, Integer> minWordCounter = wordsTop.wordCounters()
                 .entrySet()
                 .stream()
-                .min(Map.Entry.comparingByValue());
-        if (maybeMinWordCounter.isPresent()) {
-          final Map.Entry<String, Integer> minWordCounter = maybeMinWordCounter.get();
-          if (minWordCounter.getValue() < counter.count()) {
-            final HashMap<String, Integer> newWordCounters = new HashMap<>(wordsTop.wordCounters());
-            newWordCounters.remove(minWordCounter.getKey());
-            newWordCounters.put(counter.word(), counter.count());
-            return Stream.of(new WordsTop(newWordCounters));
-          } else {
-            return Stream.of(wordsTop);
-          }
-        } else {
+                .min(Map.Entry.comparingByValue()).get();
+        if (minWordCounter.getValue() < counter.count()) {
           final HashMap<String, Integer> newWordCounters = new HashMap<>(wordsTop.wordCounters());
+          newWordCounters.remove(minWordCounter.getKey());
           newWordCounters.put(counter.word(), counter.count());
-          return Stream.of(new WordsTop(newWordCounters));
+          final WordsTop t = new WordsTop(newWordCounters);
+          return Stream.of(t);
+        } else {
+          return Stream.of(wordsTop);
         }
       }
     }

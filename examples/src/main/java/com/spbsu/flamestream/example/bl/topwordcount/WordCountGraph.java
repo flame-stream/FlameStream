@@ -45,14 +45,8 @@ public class WordCountGraph implements Supplier<Graph> {
   @Override
   public Graph get() {
     final Source source = new Source();
-    final FlameMap<String, WordEntry> splitter = new FlameMap<>(new Function<String, Stream<WordEntry>>() {
-      private final Pattern pattern = Pattern.compile("\\s");
-
-      @Override
-      public Stream<WordEntry> apply(String s) {
-        return Arrays.stream(pattern.split(s)).map(WordEntry::new);
-      }
-    }, String.class);
+    final Pattern pattern = Pattern.compile("\\s");
+    final FlameMap<String, WordEntry> splitter = new FlameMap<>(s -> Arrays.stream(pattern.split(s)).map(WordEntry::new), String.class);
     final Grouping<WordContainer> wordGrouping = new Grouping<>(wordHash, wordEqualz, 2, WordContainer.class);
     final FlameMap<List<WordContainer>, List<WordContainer>> wordFilter = new FlameMap<>(
             new WordContainerOrderingFilter(),
@@ -81,8 +75,8 @@ public class WordCountGraph implements Supplier<Graph> {
             .link(wordCounter, topGrouping)
             .link(topGrouping, topFilter)
             .link(topFilter, topCounter)
-            .link(topCounter, sink)
             .link(topCounter, topGrouping)
+            .link(topCounter, sink)
             .colocate(source, splitter)
             .colocate(wordGrouping, wordFilter, wordCounter)
             .colocate(topGrouping, topFilter, topCounter, sink)
