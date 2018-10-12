@@ -8,11 +8,13 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.example.bl.wordcount.model.WordContainer;
-import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
-import com.spbsu.flamestream.example.bl.wordcount.model.WordEntry;
-import com.spbsu.flamestream.example.bl.wordcount.ops.CountWordEntries;
-import com.spbsu.flamestream.example.bl.wordcount.ops.WordContainerOrderingFilter;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordContainer;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordEntry;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.CountWordEntries;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.CountWordsTop;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.WordContainerOrderingFilter;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.WordsTopOrderingFilter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,25 +45,38 @@ public class WordCountGraph implements Supplier<Graph> {
         return Arrays.stream(pattern.split(s)).map(WordEntry::new);
       }
     }, String.class);
-    final Grouping<WordContainer> grouping = new Grouping<>(wordHash, equalz, 2, WordContainer.class);
-    final FlameMap<List<WordContainer>, List<WordContainer>> filter = new FlameMap<>(
+    final Grouping<WordContainer> wordGrouping = new Grouping<>(wordHash, equalz, 2, WordContainer.class);
+    final FlameMap<List<WordContainer>, List<WordContainer>> wordFilter = new FlameMap<>(
             new WordContainerOrderingFilter(),
             List.class
     );
-    final FlameMap<List<WordContainer>, WordCounter> counter = new FlameMap<>(
+    final FlameMap<List<WordContainer>, WordCounter> wordCounter = new FlameMap<>(
             new CountWordEntries(),
+            List.class
+    );
+    final Grouping<Object> topGrouping = new Grouping<>(HashFunction.constantHash(0), (o1, o2) -> true, 2, Object.class);
+    final FlameMap<List<Object>, List<Object>> topFilter = new FlameMap<>(
+            new WordsTopOrderingFilter(),
+            List.class
+    );
+    final FlameMap<List<Object>, Object> topCounter = new FlameMap<>(
+            new CountWordsTop(2),
             List.class
     );
     final Sink sink = new Sink();
     return new Graph.Builder()
             .link(source, splitter)
-            .link(splitter, grouping)
-            .link(grouping, filter)
-            .link(filter, counter)
-            .link(counter, sink)
-            .link(counter, grouping)
+            .link(splitter, wordGrouping)
+            .link(wordGrouping, wordFilter)
+            .link(wordFilter, wordCounter)
+            .link(wordCounter, wordGrouping)
+            .link(wordCounter, topGrouping)
+            .link(topGrouping, topFilter)
+            .link(topFilter, topCounter)
+            .link(topCounter, sink)
+            .link(topCounter, topGrouping)
             .colocate(source, splitter)
-            .colocate(grouping, filter, counter, sink)
+            .colocate(wordGrouping, wordFilter, wordCounter, topGrouping, topFilter, topCounter, sink)
             .build(source, sink);
   }
 }

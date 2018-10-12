@@ -1,7 +1,8 @@
 package com.spbsu.flamestream.example.bl.topwordcount;
 
-import com.spbsu.flamestream.example.bl.wordcount.WordCountGraph;
-import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordsTop;
+import com.spbsu.flamestream.example.bl.topwordcount.WordCountGraph;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.acceptance.FlameAkkaSuite;
@@ -13,13 +14,13 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -51,12 +52,17 @@ public class WordCountGraphTest extends FlameAkkaSuite {
         final Map<String, Integer> expected = input.stream()
                 .map(pattern::split)
                 .flatMap(Arrays::stream)
-                .collect(toMap(Function.identity(), o -> 1, Integer::sum));
+                .collect(toMap(Function.identity(), o -> 1, Integer::sum))
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue())
+                .limit(2)
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        final AwaitResultConsumer<WordCounter> awaitConsumer = new AwaitResultConsumer<>(
+        final AwaitResultConsumer<WordsTop> awaitConsumer = new AwaitResultConsumer<>(
                 lineSize * streamSize
         );
-        flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordCounter.class))
+        flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordsTop.class))
                 .forEach(r -> r.addListener(awaitConsumer));
         final List<AkkaFront.FrontHandle<String>> handles = flame
                 .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system()))
@@ -64,13 +70,21 @@ public class WordCountGraphTest extends FlameAkkaSuite {
         applyDataToAllHandlesAsync(input, handles);
         awaitConsumer.await(5, TimeUnit.MINUTES);
 
-        final Map<String, Integer> actual = new HashMap<>();
-        awaitConsumer.result().forEach(wordContainer -> {
-          actual.putIfAbsent(wordContainer.word(), 0);
-          actual.computeIfPresent(wordContainer.word(), (uid, old) -> Math.max(wordContainer.count(), old));
+        final AtomicReference<WordsTop> actual = new AtomicReference<>();
+        awaitConsumer.result().forEach(wordsTop -> {
+          if (actual.get() == null) {
+            actual.set(wordsTop);
+          } else {
+            for (Map.Entry<String, Integer> entry : actual.get().wordCounters().entrySet()) {
+              if (wordsTop.wordCounters().getOrDefault(entry.getKey(), entry.getValue()) < entry.getValue()) {
+                return;
+              }
+            }
+          }
+          actual.set(wordsTop);
         });
 
-        Assert.assertEquals(actual, expected);
+        Assert.assertEquals(actual.get(), expected);
       }
     }
   }

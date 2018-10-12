@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.bl.topwordcount.model;
 
-import com.spbsu.flamestream.example.bl.wordcount.model.WordContainer;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordContainer;
 
 import java.util.Objects;
 
