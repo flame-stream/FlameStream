@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.example.bl.topwordcount;
 
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordsTop;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
@@ -7,6 +8,7 @@ import com.spbsu.flamestream.runtime.acceptance.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -35,86 +37,6 @@ import static java.util.stream.Collectors.toMap;
  * Date: 19.12.2017
  */
 public class WordCountGraphTest extends FlameAkkaSuite {
-  public class FinalWordsTopConsumer implements Consumer<WordsTop> {
-    private final AtomicReference<Map<String, Integer>> wordCountsReference = new AtomicReference<>(new HashMap<>());
-
-    @Override
-    public void accept(WordsTop value) {
-      synchronized (wordCountsReference) {
-        switch (new LexicographicComparator<Integer>().compare(
-                dewordifiedTop(value.wordCounters()),
-                dewordifiedTop(wordCountsReference.get())
-        )) {
-          case 1:
-            wordCountsReference.set(value.wordCounters());
-            wordCountsReference.notifyAll();
-            break;
-          case 0:
-            break;
-          case -1:
-            throw new IllegalStateException("Top is decreasing");
-        }
-      }
-    }
-
-    public void await(long timeout, TimeUnit unit, Map<String, Integer> expectedWordCounts) throws
-                                                                                            InterruptedException {
-      final long stop = System.currentTimeMillis() + unit.toMillis(timeout);
-      synchronized (wordCountsReference) {
-        while (!dewordifiedTop(wordCountsReference.get()).equals(dewordifiedTop(expectedWordCounts).stream()
-                .limit(2)
-                .collect(Collectors.toList()))) {
-          wordCountsReference.wait(stop - System.currentTimeMillis());
-        }
-      }
-    }
-
-    public Map<String, Integer> wordCountsReference() {
-      synchronized (wordCountsReference) {
-        return wordCountsReference.get();
-      }
-    }
-
-    private List<Integer> dewordifiedTop(Map<String, Integer> wordCounts) {
-      return wordCounts.values().stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
-    }
-  }
-
-  static class LexicographicComparator<T extends Comparable<T>> implements Comparator<List<T>> {
-    private final Comparator<T> elementComparator;
-
-    public LexicographicComparator(final Comparator<T> elementComparator) {
-      this.elementComparator = elementComparator;
-    }
-
-    public LexicographicComparator() {
-      this(new Comparator<T>() {
-        @Override
-        public int compare(T o1, T o2) {
-          return o1.compareTo(o2);
-        }
-      });
-    }
-
-    @Override
-    public int compare(List<T> l1, List<T> l2) {
-      final Iterator<T> i1 = l1.iterator(), i2 = l2.iterator();
-      while (i1.hasNext() && i2.hasNext()) {
-        final int cmp = elementComparator.compare(i1.next(), i2.next());
-        if (cmp != 0) {
-          return cmp;
-        }
-      }
-      if (i1.hasNext()) {
-        return 1;
-      }
-      if (i2.hasNext()) {
-        return -1;
-      }
-      return 0;
-    }
-  }
-
   @Test(invocationCount = 10)
   public void localEnvironmentTest() throws InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
@@ -135,23 +57,35 @@ public class WordCountGraphTest extends FlameAkkaSuite {
                 .flatMap(Arrays::stream)
                 .collect(toMap(Function.identity(), o -> 1, Integer::sum));
 
-        final FinalWordsTopConsumer awaitConsumer = new FinalWordsTopConsumer();
+        final AwaitResultConsumer<WordsTop> awaitConsumer = new AwaitResultConsumer<>(
+                lineSize * streamSize
+        );
         flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordsTop.class))
                 .forEach(r -> r.addListener(awaitConsumer));
         final List<AkkaFront.FrontHandle<String>> handles = flame
                 .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system()))
                 .collect(Collectors.toList());
         applyDataToAllHandlesAsync(input, handles);
-        awaitConsumer.await(30, TimeUnit.SECONDS, wordCounts);
+        awaitConsumer.await(30, TimeUnit.SECONDS);
 
+        final WordsTop actualWordsTop = awaitConsumer.result().skip(lineSize * streamSize - 1).findFirst().get();
         Assert.assertEquals(
-                awaitConsumer.wordCountsReference(),
+                actualWordsTop.wordCounters(),
                 wordCounts.entrySet()
                         .stream()
-                        .filter(entry -> awaitConsumer.wordCountsReference().containsKey(entry.getKey()))
+                        .filter(entry -> actualWordsTop.wordCounters().containsKey(entry.getKey()))
                         .collect(toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
+        Assert.assertEquals(
+                dewordifiedTop(actualWordsTop.wordCounters()),
+                dewordifiedTop(wordCounts).stream().limit(2).collect(Collectors.toList())
+        );
+        Assert.assertEquals(actualWordsTop.wordCounters().size(), 2);
       }
     }
+  }
+
+  private List<Integer> dewordifiedTop(Map<String, Integer> wordCounts) {
+    return wordCounts.values().stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
   }
 }
