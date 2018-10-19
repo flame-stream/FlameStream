@@ -62,7 +62,7 @@ public class WordCountGraphTest extends FlameAkkaSuite {
       final long stop = System.currentTimeMillis() + unit.toMillis(timeout);
       synchronized (wordCountsReference) {
         while (!dewordifiedTop(wordCountsReference.get()).equals(dewordifiedTop(expectedWordCounts).stream()
-                .limit(wordCountsReference.get().size())
+                .limit(2)
                 .collect(Collectors.toList()))) {
           wordCountsReference.wait(stop - System.currentTimeMillis());
         }
