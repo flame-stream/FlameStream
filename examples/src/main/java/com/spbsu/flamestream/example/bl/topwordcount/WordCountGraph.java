@@ -1,85 +1,31 @@
 package com.spbsu.flamestream.example.bl.topwordcount;
 
-import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.FlameMap;
-import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.example.bl.topwordcount.model.WordContainer;
-import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordEntry;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.CountWordEntries;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.CountWordsTop;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.WordContainerOrderingFilter;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.WordsTopOrderingFilter;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.CounterBuilder;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.TopBuilder;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 public class WordCountGraph implements Supplier<Graph> {
-  private final HashFunction wordHash = HashFunction.uniformHash(HashFunction.objectHash(WordContainer.class));
-
-  @SuppressWarnings("Convert2Lambda")
-  private final Equalz wordEqualz = new Equalz() {
-    @Override
-    public boolean test(DataItem o1, DataItem o2) {
-      return o1.payload(WordContainer.class).word().equals(o2.payload(WordContainer.class).word());
-    }
-  };
-
-  @SuppressWarnings("Convert2Lambda")
-  private final Equalz allEqualz = new Equalz() {
-    @Override
-    public boolean test(DataItem o1, DataItem o2) {
-      return true;
-    }
-  };
-
   @Override
   public Graph get() {
     final Source source = new Source();
     final Pattern pattern = Pattern.compile("\\s");
-    final FlameMap<String, WordEntry> splitter = new FlameMap<>(s -> Arrays.stream(pattern.split(s)).map(WordEntry::new), String.class);
-    final Grouping<WordContainer> wordGrouping = new Grouping<>(wordHash, wordEqualz, 2, WordContainer.class);
-    final FlameMap<List<WordContainer>, List<WordContainer>> wordFilter = new FlameMap<>(
-            new WordContainerOrderingFilter(),
-            List.class
-    );
-    final FlameMap<List<WordContainer>, WordCounter> wordCounter = new FlameMap<>(
-            new CountWordEntries(),
-            List.class
-    );
-    final Grouping<Object> topGrouping = new Grouping<>(HashFunction.constantHash(0), allEqualz, 2, Object.class);
-    final FlameMap<List<Object>, List<Object>> topFilter = new FlameMap<>(
-            new WordsTopOrderingFilter(),
-            List.class
-    );
-    final FlameMap<List<Object>, Object> topCounter = new FlameMap<>(
-            new CountWordsTop(2),
-            List.class
-    );
+    final FlameMap<String, WordEntry> splitter = new FlameMap<>(s -> Arrays.stream(pattern.split(s))
+            .map(WordEntry::new), String.class);
     final Sink sink = new Sink();
-    return new Graph.Builder()
+    final Graph.Builder graphBuilder = new Graph.Builder();
+    final Graph.Vertex vertex = new CounterBuilder().build(graphBuilder, new TopBuilder(2).build(graphBuilder, sink));
+    return graphBuilder
             .link(source, splitter)
-            .link(splitter, wordGrouping)
-            .link(wordGrouping, wordFilter)
-            .link(wordFilter, wordCounter)
-            .link(wordCounter, wordGrouping)
-            .link(wordCounter, topGrouping)
-            .link(topGrouping, topFilter)
-            .link(topFilter, topCounter)
-            .link(topCounter, topGrouping)
-            .link(topCounter, sink)
-            .colocate(source, splitter)
-            .colocate(wordGrouping, wordFilter, wordCounter)
-            .colocate(topGrouping, topFilter, topCounter, sink)
+            .link(splitter, vertex)
+            .colocate(source, splitter, vertex)
             .build(source, sink);
   }
 }

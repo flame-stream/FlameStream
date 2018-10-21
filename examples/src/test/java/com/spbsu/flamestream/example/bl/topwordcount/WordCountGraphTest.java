@@ -69,11 +69,12 @@ public class WordCountGraphTest extends FlameAkkaSuite {
         awaitConsumer.await(30, TimeUnit.SECONDS);
 
         final WordsTop actualWordsTop = awaitConsumer.result().skip(lineSize * streamSize - 1).findFirst().get();
+        final Stream<Map.Entry<String, Integer>> entryStream = wordCounts.entrySet()
+                .stream()
+                .filter(entry -> actualWordsTop.wordCounters().containsKey(entry.getKey()));
         Assert.assertEquals(
                 actualWordsTop.wordCounters(),
-                wordCounts.entrySet()
-                        .stream()
-                        .filter(entry -> actualWordsTop.wordCounters().containsKey(entry.getKey()))
+                entryStream
                         .collect(toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
         Assert.assertEquals(
