@@ -5,8 +5,10 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordEntry;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.BucketedTopBuilder;
 import com.spbsu.flamestream.example.bl.topwordcount.ops.CounterBuilder;
 import com.spbsu.flamestream.example.bl.topwordcount.ops.TopBuilder;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.TopTopBuilder;
 
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -21,7 +23,10 @@ public class WordCountGraph implements Supplier<Graph> {
             .map(WordEntry::new), String.class);
     final Sink sink = new Sink();
     final Graph.Builder graphBuilder = new Graph.Builder();
-    final Graph.Vertex vertex = new CounterBuilder().build(graphBuilder, new TopBuilder(2).build(graphBuilder, sink));
+    final Graph.Vertex vertex = new CounterBuilder().build(
+            graphBuilder,
+            new BucketedTopBuilder(2, 2).build(graphBuilder, new TopTopBuilder(2).build(graphBuilder, sink))
+    );
     return graphBuilder
             .link(source, splitter)
             .link(splitter, vertex)

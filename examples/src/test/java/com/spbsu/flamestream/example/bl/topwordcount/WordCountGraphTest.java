@@ -44,7 +44,7 @@ public class WordCountGraphTest extends FlameAkkaSuite {
             .build()) {
       final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
       {
-        final int lineSize = 50;
+        final int lineSize = 20;
         final int streamSize = 10;
         final Queue<String> input = Stream.generate(() -> {
           final String[] words = {"repka", "dedka", "babka", "zhuchka", "vnuchka"};
@@ -66,7 +66,7 @@ public class WordCountGraphTest extends FlameAkkaSuite {
                 .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system()))
                 .collect(Collectors.toList());
         applyDataToAllHandlesAsync(input, handles);
-        awaitConsumer.await(30, TimeUnit.SECONDS);
+        awaitConsumer.await(200, TimeUnit.SECONDS);
 
         final WordsTop actualWordsTop = awaitConsumer.result().skip(lineSize * streamSize - 1).findFirst().get();
         final Stream<Map.Entry<String, Integer>> entryStream = wordCounts.entrySet()
