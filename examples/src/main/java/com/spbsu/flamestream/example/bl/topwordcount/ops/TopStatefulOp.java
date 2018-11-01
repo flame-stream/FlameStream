@@ -13,32 +13,33 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 
-public class BucketedTopBuilder extends GroupedReducerBuilder<Object, WordsTop> {
+public class TopStatefulOp implements StatefulOp<Object, WordsTop> {
   private final Integer limit;
-  private final Integer buckets;
 
-  public BucketedTopBuilder(Integer limit, Integer buckets) {
-    super(Object.class, WordsTop.class);
+  public TopStatefulOp(Integer limit) {
     this.limit = limit;
-    this.buckets = buckets;
   }
 
-  protected int groupingHash(Object input) {
-    if (input instanceof WordCounter) {
-      return ((WordCounter) input).word().hashCode();
-    } else {
-      return ((WordsTop) input).wordCounters().entrySet().stream().findFirst().get().getKey().hashCode();
-    }
+  public Class<Object> inputClass() {
+    return Object.class;
+  }
+
+  public Class<WordsTop> outputClass() {
+    return WordsTop.class;
+  }
+
+  public int groupingHash(Object input) {
+    return 0;
   }
 
   @Override
-  protected HashFunction groupingHashFunction() {
-    return HashFunction.bucketedHash(super.groupingHashFunction(), buckets);
+  public HashFunction groupingHashFunction(HashFunction hashFunction) {
+    return HashFunction.constantHash(0);
   }
 
   @Override
   @SuppressWarnings("Convert2Lambda")
-  protected Equalz groupingEqualz() {
+  public Equalz groupingEqualz(Equalz equalz) {
     return new Equalz() {
       @Override
       public boolean test(DataItem o1, DataItem o2) {
@@ -47,11 +48,11 @@ public class BucketedTopBuilder extends GroupedReducerBuilder<Object, WordsTop> 
     };
   }
 
-  protected boolean groupingEquals(Object left, Object right) {
+  public boolean groupingEquals(Object left, Object right) {
     return true;
   }
 
-  protected WordsTop output(Object input) {
+  public WordsTop output(Object input) {
     if (input instanceof WordCounter) {
       final WordCounter wordCounter = (WordCounter) input;
       final HashMap<String, Integer> wordCounters = new HashMap<>();
@@ -62,7 +63,7 @@ public class BucketedTopBuilder extends GroupedReducerBuilder<Object, WordsTop> 
     }
   }
 
-  protected WordsTop reduce(WordsTop left, WordsTop right) {
+  public WordsTop reduce(WordsTop left, WordsTop right) {
     return new WordsTop(Stream.of(left, right).flatMap(wordsTop -> wordsTop.wordCounters().entrySet().stream())
             .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, Math::max))
             .entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(limit)

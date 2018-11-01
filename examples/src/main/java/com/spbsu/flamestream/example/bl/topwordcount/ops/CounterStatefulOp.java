@@ -4,20 +4,24 @@ import com.spbsu.flamestream.example.bl.topwordcount.model.WordContainer;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordEntry;
 
-public class CounterBuilder extends GroupedReducerBuilder<WordContainer, WordCounter> {
-  public CounterBuilder() {
-    super(WordContainer.class, WordCounter.class);
+public class CounterStatefulOp implements StatefulOp<WordContainer, WordCounter> {
+  public Class<WordContainer> inputClass() {
+    return WordContainer.class;
   }
 
-  protected int groupingHash(WordContainer input) {
+  public Class<WordCounter> outputClass() {
+    return WordCounter.class;
+  }
+
+  public int groupingHash(WordContainer input) {
     return input.hashCode();
   }
 
-  protected boolean groupingEquals(WordContainer left, WordContainer right) {
+  public boolean groupingEquals(WordContainer left, WordContainer right) {
     return left.word().equals(right.word());
   }
 
-  protected WordCounter output(WordContainer input) {
+  public WordCounter output(WordContainer input) {
     if (input instanceof WordEntry) {
       return new WordCounter(input.word(), 1);
     } else {
@@ -25,7 +29,7 @@ public class CounterBuilder extends GroupedReducerBuilder<WordContainer, WordCou
     }
   }
 
-  protected WordCounter reduce(WordCounter left, WordCounter right) {
+  public WordCounter reduce(WordCounter left, WordCounter right) {
     return new WordCounter(left.word(), left.count() + right.count());
   }
 }

@@ -5,10 +5,11 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordEntry;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.BucketedTopBuilder;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.CounterBuilder;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.TopBuilder;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.TopTopBuilder;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.BucketedTopStatefulOp;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.CounterStatefulOp;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.Pipeline;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.SimplePipelineBuilder;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.TopTopStatefulOp;
 
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -23,14 +24,16 @@ public class WordCountGraph implements Supplier<Graph> {
             .map(WordEntry::new), String.class);
     final Sink sink = new Sink();
     final Graph.Builder graphBuilder = new Graph.Builder();
-    final Graph.Vertex vertex = new CounterBuilder().build(
-            graphBuilder,
-            new BucketedTopBuilder(2, 2).build(graphBuilder, new TopTopBuilder(2).build(graphBuilder, sink))
-    );
+    SimplePipelineBuilder simplePipelineBuilder = new SimplePipelineBuilder();
+    simplePipelineBuilder.add(new CounterStatefulOp());
+    simplePipelineBuilder.add(new BucketedTopStatefulOp(2, 2));
+    simplePipelineBuilder.add(new TopTopStatefulOp(2));
+    Pipeline pipeline = simplePipelineBuilder.build(graphBuilder);
     return graphBuilder
             .link(source, splitter)
-            .link(splitter, vertex)
-            .colocate(source, splitter, vertex)
+            .link(splitter, pipeline.in())
+            .link(pipeline.out(), sink)
+            .colocate(source, splitter, pipeline.in())
             .build(source, sink);
   }
 }
