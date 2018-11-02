@@ -13,7 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class SimplePipelineBuilder {
-  private BiFunction<Graph.Builder, Graph.Vertex, Pipeline> builder = null;
+  private BiFunction<Graph.Builder, Graph.Vertex, FlameBuilder> builder = null;
 
   private class StatefulOpPipeline<Input, Output extends Input> {
     StatefulOp<Input, Output> op;
@@ -74,8 +74,9 @@ public class SimplePipelineBuilder {
       }
     }
 
-    Pipeline build(Graph.Builder graphBuilder, Graph.Vertex maybeTo) {
+    FlameBuilder build(Graph.Builder graphBuilder, Graph.Vertex maybeTo) {
       final FlameMap<Input, Item> source = new FlameMap<>(new Source(), op.inputClass());
+      //noinspection Convert2Lambda
       final Grouping grouping = new Grouping<>(
               op.groupingHashFunction(HashFunction.objectHash(Item.class)),
               op.groupingEqualz(new Equalz() {
@@ -105,7 +106,7 @@ public class SimplePipelineBuilder {
                 .link(reducer, maybeTo)
                 .colocate(grouping, reducer, regrouper, maybeTo);
       }
-      return new Pipeline() {
+      return new FlameBuilder() {
         @Override
         public Graph.Vertex in() {
           return source;
@@ -120,15 +121,15 @@ public class SimplePipelineBuilder {
   }
 
   public <Input, Output extends Input> SimplePipelineBuilder add(StatefulOp<Input, Output> op) {
-    BiFunction<Graph.Builder, Graph.Vertex, Pipeline> previousBuilder = builder;
+    BiFunction<Graph.Builder, Graph.Vertex, FlameBuilder> previousBuilder = builder;
     builder = (graphBuilder, nextBuilder) -> {
-      Pipeline pipeline = new StatefulOpPipeline<Input, Output>(op).build(
+      FlameBuilder pipeline = new StatefulOpPipeline<Input, Output>(op).build(
               graphBuilder,
               nextBuilder
       );
       Graph.Vertex in =
               previousBuilder == null ? pipeline.in() : previousBuilder.apply(graphBuilder, pipeline.in()).in();
-      return new Pipeline() {
+      return new FlameBuilder() {
         @Override
         public Graph.Vertex in() {
           return in;
@@ -143,7 +144,7 @@ public class SimplePipelineBuilder {
     return this;
   }
 
-  public Pipeline build(Graph.Builder graphBuilder) {
+  public FlameBuilder build(Graph.Builder graphBuilder) {
     return builder.apply(graphBuilder, null);
   }
 }

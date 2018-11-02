@@ -5,6 +5,7 @@ import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordsTop;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -13,54 +14,25 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 
-public class TopStatefulOp implements StatefulOp<Object, WordsTop> {
+public class TopStatefulOp implements StatefulMapOperation<WordCounter, WordsTop, WordsTop> {
   private final Integer limit;
 
   public TopStatefulOp(Integer limit) {
     this.limit = limit;
   }
 
-  public Class<Object> inputClass() {
-    return Object.class;
-  }
-
-  public Class<WordsTop> outputClass() {
-    return WordsTop.class;
-  }
-
   public int groupingHash(Object input) {
     return 0;
-  }
-
-  @Override
-  public HashFunction groupingHashFunction(HashFunction hashFunction) {
-    return HashFunction.constantHash(0);
-  }
-
-  @Override
-  @SuppressWarnings("Convert2Lambda")
-  public Equalz groupingEqualz(Equalz equalz) {
-    return new Equalz() {
-      @Override
-      public boolean test(DataItem o1, DataItem o2) {
-        return true;
-      }
-    };
   }
 
   public boolean groupingEquals(Object left, Object right) {
     return true;
   }
 
-  public WordsTop output(Object input) {
-    if (input instanceof WordCounter) {
-      final WordCounter wordCounter = (WordCounter) input;
-      final HashMap<String, Integer> wordCounters = new HashMap<>();
-      wordCounters.put(wordCounter.word(), wordCounter.count());
-      return new WordsTop(wordCounters);
-    } else {
-      return (WordsTop) input;
-    }
+  public WordsTop accept(WordCounter wc) {
+    final HashMap<String, Integer> wordCounters = new HashMap<>();
+    wordCounters.put(wc.word(), wc.count());
+    return new WordsTop(wordCounters);
   }
 
   public WordsTop reduce(WordsTop left, WordsTop right) {
@@ -68,5 +40,10 @@ public class TopStatefulOp implements StatefulOp<Object, WordsTop> {
             .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, Math::max))
             .entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(limit)
             .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, Math::max)));
+  }
+
+  @Override
+  public WordsTop aggregate(WordCounter in, @Nullable WordsTop wordsTop) {
+    return null;
   }
 }

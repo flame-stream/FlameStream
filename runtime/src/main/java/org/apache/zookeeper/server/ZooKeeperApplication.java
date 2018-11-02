@@ -44,7 +44,7 @@ public final class ZooKeeperApplication extends ZooKeeperServerMain {
 
       txnLog = new FileTxnSnapLog(new File(config.dataLogDir), new File(config.dataDir));
       zkServer.setTxnLogFactory(txnLog);
-      zkServer.setTickTime(config.tickTime);
+      zkServer.setTickTime(5000);
       zkServer.setMinSessionTimeout(config.minSessionTimeout);
       zkServer.setMaxSessionTimeout(config.maxSessionTimeout);
       cnxnFactory = ServerCnxnFactory.createFactory();

@@ -4,12 +4,10 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordContainer;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordEntry;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.BucketedTopStatefulOp;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.CounterStatefulOp;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.Pipeline;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.SimplePipelineBuilder;
-import com.spbsu.flamestream.example.bl.topwordcount.ops.TopTopStatefulOp;
+import com.spbsu.flamestream.example.bl.topwordcount.ops.*;
 
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -18,6 +16,12 @@ import java.util.regex.Pattern;
 public class WordCountGraph implements Supplier<Graph> {
   @Override
   public Graph get() {
+    FlameBuilder pipeline = null;
+    final Graph.Vertex counter = pipeline.vertex((StatefulMapOperation<WordContainer, WordCounter, WordCounter>) (in, wordCounter) ->
+        new WordCounter(in.word(), wordCounter != null ? wordCounter.count() + 1 : 1)
+    );
+    pipeline.connect(counter, null);
+
     final Source source = new Source();
     final Pattern pattern = Pattern.compile("\\s");
     final FlameMap<String, WordEntry> splitter = new FlameMap<>(s -> Arrays.stream(pattern.split(s))
@@ -28,7 +32,7 @@ public class WordCountGraph implements Supplier<Graph> {
     simplePipelineBuilder.add(new CounterStatefulOp());
     simplePipelineBuilder.add(new BucketedTopStatefulOp(2, 2));
     simplePipelineBuilder.add(new TopTopStatefulOp(2));
-    Pipeline pipeline = simplePipelineBuilder.build(graphBuilder);
+    FlameBuilder pipeline = simplePipelineBuilder.build(graphBuilder);
     return graphBuilder
             .link(source, splitter)
             .link(splitter, pipeline.in())
