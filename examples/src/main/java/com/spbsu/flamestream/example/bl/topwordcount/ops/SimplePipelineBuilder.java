@@ -6,14 +6,30 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
+import com.spbsu.flamestream.core.graph.Sink;
+import com.spbsu.flamestream.core.graph.Source;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class SimplePipelineBuilder {
-  private BiFunction<Graph.Builder, Graph.Vertex, Pipeline> builder = null;
+  public interface Node {
+    Graph.Vertex source();
+
+    Graph.Vertex sink();
+
+    void connect(Node node);
+
+    void build();
+  }
+
+  private final Source source = new Source();
+  private final Sink sink = new Sink();
+  private final Graph.Builder graphBuilder = new Graph.Builder();
+  private final ArrayList<Node> nodes = new ArrayList<>();
 
   private class StatefulOpPipeline<Input, Output extends Input> {
     StatefulOp<Input, Output> op;
@@ -76,7 +92,7 @@ public class SimplePipelineBuilder {
       }
     }
 
-    Pipeline build(Graph.Builder graphBuilder, Graph.Vertex maybeTo) {
+    Node build(Graph.Builder graphBuilder) {
       final FlameMap<Input, Item> source = new FlameMap<>(new Source(), op.inputClass());
       //noinspection Convert2Lambda
       final Grouping grouping = new Grouping<>(
@@ -100,57 +116,63 @@ public class SimplePipelineBuilder {
               .link(reducer, regrouper)
               .link(regrouper, grouping);
 
-      if (maybeTo == null) {
-        graphBuilder
-                .colocate(grouping, reducer, regrouper);
-      } else {
-        graphBuilder
-                .link(reducer, maybeTo)
-                .colocate(grouping, reducer, regrouper, maybeTo);
-      }
-      return new Pipeline() {
-        @Override
-        public Graph.Vertex in() {
+      ArrayList<Graph.Vertex> colocated = new ArrayList<Graph.Vertex>(Arrays.asList(grouping, reducer, regrouper));
+      return new Node() {
+        public Graph.Vertex source() {
           return source;
         }
 
-        @Override
-        public Graph.Vertex out() {
-          return maybeTo == null ? reducer : maybeTo;
+        public Graph.Vertex sink() { return reducer; }
+
+        public void connect(Node node) {
+          graphBuilder.link(reducer, node.source());
+          colocated.add(node.source());
+        }
+
+        public void build() {
+          graphBuilder.colocate(colocated.toArray(new Graph.Vertex[]{}));
         }
       };
     }
   }
 
-  public <Input, Output extends Input> SimplePipelineBuilder add(StatefulOp<Input, Output> op, Hashing<Input> hashing) {
-    BiFunction<Graph.Builder, Graph.Vertex, Pipeline> previousBuilder = builder;
-    builder = (graphBuilder, nextBuilder) -> {
-      Pipeline pipeline = new StatefulOpPipeline<Input, Output>(op, hashing).build(
-              graphBuilder,
-              nextBuilder
-      );
-      Graph.Vertex in =
-              previousBuilder == null ? pipeline.in() : previousBuilder.apply(graphBuilder, pipeline.in()).in();
-      return new Pipeline() {
-        @Override
-        public Graph.Vertex in() {
-          return in;
-        }
+  public <Input, Output extends Input> Node node(StatefulOp<Input, Output> op, Hashing<Input> hashing) {
+    Node node = new StatefulOpPipeline<>(op, hashing).build(graphBuilder);
+    nodes.add(node);
+    return node;
+  }
 
-        @Override
-        public Graph.Vertex out() {
-          return pipeline.out();
-        }
-      };
+  public <Input, Output> Node node(MapOp<Input, Output> op) {
+    Graph.Vertex vertex = new FlameMap<>(op, op.inputClass());
+    return new Node() {
+      public Graph.Vertex source() {
+        return vertex;
+      }
+
+      public Graph.Vertex sink() { return vertex; }
+
+      public void connect(Node node) {
+        graphBuilder.link(vertex, node.source());
+      }
+
+      public void build() {
+      }
     };
-    return this;
   }
 
-  public <Input, Output extends Input> SimplePipelineBuilder add(StatefulOp<Input, Output> op) {
-    return add(op, new Hashing<Input>() {});
+  public void connect(Node source, Node sink) {
+    source.connect(sink);
   }
 
-  public Pipeline build(Graph.Builder graphBuilder) {
-    return builder.apply(graphBuilder, null);
+  public void connectToSource(Node node) {
+    graphBuilder.link(source, node.source());
+  }
+
+  public void connectToSink(Node node) {
+    graphBuilder.link(node.sink(), sink);
+  }
+
+  public Graph build() {
+    return graphBuilder.build(source, sink);
   }
 }
