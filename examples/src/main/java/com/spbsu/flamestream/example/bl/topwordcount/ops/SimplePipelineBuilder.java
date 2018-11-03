@@ -144,7 +144,7 @@ public class SimplePipelineBuilder {
 
   public <Input, Output> Node node(MapOp<Input, Output> op) {
     Graph.Vertex vertex = new FlameMap<>(op, op.inputClass());
-    return new Node() {
+    final Node node = new Node() {
       public Graph.Vertex source() {
         return vertex;
       }
@@ -155,9 +155,10 @@ public class SimplePipelineBuilder {
         graphBuilder.link(vertex, node.source());
       }
 
-      public void build() {
-      }
+      public void build() {}
     };
+    nodes.add(node);
+    return node;
   }
 
   public void connect(Node source, Node sink) {
@@ -173,6 +174,7 @@ public class SimplePipelineBuilder {
   }
 
   public Graph build() {
+    nodes.forEach(Node::build);
     return graphBuilder.build(source, sink);
   }
 }
