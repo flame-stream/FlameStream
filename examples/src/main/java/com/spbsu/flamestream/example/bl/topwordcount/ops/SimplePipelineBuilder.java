@@ -17,9 +17,11 @@ public class SimplePipelineBuilder {
 
   private class StatefulOpPipeline<Input, Output extends Input> {
     StatefulOp<Input, Output> op;
+    Hashing<Input> hashing;
 
-    StatefulOpPipeline(StatefulOp<Input, Output> op) {
+    StatefulOpPipeline(StatefulOp<Input, Output> op, Hashing<Input> hashing) {
       this.op = op;
+      this.hashing = hashing;
     }
 
     private class Item {
@@ -33,7 +35,7 @@ public class SimplePipelineBuilder {
 
       @Override
       public int hashCode() {
-        return op.groupingHash(value);
+        return hashing.hash(value);
       }
     }
 
@@ -76,14 +78,15 @@ public class SimplePipelineBuilder {
 
     Pipeline build(Graph.Builder graphBuilder, Graph.Vertex maybeTo) {
       final FlameMap<Input, Item> source = new FlameMap<>(new Source(), op.inputClass());
+      //noinspection Convert2Lambda
       final Grouping grouping = new Grouping<>(
-              op.groupingHashFunction(HashFunction.objectHash(Item.class)),
-              op.groupingEqualz(new Equalz() {
+              hashing.hashFunction(HashFunction.objectHash(Item.class)),
+              hashing.equalz(new Equalz() {
                 @Override
                 public boolean test(DataItem o1, DataItem o2) {
                   final Item payload = o1.payload(Item.class);
                   final Item payload1 = o2.payload(Item.class);
-                  return op.groupingEquals(payload.value, payload1.value);
+                  return hashing.equals(payload.value, payload1.value);
                 }
               }),
               2,
@@ -119,10 +122,10 @@ public class SimplePipelineBuilder {
     }
   }
 
-  public <Input, Output extends Input> SimplePipelineBuilder add(StatefulOp<Input, Output> op) {
+  public <Input, Output extends Input> SimplePipelineBuilder add(StatefulOp<Input, Output> op, Hashing<Input> hashing) {
     BiFunction<Graph.Builder, Graph.Vertex, Pipeline> previousBuilder = builder;
     builder = (graphBuilder, nextBuilder) -> {
-      Pipeline pipeline = new StatefulOpPipeline<Input, Output>(op).build(
+      Pipeline pipeline = new StatefulOpPipeline<Input, Output>(op, hashing).build(
               graphBuilder,
               nextBuilder
       );
@@ -141,6 +144,10 @@ public class SimplePipelineBuilder {
       };
     };
     return this;
+  }
+
+  public <Input, Output extends Input> SimplePipelineBuilder add(StatefulOp<Input, Output> op) {
+    return add(op, new Hashing<Input>() {});
   }
 
   public Pipeline build(Graph.Builder graphBuilder) {

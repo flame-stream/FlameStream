@@ -13,14 +13,6 @@ public class CounterStatefulOp implements StatefulOp<WordContainer, WordCounter>
     return WordCounter.class;
   }
 
-  public int groupingHash(WordContainer input) {
-    return input.hashCode();
-  }
-
-  public boolean groupingEquals(WordContainer left, WordContainer right) {
-    return left.word().equals(right.word());
-  }
-
   public WordCounter output(WordContainer input) {
     if (input instanceof WordEntry) {
       return new WordCounter(input.word(), 1);

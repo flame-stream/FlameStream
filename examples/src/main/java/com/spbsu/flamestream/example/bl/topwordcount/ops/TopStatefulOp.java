@@ -28,30 +28,6 @@ public class TopStatefulOp implements StatefulOp<Object, WordsTop> {
     return WordsTop.class;
   }
 
-  public int groupingHash(Object input) {
-    return 0;
-  }
-
-  @Override
-  public HashFunction groupingHashFunction(HashFunction hashFunction) {
-    return HashFunction.constantHash(0);
-  }
-
-  @Override
-  @SuppressWarnings("Convert2Lambda")
-  public Equalz groupingEqualz(Equalz equalz) {
-    return new Equalz() {
-      @Override
-      public boolean test(DataItem o1, DataItem o2) {
-        return true;
-      }
-    };
-  }
-
-  public boolean groupingEquals(Object left, Object right) {
-    return true;
-  }
-
   public WordsTop output(Object input) {
     if (input instanceof WordCounter) {
       final WordCounter wordCounter = (WordCounter) input;
