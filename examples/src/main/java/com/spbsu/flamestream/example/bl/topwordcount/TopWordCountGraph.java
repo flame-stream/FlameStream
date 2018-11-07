@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public class WordCountGraph implements Supplier<Graph> {
+public class TopWordCountGraph implements Supplier<Graph> {
   @Override
   public Graph get() {
     final Pattern pattern = Pattern.compile("\\s");

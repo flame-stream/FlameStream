@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.example.bl.topwordcount;
 
-import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordsTop;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
@@ -14,16 +13,12 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -36,13 +31,13 @@ import static java.util.stream.Collectors.toMap;
  * User: Artem
  * Date: 19.12.2017
  */
-public class WordCountGraphTest extends FlameAkkaSuite {
+public class TopWordCountGraphTest extends FlameAkkaSuite {
   @Test(invocationCount = 10)
   public void localEnvironmentTest() throws InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
             .millisBetweenCommits(500)
             .build()) {
-      final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
+      final FlameRuntime.Flame flame = runtime.run(new TopWordCountGraph().get());
       {
         final int lineSize = 20;
         final int streamSize = 10;
