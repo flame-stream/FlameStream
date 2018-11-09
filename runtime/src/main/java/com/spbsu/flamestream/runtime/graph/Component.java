@@ -8,6 +8,7 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
+import com.spbsu.flamestream.core.graph.HashingVertexStub;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
@@ -105,18 +106,11 @@ public class Component extends LoggingActor {
                 final Consumer<DataItem> sink;
                 if (componentVertices.contains(to)) {
                   sink = item -> localCall(item, toDest);
-                } else if (graph.isShuffle(from, to)) {
-                  sink = item -> {
-                    shuffleSendTracer.log(item.xor());
-                    acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-                    routes.get(ThreadLocalRandom.current().nextInt())
-                            .tell(new AddressedItem(item, toDest), self());
-                  };
-                } else if (to instanceof Grouping) {
+                } else if (to instanceof HashingVertexStub && ((HashingVertexStub) to).hash() != null) {
                   sink = item -> {
                     groupingSendTracer.log(item.xor());
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-                    routes.get(((Grouping) to).hash().applyAsInt(item))
+                    routes.get(((HashingVertexStub) to).hash().applyAsInt(item))
                             .tell(new AddressedItem(item, toDest), self());
                   };
                 } else {
