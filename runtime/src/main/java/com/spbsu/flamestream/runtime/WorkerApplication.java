@@ -34,11 +34,11 @@ public class WorkerApplication implements Runnable {
   @Nullable
   private ActorSystem system = null;
 
-  WorkerApplication(String id, DumbInetSocketAddress host, String zkString) {
+  public WorkerApplication(String id, DumbInetSocketAddress host, String zkString) {
     this(id, host, zkString, null);
   }
 
-  private WorkerApplication(String id, DumbInetSocketAddress host, String zkString, String snapshotPath) {
+  public WorkerApplication(String id, DumbInetSocketAddress host, String zkString, String snapshotPath) {
     this.id = id;
     this.host = host;
     this.zkString = zkString;
@@ -61,7 +61,7 @@ public class WorkerApplication implements Runnable {
     final String id = workerConfig.id();
     final DumbInetSocketAddress socketAddress = workerConfig.localAddress();
     final String zkString = workerConfig.zkString();
-    if (workerConfig.guarantees() == WorkerConfig.Guarantees.AT_MOST_ONCE) {
+    if (workerConfig.guarantees() == Guarantees.AT_MOST_ONCE) {
       new WorkerApplication(id, socketAddress, zkString).run();
     } else {
       new WorkerApplication(id, socketAddress, zkString, workerConfig.snapshotPath()).run();
@@ -148,12 +148,12 @@ public class WorkerApplication implements Runnable {
     String zkString() {
       return zkString;
     }
+  }
 
-    @SuppressWarnings("unused")
-    enum Guarantees {
-      AT_MOST_ONCE,
-      AT_LEAST_ONCE,
-      EXACTLY_ONCE
-    }
+  @SuppressWarnings("unused")
+  public enum Guarantees {
+    AT_MOST_ONCE,
+    AT_LEAST_ONCE,
+    EXACTLY_ONCE
   }
 }
