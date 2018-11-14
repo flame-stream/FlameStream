@@ -2,19 +2,26 @@ package com.spbsu.flamestream.core.graph;
 
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class FlameMap<T, R> extends Graph.Vertex.Stub {
+public class FlameMap<T, R> extends HashingVertexStub {
   private final Function<T, Stream<R>> function;
   private final Class<?> clazz;
+  private final @Nullable HashFunction hashFunction;
 
-  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz) {
+  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz, @Nullable HashFunction hashFunction) {
     this.function = function;
     this.clazz = clazz;
+    this.hashFunction = hashFunction;
+  }
+  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz) {
+    this(function, clazz, null);
   }
 
   public FlameMapOperation operation(long physicalId) {
@@ -30,6 +37,11 @@ public class FlameMap<T, R> extends Graph.Vertex.Stub {
 
   public Function<T, Stream<R>> function() {
     return function;
+  }
+
+  @Override
+  public @Nullable HashFunction hash() {
+    return hashFunction;
   }
 
   public class FlameMapOperation {
