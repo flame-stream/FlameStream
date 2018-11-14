@@ -7,14 +7,18 @@ import akka.actor.Address;
 import akka.actor.RootActorPath;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear.Handle<T>> {
+public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear.Handles<T>> {
   private final ActorSystem system;
   private final Class<T> clazz;
-  private final Map<EdgeContext, AkkaRear.Handle<T>> localHandles = new HashMap<>();
+  private final Map<EdgeContext, ActorRef> localHandles = new HashMap<>();
 
   public AkkaRearType(ActorSystem system, Class<T> clazz) {
     this.system = system;
@@ -29,16 +33,26 @@ public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear
   }
 
   @Override
-  public AkkaRear.Handle<T> handle(EdgeContext context) {
-    if (!localHandles.containsKey(context)) {
-      final ActorRef localMediator = system.actorOf(
-              AkkaRear.LocalMediator.props(clazz),
-              context.edgeId().nodeId() + "-localrear"
-      );
-      final AkkaRear.Handle<T> rearHandle = new AkkaRear.Handle<>(localMediator);
-      localHandles.put(context, rearHandle);
-    }
-    return localHandles.get(context);
+  public AkkaRear.Handles<T> handles(ObservableSet<EdgeContext> contexts) {
+    ObservableSet<ActorRef> localMediators =
+            FXCollections.observableSet(contexts.stream()
+                    .map(this::localMediator)
+                    .collect(Collectors.toSet()));
+    contexts.addListener((SetChangeListener<EdgeContext>) change -> {
+      if (change.wasAdded()) {
+        localMediators.add(localMediator(change.getElementAdded()));
+      }
+    });
+    return new AkkaRear.Handles<>(localMediators);
+  }
+
+  private ActorRef localMediator(EdgeContext context) {
+    return localHandles.computeIfAbsent(context, __ ->
+            system.actorOf(
+                    AkkaRear.LocalMediator.props(clazz),
+                    context.edgeId().nodeId() + "-localrear"
+            )
+    );
   }
 
   private static class AkkaRearInstance implements FlameRuntime.RearInstance<AkkaRear> {

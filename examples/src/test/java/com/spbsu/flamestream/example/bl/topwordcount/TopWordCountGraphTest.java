@@ -56,7 +56,7 @@ public class TopWordCountGraphTest extends FlameAkkaSuite {
                 lineSize * streamSize
         );
         flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordsTop.class))
-                .forEach(r -> r.addListener(awaitConsumer));
+                .addListener(awaitConsumer);
         final List<AkkaFront.FrontHandle<String>> handles = flame
                 .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system()))
                 .collect(Collectors.toList());

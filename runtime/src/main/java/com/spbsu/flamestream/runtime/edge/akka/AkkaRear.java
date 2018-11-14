@@ -15,7 +15,11 @@ import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -132,15 +136,31 @@ public class AkkaRear implements Rear {
     }
   }
 
-  public static class Handle<T> {
-    private final ActorRef localMediator;
+  public static class Handles<T> {
+    private final ObservableSet<ActorRef> localMediators;
+    private final List<Consumer<T>> sinks = new ArrayList<>();
 
-    Handle(ActorRef localMediator) {
-      this.localMediator = localMediator;
+    Handles(ObservableSet<ActorRef> localMediators) {
+      this.localMediators = localMediators;
+      localMediators.addListener((SetChangeListener<ActorRef>) change -> {
+        if (change.wasAdded()) {
+          for (Consumer<T> sink : sinks) {
+            change.getElementAdded().tell(sink, ActorRef.noSender());
+          }
+        }
+      });
+      for (ActorRef localMediator : localMediators) {
+        for (Consumer<T> sink : sinks) {
+          localMediator.tell(sink, ActorRef.noSender());
+        }
+      }
     }
 
     public void addListener(Consumer<T> sink) {
-      localMediator.tell(sink, ActorRef.noSender());
+      sinks.add(sink);
+      for (ActorRef localMediator : localMediators) {
+        localMediator.tell(sink, ActorRef.noSender());
+      }
     }
   }
 }

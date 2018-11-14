@@ -65,7 +65,7 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
                 .mapToInt(List::size)
                 .sum());
         flame.attachRear("groupingAcceptanceRear", new AkkaRearType<>(runtime.system(), List.class))
-                .forEach(r -> r.addListener(consumer::accept));
+                .addListener(consumer::accept);
         IntStream.range(0, parallelism).forEach(i -> applyDataToHandleAsync(source.get(i).stream(), handles.get(i)));
 
         consumer.await(5, TimeUnit.MINUTES);

@@ -177,7 +177,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
       final List<Integer> expected = expected(source);
       final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(expected.size());
       flame.attachRear("doubleGroupingRear", new AkkaRearType<>(runtime.system(), Integer.class))
-              .forEach(r -> r.addListener(consumer));
+              .addListener(consumer);
 
       final List<AkkaFront.FrontHandle<Integer>> handles = flame.attachFront(
               "doubleGroupingFront",

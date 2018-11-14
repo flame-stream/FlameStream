@@ -90,7 +90,7 @@ public final class SumTest extends FlameAkkaSuite {
 
         final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.stream().mapToInt(List::size).sum());
         flame.attachRear("sumRear", new AkkaRearType<>(runtime.system(), Sum.class))
-                .forEach(r -> r.addListener(consumer));
+                .addListener(consumer);
         IntStream.range(0, parallelism).forEach(i -> applyDataToHandleAsync(source.get(i).stream(), handles.get(i)));
 
         consumer.await(10, TimeUnit.MINUTES);
@@ -131,7 +131,7 @@ public final class SumTest extends FlameAkkaSuite {
 
         final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.size());
         flame.attachRear("totalOrderRear", new AkkaRearType<>(runtime.system(), Sum.class))
-                .forEach(r -> r.addListener(consumer));
+                .addListener(consumer);
         source.forEach(sink);
         sink.eos();
 
@@ -161,7 +161,7 @@ public final class SumTest extends FlameAkkaSuite {
 
         final AwaitResultConsumer<Sum> consumer = new AwaitResultConsumer<>(source.size());
         flame.attachRear("totalOrderRear", new AkkaRearType<>(system, Sum.class))
-                .forEach(r -> r.addListener(consumer));
+                .addListener(consumer);
 
         final Set<Sum> expected = new HashSet<>();
         long currentSum = 0;

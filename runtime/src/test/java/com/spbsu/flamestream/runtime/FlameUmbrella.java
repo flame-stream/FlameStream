@@ -24,6 +24,7 @@ import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import javafx.collections.FXCollections;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -170,10 +171,9 @@ class FlameUmbrella extends LoggingActor {
               final AttachRear attach = new AttachRear(a.id, a.type.instance());
               toBeTold.add(attach);
               getContext().getChildren().forEach(n -> n.tell(attach, self()));
-              final List<Object> collect = paths.entrySet().stream()
-                      .map(node -> a.type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), a.id)))
-                      .collect(Collectors.toList());
-              sender().tell(collect, self());
+              sender().tell(a.type.handles(FXCollections.observableSet(paths.entrySet().stream()
+                      .map(node -> new SystemEdgeContext(node.getValue(), node.getKey(), a.id))
+                      .collect(Collectors.toSet()))), self());
             })
             .build();
   }

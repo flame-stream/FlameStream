@@ -86,7 +86,7 @@ public class BlinkBenchStand implements AutoCloseable {
 
     try (FlameRuntime.Flame flame = runtime.run(new InvertedIndexGraph().get())) {
       flame.attachRear("wikirear", new AkkaRearType<>(system, WordBase.class))
-              .forEach(r -> r.addListener(wordBase -> {
+              .addListener(wordBase -> {
                 final WordIndexAdd wordIndexAdd;
                 if (wordBase instanceof WordIndexAdd) {
                   wordIndexAdd = (WordIndexAdd) wordBase;
@@ -102,7 +102,7 @@ public class BlinkBenchStand implements AutoCloseable {
                   LOG.info("Progress: {}/{}", awaitConsumer.got(), awaitConsumer.expected());
                 }
 
-              }));
+              });
 
       final List<AkkaFront.FrontHandle<Object>> consumers =
               flame.attachFront("wikifront", new AkkaFrontType<>(system, true))

@@ -40,7 +40,7 @@ public class InvertedIndexTest extends FlameAkkaSuite {
         final String invocationConfig = validator.getClass().getSimpleName() + "-bp-" + backPressure;
         final AwaitResultConsumer<WordBase> awaitConsumer = new AwaitResultConsumer<>(validator.expectedOutputSize());
         flame.attachRear("Rear-" + invocationConfig, new AkkaRearType<>(runtime.system(), WordBase.class))
-                .forEach(r -> r.addListener(awaitConsumer));
+                .addListener(awaitConsumer);
 
         final List<AkkaFront.FrontHandle<Object>> consumers =
                 flame.attachFront("Front-" + invocationConfig, new AkkaFrontType<>(runtime.system(), backPressure))

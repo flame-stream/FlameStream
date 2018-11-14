@@ -32,14 +32,14 @@ public class InvertedIndexBenchmark {
       final ConcurrentSkipListMap<Integer, LatencyMeasurer> latencies = new ConcurrentSkipListMap<>();
       final AwaitCountConsumer awaitConsumer = new AwaitCountConsumer(65813);
       flame.attachRear("Rear", new AkkaRearType<>(runtime.system(), WordBase.class))
-              .forEach(r -> r.addListener(wordBase -> {
+              .addListener(wordBase -> {
                 awaitConsumer.accept(wordBase);
                 if (wordBase instanceof WordIndexAdd) {
                   final WordIndexAdd indexAdd = (WordIndexAdd) wordBase;
                   final int docId = IndexItemInLong.pageId(indexAdd.positions()[0]);
                   latencies.get(docId).finish();
                 }
-              }));
+              });
 
       final List<AkkaFront.FrontHandle<WikipediaPage>> handles = flame
               .attachFront("Front", new AkkaFrontType<WikipediaPage>(runtime.system()))

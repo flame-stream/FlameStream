@@ -70,11 +70,11 @@ public class LocalRuntime implements FlameRuntime {
       }
 
       @Override
-      public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
+      public <R extends Rear, H> H attachRear(String id, RearType<R, H> type) {
         try {
           //noinspection unchecked
           return PatternsCS.ask(cluster, new FlameUmbrella.RearTypeWithId<>(id, type), FlameConfig.config.bigTimeout())
-                  .thenApply(a -> (List<H>) a).toCompletableFuture().get().stream();
+                  .thenApply(a -> (H) a).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
           throw new RuntimeException(e);
         }

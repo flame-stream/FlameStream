@@ -6,10 +6,12 @@ import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
+import javafx.collections.FXCollections;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RemoteRuntime implements FlameRuntime {
@@ -65,7 +67,7 @@ public class RemoteRuntime implements FlameRuntime {
     }
 
     @Override
-    public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
+    public <R extends Rear, H> H attachRear(String id, RearType<R, H> type) {
       log.info("Attaching rear id: '{}', type: '{}'", id, type);
       try {
         curator.create()
@@ -75,10 +77,11 @@ public class RemoteRuntime implements FlameRuntime {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-      return clusterConfig.paths()
+      return type.handles(FXCollections.observableSet(clusterConfig.paths()
               .entrySet()
               .stream()
-              .map(e -> type.handle(new SystemEdgeContext(e.getValue(), e.getKey(), id)));
+              .map(e -> new SystemEdgeContext(e.getValue(), e.getKey(), id))
+              .collect(Collectors.toSet())));
     }
   }
 }
