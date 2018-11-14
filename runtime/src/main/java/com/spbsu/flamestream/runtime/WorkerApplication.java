@@ -34,6 +34,14 @@ public class WorkerApplication implements Runnable {
   @Nullable
   private ActorSystem system = null;
 
+  static {
+    try {
+      Class.forName("org.agrona.concurrent.SleepingIdleStrategy");
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+  }
+
   public WorkerApplication(String id, DumbInetSocketAddress host, String zkString) {
     this(id, host, zkString, null);
   }
@@ -45,13 +53,7 @@ public class WorkerApplication implements Runnable {
     this.snapshotPath = snapshotPath;
   }
 
-
   public static void main(String... args) throws IOException {
-    try {
-      Class.forName("org.agrona.concurrent.SleepingIdleStrategy");
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
     final Path configPath = Paths.get(args[0]);
     final ObjectMapper mapper = new ObjectMapper();
     final WorkerConfig workerConfig = mapper.readValue(
