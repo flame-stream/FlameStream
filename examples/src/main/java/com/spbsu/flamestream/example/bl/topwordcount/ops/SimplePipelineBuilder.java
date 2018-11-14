@@ -8,6 +8,9 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import scala.util.Either;
+import scala.util.Left;
+import scala.util.Right;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,52 +34,65 @@ public class SimplePipelineBuilder {
   private final Graph.Builder graphBuilder = new Graph.Builder();
   private final ArrayList<Node> nodes = new ArrayList<>();
 
-  private class StatefulOpPipeline<Input, Output extends Input> {
-    StatefulOp<Input, Output> op;
+  private class StatefulOpPipeline<Input, State, Output> {
+    StatefulOp<Input, State, Output> op;
     Hashing<Input> hashing;
 
-    StatefulOpPipeline(StatefulOp<Input, Output> op, Hashing<Input> hashing) {
+    StatefulOpPipeline(StatefulOp<Input, State, Output> op, Hashing<Input> hashing) {
       this.op = op;
       this.hashing = hashing;
     }
 
     private class Item {
-      final Input value;
-      final boolean reduced;
+      final Either<Input, State> value;
+      final Input hash;
 
-      Item(Input value, boolean reduced) {
+      Item(Either<Input, State> value, Input hash) {
         this.value = value;
-        this.reduced = reduced;
+        this.hash = hash;
       }
 
       @Override
       public int hashCode() {
-        return hashing.hash(value);
+        return hashing.hash(hash);
+      }
+    }
+
+    private class HashedState {
+      final State state;
+      final Input hash;
+
+      private HashedState(State state, Input hash) {
+        this.state = state;
+        this.hash = hash;
       }
     }
 
     private class Source implements Function<Input, Stream<Item>> {
       @Override
       public Stream<Item> apply(Input input) {
-        return Stream.of(new Item(input, false));
+        return Stream.of(new Item(new Left<>(input), input));
       }
     }
 
-    private class Reducer implements Function<List<Item>, Stream<Output>> {
+    private class Reducer implements Function<List<Item>, Stream<HashedState>> {
       @Override
-      public Stream<Output> apply(List<Item> items) {
+      public Stream<HashedState> apply(List<Item> items) {
         switch (items.size()) {
           case 1:
             final Item item = items.get(0);
-            if (!item.reduced) {
-              return Stream.of(op.output(item.value));
+            if (item.value.isLeft()) {
+              return Stream.of(new HashedState(op.aggregate(item.value.left().get(), null), item.hash));
             }
             return Stream.empty();
           case 2:
             final Item right = items.get(0);
             final Item left = items.get(1);
-            if (right.reduced && !left.reduced) {
-              return Stream.of(op.reduce(op.output(left.value), op.output(right.value)));
+            if (right.value.isRight() && left.value.isLeft()) {
+              return Stream.of(new HashedState(
+                      op.aggregate(left.value.left().get(), right.value.right().get()),
+                      left.hash
+              ));
             }
             return Stream.empty();
           default:
@@ -85,10 +101,17 @@ public class SimplePipelineBuilder {
       }
     }
 
-    private class Regrouper implements Function<Output, Stream<Item>> {
+    private class Regrouper implements Function<HashedState, Stream<Item>> {
       @Override
-      public Stream<Item> apply(Output item) {
-        return Stream.of(new Item(item, true));
+      public Stream<Item> apply(HashedState item) {
+        return Stream.of(new Item(new Right<>(item.state), item.hash));
+      }
+    }
+
+    private class Sink implements Function<HashedState, Stream<Output>> {
+      @Override
+      public Stream<Output> apply(HashedState item) {
+        return Stream.of(op.release(item.state));
       }
     }
 
@@ -96,36 +119,43 @@ public class SimplePipelineBuilder {
       final FlameMap<Input, Item> source = new FlameMap<>(new Source(), op.inputClass());
       //noinspection Convert2Lambda
       final Grouping grouping = new Grouping<>(
-              hashing.hashFunction(HashFunction.objectHash(Item.class)),
-              hashing.equalz(new Equalz() {
+              HashFunction.objectHash(Item.class),
+              new Equalz() {
                 @Override
                 public boolean test(DataItem o1, DataItem o2) {
                   final Item payload = o1.payload(Item.class);
                   final Item payload1 = o2.payload(Item.class);
-                  return hashing.equals(payload.value, payload1.value);
+                  return hashing.equals(payload.hash, payload1.hash);
                 }
-              }),
+              },
               2,
               Item.class
       );
-      final FlameMap<List<Item>, Output> reducer = new FlameMap<>(new Reducer(), List.class);
-      final FlameMap<Output, Item> regrouper = new FlameMap<>(new Regrouper(), op.outputClass());
+      final FlameMap<List<Item>, HashedState> reducer = new FlameMap<>(new Reducer(), List.class);
+      final FlameMap<HashedState, Item> regrouper = new FlameMap<>(new Regrouper(), HashedState.class);
+      final FlameMap<HashedState, Output> sink = new FlameMap<>(new Sink(), HashedState.class);
       graphBuilder
               .link(source, grouping)
               .link(grouping, reducer)
               .link(reducer, regrouper)
+              .link(reducer, sink)
               .link(regrouper, grouping);
 
-      ArrayList<Graph.Vertex> colocated = new ArrayList<Graph.Vertex>(Arrays.asList(grouping, reducer, regrouper));
+      ArrayList<Graph.Vertex> colocated = new ArrayList<Graph.Vertex>(Arrays.asList(
+              grouping,
+              reducer,
+              regrouper,
+              sink
+      ));
       return new Node() {
         public Graph.Vertex source() {
           return source;
         }
 
-        public Graph.Vertex sink() { return reducer; }
+        public Graph.Vertex sink() { return sink; }
 
         public void connect(Node node) {
-          graphBuilder.link(reducer, node.source());
+          graphBuilder.link(sink, node.source());
           colocated.add(node.source());
         }
 
@@ -136,7 +166,7 @@ public class SimplePipelineBuilder {
     }
   }
 
-  public <Input, Output extends Input> Node node(StatefulOp<Input, Output> op, Hashing<Input> hashing) {
+  public <Input, State, Output> Node node(StatefulOp<Input, State, Output> op, Hashing<Input> hashing) {
     Node node = new StatefulOpPipeline<>(op, hashing).build(graphBuilder);
     nodes.add(node);
     return node;

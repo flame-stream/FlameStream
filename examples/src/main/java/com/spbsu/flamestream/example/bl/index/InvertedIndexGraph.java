@@ -44,7 +44,8 @@ public class InvertedIndexGraph implements Supplier<Graph> {
     final Source source = new Source();
     final FlameMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlameMap<>(
             new WikipediaPageToWordPositions(),
-            WikipediaPage.class
+            WikipediaPage.class,
+            HashFunction.objectHash(WikipediaPage.class)
     );
     final FlameMap<WordBase, WordBase> indexDiffFilter = new FlameMap<>(new WordIndexDiffFilter(), WordBase.class);
     final Grouping<WordBase> grouping = new Grouping<>(wordHash, wordEqualz, 2, WordBase.class);
@@ -57,7 +58,7 @@ public class InvertedIndexGraph implements Supplier<Graph> {
     final Sink sink = new Sink();
 
     return new Graph.Builder()
-            .linkShuffle(source, wikiPageToPositions)
+            .link(source, wikiPageToPositions)
             //.colocate(source, wikiPageToPositions)
             .link(wikiPageToPositions, grouping)
             .link(grouping, wrongOrderingFilter)
