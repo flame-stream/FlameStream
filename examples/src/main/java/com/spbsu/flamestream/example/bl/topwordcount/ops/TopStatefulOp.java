@@ -5,6 +5,7 @@ import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordsTop;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -13,36 +14,35 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 
-public class TopStatefulOp implements StatefulOp<Object, WordsTop> {
-  private final Integer limit;
+public class TopStatefulOp implements StatefulOp<WordCounter, WordsTop, WordsTop> {
+  private final int limit;
 
-  public TopStatefulOp(Integer limit) {
+  public TopStatefulOp(int limit) {
     this.limit = limit;
   }
 
-  public Class<Object> inputClass() {
-    return Object.class;
+  public Class<WordCounter> inputClass() {
+    return WordCounter.class;
   }
 
   public Class<WordsTop> outputClass() {
     return WordsTop.class;
   }
 
-  public WordsTop output(Object input) {
-    if (input instanceof WordCounter) {
-      final WordCounter wordCounter = (WordCounter) input;
-      final HashMap<String, Integer> wordCounters = new HashMap<>();
-      wordCounters.put(wordCounter.word(), wordCounter.count());
-      return new WordsTop(wordCounters);
-    } else {
-      return (WordsTop) input;
-    }
-  }
-
-  public WordsTop reduce(WordsTop left, WordsTop right) {
-    return new WordsTop(Stream.of(left, right).flatMap(wordsTop -> wordsTop.wordCounters().entrySet().stream())
+  @Override
+  public WordsTop aggregate(WordCounter wordCounter, @Nullable WordsTop state) {
+    final HashMap<String, Integer> wordCounters = new HashMap<>();
+    wordCounters.put(wordCounter.word(), wordCounter.count());
+    final WordsTop singleWordTop = new WordsTop(wordCounters);
+    if (state == null)
+      return singleWordTop;
+    return new WordsTop(Stream.of(singleWordTop, state)
+            .flatMap(wordsTop -> wordsTop.wordCounters().entrySet().stream())
             .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, Math::max))
-            .entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(limit)
+            .entrySet()
+            .stream()
+            .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+            .limit(limit)
             .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, Math::max)));
   }
 }

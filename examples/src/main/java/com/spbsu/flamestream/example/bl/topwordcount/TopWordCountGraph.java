@@ -3,6 +3,7 @@ package com.spbsu.flamestream.example.bl.topwordcount;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordContainer;
+import com.spbsu.flamestream.example.bl.topwordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordEntry;
 import com.spbsu.flamestream.example.bl.topwordcount.model.WordsTop;
 import com.spbsu.flamestream.example.bl.topwordcount.ops.BucketedTopStatefulOp;
@@ -49,10 +50,10 @@ public class TopWordCountGraph implements Supplier<Graph> {
     });
     final SimplePipelineBuilder.Node bucketedTop = simplePipelineBuilder.node(
             new BucketedTopStatefulOp(2),
-            new Hashing<Object>() {
+            new Hashing<WordCounter>() {
               @Override
-              public HashFunction hashFunction(HashFunction hashFunction) {
-                return HashFunction.bucketedHash(hashFunction, 2);
+              public int hash(WordCounter wordCounter) {
+                return wordCounter.hashCode() % 2;
               }
             }
     );
