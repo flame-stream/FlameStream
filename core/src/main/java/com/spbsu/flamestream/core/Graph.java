@@ -27,8 +27,6 @@ public interface Graph {
 
   Stream<Vertex> adjacent(Vertex vertex);
 
-  boolean isShuffle(Vertex from, Vertex to);
-
   interface Vertex {
     String id();
 
@@ -55,12 +53,6 @@ public interface Graph {
       return this;
     }
 
-    public Builder linkShuffle(Vertex from, Vertex to) {
-      link(from, to);
-      shuffles.add(new Tuple2<>(from, to));
-      return this;
-    }
-
     public Builder link(Vertex from, Vertex to) {
       adjLists.put(from, to);
       invertedAdjLists.put(to, from);
@@ -81,7 +73,7 @@ public interface Graph {
 
       v.forEach(isolated -> components.add(Collections.singleton(isolated)));
 
-      return new MyGraph(adjLists, source, sink, components, shuffles);
+      return new MyGraph(adjLists, source, sink, components);
     }
 
     private static class MyGraph implements Graph {
@@ -90,17 +82,14 @@ public interface Graph {
       private final Sink sink;
       private final Map<Vertex, Collection<Vertex>> adjLists;
 
-      private final List<Tuple2<Vertex, Vertex>> shuffles;
       private final Set<Set<Vertex>> components;
 
       MyGraph(Multimap<Vertex, Vertex> adjLists,
               Source source,
               Sink sink,
-              Set<Set<Vertex>> components,
-              List<Tuple2<Vertex, Vertex>> shuffles) {
+              Set<Set<Vertex>> components) {
         this.allVertices = new ArrayList<>(adjLists.keySet());
         this.components = components;
-        this.shuffles = shuffles;
         allVertices.add(sink);
         // Multimap is converted to Map<.,Set> to support serialization
         this.adjLists = adjLists.entries().stream().collect(Collectors.groupingBy(
@@ -113,11 +102,6 @@ public interface Graph {
 
         this.source = source;
         this.sink = sink;
-      }
-
-      @Override
-      public boolean isShuffle(Vertex from, Vertex to) {
-        return shuffles.contains(new Tuple2<>(from, to));
       }
 
       @Override
