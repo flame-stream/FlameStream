@@ -43,7 +43,7 @@ public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear
         localMediators.add(localMediator(change.getElementAdded()));
       }
     });
-    return new AkkaRear.Handles<>(localMediators);
+    return new AkkaRear.Handles<>(FXCollections.unmodifiableObservableSet(localMediators));
   }
 
   private ActorRef localMediator(EdgeContext context) {

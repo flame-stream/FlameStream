@@ -171,9 +171,12 @@ class FlameUmbrella extends LoggingActor {
               final AttachRear attach = new AttachRear(a.id, a.type.instance());
               toBeTold.add(attach);
               getContext().getChildren().forEach(n -> n.tell(attach, self()));
-              sender().tell(a.type.handles(FXCollections.observableSet(paths.entrySet().stream()
-                      .map(node -> new SystemEdgeContext(node.getValue(), node.getKey(), a.id))
-                      .collect(Collectors.toSet()))), self());
+              sender().tell(a.type.handles(
+                      FXCollections.unmodifiableObservableSet(FXCollections.observableSet(paths.entrySet()
+                              .stream()
+                              .map(node -> new SystemEdgeContext(node.getValue(), node.getKey(), a.id))
+                              .collect(Collectors.toSet())))
+              ), self());
             })
             .build();
   }

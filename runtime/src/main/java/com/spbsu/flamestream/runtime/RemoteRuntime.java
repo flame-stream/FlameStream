@@ -77,11 +77,11 @@ public class RemoteRuntime implements FlameRuntime {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-      return type.handles(FXCollections.observableSet(clusterConfig.paths()
+      return type.handles(FXCollections.unmodifiableObservableSet(FXCollections.observableSet(clusterConfig.paths()
               .entrySet()
               .stream()
               .map(e -> new SystemEdgeContext(e.getValue(), e.getKey(), id))
-              .collect(Collectors.toSet())));
+              .collect(Collectors.toSet()))));
     }
   }
 }
