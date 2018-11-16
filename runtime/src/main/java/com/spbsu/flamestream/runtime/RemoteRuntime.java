@@ -6,8 +6,8 @@ import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
-import javafx.collections.FXCollections;
 import org.apache.curator.framework.CuratorFramework;
+import org.reactfx.collection.LiveArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,11 +77,11 @@ public class RemoteRuntime implements FlameRuntime {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-      return type.handles(FXCollections.unmodifiableObservableList(FXCollections.observableList(clusterConfig.paths()
+      return type.handles(new LiveArrayList<>(clusterConfig.paths()
               .entrySet()
               .stream()
               .map(e -> new SystemEdgeContext(e.getValue(), e.getKey(), id))
-              .collect(Collectors.toList()))));
+              .collect(Collectors.toList())));
     }
   }
 }

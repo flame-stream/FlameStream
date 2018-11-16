@@ -125,6 +125,11 @@
             <groupId>kryonet</groupId>
             <artifactId>kryonet</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.reactfx</groupId>
+            <artifactId>reactfx</artifactId>
+            <version>2.0-M5</version>
+        </dependency>
 
         <!--Tests-->
         <dependency>

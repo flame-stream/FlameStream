@@ -16,7 +16,7 @@ import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
+import org.reactfx.collection.LiveList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -137,10 +137,10 @@ public class AkkaRear implements Rear {
   }
 
   public static class Handles<T> {
-    private final ObservableList<ActorRef> localMediators;
+    private final LiveList<ActorRef> localMediators;
     private final List<Consumer<T>> sinks = new ArrayList<>();
 
-    Handles(ObservableList<ActorRef> localMediators) {
+    Handles(LiveList<ActorRef> localMediators) {
       this.localMediators = localMediators;
       localMediators.addListener((ListChangeListener<ActorRef>) change -> {
         for (ActorRef localMediator : change.getAddedSubList()) {

@@ -2,7 +2,7 @@ package com.spbsu.flamestream.runtime.edge.socket;
 
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import javafx.collections.ObservableList;
+import org.reactfx.collection.LiveList;
 
 /**
  * User: Artem
@@ -25,7 +25,7 @@ public class SocketRearType implements FlameRuntime.RearType<SocketRear, Void> {
   }
 
   @Override
-  public Void handles(ObservableList<EdgeContext> context) {
+  public Void handles(LiveList<EdgeContext> context) {
     return null;
   }
 
