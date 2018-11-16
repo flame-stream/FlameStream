@@ -8,8 +8,8 @@ import akka.actor.RootActorPath;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableSet;
-import javafx.collections.SetChangeListener;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,17 +33,17 @@ public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear
   }
 
   @Override
-  public AkkaRear.Handles<T> handles(ObservableSet<EdgeContext> contexts) {
-    ObservableSet<ActorRef> localMediators =
-            FXCollections.observableSet(contexts.stream()
+  public AkkaRear.Handles<T> handles(ObservableList<EdgeContext> contexts) {
+    ObservableList<ActorRef> localMediators =
+            FXCollections.observableList(contexts.stream()
                     .map(this::localMediator)
-                    .collect(Collectors.toSet()));
-    contexts.addListener((SetChangeListener<EdgeContext>) change -> {
-      if (change.wasAdded()) {
-        localMediators.add(localMediator(change.getElementAdded()));
+                    .collect(Collectors.toList()));
+    contexts.addListener((ListChangeListener<EdgeContext>) change -> {
+      for (EdgeContext context : change.getAddedSubList()) {
+        localMediators.add(localMediator(context));
       }
     });
-    return new AkkaRear.Handles<>(FXCollections.unmodifiableObservableSet(localMediators));
+    return new AkkaRear.Handles<>(FXCollections.unmodifiableObservableList(localMediators));
   }
 
   private ActorRef localMediator(EdgeContext context) {

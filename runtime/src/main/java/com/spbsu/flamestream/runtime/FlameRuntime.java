@@ -4,7 +4,7 @@ import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import javafx.collections.ObservableSet;
+import javafx.collections.ObservableList;
 
 import java.util.stream.Stream;
 
@@ -38,7 +38,7 @@ public interface FlameRuntime extends AutoCloseable {
   interface RearType<R extends Rear, H> {
     RearInstance<R> instance();
 
-    H handles(ObservableSet<EdgeContext> context);
+    H handles(ObservableList<EdgeContext> context);
   }
 
   interface FrontInstance<F extends Front> {

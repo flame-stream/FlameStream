@@ -15,8 +15,8 @@ import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import javafx.collections.ObservableSet;
-import javafx.collections.SetChangeListener;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -137,15 +137,15 @@ public class AkkaRear implements Rear {
   }
 
   public static class Handles<T> {
-    private final ObservableSet<ActorRef> localMediators;
+    private final ObservableList<ActorRef> localMediators;
     private final List<Consumer<T>> sinks = new ArrayList<>();
 
-    Handles(ObservableSet<ActorRef> localMediators) {
+    Handles(ObservableList<ActorRef> localMediators) {
       this.localMediators = localMediators;
-      localMediators.addListener((SetChangeListener<ActorRef>) change -> {
-        if (change.wasAdded()) {
+      localMediators.addListener((ListChangeListener<ActorRef>) change -> {
+        for (ActorRef localMediator : change.getAddedSubList()) {
           for (Consumer<T> sink : sinks) {
-            change.getElementAdded().tell(sink, ActorRef.noSender());
+            localMediator.tell(sink, ActorRef.noSender());
           }
         }
       });

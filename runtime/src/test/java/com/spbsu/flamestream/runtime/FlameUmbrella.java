@@ -172,10 +172,10 @@ class FlameUmbrella extends LoggingActor {
               toBeTold.add(attach);
               getContext().getChildren().forEach(n -> n.tell(attach, self()));
               sender().tell(a.type.handles(
-                      FXCollections.unmodifiableObservableSet(FXCollections.observableSet(paths.entrySet()
+                      FXCollections.unmodifiableObservableList(FXCollections.observableList(paths.entrySet()
                               .stream()
                               .map(node -> new SystemEdgeContext(node.getValue(), node.getKey(), a.id))
-                              .collect(Collectors.toSet())))
+                              .collect(Collectors.toList())))
               ), self());
             })
             .build();
