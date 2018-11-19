@@ -138,29 +138,20 @@ public class AkkaRear implements Rear {
 
   public static class Handles<T> {
     private final LiveList<ActorRef> localMediators;
-    private final List<Consumer<T>> sinks = new ArrayList<>();
 
     Handles(LiveList<ActorRef> localMediators) {
       this.localMediators = localMediators;
-      localMediators.addListener((ListChangeListener<ActorRef>) change -> {
-        for (ActorRef localMediator : change.getAddedSubList()) {
-          for (Consumer<T> sink : sinks) {
-            localMediator.tell(sink, ActorRef.noSender());
-          }
-        }
-      });
-      for (ActorRef localMediator : localMediators) {
-        for (Consumer<T> sink : sinks) {
-          localMediator.tell(sink, ActorRef.noSender());
-        }
-      }
     }
 
     public void addListener(Consumer<T> sink) {
-      sinks.add(sink);
       for (ActorRef localMediator : localMediators) {
         localMediator.tell(sink, ActorRef.noSender());
       }
+      localMediators.addListener((ListChangeListener<ActorRef>) c -> {
+        for (ActorRef localMediator : c.getAddedSubList()) {
+          localMediator.tell(sink, ActorRef.noSender());
+        }
+      });
     }
   }
 }
