@@ -14,9 +14,6 @@
     src: bench.conf.j2
     dest: "{{ flamestream_dir }}/bench.conf"
 
-- name: Clean shm
-  shell: rm -rf /dev/shm/aeron*
-
 - name: Start the flamestream bench
   shell: >
     java
