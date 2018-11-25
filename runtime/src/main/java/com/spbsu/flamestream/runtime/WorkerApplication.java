@@ -53,13 +53,8 @@ public class WorkerApplication implements Runnable {
     this.snapshotPath = snapshotPath;
   }
 
-  public static void main(String... args) throws IOException {
-    final Path configPath = Paths.get(args[0]);
-    final ObjectMapper mapper = new ObjectMapper();
-    final WorkerConfig workerConfig = mapper.readValue(
-            Files.readAllBytes(configPath),
-            WorkerConfig.class
-    );
+  public static void main(String... args) {
+    final WorkerConfig workerConfig = new WorkerConfig();
     final String id = workerConfig.id();
     final DumbInetSocketAddress socketAddress = workerConfig.localAddress();
     final String zkString = workerConfig.zkString();
@@ -120,6 +115,16 @@ public class WorkerApplication implements Runnable {
     private final String zkString;
     private final String snapshotPath;
     private final Guarantees guarantees;
+
+    private WorkerConfig() {
+      this(
+              System.getenv("ID"),
+              System.getenv("LOCAL_ADDRESS"),
+              System.getenv("ZK_STRING"),
+              System.getenv("SNAPSHOT_PATH"),
+              Guarantees.valueOf(System.getenv("GUARANTEES"))
+      );
+    }
 
     private WorkerConfig(@JsonProperty("id") String id,
                          @JsonProperty("localAddress") String localAddress,
