@@ -11,21 +11,15 @@ import java.util.Map;
 public class ClusterConfig {
   private final Map<String, ActorPath> paths;
   private final String masterLocation;
-  private final ComputationProps props;
-  private final int millisBetweenCommits;
-  private final int defaultMinTime;
+  private final Map<String, HashGroup> hashGroups;
 
   @JsonCreator
   public ClusterConfig(@JsonProperty("paths") Map<String, ActorPath> paths,
                        @JsonProperty("masterLocation") String masterLocation,
-                       @JsonProperty("props") ComputationProps props,
-                       @JsonProperty("millisBetweenCommits") int millisBetweenCommits,
-                       @JsonProperty("defaultMinTime") int defaultMinTime) {
+                       @JsonProperty("hashGroups") Map<String, HashGroup> hashGroups) {
     this.paths = paths;
     this.masterLocation = masterLocation;
-    this.props = props;
-    this.millisBetweenCommits = millisBetweenCommits;
-    this.defaultMinTime = defaultMinTime;
+    this.hashGroups = hashGroups;
   }
 
   @JsonProperty
@@ -38,25 +32,19 @@ public class ClusterConfig {
     return masterLocation;
   }
 
-  @JsonIgnore
-  public int defaultMinTime() {
-    return defaultMinTime;
+  @JsonProperty
+  public Map<String, HashGroup> hashGroups() {
+    return hashGroups;
   }
 
-  @JsonProperty
-  public ComputationProps props() {
-    return props;
-  }
-
-  @JsonProperty
-  public int millisBetweenCommits() {
-    return this.millisBetweenCommits;
+  public ComputationProps props(int maxElementsInGraph) {
+    return new ComputationProps(hashGroups, maxElementsInGraph);
   }
 
   public ClusterConfig withChildPath(String childPath) {
     final Map<String, ActorPath> newPaths = new HashMap<>();
     paths.forEach((s, path) -> newPaths.put(s, path.child(childPath)));
-    return new ClusterConfig(newPaths, masterLocation, props, millisBetweenCommits, 0);
+    return new ClusterConfig(newPaths, masterLocation, hashGroups);
   }
 
   @Override
@@ -64,7 +52,7 @@ public class ClusterConfig {
     return "ClusterConfig{" +
             "paths=" + paths +
             ", masterLocation='" + masterLocation + '\'' +
-            ", props=" + props +
+            ", hashGroups=" + hashGroups +
             '}';
   }
 }

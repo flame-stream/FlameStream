@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.ActorSystem;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spbsu.flamestream.runtime.config.AckerConfig;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
@@ -87,8 +88,13 @@ public class WorkerApplication implements Runnable {
 
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);
+    final AckerConfig ackerConfig = new AckerConfig(
+            Integer.parseInt(System.getenv("MAX_ELEMENTS_IN_GRAPH")),
+            Integer.parseInt(System.getenv("MILLIS_BETWEEN_COMMITS")),
+            0
+    );
     //noinspection ConstantConditions
-    system.actorOf(StartupWatcher.props(id, zkString, snapshotPath), "watcher");
+    system.actorOf(StartupWatcher.props(id, zkString, snapshotPath, ackerConfig), "watcher");
 
     system.registerOnTermination(() -> {
       try {

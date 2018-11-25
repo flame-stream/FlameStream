@@ -67,7 +67,7 @@ public class LocalClusterRuntime implements FlameRuntime {
       worker.run();
     }
 
-    final ClusterConfig config = config(workersAddresses, maxElementsInGraph, millisBetweenCommits);
+    final ClusterConfig config = config(workersAddresses);
     LOG.info("Pushing configuration {}", config);
     final CuratorFramework curator = CuratorFrameworkFactory.newClient(
             zkString,
@@ -103,9 +103,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     return zkString;
   }
 
-  private static ClusterConfig config(Map<String, ActorPath> workers,
-                                      int maxElementsInGraph,
-                                      int millisBetweenCommits) {
+  private static ClusterConfig config(Map<String, ActorPath> workers) {
     final String masterLocation = workers.keySet().stream().findAny().orElseThrow(IllegalArgumentException::new);
 
     final Map<String, HashGroup> rangeMap = new HashMap<>();
@@ -116,8 +114,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     });
     assert ranges.isEmpty();
 
-    final ComputationProps computationProps = new ComputationProps(rangeMap, maxElementsInGraph);
-    return new ClusterConfig(workers, masterLocation, computationProps, millisBetweenCommits, 0);
+    return new ClusterConfig(workers, masterLocation, rangeMap);
   }
 
   private Set<Integer> freePorts(int n) throws IOException {

@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.runtime.config.AckerConfig;
 import com.spbsu.flamestream.runtime.master.acker.Acker;
 import com.spbsu.flamestream.runtime.master.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
@@ -23,14 +24,13 @@ public class FlameNode extends LoggingActor {
   private final ActorRef edgeManager;
   private final ClusterConfig config;
 
-  private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, Registry registry, StateStorage storage) {
+  private FlameNode(String id, Graph bootstrapGraph, ClusterConfig config, AckerConfig ackerConfig, Registry registry, StateStorage storage) {
     this.config = config;
     final ActorRef acker;
     if (id.equals(config.masterLocation())) {
       acker = context().actorOf(Acker.props(
               config.paths().size(),
-              config.defaultMinTime(),
-              config.millisBetweenCommits(),
+              ackerConfig,
               registry
       ), "acker");
     } else {
@@ -41,7 +41,7 @@ public class FlameNode extends LoggingActor {
             id,
             bootstrapGraph,
             acker,
-            config.props(),
+            config.props(ackerConfig.maxElementsInGraph()),
             storage
     ), "graph");
     graph.tell(resolvedManagers(), self());
@@ -58,9 +58,10 @@ public class FlameNode extends LoggingActor {
   public static Props props(String id,
                             Graph initialGraph,
                             ClusterConfig initialConfig,
+                            AckerConfig ackerConfig,
                             Registry registry,
                             StateStorage stateStorage) {
-    return Props.create(FlameNode.class, id, initialGraph, initialConfig, registry, stateStorage);
+    return Props.create(FlameNode.class, id, initialGraph, initialConfig, ackerConfig, registry, stateStorage);
   }
 
   @Override

@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.serialization.SerializationExtension;
+import com.spbsu.flamestream.runtime.config.AckerConfig;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.master.ClientWatcher;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
@@ -33,20 +34,22 @@ public class StartupWatcher extends LoggingActor {
   private final String zkConnectString;
   private final String id;
   private final String snapshotPath;
+  private final AckerConfig ackerConfig;
 
   private StateStorage stateStorage = null;
   private ClusterConfig config = null;
   private CuratorFramework curator = null;
   private NodeCache configCache = null;
 
-  private StartupWatcher(String id, String zkConnectString, String snapshotPath) {
+  private StartupWatcher(String id, String zkConnectString, String snapshotPath, AckerConfig ackerConfig) {
     this.zkConnectString = zkConnectString;
     this.id = id;
     this.snapshotPath = snapshotPath;
+    this.ackerConfig = ackerConfig;
   }
 
-  public static Props props(String id, String zkConnectString, String snapshotPath) {
-    return Props.create(StartupWatcher.class, id, zkConnectString, snapshotPath);
+  public static Props props(String id, String zkConnectString, String snapshotPath, AckerConfig ackerConfig) {
+    return Props.create(StartupWatcher.class, id, zkConnectString, snapshotPath, ackerConfig);
   }
 
   @Override
@@ -109,6 +112,9 @@ public class StartupWatcher extends LoggingActor {
     if (id.equals(config.masterLocation())) {
       context().actorOf(ClientWatcher.props(curator, kryoSerializer, config), "client-watcher");
     }
-    context().actorOf(ProcessingWatcher.props(id, curator, config, stateStorage, kryoSerializer), "processing-watcher");
+    context().actorOf(
+            ProcessingWatcher.props(id, curator, config, ackerConfig, stateStorage, kryoSerializer),
+            "processing-watcher"
+    );
   }
 }

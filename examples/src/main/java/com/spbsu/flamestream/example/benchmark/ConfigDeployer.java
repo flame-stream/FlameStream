@@ -6,7 +6,6 @@ import akka.actor.RootActorPath;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
-import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
@@ -61,14 +60,7 @@ public class ConfigDeployer {
     });
     assert covering.isEmpty();
 
-    final ComputationProps props = new ComputationProps(ranges, config.maxElementsInGraph);
-    final ClusterConfig clusterConfig = new ClusterConfig(
-            paths,
-            config.masterLocation,
-            props,
-            config.millisBetweenCommits,
-            0
-    );
+    final ClusterConfig clusterConfig = new ClusterConfig(paths, config.masterLocation, ranges);
 
     final CuratorFramework curator = CuratorFrameworkFactory.newClient(
             config.zkString,
@@ -86,19 +78,13 @@ public class ConfigDeployer {
     private final String zkString;
     private final Map<String, DumbInetSocketAddress> workers;
     private final String masterLocation;
-    private final int maxElementsInGraph;
-    private final int millisBetweenCommits;
 
     public ConfigDeployerConfig(@JsonProperty("zkString") String zkString,
                                 @JsonProperty("workers") Map<String, DumbInetSocketAddress> workers,
-                                @JsonProperty("masterLocation") String masterLocation,
-                                @JsonProperty("maxElementsInGraph") int maxElementsInGraph,
-                                @JsonProperty("millisBetweenCommits") int millisBetweenCommits) {
+                                @JsonProperty("masterLocation") String masterLocation) {
       this.zkString = zkString;
       this.workers = workers;
       this.masterLocation = masterLocation;
-      this.maxElementsInGraph = maxElementsInGraph;
-      this.millisBetweenCommits = millisBetweenCommits;
     }
   }
 }
