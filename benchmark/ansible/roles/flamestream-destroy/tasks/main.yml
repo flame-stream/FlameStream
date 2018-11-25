@@ -7,12 +7,6 @@
     path: "{{ flamestream_dir }}/data/"
     state: absent
 
-- name: Fetch replay times
-  fetch:
-    src: /tmp/elements.cnt
-    dest: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/flamestream/rate/{{ inventory_hostname }}.cnt
-    flat: true
-
 - name: Fetch worker logs
   fetch:
     src: "{{ flamestream_dir }}/worker.log"

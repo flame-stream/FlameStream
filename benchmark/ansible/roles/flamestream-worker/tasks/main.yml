@@ -12,5 +12,5 @@
     src: worker.json.j2
     dest: "{{ flamestream_dir }}/worker.json"
 
-- name: Run flamstream
+- name: Run flamestream
   shell: "cd {{ flamestream_dir }} && bash entrypoint.sh restart worker.json"

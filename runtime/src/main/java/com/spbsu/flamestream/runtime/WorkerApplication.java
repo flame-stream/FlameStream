@@ -77,6 +77,8 @@ public class WorkerApplication implements Runnable {
     final Map<String, String> props = new HashMap<>();
     props.put("akka.remote.artery.canonical.hostname", host.host());
     props.put("akka.remote.artery.canonical.port", String.valueOf(host.port()));
+    props.put("akka.remote.artery.bind.hostname", "0.0.0.0");
+    props.put("akka.remote.artery.bind.port", String.valueOf(host.port()));
     try {
       final File shm = new File(("/dev/shm"));
       if (shm.exists() && shm.isDirectory()) {
