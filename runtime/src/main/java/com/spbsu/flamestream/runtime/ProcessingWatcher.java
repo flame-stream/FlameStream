@@ -6,6 +6,7 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.config.AckerConfig;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
@@ -26,7 +27,7 @@ import java.io.IOException;
 public class ProcessingWatcher extends LoggingActor {
   private final String id;
   private final CuratorFramework curator;
-  private final ClusterConfig config;
+  private final ZookeeperWorkersNode config;
   private final AckerConfig ackerConfig;
   private final StateStorage stateStorage;
   private final FlameSerializer serializer;
@@ -40,7 +41,7 @@ public class ProcessingWatcher extends LoggingActor {
 
   public ProcessingWatcher(String id,
                            CuratorFramework curator,
-                           ClusterConfig config,
+                           ZookeeperWorkersNode config,
                            AckerConfig ackerConfig,
                            StateStorage stateStorage,
                            FlameSerializer serializer) {
@@ -54,7 +55,7 @@ public class ProcessingWatcher extends LoggingActor {
 
   public static Props props(String id,
                             CuratorFramework curator,
-                            ClusterConfig config,
+                            ZookeeperWorkersNode config,
                             AckerConfig ackerConfig,
                             StateStorage stateStorage,
                             FlameSerializer serializer) {
@@ -122,7 +123,7 @@ public class ProcessingWatcher extends LoggingActor {
             FlameNode.props(
                     id,
                     graph,
-                    config.withChildPath("processing-watcher").withChildPath("graph"),
+                    config.clusterConfig().withChildPath("processing-watcher").withChildPath("graph"),
                     ackerConfig,
                     new ZkRegistry(curator),
                     stateStorage

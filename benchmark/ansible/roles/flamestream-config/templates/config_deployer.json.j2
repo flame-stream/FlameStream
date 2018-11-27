@@ -1,9 +1,0 @@
-{
-  "zkString": "{{ groups['manager'][0] }}:{{ zookeeper_client_port }}",
-  "masterLocation": "{{ groups['acker'][0] }}",
-  "workers": {
-  {% for worker in groups['workers'] %}
-    "{{ worker }}": "{{ worker }}:{{ flamestream_worker_port }}"{{ "," if not loop.last else "" }}
-  {% endfor %}
-  }
-}
