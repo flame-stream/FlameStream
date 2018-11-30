@@ -1,4 +1,30 @@
 language: java
+matrix:
+  include:
+    - script:
+        - travis_wait 20 mvn --errors --batch-mode clean package
+
+      after_failure:
+        - ls -al
+        - export SSHPASS=$FLAME_PASS
+        - sshpass -e scp -v -o stricthostkeychecking=no runtime/oom.hprof flamestream@marnikitta.com:~/$TRAVIS_BUILD_ID.hprof
+    - before_install:
+        - git lfs pull --include benchmark/wiki-dumps/1000.xml
+        - sudo apt-get update
+        - sudo apt-get install software-properties-common -y
+        - sudo apt-add-repository ppa:ansible/ansible -y
+        - sudo apt-get update
+        - sudo apt-get install ansible -y
+      services: docker
+      script:
+        - ln -s ../../../../wiki-dumps/1000.xml benchmark/ansible/roles/flamestream-bench/files/wiki.xml
+        - timeout 8m ./run_benchmarks.sh
+      after_script:
+        - docker exec worker2 cat /opt/flamestream/bench.log
+        - docker exec worker1 ls /opt/flamestream/
+        - docker exec worker1 cat /opt/flamestream/worker.log
+        - docker exec worker2 ls /opt/flamestream/
+        - docker exec worker2 cat /opt/flamestream/worker.log
 
 sudo: required
 
@@ -20,11 +46,3 @@ env:
     - JAVA_OPTS="-Xmx256m -Xms256m"
 
 install: true
-
-script:
-  - travis_wait 20 mvn --errors --batch-mode clean package
-
-after_failure:
-  - ls -al
-  - export SSHPASS=$FLAME_PASS
-  - sshpass -e scp -v -o stricthostkeychecking=no runtime/oom.hprof flamestream@marnikitta.com:~/$TRAVIS_BUILD_ID.hprof

@@ -1,0 +1,1 @@
+benchmark/wiki-dumps/1000.xml filter=lfs diff=lfs merge=lfs -text

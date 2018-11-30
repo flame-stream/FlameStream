@@ -38,14 +38,14 @@ copy_flink_artifacts() {
 }
 
 docker_compose_up() {
-  sudo docker-compose -f "$DOCKER_COMPOSE" up -d
+  docker-compose -f "$DOCKER_COMPOSE" up -d
 }
 
 local_bench() {
   docker_compose_up \
     && package \
     && copy_worker_artifacts \
-    && sudo ansible-playbook -v -i "${ANSIBLE_HOME}/local.yml" "${ANSIBLE_HOME}/flamestream.yml"
+    && ansible-playbook -v -i "${ANSIBLE_HOME}/local.yml" "${ANSIBLE_HOME}/flamestream.yml"
 }
 
 remote_bench() {
@@ -67,4 +67,4 @@ remote_flink_bench() {
     && ansible-playbook -v -i "${ANSIBLE_HOME}/aws.yml" "${ANSIBLE_HOME}/flink.yml"
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && remote_bench
+[[ "$0" == "$BASH_SOURCE" ]] && local_bench
