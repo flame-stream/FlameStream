@@ -46,6 +46,7 @@ public class TfIdfGraph implements Supplier<Graph> {
         }
     };
 
+    @SuppressWarnings("Convert2Lambda")
     private final Equalz equalzWordDoc = new Equalz() {
         @Override
         public boolean test(DataItem o1, DataItem o2) {
