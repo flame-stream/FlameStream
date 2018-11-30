@@ -36,20 +36,28 @@ public class ZookeeperWorkersNode {
     }
   }
 
-  public ZookeeperWorkersNode(CuratorFramework curator, String path) throws Exception {
+  public ZookeeperWorkersNode(CuratorFramework curator, String path) {
     this.curator = curator;
     this.path = path;
     this.pathChildrenCache = new PathChildrenCache(curator, path, true);
-    pathChildrenCache.start();
-    pathChildrenCache.rebuild();
+    try {
+      pathChildrenCache.start();
+      pathChildrenCache.rebuild();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  public void create(String id, ActorPath actorPath) throws Exception {
-    curator.create()
-            .creatingParentsIfNeeded()
-            .withMode(CreateMode.EPHEMERAL_SEQUENTIAL)
-            .forPath(path + "/_", jacksonSerializer.serialize(new Worker(id, actorPath)));
-    pathChildrenCache.rebuild();
+  public void create(String id, ActorPath actorPath) {
+    try {
+      curator.create()
+              .creatingParentsIfNeeded()
+              .withMode(CreateMode.EPHEMERAL_SEQUENTIAL)
+              .forPath(path + "/_", jacksonSerializer.serialize(new Worker(id, actorPath)));
+      pathChildrenCache.rebuild();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public List<Worker> workers() {
