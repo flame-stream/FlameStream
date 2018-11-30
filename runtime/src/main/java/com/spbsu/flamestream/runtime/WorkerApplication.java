@@ -2,7 +2,6 @@ package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorSystem;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.flamestream.runtime.config.AckerConfig;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
@@ -18,8 +17,6 @@ import scala.concurrent.duration.Duration;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -91,7 +88,7 @@ public class WorkerApplication implements Runnable {
     final AckerConfig ackerConfig = new AckerConfig(
             Integer.parseInt(System.getenv("MAX_ELEMENTS_IN_GRAPH")),
             Integer.parseInt(System.getenv("MILLIS_BETWEEN_COMMITS")),
-            0
+            Integer.parseInt(System.getenv("DEFAULT_MINIMAL_TIME"))
     );
     //noinspection ConstantConditions
     system.actorOf(StartupWatcher.props(id, zkString, snapshotPath, ackerConfig), "watcher");

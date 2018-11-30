@@ -15,5 +15,6 @@
     SNAPSHOT_PATH: "{{ flamestream_dir }}/data"
     GUARANTEES: "{{ guarantees }}"
     ZK_STRING: "{{ groups['manager'][0] }}:{{ zookeeper_client_port }}"
+    DEFAULT_MINIMAL_TIME: 0
     MAX_ELEMENTS_IN_GRAPH: 100
     MILLIS_BETWEEN_COMMITS: "{{ millis_between_commits }}"
