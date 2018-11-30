@@ -9,11 +9,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.zookeeper.CreateMode;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ZookeeperWorkersNode {
@@ -56,28 +52,9 @@ public class ZookeeperWorkersNode {
     pathChildrenCache.rebuild();
   }
 
-  public List<Worker> stream() {
+  public List<Worker> workers() {
     return pathChildrenCache.getCurrentData()
             .stream()
             .map(worker -> jacksonSerializer.deserialize(worker.getData(), Worker.class)).collect(Collectors.toList());
-  }
-
-  public ClusterConfig clusterConfig() {
-    final Map<String, ActorPath> paths = stream().stream().collect(Collectors.toMap(Worker::id, Worker::actorPath));
-    final Map<String, HashGroup> ranges = new HashMap<>();
-    final List<HashUnit> covering = HashUnit.covering(paths.size() - 1)
-            .collect(Collectors.toCollection(ArrayList::new));
-    final String masterLocation = stream().get(0).id;
-    paths.keySet().forEach(s -> {
-      if (s.equals(masterLocation)) {
-        ranges.put(s, new HashGroup(Collections.singleton(new HashUnit(0, 0))));
-      } else {
-        ranges.put(s, new HashGroup(Collections.singleton(covering.get(0))));
-        covering.remove(0);
-      }
-    });
-    assert covering.isEmpty();
-
-    return new ClusterConfig(paths, masterLocation, ranges);
   }
 }

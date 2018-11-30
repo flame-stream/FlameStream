@@ -27,10 +27,6 @@ public class ClientWatcher extends LoggingActor {
 
   private PathChildrenCache jobsCache = null;
 
-  private RemoteRuntime remoteRuntime() {
-    return new RemoteRuntime(curator, serializer, config.clusterConfig());
-  }
-
   private ClientWatcher(CuratorFramework curator, FlameSerializer serializer, ZookeeperWorkersNode config) {
     this.curator = curator;
     this.serializer = serializer;
@@ -90,7 +86,9 @@ public class ClientWatcher extends LoggingActor {
   }
 
   private void onNewJob(Job job) {
-    final RemoteRuntime.Flame flame = remoteRuntime().run(job.graph());
+    //Lock number of workers before starting job
+    final ClusterConfig config = ClusterConfig.fromWorkers(this.config.workers());
+    final RemoteRuntime.Flame flame = new RemoteRuntime(curator, serializer, config).run(job.graph());
     job.fronts()
             .forEach(front -> flame.attachFront(
                     front.id(),

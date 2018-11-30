@@ -123,7 +123,7 @@ public class ProcessingWatcher extends LoggingActor {
             FlameNode.props(
                     id,
                     graph,
-                    config.clusterConfig().withChildPath("processing-watcher").withChildPath("graph"),
+                    ClusterConfig.fromWorkers(config.workers()).withChildPath("processing-watcher").withChildPath("graph"),
                     ackerConfig,
                     new ZkRegistry(curator),
                     stateStorage

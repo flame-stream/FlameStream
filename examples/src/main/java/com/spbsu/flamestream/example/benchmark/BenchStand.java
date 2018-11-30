@@ -19,6 +19,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
+import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
 import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
@@ -326,10 +327,11 @@ public class BenchStand implements AutoCloseable {
       );
       curator.start();
       try {
+        final ZookeeperWorkersNode zookeeperWorkersNode = new ZookeeperWorkersNode(curator, "/workers");
         runtime = new RemoteRuntime(
                 curator,
                 new KryoSerializer(),
-                new ZookeeperWorkersNode(curator, "/workers").clusterConfig()
+                ClusterConfig.fromWorkers(zookeeperWorkersNode.workers())
         );
       } catch (Exception e) {
         throw new RuntimeException(e);

@@ -67,17 +67,19 @@ public class StartupWatcher extends LoggingActor {
       stateStorage = new RocksDBStateStorage(snapshotPath, SerializationExtension.get(context().system()));
     }
     final ZookeeperWorkersNode zookeeperWorkersNode = new ZookeeperWorkersNode(curator, "/workers");
-    zookeeperWorkersNode.create(id,
+    zookeeperWorkersNode.create(
+            id,
             ActorPath$.MODULE$.fromString(self().path()
                     .toStringWithAddress(context().system().provider().getDefaultAddress()))
     );
-    if (zookeeperWorkersNode.stream().get(0).id.equals(id)) {
+    if (zookeeperWorkersNode.workers().get(0).id.equals(id)) {
       context().actorOf(ClientWatcher.props(curator, kryoSerializer, zookeeperWorkersNode), "client-watcher");
     }
     context().actorOf(
             ProcessingWatcher.props(id, curator, zookeeperWorkersNode, ackerConfig, stateStorage, kryoSerializer),
             "processing-watcher"
     );
+    //noinspection ResultOfMethodCallIgnored
     new File("/tmp/flame_stream").createNewFile();
   }
 
