@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorSystem;
-import com.spbsu.flamestream.runtime.config.AckerConfig;
+import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
@@ -78,14 +78,14 @@ public class WorkerApplication implements Runnable {
 
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);
-    final AckerConfig ackerConfig = new AckerConfig(
+    final CommitterConfig committerConfig = new CommitterConfig(
             workerConfig.maxElementsInGraph,
             workerConfig.millisBetweenCommits,
             workerConfig.defaultMinimalTime
     );
     //noinspection ConstantConditions
     system.actorOf(
-            StartupWatcher.props(workerConfig.id, workerConfig.zkString, workerConfig.snapshotPath, ackerConfig),
+            StartupWatcher.props(workerConfig.id, workerConfig.zkString, workerConfig.snapshotPath, committerConfig),
             "watcher"
     );
 

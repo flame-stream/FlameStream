@@ -1,17 +1,21 @@
 package com.spbsu.flamestream.runtime;
 
+import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.config.AckerConfig;
+import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.master.acker.Acker;
+import com.spbsu.flamestream.runtime.master.acker.Committer;
 import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.state.StateStorage;
+import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
@@ -27,8 +31,8 @@ import java.io.IOException;
 public class ProcessingWatcher extends LoggingActor {
   private final String id;
   private final CuratorFramework curator;
-  private final ZookeeperWorkersNode config;
-  private final AckerConfig ackerConfig;
+  private final ZookeeperWorkersNode zookeeperWorkersNode;
+  private final CommitterConfig committerConfig;
   private final StateStorage stateStorage;
   private final FlameSerializer serializer;
 
@@ -41,25 +45,33 @@ public class ProcessingWatcher extends LoggingActor {
 
   public ProcessingWatcher(String id,
                            CuratorFramework curator,
-                           ZookeeperWorkersNode config,
-                           AckerConfig ackerConfig,
+                           ZookeeperWorkersNode zookeeperWorkersNode,
+                           CommitterConfig committerConfig,
                            StateStorage stateStorage,
                            FlameSerializer serializer) {
     this.id = id;
     this.curator = curator;
-    this.config = config;
-    this.ackerConfig = ackerConfig;
+    this.zookeeperWorkersNode = zookeeperWorkersNode;
+    this.committerConfig = committerConfig;
     this.stateStorage = stateStorage;
     this.serializer = serializer;
   }
 
   public static Props props(String id,
                             CuratorFramework curator,
-                            ZookeeperWorkersNode config,
-                            AckerConfig ackerConfig,
+                            ZookeeperWorkersNode zookeeperWorkersNode,
+                            CommitterConfig committerConfig,
                             StateStorage stateStorage,
                             FlameSerializer serializer) {
-    return Props.create(ProcessingWatcher.class, id, curator, config, ackerConfig, stateStorage, serializer);
+    return Props.create(
+            ProcessingWatcher.class,
+            id,
+            curator,
+            zookeeperWorkersNode,
+            committerConfig,
+            stateStorage,
+            serializer
+    );
   }
 
   @Override
@@ -119,13 +131,33 @@ public class ProcessingWatcher extends LoggingActor {
     }
 
     this.graph = graph;
+    final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
+    final ActorRef acker;
+    final ZkRegistry zkRegistry = new ZkRegistry(curator);
+    final ActorRef committer;
+    if (zookeeperWorkersNode.isLeader(id)) {
+      acker = context().actorOf(Acker.props(committerConfig.defaultMinimalTime(), zkRegistry), "acker");
+      committer = context().actorOf(Committer.props(
+              config.paths().size(),
+              committerConfig,
+              zkRegistry,
+              acker
+      ), "committer");
+    } else {
+      final ActorPath leader = config.paths().get(config.masterLocation()).child("processing-watcher");
+      acker = AwaitResolver.syncResolve(leader.child("acker"), context());
+      committer = AwaitResolver.syncResolve(leader.child("committer"), context());
+    }
+
+
     this.flameNode = context().actorOf(
             FlameNode.props(
                     id,
                     graph,
-                    ClusterConfig.fromWorkers(config.workers()).withChildPath("processing-watcher").withChildPath("graph"),
-                    ackerConfig,
-                    new ZkRegistry(curator),
+                    config.withChildPath("processing-watcher").withChildPath("graph"),
+                    acker,
+                    committer,
+                    committerConfig.maxElementsInGraph(),
                     stateStorage
             ),
             "graph"

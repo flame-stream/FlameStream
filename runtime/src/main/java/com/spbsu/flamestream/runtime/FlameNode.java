@@ -4,10 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.config.AckerConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
-import com.spbsu.flamestream.runtime.master.acker.Acker;
-import com.spbsu.flamestream.runtime.master.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.EdgeManager;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
@@ -28,26 +25,18 @@ public class FlameNode extends LoggingActor {
   private FlameNode(String id,
                     Graph bootstrapGraph,
                     ClusterConfig config,
-                    AckerConfig ackerConfig,
-                    Registry registry,
+                    ActorRef acker,
+                    ActorRef committer,
+                    int maxElementsInGraph,
                     StateStorage storage) {
     this.config = config;
-    final ActorRef acker;
-    if (id.equals(config.masterLocation())) {
-      acker = context().actorOf(Acker.props(
-              config.paths().size(),
-              ackerConfig,
-              registry
-      ), "acker");
-    } else {
-      acker = AwaitResolver.syncResolve(config.paths().get(config.masterLocation()).child("acker"), context());
-    }
 
     final ActorRef graph = context().actorOf(GraphManager.props(
             id,
             bootstrapGraph,
             acker,
-            new ComputationProps(config.hashGroups(), ackerConfig.maxElementsInGraph()),
+            committer,
+            new ComputationProps(config.hashGroups(), maxElementsInGraph),
             storage
     ), "graph");
     graph.tell(resolvedManagers(), self());
@@ -64,10 +53,20 @@ public class FlameNode extends LoggingActor {
   public static Props props(String id,
                             Graph initialGraph,
                             ClusterConfig initialConfig,
-                            AckerConfig ackerConfig,
-                            Registry registry,
+                            ActorRef acker,
+                            ActorRef committer,
+                            int maxElementsInGraph,
                             StateStorage stateStorage) {
-    return Props.create(FlameNode.class, id, initialGraph, initialConfig, ackerConfig, registry, stateStorage);
+    return Props.create(
+            FlameNode.class,
+            id,
+            initialGraph,
+            initialConfig,
+            acker,
+            committer,
+            maxElementsInGraph,
+            stateStorage
+    );
   }
 
   @Override

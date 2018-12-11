@@ -65,4 +65,8 @@ public class ZookeeperWorkersNode {
             .stream()
             .map(worker -> jacksonSerializer.deserialize(worker.getData(), Worker.class)).collect(Collectors.toList());
   }
+
+  public boolean isLeader(String id) {
+    return workers().get(0).id.equals(id);
+  }
 }
