@@ -5,6 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.runtime.config.AckerConfig;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
@@ -80,8 +81,14 @@ public class Acker extends LoggingActor {
     );
   }
 
-  public static Props props(int managersCount, long defaultMinimalTime, int millisBetweenCommits, Registry registry) {
-    return Props.create(Acker.class, managersCount, defaultMinimalTime, millisBetweenCommits, registry)
+  public static Props props(int managersCount, AckerConfig ackerConfig, Registry registry) {
+    return Props.create(
+            Acker.class,
+            managersCount,
+            ackerConfig.defaultMinimalTime(),
+            ackerConfig.millisBetweenCommits(),
+            registry
+    )
             .withDispatcher("processing-dispatcher");
   }
 

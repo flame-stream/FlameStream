@@ -10,6 +10,7 @@ import akka.actor.RootActorPath;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.runtime.config.AckerConfig;
 import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.edge.Rear;
@@ -63,18 +64,13 @@ class Cluster extends LoggingActor {
       );
       ranges.put(id, new HashGroup(Collections.singleton(range)));
     }
-    final ClusterConfig clusterConfig = new ClusterConfig(
-            paths,
-            "node-0",
-            new ComputationProps(ranges, maxElementsInGraph),
-            millisBetweenCommits,
-            0
-    );
+    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
+    final AckerConfig ackerConfig = new AckerConfig(maxElementsInGraph, millisBetweenCommits, 0);
 
     final Registry registry = new InMemoryRegistry();
     final Map<String, Props> nodeProps = new HashMap<>();
     paths.keySet().forEach(id -> {
-      final Props props = FlameNode.props(id, g, clusterConfig, registry, stateStorage);
+      final Props props = FlameNode.props(id, g, clusterConfig, ackerConfig, registry, stateStorage);
       nodeProps.put(id, props);
     });
     inner = context().actorOf(FlameUmbrella.props(nodeProps, paths), "cluster");

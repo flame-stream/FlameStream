@@ -1,62 +1,41 @@
 package com.spbsu.flamestream.runtime.config;
 
 import akka.actor.ActorPath;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ClusterConfig {
   private final Map<String, ActorPath> paths;
   private final String masterLocation;
-  private final ComputationProps props;
-  private final int millisBetweenCommits;
-  private final int defaultMinTime;
+  private final Map<String, HashGroup> hashGroups;
 
-  @JsonCreator
-  public ClusterConfig(@JsonProperty("paths") Map<String, ActorPath> paths,
-                       @JsonProperty("masterLocation") String masterLocation,
-                       @JsonProperty("props") ComputationProps props,
-                       @JsonProperty("millisBetweenCommits") int millisBetweenCommits,
-                       @JsonProperty("defaultMinTime") int defaultMinTime) {
+  public ClusterConfig(Map<String, ActorPath> paths, String masterLocation, Map<String, HashGroup> hashGroups) {
     this.paths = paths;
     this.masterLocation = masterLocation;
-    this.props = props;
-    this.millisBetweenCommits = millisBetweenCommits;
-    this.defaultMinTime = defaultMinTime;
+    this.hashGroups = hashGroups;
   }
 
-  @JsonProperty
   public Map<String, ActorPath> paths() {
-    return paths;
+    return new HashMap<>(paths);
   }
 
-  @JsonProperty
   public String masterLocation() {
     return masterLocation;
   }
 
-  @JsonIgnore
-  public int defaultMinTime() {
-    return defaultMinTime;
-  }
-
-  @JsonProperty
-  public ComputationProps props() {
-    return props;
-  }
-
-  @JsonProperty
-  public int millisBetweenCommits() {
-    return this.millisBetweenCommits;
+  public Map<String, HashGroup> hashGroups() {
+    return new HashMap<>(hashGroups);
   }
 
   public ClusterConfig withChildPath(String childPath) {
     final Map<String, ActorPath> newPaths = new HashMap<>();
     paths.forEach((s, path) -> newPaths.put(s, path.child(childPath)));
-    return new ClusterConfig(newPaths, masterLocation, props, millisBetweenCommits, 0);
+    return new ClusterConfig(newPaths, masterLocation, hashGroups);
   }
 
   @Override
@@ -64,7 +43,27 @@ public class ClusterConfig {
     return "ClusterConfig{" +
             "paths=" + paths +
             ", masterLocation='" + masterLocation + '\'' +
-            ", props=" + props +
+            ", hashGroups=" + hashGroups +
             '}';
+  }
+
+  public static ClusterConfig fromWorkers(List<ZookeeperWorkersNode.Worker> workers) {
+    final Map<String, ActorPath> paths = workers.stream()
+            .collect(Collectors.toMap(ZookeeperWorkersNode.Worker::id, ZookeeperWorkersNode.Worker::actorPath));
+    final Map<String, HashGroup> ranges = new HashMap<>();
+    final List<HashUnit> covering = HashUnit.covering(paths.size() - 1)
+            .collect(Collectors.toCollection(ArrayList::new));
+    final String masterLocation = workers.get(0).id;
+    paths.keySet().forEach(s -> {
+      if (s.equals(masterLocation)) {
+        ranges.put(s, new HashGroup(Collections.singleton(new HashUnit(0, 0))));
+      } else {
+        ranges.put(s, new HashGroup(Collections.singleton(covering.get(0))));
+        covering.remove(0);
+      }
+    });
+    assert covering.isEmpty();
+
+    return new ClusterConfig(paths, masterLocation, ranges);
   }
 }
