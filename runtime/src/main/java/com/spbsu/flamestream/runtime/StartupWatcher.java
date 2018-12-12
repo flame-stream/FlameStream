@@ -1,12 +1,13 @@
 package com.spbsu.flamestream.runtime;
 
+import akka.actor.ActorPath$;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.serialization.SerializationExtension;
-import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.AckerConfig;
+import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.master.ClientWatcher;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
-import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.state.DevNullStateStorage;
 import com.spbsu.flamestream.runtime.state.RocksDBStateStorage;
@@ -16,9 +17,9 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 public class StartupWatcher extends LoggingActor {
@@ -28,25 +29,24 @@ public class StartupWatcher extends LoggingActor {
           .toMillis()), 3);
 
   private final FlameSerializer kryoSerializer = new KryoSerializer();
-  private final FlameSerializer jacksonSerializer = new JacksonSerializer();
 
   private final String zkConnectString;
   private final String id;
   private final String snapshotPath;
+  private final AckerConfig ackerConfig;
 
   private StateStorage stateStorage = null;
-  private ClusterConfig config = null;
   private CuratorFramework curator = null;
-  private NodeCache configCache = null;
 
-  private StartupWatcher(String id, String zkConnectString, String snapshotPath) {
+  private StartupWatcher(String id, String zkConnectString, String snapshotPath, AckerConfig ackerConfig) {
     this.zkConnectString = zkConnectString;
     this.id = id;
     this.snapshotPath = snapshotPath;
+    this.ackerConfig = ackerConfig;
   }
 
-  public static Props props(String id, String zkConnectString, String snapshotPath) {
-    return Props.create(StartupWatcher.class, id, zkConnectString, snapshotPath);
+  public static Props props(String id, String zkConnectString, String snapshotPath, AckerConfig ackerConfig) {
+    return Props.create(StartupWatcher.class, id, zkConnectString, snapshotPath, ackerConfig);
   }
 
   @Override
@@ -59,16 +59,6 @@ public class StartupWatcher extends LoggingActor {
             TimeUnit.MILLISECONDS
     );
 
-    configCache = new NodeCache(curator, "/config");
-    configCache.getListenable().addListener(() -> {
-      final ClusterConfig clusterConfig = jacksonSerializer.deserialize(
-              configCache.getCurrentData().getData(),
-              ClusterConfig.class
-      );
-      self().tell(clusterConfig, self());
-    });
-    configCache.start();
-
     if (snapshotPath == null) {
       log().info("No backend is provided, using /dev/null");
       stateStorage = new DevNullStateStorage();
@@ -76,6 +66,21 @@ public class StartupWatcher extends LoggingActor {
       log().info("Initializing rocksDB backend");
       stateStorage = new RocksDBStateStorage(snapshotPath, SerializationExtension.get(context().system()));
     }
+    final ZookeeperWorkersNode zookeeperWorkersNode = new ZookeeperWorkersNode(curator, "/workers");
+    zookeeperWorkersNode.create(
+            id,
+            ActorPath$.MODULE$.fromString(self().path()
+                    .toStringWithAddress(context().system().provider().getDefaultAddress()))
+    );
+    if (zookeeperWorkersNode.workers().get(0).id.equals(id)) {
+      context().actorOf(ClientWatcher.props(curator, kryoSerializer, zookeeperWorkersNode), "client-watcher");
+    }
+    context().actorOf(
+            ProcessingWatcher.props(id, curator, zookeeperWorkersNode, ackerConfig, stateStorage, kryoSerializer),
+            "processing-watcher"
+    );
+    //noinspection ResultOfMethodCallIgnored
+    new File("/tmp/flame_stream").createNewFile();
   }
 
   @Override
@@ -83,7 +88,6 @@ public class StartupWatcher extends LoggingActor {
     //noinspection EmptyTryBlock,unused
     try (
             StateStorage s = stateStorage;
-            NodeCache cc = configCache;
             CuratorFramework cf = curator
     ) {
 
@@ -96,19 +100,6 @@ public class StartupWatcher extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(ClusterConfig.class, this::onConfig)
             .build();
-  }
-
-  private void onConfig(ClusterConfig config) {
-    if (this.config != null) {
-      throw new RuntimeException("Config updating is not supported yet");
-    }
-
-    this.config = config;
-    if (id.equals(config.masterLocation())) {
-      context().actorOf(ClientWatcher.props(curator, kryoSerializer, config), "client-watcher");
-    }
-    context().actorOf(ProcessingWatcher.props(id, curator, config, stateStorage, kryoSerializer), "processing-watcher");
   }
 }

@@ -5,13 +5,11 @@ usage() {
 }
 
 start() {
-  local config=$1
-  echo "Starting flamestream worker, config path: $config"
+  echo "Starting flamestream worker"
   local java_ops="-Daeron.term.buffer.length=4194304 -Daeron.mtu.length=16384 -Xms500m -Xmx500m -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+HeapDumpOnOutOfMemoryError"
   echo "java_ops=$java_ops"
   local main="com.spbsu.flamestream.runtime.WorkerApplication"
-  local command="while :; do java $java_ops -cp lib/*:flamestream-runtime-1.0-SNAPSHOT.jar $main $config > worker.log 2>&1; done"
-  nohup bash -c "${command}" &
+  nohup bash -c "while :; do java $java_ops -cp lib/*:flamestream-runtime-1.0-SNAPSHOT.jar $main; done &>worker.log" &
   local pid=$!
   echo "Pid=$pid"
   echo $pid > flamestream.pid
@@ -34,9 +32,9 @@ stop() {
 main() {
   local target=$1
   case "$target" in
-    start) start "$2";;
+    start) start;;
     stop) stop;;
-    restart) stop ||:; start "$2";;
+    restart) stop ||:; start;;
     *) usage;;
   esac
 }

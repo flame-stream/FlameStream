@@ -20,9 +20,9 @@ import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.socket.SocketFrontType;
 import com.spbsu.flamestream.runtime.edge.socket.SocketRearType;
-import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.AwaitCountConsumer;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
@@ -327,11 +327,12 @@ public class BenchStand implements AutoCloseable {
       );
       curator.start();
       try {
-        final ClusterConfig config = new JacksonSerializer().deserialize(
-                curator.getData().forPath("/config"),
-                ClusterConfig.class
+        final ZookeeperWorkersNode zookeeperWorkersNode = new ZookeeperWorkersNode(curator, "/workers");
+        runtime = new RemoteRuntime(
+                curator,
+                new KryoSerializer(),
+                ClusterConfig.fromWorkers(zookeeperWorkersNode.workers())
         );
-        runtime = new RemoteRuntime(curator, new KryoSerializer(), config);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }

@@ -1,8 +1,7 @@
 package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorSystem;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spbsu.flamestream.runtime.config.AckerConfig;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
@@ -17,8 +16,6 @@ import scala.concurrent.duration.Duration;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,10 +23,7 @@ import java.util.concurrent.TimeoutException;
 
 public class WorkerApplication implements Runnable {
   private final Logger log = LoggerFactory.getLogger(WorkerApplication.class);
-  private final DumbInetSocketAddress host;
-  private final String zkString;
-  private final String id;
-  private final String snapshotPath;
+  private final WorkerConfig workerConfig;
 
   @Nullable
   private ActorSystem system = null;
@@ -42,45 +36,39 @@ public class WorkerApplication implements Runnable {
     }
   }
 
-  public WorkerApplication(String id, DumbInetSocketAddress host, String zkString) {
-    this(id, host, zkString, null);
+  @SuppressWarnings("WeakerAccess")
+  public WorkerApplication(WorkerConfig workerConfig) {
+    this.workerConfig = workerConfig;
   }
 
-  public WorkerApplication(String id, DumbInetSocketAddress host, String zkString, String snapshotPath) {
-    this.id = id;
-    this.host = host;
-    this.zkString = zkString;
-    this.snapshotPath = snapshotPath;
-  }
-
-  public static void main(String... args) throws IOException {
-    final Path configPath = Paths.get(args[0]);
-    final ObjectMapper mapper = new ObjectMapper();
-    final WorkerConfig workerConfig = mapper.readValue(
-            Files.readAllBytes(configPath),
-            WorkerConfig.class
-    );
-    final String id = workerConfig.id();
-    final DumbInetSocketAddress socketAddress = workerConfig.localAddress();
-    final String zkString = workerConfig.zkString();
-    if (workerConfig.guarantees() == Guarantees.AT_MOST_ONCE) {
-      new WorkerApplication(id, socketAddress, zkString).run();
-    } else {
-      new WorkerApplication(id, socketAddress, zkString, workerConfig.snapshotPath()).run();
-    }
+  public static void main(String... args) {
+    final WorkerConfig config = new WorkerConfig.Builder()
+            .snapshotPath(System.getenv("SNAPSHOT_PATH"))
+            .guarantees(Guarantees.valueOf(System.getenv("GUARANTEES")))
+            .defaultMinimalTime(Integer.parseInt(System.getenv("DEFAULT_MINIMAL_TIME")))
+            .millisBetweenCommits(Integer.parseInt(System.getenv("MILLIS_BETWEEN_COMMITS")))
+            .maxElementsInGraph(Integer.parseInt(System.getenv("MAX_ELEMENTS_IN_GRAPH")))
+            .build(
+                    System.getenv("ID"),
+                    new DumbInetSocketAddress(System.getenv("LOCAL_ADDRESS")),
+                    System.getenv("ZK_STRING")
+            );
+    new WorkerApplication(config).run();
   }
 
   @Override
   public void run() {
-    log.info("Starting worker with id: '{}', host: '{}', zkString: '{}'", id, host, zkString);
+    log.info("Starting worker with workerConfig '{}'", workerConfig);
 
     final Map<String, String> props = new HashMap<>();
-    props.put("akka.remote.artery.canonical.hostname", host.host());
-    props.put("akka.remote.artery.canonical.port", String.valueOf(host.port()));
+    props.put("akka.remote.artery.canonical.hostname", workerConfig.localAddress.host());
+    props.put("akka.remote.artery.canonical.port", String.valueOf(workerConfig.localAddress.port()));
+    props.put("akka.remote.artery.bind.hostname", "0.0.0.0");
+    props.put("akka.remote.artery.bind.port", String.valueOf(workerConfig.localAddress.port()));
     try {
       final File shm = new File(("/dev/shm"));
       if (shm.exists() && shm.isDirectory()) {
-        final String aeronDir = "/dev/shm/aeron-" + id;
+        final String aeronDir = "/dev/shm/aeron-" + workerConfig.id;
         FileUtils.deleteDirectory(new File(aeronDir));
         props.put("akka.remote.artery.advanced.aeron-dir", aeronDir);
       }
@@ -90,8 +78,16 @@ public class WorkerApplication implements Runnable {
 
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);
+    final AckerConfig ackerConfig = new AckerConfig(
+            workerConfig.maxElementsInGraph,
+            workerConfig.millisBetweenCommits,
+            workerConfig.defaultMinimalTime
+    );
     //noinspection ConstantConditions
-    system.actorOf(StartupWatcher.props(id, zkString, snapshotPath), "watcher");
+    system.actorOf(
+            StartupWatcher.props(workerConfig.id, workerConfig.zkString, workerConfig.snapshotPath, ackerConfig),
+            "watcher"
+    );
 
     system.registerOnTermination(() -> {
       try {
@@ -112,43 +108,93 @@ public class WorkerApplication implements Runnable {
     }
   }
 
-  private static class WorkerConfig {
+  public static class WorkerConfig {
     private final String id;
     private final DumbInetSocketAddress localAddress;
     private final String zkString;
+
     private final String snapshotPath;
     private final Guarantees guarantees;
 
-    private WorkerConfig(@JsonProperty("id") String id,
-                         @JsonProperty("localAddress") String localAddress,
-                         @JsonProperty("zkString") String zkString,
-                         @JsonProperty("snapshotPath") String snapshotPath,
-                         @JsonProperty("guarantees") Guarantees guarantees) {
+    private final int maxElementsInGraph;
+    private final int millisBetweenCommits;
+    private final int defaultMinimalTime;
+
+    private WorkerConfig(String id,
+                         DumbInetSocketAddress localAddress,
+                         String zkString,
+                         String snapshotPath,
+                         Guarantees guarantees,
+                         int maxElementsInGraph, int millisBetweenCommits, int defaultMinimalTime) {
       this.guarantees = guarantees;
       this.id = id;
-      this.localAddress = new DumbInetSocketAddress(localAddress);
+      this.localAddress = localAddress;
       this.zkString = zkString;
       this.snapshotPath = snapshotPath;
+      this.maxElementsInGraph = maxElementsInGraph;
+      this.millisBetweenCommits = millisBetweenCommits;
+      this.defaultMinimalTime = defaultMinimalTime;
     }
 
-    Guarantees guarantees() {
-      return guarantees;
+    @Override
+    public String toString() {
+      return "WorkerConfig{" +
+              "id='" + id + '\'' +
+              ", localAddress=" + localAddress +
+              ", zkString='" + zkString + '\'' +
+              ", snapshotPath='" + snapshotPath + '\'' +
+              ", guarantees=" + guarantees +
+              ", maxElementsInGraph=" + maxElementsInGraph +
+              ", millisBetweenCommits=" + millisBetweenCommits +
+              ", defaultMinimalTime=" + defaultMinimalTime +
+              '}';
     }
 
-    String snapshotPath() {
-      return snapshotPath;
-    }
+    static class Builder {
+      private String snapshotPath = null;
+      private Guarantees guarantees = Guarantees.AT_MOST_ONCE;
 
-    String id() {
-      return id;
-    }
+      private int maxElementsInGraph = 500;
+      private int millisBetweenCommits = 100;
+      private int defaultMinimalTime = 0;
 
-    DumbInetSocketAddress localAddress() {
-      return localAddress;
-    }
+      Builder snapshotPath(String snapshotPath) {
+        this.snapshotPath = snapshotPath;
+        return this;
+      }
 
-    String zkString() {
-      return zkString;
+      Builder guarantees(Guarantees guarantees) {
+        this.guarantees = guarantees;
+        return this;
+      }
+
+      public Builder maxElementsInGraph(int maxElementsInGraph) {
+        this.maxElementsInGraph = maxElementsInGraph;
+        return this;
+      }
+
+      public Builder millisBetweenCommits(int millisBetweenCommits) {
+        this.millisBetweenCommits = millisBetweenCommits;
+        return this;
+      }
+
+      Builder defaultMinimalTime(int defaultMinimalTime) {
+        this.defaultMinimalTime = defaultMinimalTime;
+        return this;
+      }
+
+      WorkerConfig build(String id, DumbInetSocketAddress localAddress, String zkString) {
+        return new WorkerConfig(
+                id,
+                localAddress,
+                zkString,
+                snapshotPath,
+                guarantees,
+                maxElementsInGraph,
+                millisBetweenCommits,
+                defaultMinimalTime
+        );
+      }
     }
   }
 

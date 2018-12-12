@@ -23,15 +23,15 @@
   roles:
     - { role: flamestream-common  }
 
-- name: Setup config
-  hosts: manager
-  roles:
-    - { role: flamestream-config }
-
 - name: Init workers
   hosts: workers
   roles:
     - { role: flamestream-worker }
+
+- hosts: workers
+  tasks:
+    - wait_for:
+        path: /tmp/flame_stream
 
 #- name: Pause
 #  hosts: bench

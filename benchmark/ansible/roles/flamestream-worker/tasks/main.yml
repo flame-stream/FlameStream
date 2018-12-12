@@ -7,10 +7,14 @@
     path: "{{ flamestream_dir }}/data/"
     state: absent
 
-- name: Copy the worker config
-  template:
-    src: worker.json.j2
-    dest: "{{ flamestream_dir }}/worker.json"
-
-- name: Run flamstream
-  shell: "cd {{ flamestream_dir }} && bash entrypoint.sh restart worker.json"
+- name: Run flamestream
+  shell: "cd {{ flamestream_dir }} && bash entrypoint.sh restart"
+  environment:
+    ID: "{{ inventory_hostname }}"
+    LOCAL_ADDRESS: "{{ inventory_hostname }}:{{ flamestream_worker_port }}"
+    SNAPSHOT_PATH: "{{ flamestream_dir }}/data"
+    GUARANTEES: "{{ guarantees }}"
+    ZK_STRING: "{{ groups['manager'][0] }}:{{ zookeeper_client_port }}"
+    DEFAULT_MINIMAL_TIME: 0
+    MAX_ELEMENTS_IN_GRAPH: 100
+    MILLIS_BETWEEN_COMMITS: "{{ millis_between_commits }}"

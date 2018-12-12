@@ -1,14 +1,8 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.ActorPath;
-import akka.actor.Address;
-import akka.actor.RootActorPath;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
-import com.spbsu.flamestream.runtime.config.ComputationProps;
-import com.spbsu.flamestream.runtime.config.HashGroup;
-import com.spbsu.flamestream.runtime.config.HashUnit;
-import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
+import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.curator.framework.CuratorFramework;
@@ -21,13 +15,11 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 public class LocalClusterRuntime implements FlameRuntime {
   private static final Logger LOG = LoggerFactory.getLogger(LocalClusterRuntime.class);
@@ -51,35 +43,32 @@ public class LocalClusterRuntime implements FlameRuntime {
     zkString = "localhost:" + ports.get(0);
     LOG.info("ZK string: {}", zkString);
 
-    final Map<String, ActorPath> workersAddresses = new HashMap<>();
     for (int i = 0; i < parallelism; i++) {
       final String name = "worker" + i;
       final DumbInetSocketAddress address = new DumbInetSocketAddress("localhost", ports.get(i + 1));
-      final WorkerApplication worker = new WorkerApplication(name, address, zkString);
-      final ActorPath path = RootActorPath.apply(Address.apply(
-              "akka",
-              "worker",
-              address.host(),
-              address.port()
-      ), "/").child("user").child("watcher");
-      workersAddresses.put(name, path);
+
+      final WorkerApplication.WorkerConfig workerConfig = new WorkerApplication.WorkerConfig.Builder()
+              .maxElementsInGraph(maxElementsInGraph)
+              .millisBetweenCommits(millisBetweenCommits)
+              .build(name, address, zkString);
+      final WorkerApplication worker = new WorkerApplication(workerConfig);
       workers.add(worker);
       worker.run();
     }
 
-    final ClusterConfig config = config(workersAddresses, maxElementsInGraph, millisBetweenCommits);
-    LOG.info("Pushing configuration {}", config);
     final CuratorFramework curator = CuratorFrameworkFactory.newClient(
             zkString,
             new ExponentialBackoffRetry(1000, 3)
     );
     curator.start();
-    try {
-      curator.create().orSetData().forPath("/config", new JacksonSerializer().serialize(config));
-      this.remoteRuntime = new RemoteRuntime(curator, new KryoSerializer(), config);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    final ZookeeperWorkersNode workersNode = new ZookeeperWorkersNode(curator, "/workers");
+    while (workersNode.workers().size() != parallelism) {
+      LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
     }
+
+    final ClusterConfig config = ClusterConfig.fromWorkers(workersNode.workers());
+    LOG.info("Pushing configuration {}", config);
+    this.remoteRuntime = new RemoteRuntime(curator, new KryoSerializer(), config);
   }
 
   @Override
@@ -101,23 +90,6 @@ public class LocalClusterRuntime implements FlameRuntime {
 
   public String zkString() {
     return zkString;
-  }
-
-  private static ClusterConfig config(Map<String, ActorPath> workers,
-                                      int maxElementsInGraph,
-                                      int millisBetweenCommits) {
-    final String masterLocation = workers.keySet().stream().findAny().orElseThrow(IllegalArgumentException::new);
-
-    final Map<String, HashGroup> rangeMap = new HashMap<>();
-    final List<HashUnit> ranges = HashUnit.covering(workers.size()).collect(Collectors.toList());
-    workers.keySet().forEach(name -> {
-      rangeMap.put(name, new HashGroup(Collections.singleton(ranges.get(0))));
-      ranges.remove(0);
-    });
-    assert ranges.isEmpty();
-
-    final ComputationProps computationProps = new ComputationProps(rangeMap, maxElementsInGraph);
-    return new ClusterConfig(workers, masterLocation, computationProps, millisBetweenCommits, 0);
   }
 
   private Set<Integer> freePorts(int n) throws IOException {
