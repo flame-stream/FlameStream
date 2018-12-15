@@ -46,12 +46,12 @@ public class InvertedIndexTest extends FlameAkkaSuite {
                 flame.attachFront("Front-" + invocationConfig, new AkkaFrontType<>(runtime.system(), backPressure))
                         .collect(Collectors.toList());
         for (int i = 1; i < consumers.size(); i++) {
-          consumers.get(i).eos();
+          consumers.get(i).unregister();
         }
 
         final AkkaFront.FrontHandle<Object> sink = consumers.get(0);
         validator.input().forEach(sink);
-        sink.eos();
+        sink.unregister();
 
         awaitConsumer.await(5, TimeUnit.MINUTES);
         validator.assertCorrect(awaitConsumer.result());

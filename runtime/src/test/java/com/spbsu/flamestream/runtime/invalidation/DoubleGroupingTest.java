@@ -190,7 +190,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
       }
 
       source.forEach(sink);
-      sink.eos();
+      sink.unregister();
 
       consumer.await(10, TimeUnit.MINUTES);
       Assert.assertEquals(consumer.result().collect(Collectors.toSet()), new HashSet<>(expected));

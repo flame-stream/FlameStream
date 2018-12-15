@@ -46,14 +46,14 @@ public class InvertedIndexBenchmark {
               .collect(Collectors.toList());
       final AkkaFront.FrontHandle<WikipediaPage> sink = handles.get(0);
       for (int i = 1; i < parallelism; i++) {
-        handles.get(i).eos();
+        handles.get(i).unregister();
       }
 
       final Stream<WikipediaPage> source = WikipeadiaInput.dumpStreamFromResources(
               "wikipedia/national_football_teams_dump.xml")
               .peek(wikipediaPage -> latencies.put(wikipediaPage.id(), new LatencyMeasurer()));
       source.forEach(sink);
-      sink.eos();
+      sink.unregister();
       awaitConsumer.await(5, TimeUnit.MINUTES);
 
       final LongSummaryStatistics result = new LongSummaryStatistics();

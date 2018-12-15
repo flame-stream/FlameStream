@@ -160,17 +160,6 @@ public class AkkaFront implements Front {
               })
               .match(
                       Command.class,
-                      command -> command == Command.EOS,
-                      command -> {
-                        remoteMediator.tell(new Heartbeat(new GlobalTime(
-                                Long.MAX_VALUE,
-                                edgeContext.edgeId()
-                        )), self());
-                        sender().tell(Command.OK, self());
-                      }
-              )
-              .match(
-                      Command.class,
                       command -> command == Command.UNREGISTER,
                       command -> {
                         remoteMediator.tell(new UnregisterFront(edgeContext.edgeId()), self());
@@ -225,14 +214,6 @@ public class AkkaFront implements Front {
       }
     }
 
-    public void eos() {
-      try {
-        PatternsCS.ask(localMediator, Command.EOS, FlameConfig.config.bigTimeout()).toCompletableFuture().get();
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
     public void unregister() {
       try {
         PatternsCS.ask(localMediator, Command.UNREGISTER, FlameConfig.config.bigTimeout()).toCompletableFuture().get();
@@ -251,7 +232,6 @@ public class AkkaFront implements Front {
   }
 
   private enum Command {
-    EOS,
     UNREGISTER,
     OK
   }

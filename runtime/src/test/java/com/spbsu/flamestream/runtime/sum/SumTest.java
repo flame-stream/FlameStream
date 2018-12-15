@@ -133,7 +133,7 @@ public final class SumTest extends FlameAkkaSuite {
         flame.attachRear("totalOrderRear", new AkkaRearType<>(runtime.system(), Sum.class))
                 .forEach(r -> r.addListener(consumer));
         source.forEach(sink);
-        sink.eos();
+        sink.unregister();
 
         consumer.await(10, TimeUnit.MINUTES);
         Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
@@ -171,7 +171,7 @@ public final class SumTest extends FlameAkkaSuite {
         }
 
         source.forEach(sink);
-        sink.eos();
+        sink.unregister();
         consumer.await(10, TimeUnit.MINUTES);
         Assert.assertEquals(consumer.result().collect(Collectors.toSet()), expected);
       }
