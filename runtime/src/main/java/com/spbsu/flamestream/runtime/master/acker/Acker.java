@@ -85,7 +85,7 @@ public class Acker extends LoggingActor {
     return Props.create(
             Acker.class,
             managersCount,
-            ackerConfig.defaultMinimalTime(),
+            ackerConfig.defaultMinimalTime() + System.currentTimeMillis(),
             ackerConfig.millisBetweenCommits(),
             registry
     )
@@ -169,13 +169,13 @@ public class Acker extends LoggingActor {
       registry.register(frontId, min.time());
       log().info("Front instance \"{}\" has been registered, sending ticket", frontId);
 
-      sender().tell(new FrontTicket(new GlobalTime(min.time(), frontId)), self());
+      sender().tell(new FrontTicket(), self());
     } else {
       final long startTime = Math.max(registeredTime, registry.lastCommit());
       log().info("Front '{}' has been registered already, starting from '{}'", frontId, startTime);
       final GlobalTime globalTime = new GlobalTime(startTime, frontId);
       maxHeartbeats.put(frontId, globalTime);
-      sender().tell(new FrontTicket(globalTime), self());
+      sender().tell(new FrontTicket(), self());
     }
   }
 

@@ -63,7 +63,7 @@ public class SocketFront extends Front.Stub {
   }
 
   @Override
-  public void onStart(Consumer<Object> consumer, GlobalTime from) {
+  public void onStart(Consumer<Object> consumer) {
     final boolean init = this.consumer == null;
     this.consumer = consumer;
     if (init) {

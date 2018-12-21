@@ -39,8 +39,8 @@ public class AkkaFront implements Front {
   }
 
   @Override
-  public void onStart(Consumer<Object> consumer, GlobalTime from) {
-    innerActor.tell(new MediatorStart(consumer, from), ActorRef.noSender());
+  public void onStart(Consumer<Object> consumer) {
+    innerActor.tell(new MediatorStart(consumer), ActorRef.noSender());
   }
 
   @Override
@@ -81,7 +81,7 @@ public class AkkaFront implements Front {
       return ReceiveBuilder.create()
               .match(MediatorStart.class, s -> {
                 hole = s.hole;
-                localMediator.tell(new Start(self(), s.from), self());
+                localMediator.tell(new Start(self()), self());
               })
               .match(DataItem.class, t2 -> hole.accept(t2))
               .match(Heartbeat.class, t1 -> hole.accept(t1))
@@ -95,11 +95,9 @@ public class AkkaFront implements Front {
 
   public static class MediatorStart {
     final Consumer<Object> hole;
-    final GlobalTime from;
 
-    MediatorStart(Consumer<Object> hole, GlobalTime from) {
+    MediatorStart(Consumer<Object> hole) {
       this.hole = hole;
-      this.from = from;
     }
   }
 
@@ -109,7 +107,15 @@ public class AkkaFront implements Front {
 
     private GlobalTime producerWait = null;
     private GlobalTime lastEmitted = GlobalTime.MIN;
-    private long time = 0;
+    private long prevTime = 0;
+
+    private long currentTime() {
+      long globalTs = System.currentTimeMillis();
+      if (globalTs <= prevTime)
+        globalTs = prevTime + 1;
+      prevTime = globalTs;
+      return globalTs;
+    }
 
     private int requestDebt;
     private ActorRef sender;
@@ -153,7 +159,7 @@ public class AkkaFront implements Front {
               .match(Checkpoint.class, checkpoint -> log.headMap(checkpoint.time()).clear())
               .match(Raw.class, raw -> {
                 sender = sender();
-                final GlobalTime globalTime = new GlobalTime(++time, edgeContext.edgeId());
+                final GlobalTime globalTime = new GlobalTime(currentTime(), edgeContext.edgeId());
                 log.put(globalTime, new PayloadDataItem(new Meta(globalTime), raw.raw));
                 producerWait = globalTime;
                 tryProcess();
@@ -188,8 +194,7 @@ public class AkkaFront implements Front {
         remoteMediator.tell(new UnregisterFront(edgeContext.edgeId()), self());
       }
 
-      time = Math.max(start.from().time(), time);
-      lastEmitted = new GlobalTime(start.from().time() - 1, edgeContext.edgeId());
+      lastEmitted = new GlobalTime(currentTime() - 1, edgeContext.edgeId());
       requestDebt = 0;
     }
 

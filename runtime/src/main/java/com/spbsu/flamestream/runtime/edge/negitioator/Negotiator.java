@@ -48,7 +48,7 @@ public class Negotiator extends LoggingActor {
             .thenApply(ticket -> (FrontTicket) ticket)
             .thenAccept(ticket -> {
               log().info("Ticket for the frontClass received: {}", ticket);
-              localFronts.get(edgeId).tell(new Start(source, ticket.allowedTimestamp()), self());
+              localFronts.get(edgeId).tell(new Start(source), self());
               localFronts.get(edgeId).tell(new RequestNext(), self());
             });
   }

@@ -10,7 +10,7 @@ import java.util.function.Consumer;
  * Date: 15.11.2017
  */
 public interface Front {
-  void onStart(Consumer<Object> consumer, GlobalTime from);
+  void onStart(Consumer<Object> consumer);
 
   void onRequestNext();
 
@@ -25,7 +25,9 @@ public interface Front {
     }
 
     protected synchronized GlobalTime currentTime() {
-      long globalTs = prevGlobalTs + 1;
+      long globalTs = System.currentTimeMillis();
+      if (globalTs <= prevGlobalTs)
+        globalTs = prevGlobalTs + 1;
       prevGlobalTs = globalTs;
       return new GlobalTime(globalTs, edgeId);
     }
