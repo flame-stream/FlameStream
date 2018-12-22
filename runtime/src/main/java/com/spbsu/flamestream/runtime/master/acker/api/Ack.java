@@ -3,7 +3,7 @@ package com.spbsu.flamestream.runtime.master.acker.api;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
-public class Ack {
+public class Ack implements AckerInputMessage {
   private static final Tracing.Tracer tracer = Tracing.TRACING.forEvent("ack-create");
   private final GlobalTime time;
   private final long xor;

@@ -5,7 +5,7 @@ import com.spbsu.flamestream.core.data.meta.GlobalTime;
 /**
  * Heartbeat means that there are no items with global time < heartbeat's time
  */
-public class Heartbeat {
+public class Heartbeat implements AckerInputMessage {
   private final GlobalTime time;
 
   public Heartbeat(GlobalTime time) {
