@@ -18,7 +18,7 @@ public class FlameAkkaSuite extends FlameStreamSuite {
   protected <T> void applyDataToHandleAsync(Stream<T> data, AkkaFront.FrontHandle<T> handle) {
     final Thread thread = new Thread(() -> {
       data.forEach(handle);
-      handle.eos();
+      handle.unregister();
     });
     thread.setDaemon(true);
     thread.start();
@@ -33,7 +33,7 @@ public class FlameAkkaSuite extends FlameStreamSuite {
           if (item != null) {
             handle.accept(item);
           } else {
-            handle.eos();
+            handle.unregister();
             break;
           }
         }

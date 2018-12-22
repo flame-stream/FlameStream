@@ -135,7 +135,7 @@ public class BlinkBenchStand implements AutoCloseable {
       }
 
       final AkkaFront.FrontHandle<Object> sink = consumers.get(0);
-      sink.eos();
+      sink.unregister();
 
       awaitConsumer.await(10, TimeUnit.MINUTES);
     } catch (Exception e) {
