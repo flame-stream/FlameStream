@@ -5,7 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
-import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
+import com.spbsu.flamestream.runtime.master.acker.api.AckerInputMessage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 
@@ -21,7 +21,7 @@ public class LocalAcker extends LoggingActor {
   private static final int FLUSH_COUNT = 100;
 
   private final SortedMap<GlobalTime, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
-  private final List<Heartbeat> heartbeatCache = new ArrayList<>();
+  private final List<AckerInputMessage> fifoCache = new ArrayList<>();
 
   private final ActorRef globalAcker;
   private final ActorRef pingActor;
@@ -53,9 +53,9 @@ public class LocalAcker extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
-            .match(Heartbeat.class, heartbeatCache::add)
             .match(Flush.class, flush -> flush())
-            .matchAny(m -> globalAcker.forward(m, context()))
+            .match(AckerInputMessage.class, fifoCache::add)
+            .matchAny(e -> globalAcker.forward(e, context()))
             .build();
   }
 
@@ -79,8 +79,8 @@ public class LocalAcker extends LoggingActor {
     ackCache.forEach((globalTime, xor) -> globalAcker.tell(new Ack(globalTime, xor), context().parent()));
     ackCache.clear();
 
-    heartbeatCache.forEach(heartbeat -> globalAcker.tell(heartbeat, self()));
-    heartbeatCache.clear();
+    fifoCache.forEach(heartbeat -> globalAcker.tell(heartbeat, self()));
+    fifoCache.clear();
 
     flushCounter = 0;
   }

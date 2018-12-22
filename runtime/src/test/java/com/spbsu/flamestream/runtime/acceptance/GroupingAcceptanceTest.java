@@ -50,9 +50,11 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
 
       final FlameRuntime.Flame flame = runtime.run(graph);
       {
-        final int streamSize = 50000;
+        final int streamSize = 10000;
+        final Random rd = new Random(3);
+
         final List<List<Long>> source = Stream.generate(() -> new Random()
-                .longs(streamSize / parallelism, 0, 10)
+                .longs(rd.nextInt() % 100 + streamSize, 0, 10)
                 .boxed()
                 .collect(Collectors.toList()))
                 .limit(parallelism).collect(Collectors.toList());
