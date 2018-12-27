@@ -60,7 +60,7 @@ public class WordCountTest extends FlameAkkaSuite {
         final List<AkkaFront.FrontHandle<String>> handles = flame
                 .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system()))
                 .collect(Collectors.toList());
-        applyDataToAllHandlesAsync(input, handles);
+        applyDataToAllHandlesAsync(input.stream(), handles);
         awaitConsumer.await(5, TimeUnit.MINUTES);
 
         final Map<String, Integer> actual = new HashMap<>();

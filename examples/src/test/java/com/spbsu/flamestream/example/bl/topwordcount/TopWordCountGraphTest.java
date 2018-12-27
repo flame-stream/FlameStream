@@ -60,7 +60,7 @@ public class TopWordCountGraphTest extends FlameAkkaSuite {
         final List<AkkaFront.FrontHandle<String>> handles = flame
                 .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system()))
                 .collect(Collectors.toList());
-        applyDataToAllHandlesAsync(input, handles);
+        applyDataToAllHandlesAsync(input.stream(), handles);
         awaitConsumer.await(200, TimeUnit.SECONDS);
 
         final WordsTop actualWordsTop = awaitConsumer.result().skip(lineSize * streamSize - 1).findFirst().get();

@@ -20,8 +20,10 @@ import com.spbsu.flamestream.example.bl.tfidfsd.ops.entries.CountWordEntries;
 import com.spbsu.flamestream.example.bl.tfidfsd.ops.filtering.WordContainerOrderingFilter;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -43,6 +45,35 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 new Grouping<>(wordHash, equalzWord, 2, WordContainer.class);
 
         final FlameMap<TextDocument, WordDocCounter> splitterWordDoc2 = new FlameMap<>(new Function<TextDocument, Stream<WordDocCounter>>() {
+            private Pattern p = Pattern.compile("\\w+", Pattern.UNICODE_CHARACTER_CLASS);
+            //private final Pattern pattern = Pattern.compile("\\w+");
+            AtomicInteger docs = new AtomicInteger();
+            AtomicInteger wdocs = new AtomicInteger();
+
+            @Override
+            public Stream<WordDocCounter> apply(TextDocument s) {
+                final Map<String, Integer> counter = new HashMap<>();
+                Matcher m = p.matcher(s.content());
+                int nd = docs.incrementAndGet();
+
+
+  //              System.out.format("doc %s >%s<%n", s.name(), s.content());
+                while (m.find()) {
+                    String w = m.group();
+                    counter.put(w, counter.getOrDefault(w, 0) + 1);
+//                    System.out.format("doc %s =%s=%n", s.name(), w);
+                }
+
+                int nwd = wdocs.addAndGet(counter.size());
+
+                System.out.format("nd: %d, mwd: %d%n", nd, nwd);
+
+
+
+                return counter.entrySet().stream()
+                        .map(word -> new WordDocCounter(new WordDocEntry(s.name(), word.getKey()), word.getValue()));
+            }
+        }, TextDocument.class);  /*new FlameMap<>(new Function<TextDocument, Stream<WordDocCounter>>() {
             private final Pattern pattern = Pattern.compile("\\s");
 
             @Override
@@ -51,10 +82,11 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 for (String w: pattern.split(s.content())) {
                     counter.put(w, counter.getOrDefault(w, 0) + 1);
                 }
+                System.out.format("doc %s%n", s.name());
                 return counter.entrySet().stream()
                         .map(word -> new WordDocCounter(new WordDocEntry(s.name(), word.getKey()), word.getValue()));
             }
-        }, TextDocument.class);
+        }, TextDocument.class);*/
 
         final FlameMap<TextDocument, DocCounter> splitterDoc2 = new FlameMap<>(new Function<TextDocument, Stream<DocCounter>>() {
             private final Pattern pattern = Pattern.compile("\\s");
@@ -98,12 +130,12 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 .link(filterWord2, counterWord2)
                 .link(counterWord2, groupingWord2)
 
-       //         .colocate(source, splitterWordDoc)
-       //         .colocate(groupingWordDoc, filterWordDoc, counterWordDoc, sink)
+                .colocate(source, splitterWordDoc2, splitterDoc2)
+                .colocate(groupingWord2, filterWord2, counterWord2, sink)
 
                 .link(splitterWordDoc2, sink)
                 .link(splitterDoc2, sink)
-                .link(counterWord2, sink)
+  //              .link(counterWord2, sink)
 
 
                 .build(source, sink);

@@ -105,7 +105,7 @@ public class TfIdfSdTest extends FlameAkkaSuite {
         final List<AkkaFront.FrontHandle<TextDocument>> handles = flame
                 .attachFront("tfidfFront", new AkkaFrontType<TextDocument>(runtime.system()))
                 .collect(toList());
-        applyDataToAllHandlesAsync(input, handles);
+        applyDataToAllHandlesAsync(input.stream(), handles);
         awaitConsumer.await(5, TimeUnit.MINUTES);
 
         final Map<String, Integer> actualDoc = new HashMap<>();

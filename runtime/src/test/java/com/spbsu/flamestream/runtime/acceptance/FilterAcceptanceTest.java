@@ -63,7 +63,7 @@ public final class FilterAcceptanceTest extends FlameAkkaSuite {
         final AwaitResultConsumer<Integer> consumer = new AwaitResultConsumer<>(streamSize);
         flame.attachRear("linerFilterRear", new AkkaRearType<>(runtime.system(), Integer.class))
                 .forEach(f -> f.addListener(consumer));
-        applyDataToAllHandlesAsync(source, handles);
+        applyDataToAllHandlesAsync(source.stream(), handles);
 
         consumer.await(5, TimeUnit.MINUTES);
         Assert.assertEquals(
