@@ -28,6 +28,10 @@ public class ClusterConfig {
     return masterLocation;
   }
 
+  public ActorPath masterPath() {
+    return paths.get(masterLocation);
+  }
+
   public Map<String, HashGroup> hashGroups() {
     return new HashMap<>(hashGroups);
   }

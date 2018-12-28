@@ -1,18 +1,24 @@
 package com.spbsu.flamestream.runtime;
 
+import akka.actor.ActorPath;
 import akka.actor.ActorPath$;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.serialization.SerializationExtension;
+import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.master.ClientWatcher;
+import com.spbsu.flamestream.runtime.master.acker.Acker;
+import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.state.DevNullStateStorage;
 import com.spbsu.flamestream.runtime.state.RocksDBStateStorage;
 import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;
+import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -72,11 +78,29 @@ public class StartupWatcher extends LoggingActor {
             ActorPath$.MODULE$.fromString(self().path()
                     .toStringWithAddress(context().system().provider().getDefaultAddress()))
     );
+    ActorRef acker;
     if (zookeeperWorkersNode.isLeader(id)) {
+      acker = context().actorOf(Acker.props(committerConfig.defaultMinimalTime(), new ZkRegistry(curator)), "acker");
       context().actorOf(ClientWatcher.props(curator, kryoSerializer, zookeeperWorkersNode), "client-watcher");
+    } else {
+      acker =
+              AwaitResolver.syncResolve(
+                      ClusterConfig.fromWorkers(zookeeperWorkersNode.workers())
+                              .masterPath()
+                              .child("acker"),
+                      context()
+              );
     }
     context().actorOf(
-            ProcessingWatcher.props(id, curator, zookeeperWorkersNode, committerConfig, stateStorage, kryoSerializer),
+            ProcessingWatcher.props(
+                    id,
+                    curator,
+                    zookeeperWorkersNode,
+                    committerConfig,
+                    stateStorage,
+                    kryoSerializer,
+                    acker
+            ),
             "processing-watcher"
     );
     //noinspection ResultOfMethodCallIgnored
