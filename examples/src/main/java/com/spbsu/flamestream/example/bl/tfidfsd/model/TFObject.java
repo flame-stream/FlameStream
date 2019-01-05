@@ -31,6 +31,11 @@ public class TFObject implements DocContainer {
         return idfCounts.getOrDefault(key, 0) > 0;
     }
 
+    public int idfSize() {
+        return idfCounts.size();
+    }
+
+
     public void addKey(String key, int value) {
         //TFObject result = new TFObject(this);
         //result.

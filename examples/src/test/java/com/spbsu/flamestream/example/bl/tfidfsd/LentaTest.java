@@ -116,7 +116,7 @@ public class LentaTest extends FlameAkkaSuite {
     //    int nExpectedDocCards = docCards.size();
         int nExpected = /*docCards.size() + expectedWordDoc.size() + */nWordDocs.get() + 1;
         System.out.println("AAA: " + nExpected);
-        final AwaitResultConsumer<Object> awaitConsumer = new AwaitResultConsumer<>(nExpected + 1 + 1);
+        final AwaitResultConsumer<Object> awaitConsumer = new AwaitResultConsumer<>(nExpected + 1 + 1 + 1000000);
         try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
                 .millisBetweenCommits(500)
                 .build()) {

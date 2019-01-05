@@ -30,7 +30,7 @@ public class IDFAggregator implements Function<List<DocContainer>, Stream<DocCon
             if (single instanceof TFObject) return Stream.of(single);
             throw new IllegalArgumentException("Unexpected data type: " + single);
         } else {
-            System.out.println("DC2: " + docContainers);
+            System.out.format("DC2: %s%n", docContainers);
             DocContainer first = docContainers.get(0);
             DocContainer second = docContainers.get(1);
 
@@ -43,6 +43,9 @@ public class IDFAggregator implements Function<List<DocContainer>, Stream<DocCon
             if (first instanceof TFObject && second instanceof WordCounter) {
                 TFObject tfObject = (TFObject)first;
                 WordCounter wc = (WordCounter) second;
+
+                System.out.format("DC22: %d%n", tfObject.idfSize());
+
                 tfObject.addKey(wc.word(), wc.count());
                 //System.out.format("====: %s %s %s%n", System.identityHashCode(tfObject), System.identityHashCode(newTF), newTF);
                 return Stream.of(tfObject);
