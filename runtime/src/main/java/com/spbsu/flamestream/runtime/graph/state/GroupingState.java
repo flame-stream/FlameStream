@@ -28,6 +28,7 @@ public class GroupingState {
   public InvalidatingBucket bucketFor(DataItem item, HashFunction hash, Equalz equalz) {
     final int hashValue = hash.applyAsInt(item);
     final Object obj = buffers.get(hashValue);
+    //System.out.format("bucketFor: %s %s %s%n", item.payload(Object.class).getClass(), hashValue, obj);
     if (obj == null) {
       final InvalidatingBucket newBucket = new SynchronizedArrayInvalidatingBucket();
       buffers.put(hashValue, newBucket);

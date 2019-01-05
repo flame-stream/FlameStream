@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 public class CountWordEntries implements Function<List<WordContainer>, Stream<WordCounter>> {
     @Override
     public Stream<WordCounter> apply(List<WordContainer> wordContainers) {
+        System.out.println("WC: " + wordContainers);
         if (wordContainers.size() == 1) {
             final WordEntry wordEntry = (WordEntry) wordContainers.get(0);
             return Stream.of(new WordCounter(wordEntry, 1));

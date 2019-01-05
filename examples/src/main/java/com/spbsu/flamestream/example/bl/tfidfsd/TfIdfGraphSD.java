@@ -8,7 +8,9 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import com.spbsu.flamestream.example.bl.tfidfsd.model.TFObject;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.TextDocument;
+import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.DocContainer;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.WordContainer;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.counters.DocCounter;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.counters.WordCounter;
@@ -17,6 +19,8 @@ import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.DocEntry;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordDocEntry;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordEntry;
 import com.spbsu.flamestream.example.bl.tfidfsd.ops.entries.CountWordEntries;
+import com.spbsu.flamestream.example.bl.tfidfsd.ops.entries.IDFAggregator;
+import com.spbsu.flamestream.example.bl.tfidfsd.ops.filtering.DocContainerOrderingFilter;
 import com.spbsu.flamestream.example.bl.tfidfsd.ops.filtering.WordContainerOrderingFilter;
 
 import java.util.*;
@@ -26,9 +30,13 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class TfIdfGraphSD implements Supplier<Graph> {
     private final HashFunction wordHash = HashFunction.uniformHash(HashFunction.objectHash(WordContainer.class));
+    private final HashFunction docHash = HashFunction.uniformHash(
+            dataItem -> dataItem.payload(DocContainer.class).document().hashCode()
+    );
 
     @SuppressWarnings("Convert2Lambda")
     private final Equalz equalzWord = new Equalz() {
@@ -38,66 +46,25 @@ public class TfIdfGraphSD implements Supplier<Graph> {
         }
     };
 
+    @SuppressWarnings("Convert2Lambda")
+    private final Equalz equalzDoc = new Equalz() {
+        @Override
+        public boolean test(DataItem o1, DataItem o2) {
+            return o1.payload(DocContainer.class).document().equals(o2.payload(DocContainer.class).document());
+        }
+    };
+
     @Override
     public Graph get() {
         final Source source = new Source();
-        final Grouping<WordContainer> groupingWord2 =
+        final Grouping<WordContainer> groupingWord =
                 new Grouping<>(wordHash, equalzWord, 2, WordContainer.class);
 
-        final FlameMap<TextDocument, WordDocCounter> splitterWordDoc2 = new FlameMap<>(new Function<TextDocument, Stream<WordDocCounter>>() {
-            private Pattern p = Pattern.compile("\\w+", Pattern.UNICODE_CHARACTER_CLASS);
-            //private final Pattern pattern = Pattern.compile("\\w+");
-            AtomicInteger docs = new AtomicInteger();
-            AtomicInteger wdocs = new AtomicInteger();
-
-            @Override
-            public Stream<WordDocCounter> apply(TextDocument s) {
-                final Map<String, Integer> counter = new HashMap<>();
-                Matcher m = p.matcher(s.content());
-                int nd = docs.incrementAndGet();
+        final Grouping<DocContainer> groupingDoc =
+                new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
 
 
-  //              System.out.format("doc %s >%s<%n", s.name(), s.content());
-                while (m.find()) {
-                    String w = m.group();
-                    counter.put(w, counter.getOrDefault(w, 0) + 1);
-//                    System.out.format("doc %s =%s=%n", s.name(), w);
-                }
-
-                int nwd = wdocs.addAndGet(counter.size());
-
-                System.out.format("nd: %d, mwd: %d%n", nd, nwd);
-
-
-
-                return counter.entrySet().stream()
-                        .map(word -> new WordDocCounter(new WordDocEntry(s.name(), word.getKey()), word.getValue()));
-            }
-        }, TextDocument.class);  /*new FlameMap<>(new Function<TextDocument, Stream<WordDocCounter>>() {
-            private final Pattern pattern = Pattern.compile("\\s");
-
-            @Override
-            public Stream<WordDocCounter> apply(TextDocument s) {
-                final Map<String, Integer> counter = new HashMap<>();
-                for (String w: pattern.split(s.content())) {
-                    counter.put(w, counter.getOrDefault(w, 0) + 1);
-                }
-                System.out.format("doc %s%n", s.name());
-                return counter.entrySet().stream()
-                        .map(word -> new WordDocCounter(new WordDocEntry(s.name(), word.getKey()), word.getValue()));
-            }
-        }, TextDocument.class);*/
-
-        final FlameMap<TextDocument, DocCounter> splitterDoc2 = new FlameMap<>(new Function<TextDocument, Stream<DocCounter>>() {
-            private final Pattern pattern = Pattern.compile("\\s");
-
-            @Override
-            public Stream<DocCounter> apply(TextDocument s) {
-                return Stream.of(new DocCounter(new DocEntry(s.name()),pattern.split(s.content()).length));
-            }
-        }, TextDocument.class);
-
-        final FlameMap<TextDocument, WordEntry> splitterWord2 = new FlameMap<>(new Function<TextDocument, Stream<WordEntry>>() {
+        final FlameMap<TextDocument, WordEntry> splitterWord = new FlameMap<>(new Function<TextDocument, Stream<WordEntry>>() {
             private final Pattern pattern = Pattern.compile("\\s");
 
             @Override
@@ -107,36 +74,59 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                     counter.put(w, counter.getOrDefault(w, 0) + 1);
                 }
                 return counter.entrySet().stream()
-                        .map(word -> new WordEntry(word.getKey()));
+                        .map(word -> new WordEntry(word.getKey(), s.name()));
             }
         }, TextDocument.class);
 
-        final FlameMap<List<WordContainer>, List<WordContainer>> filterWord2 = new FlameMap<>(
+        final FlameMap<TextDocument, TFObject> splitterTF = new FlameMap<>(new Function<TextDocument, Stream<TFObject>>() {
+            private final Pattern pattern = Pattern.compile("\\s");
+
+            @Override
+            public Stream<TFObject> apply(TextDocument s) {
+                TFObject tfObject = new TFObject(s.name(), pattern.split(s.content()));
+                return Stream.of(tfObject);
+            }
+        }, TextDocument.class);
+
+        final FlameMap<List<WordContainer>, List<WordContainer>> filterWord = new FlameMap<>(
                 new WordContainerOrderingFilter(),
                 List.class
         );
-        final FlameMap<List<WordContainer>, WordCounter> counterWord2 = new FlameMap<>(
+        final FlameMap<List<WordContainer>, WordCounter> counterWord = new FlameMap<>(
                 new CountWordEntries(),
+                List.class
+        );
+        final FlameMap<List<DocContainer>, DocContainer> idfAggregator = new FlameMap<>(
+                new IDFAggregator(),
+                List.class
+        );
+
+        final FlameMap<List<DocContainer>, List<DocContainer>> filterDoc = new FlameMap<>(
+                new DocContainerOrderingFilter(),
                 List.class
         );
 
         final Sink sink = new Sink();
         return new Graph.Builder()
-                .link(source, splitterWordDoc2)
-                .link(source, splitterDoc2)
-                .link(source, splitterWord2)
-                .link(splitterWord2, groupingWord2)
-                .link(groupingWord2, filterWord2)
-                .link(filterWord2, counterWord2)
-                .link(counterWord2, groupingWord2)
+                .link(source, splitterTF)
+                .link(source, splitterWord)
 
-                .colocate(source, splitterWordDoc2, splitterDoc2)
-                .colocate(groupingWord2, filterWord2, counterWord2, sink)
+                .link(splitterWord, groupingWord)
+                .link(groupingWord, filterWord)
+                .link(filterWord, counterWord)
+                .link(counterWord, groupingWord)
 
-                .link(splitterWordDoc2, sink)
-                .link(splitterDoc2, sink)
-  //              .link(counterWord2, sink)
+                .link(counterWord, groupingDoc)
+                .link(splitterTF, groupingDoc)
+                .link(groupingDoc, filterDoc)
+                .link(filterDoc, idfAggregator)
+                .link(idfAggregator, groupingDoc)
 
+                .colocate(groupingDoc, filterDoc, counterWord)
+                .colocate(groupingWord, filterWord, counterWord, sink)
+
+                .link(counterWord, sink)
+                .link(splitterTF, sink)
 
                 .build(source, sink);
     }

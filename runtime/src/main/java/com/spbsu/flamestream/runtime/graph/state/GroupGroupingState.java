@@ -27,6 +27,11 @@ public class GroupGroupingState {
   public InvalidatingBucket bucketFor(DataItem item, HashFunction hashFunction, Equalz equalz) {
     final int hash = hashFunction.hash(item);
     final GroupingState state = unitStates.get(hash);
-    return state.bucketFor(item, hashFunction, equalz);
+    InvalidatingBucket res = state.bucketFor(item, hashFunction, equalz);
+    //System.out.println("RES: " + res.size());
+    if (res.size() > 0) {
+    //  System.out.format("11111: %s %s%n", item.payload(Object.class), res.get(0).payload(Object.class));
+    }
+    return res;
   }
 }

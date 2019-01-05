@@ -1,14 +1,17 @@
 package com.spbsu.flamestream.example.bl.tfidfsd.model.entries;
 
+import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.DocContainer;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.WordContainer;
 
 import java.util.Objects;
 
-public class WordEntry implements WordContainer {
+public class WordEntry implements WordContainer, DocContainer {
     private final String word;
+    private final String docId;
 
-    public WordEntry(String word) {
+    public WordEntry(String word, String docId) {
         this.word = word;
+        this.docId = docId;
     }
 
     @Override
@@ -17,8 +20,13 @@ public class WordEntry implements WordContainer {
     }
 
     @Override
+    public String document() {
+        return docId;
+    }
+
+    @Override
     public String toString() {
-        return String.format(">%s<", word);
+        return String.format("word: >%s<, doc: >%s<", word, docId);
     }
 
     @Override

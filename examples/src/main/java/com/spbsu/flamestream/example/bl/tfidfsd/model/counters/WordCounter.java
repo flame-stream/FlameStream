@@ -1,9 +1,10 @@
 package com.spbsu.flamestream.example.bl.tfidfsd.model.counters;
 
+import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.DocContainer;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.WordContainer;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordEntry;
 
-public class WordCounter implements WordContainer {
+public class WordCounter implements WordContainer, DocContainer {
     private final WordEntry wordEntry;
     private final int count;
 
@@ -15,6 +16,11 @@ public class WordCounter implements WordContainer {
     @Override
     public String word() {
         return wordEntry.word();
+    }
+
+    @Override
+    public String document() {
+        return wordEntry.document();
     }
 
     public WordEntry wordEntry() {
