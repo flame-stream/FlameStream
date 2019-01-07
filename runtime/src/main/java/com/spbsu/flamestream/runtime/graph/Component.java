@@ -29,7 +29,7 @@ import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -38,8 +38,18 @@ import java.util.stream.Collectors;
 
 public class Component extends LoggingActor {
   private final ActorRef acker;
-  private final Map<GraphManager.Destination, Joba> jobas;
-  private final Map<GraphManager.Destination, Consumer<DataItem>> downstreams = new HashMap<>();
+
+  private class JobaWrapper<WrappedJoba extends Joba> {
+    WrappedJoba joba;
+    Consumer<DataItem> downstream;
+
+    JobaWrapper(WrappedJoba joba, Consumer<DataItem> downstream) {
+      this.joba = joba;
+      this.downstream = downstream;
+    }
+  }
+
+  private final Map<GraphManager.Destination, JobaWrapper<?>> wrappedJobas;
 
   private final Tracing.Tracer groupingSendTracer = Tracing.TRACING.forEvent("fm-send");
   private final Tracing.Tracer acceptInTracer = Tracing.TRACING.forEvent("accept-in", 1000, 1);
@@ -48,12 +58,9 @@ public class Component extends LoggingActor {
   private final Tracing.Tracer injectOutTracer = Tracing.TRACING.forEvent("inject-out");
 
   @Nullable
-  private SourceJoba sourceJoba;
+  private JobaWrapper<SourceJoba> wrappedSourceJoba;
   @Nullable
-  private GraphManager.Destination sourceDestination;
-
-  @Nullable
-  private SinkJoba sinkJoba;
+  private JobaWrapper<SinkJoba> wrappedSinkJoba;
 
   private Component(Set<Graph.Vertex> componentVertices,
                     Graph graph,
@@ -64,82 +71,72 @@ public class Component extends LoggingActor {
                     Map<String, GroupGroupingState> stateByVertex) {
     this.acker = acker;
 
-    {
-      jobas = new HashMap<>();
-      for (Graph.Vertex vertex : componentVertices) {
-        final Joba joba;
-        if (vertex instanceof Sink) {
-          joba = new SinkJoba(context());
-        } else if (vertex instanceof FlameMap) {
-          joba = new MapJoba((FlameMap<?, ?>) vertex);
-        } else if (vertex instanceof Grouping) {
-          final Grouping grouping = (Grouping) vertex;
-          final Collection<HashUnit> values = props.hashGroups()
-                  .values()
-                  .stream()
-                  .flatMap(g -> g.units().stream())
-                  .collect(Collectors.toSet());
-          stateByVertex.putIfAbsent(vertex.id(), new GroupGroupingState(values));
-          joba = new GroupingJoba(grouping, stateByVertex.get(vertex.id()));
-        } else if (vertex instanceof Source) {
-          joba = new SourceJoba(props.maxElementsInGraph(), context());
-        } else {
-          throw new RuntimeException("Invalid vertex type");
-        }
-        jobas.put(GraphManager.Destination.fromVertexId(vertex.id()), joba);
-        if (joba instanceof SourceJoba) {
-          sourceJoba = (SourceJoba) joba;
-          sourceDestination = GraphManager.Destination.fromVertexId(vertex.id());
-        } else if (joba instanceof SinkJoba) {
-          sinkJoba = (SinkJoba) joba;
-        }
-      }
-    }
+    this.wrappedJobas = componentVertices.stream().collect(Collectors.toMap(
+            vertex -> GraphManager.Destination.fromVertexId(vertex.id()),
+            vertex -> {
+              final List<Consumer<DataItem>> sinks = graph.adjacent(vertex)
+                      .map(to -> {
+                        final GraphManager.Destination toDest = GraphManager.Destination.fromVertexId(to.id());
 
-    for (Graph.Vertex from : componentVertices) {
-      final GraphManager.Destination fromDest = GraphManager.Destination.fromVertexId(from.id());
-
-      final Set<Consumer<DataItem>> sinks = graph.adjacent(from)
-              .map(to -> {
-                final GraphManager.Destination toDest = GraphManager.Destination.fromVertexId(to.id());
-
-                final Consumer<DataItem> sink;
-                if (componentVertices.contains(to)) {
-                  sink = item -> localCall(item, toDest);
-                } else if (to instanceof HashingVertexStub && ((HashingVertexStub) to).hash() != null) {
-                  sink = item -> {
-                    groupingSendTracer.log(item.xor());
-                    acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-                    routes.get(Objects.requireNonNull(((HashingVertexStub) to).hash()).applyAsInt(item))
-                            .tell(new AddressedItem(item, toDest), self());
+                        final Consumer<DataItem> sink;
+                        if (componentVertices.contains(to)) {
+                          sink = item -> localCall(item, toDest);
+                        } else if (to instanceof HashingVertexStub && ((HashingVertexStub) to).hash() != null) {
+                          sink = item -> {
+                            groupingSendTracer.log(item.xor());
+                            acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
+                            routes.get(Objects.requireNonNull(((HashingVertexStub) to).hash()).applyAsInt(item))
+                                    .tell(new AddressedItem(item, toDest), self());
+                          };
+                        } else {
+                          sink = item -> {
+                            acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
+                            localManager.tell(new AddressedItem(item, toDest), self());
+                          };
+                        }
+                        return sink;
+                      })
+                      .collect(Collectors.toList());
+              Consumer<DataItem> downstream;
+              switch (sinks.size()) {
+                case 0:
+                  downstream = item -> context().system().deadLetters().tell(item, self());
+                  break;
+                case 1:
+                  downstream = sinks.stream().findAny().get();
+                  break;
+                default:
+                  downstream = item -> {
+                    int childId = 0;
+                    for (Consumer<DataItem> sink : sinks) {
+                      sink.accept(item.cloneWith(new Meta(item.meta(), 0, childId++)));
+                    }
                   };
-                } else {
-                  sink = item -> {
-                    acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-                    localManager.tell(new AddressedItem(item, toDest), self());
-                  };
-                }
-                return sink;
-              })
-              .collect(Collectors.toSet());
+              }
+              final Joba joba;
+              if (vertex instanceof Sink) {
+                return wrappedSinkJoba = new JobaWrapper<>(new SinkJoba(context()), downstream);
+              } else if (vertex instanceof FlameMap) {
+                joba = new MapJoba((FlameMap<?, ?>) vertex);
+              } else if (vertex instanceof Grouping) {
+                final Grouping grouping = (Grouping) vertex;
+                final Collection<HashUnit> values = props.hashGroups()
+                        .values()
+                        .stream()
+                        .flatMap(g -> g.units().stream())
+                        .collect(Collectors.toSet());
+                stateByVertex.putIfAbsent(vertex.id(), new GroupGroupingState(values));
+                joba = new GroupingJoba(grouping, stateByVertex.get(vertex.id()));
+              } else if (vertex instanceof Source) {
+                return wrappedSourceJoba =
+                        new JobaWrapper<>(new SourceJoba(props.maxElementsInGraph(), context()), downstream);
+              } else {
+                throw new RuntimeException("Invalid vertex type");
+              }
 
-      if (sinks.size() == 1) {
-        downstreams.put(fromDest, sinks.stream().findAny().get());
-      } else if (sinks.size() > 1) {
-        final Consumer<DataItem> broadcast = item -> {
-          final int[] childId = {0};
-          for (Consumer<DataItem> sink : sinks) {
-            final Meta newMeta = new Meta(item.meta(), 0, childId[0]);
-            final DataItem newItem = item.cloneWith(newMeta);
-            sink.accept(newItem);
-            childId[0]++;
-          }
-        };
-        downstreams.put(fromDest, broadcast);
-      } else {
-        downstreams.put(fromDest, item -> context().system().deadLetters().tell(item, self()));
-      }
-    }
+              return new JobaWrapper<>(joba, downstream);
+            }
+    ));
   }
 
   public static Props props(Set<Graph.Vertex> componentVertices,
@@ -168,13 +165,13 @@ public class Component extends LoggingActor {
   }
 
   private void onCommit(Commit commit) {
-    if (sourceJoba != null) {
-      sourceJoba.checkpoint(commit.globalTime());
+    if (wrappedSourceJoba != null) {
+      wrappedSourceJoba.joba.checkpoint(commit.globalTime());
     }
   }
 
   private void onPrepare(Prepare prepare) {
-    jobas.values().forEach(joba -> joba.onPrepareCommit(prepare.globalTime()));
+    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onPrepareCommit(prepare.globalTime()));
     sender().tell(new ComponentPrepared(), self());
   }
 
@@ -187,18 +184,18 @@ public class Component extends LoggingActor {
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {
-    jobas.get(destination).accept(item, downstreams.get(destination));
+    wrappedJobas.get(destination).joba.accept(item, wrappedJobas.get(destination).downstream);
   }
 
   private void onMinTime(MinTimeUpdate minTimeUpdate) {
-    jobas.values().forEach(j -> j.onMinTime(minTimeUpdate.minTime()));
+    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTimeUpdate.minTime()));
   }
 
   private void accept(DataItem item) {
-    if (sourceJoba != null) {
+    if (wrappedSourceJoba != null) {
       acceptInTracer.log(item.xor());
-      sourceJoba.addFront(item.meta().globalTime().frontId(), sender());
-      sourceJoba.accept(item, downstreams.get(sourceDestination));
+      wrappedSourceJoba.joba.addFront(item.meta().globalTime().frontId(), sender());
+      wrappedSourceJoba.joba.accept(item, wrappedSourceJoba.downstream);
       acceptOutTracer.log(item.xor());
     } else {
       throw new IllegalStateException("Source doesn't belong to this component");
@@ -206,8 +203,8 @@ public class Component extends LoggingActor {
   }
 
   private void onNewRear(NewRear attachRear) {
-    if (sinkJoba != null) {
-      sinkJoba.attachRear(attachRear.rear());
+    if (wrappedSinkJoba != null) {
+      wrappedSinkJoba.joba.attachRear(attachRear.rear());
     } else {
       throw new IllegalStateException("Sink doesn't belong to this component");
     }
