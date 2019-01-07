@@ -10,14 +10,15 @@ import akka.actor.RootActorPath;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.config.AckerConfig;
+import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
+import com.spbsu.flamestream.runtime.master.acker.Acker;
+import com.spbsu.flamestream.runtime.master.acker.Committer;
 import com.spbsu.flamestream.runtime.master.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
-import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 class Cluster extends LoggingActor {
@@ -65,15 +67,30 @@ class Cluster extends LoggingActor {
       ranges.put(id, new HashGroup(Collections.singleton(range)));
     }
     final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
-    final AckerConfig ackerConfig = new AckerConfig(maxElementsInGraph, millisBetweenCommits, 0);
+    final CommitterConfig committerConfig = new CommitterConfig(maxElementsInGraph, millisBetweenCommits, 0);
 
     final Registry registry = new InMemoryRegistry();
-    final Map<String, Props> nodeProps = new HashMap<>();
-    paths.keySet().forEach(id -> {
-      final Props props = FlameNode.props(id, g, clusterConfig, ackerConfig, registry, stateStorage);
-      nodeProps.put(id, props);
-    });
-    inner = context().actorOf(FlameUmbrella.props(nodeProps, paths), "cluster");
+    inner = context().actorOf(FlameUmbrella.props(
+            context -> {
+              final ActorRef acker = context.actorOf(Acker.props(0, registry), "acker");
+              final ActorRef committer = context.actorOf(Committer.props(
+                      clusterConfig.paths().size(),
+                      committerConfig,
+                      registry,
+                      acker
+              ));
+              return paths.keySet().stream().map(id -> context.actorOf(FlameNode.props(
+                      id,
+                      g,
+                      clusterConfig,
+                      acker,
+                      committer,
+                      maxElementsInGraph,
+                      stateStorage
+              ), id)).collect(Collectors.toList());
+            },
+            paths
+    ), "cluster");
   }
 
   static Props props(Graph g,
@@ -131,23 +148,27 @@ class Cluster extends LoggingActor {
 class FlameUmbrella extends LoggingActor {
   private final List<Object> toBeTold;
   private final Map<String, ActorPath> paths;
+  private final Iterable<ActorRef> flameNodes;
 
-  private FlameUmbrella(Map<String, Props> props, Map<String, ActorPath> paths, List<Object> toBeTold) {
+  private FlameUmbrella(Function<akka.actor.ActorContext, Iterable<ActorRef>> actorsStarter,
+                        Map<String, ActorPath> paths,
+                        List<Object> toBeTold) {
     this.paths = paths;
     this.toBeTold = toBeTold;
-    props.forEach((id, prop) -> context().actorOf(prop, id));
+    flameNodes = actorsStarter.apply(context());
 
     // Reattach rears first
     toBeTold.stream().filter(e -> e instanceof AttachRear).forEach(a -> {
-      getContext().getChildren().forEach(c -> c.tell(a, self()));
+      flameNodes.forEach(c -> c.tell(a, self()));
     });
     toBeTold.stream().filter(e -> e instanceof AttachFront).forEach(a -> {
-      getContext().getChildren().forEach(c -> c.tell(a, self()));
+      flameNodes.forEach(c -> c.tell(a, self()));
     });
   }
 
-  public static Props props(Map<String, Props> props, Map<String, ActorPath> paths) {
-    return Props.create(FlameUmbrella.class, props, paths, new ArrayList<>());
+  static Props props(Function<akka.actor.ActorContext, Iterable<ActorRef>> flameNodesStarter,
+                     Map<String, ActorPath> paths) {
+    return Props.create(FlameUmbrella.class, flameNodesStarter, paths, new ArrayList<>());
   }
 
   @Override
@@ -156,7 +177,7 @@ class FlameUmbrella extends LoggingActor {
             .match(FrontTypeWithId.class, a -> {
               final AttachFront attach = new AttachFront<>(a.id, a.type.instance());
               toBeTold.add(attach);
-              getContext().getChildren().forEach(n -> n.tell(attach, self()));
+              flameNodes.forEach(n -> n.tell(attach, self()));
               final List<Object> collect = paths.entrySet().stream()
                       .map(node -> a.type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), a.id)))
                       .collect(Collectors.toList());
@@ -165,7 +186,7 @@ class FlameUmbrella extends LoggingActor {
             .match(RearTypeWithId.class, a -> {
               final AttachRear attach = new AttachRear(a.id, a.type.instance());
               toBeTold.add(attach);
-              getContext().getChildren().forEach(n -> n.tell(attach, self()));
+              flameNodes.forEach(n -> n.tell(attach, self()));
               final List<Object> collect = paths.entrySet().stream()
                       .map(node -> a.type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), a.id)))
                       .collect(Collectors.toList());

@@ -12,8 +12,9 @@ import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
-import com.spbsu.flamestream.runtime.master.acker.api.commit.GimmeTime;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.GimmeLastCommit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.LastCommit;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepared;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Ready;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 public class GraphManager extends LoggingActor {
   private final Graph graph;
   private final ActorRef acker;
+  private final ActorRef committer;
   private final ComputationProps computationProps;
   private final StateStorage storage;
   private final String nodeId;
@@ -59,6 +61,7 @@ public class GraphManager extends LoggingActor {
   private GraphManager(String nodeId,
                        Graph graph,
                        ActorRef acker,
+                       ActorRef committer,
                        ComputationProps computationProps,
                        StateStorage storage) {
     this.nodeId = nodeId;
@@ -66,15 +69,18 @@ public class GraphManager extends LoggingActor {
     this.computationProps = computationProps;
     this.graph = graph;
     this.acker = context().actorOf(LocalAcker.props(acker), "local-acker");
+    this.committer = committer;
+    acker.tell(new MinTimeUpdateListener(self()), self());
   }
 
   public static Props props(
           String nodeId,
           Graph graph,
           ActorRef acker,
+          ActorRef committer,
           ComputationProps layout,
           StateStorage storage) {
-    return Props.create(GraphManager.class, nodeId, graph, acker, layout, storage)
+    return Props.create(GraphManager.class, nodeId, graph, acker, committer, layout, storage)
             .withDispatcher("processing-dispatcher");
   }
 
@@ -89,7 +95,7 @@ public class GraphManager extends LoggingActor {
                               .forEach(unit -> routerMap.put(unit, (ActorRef) managers.get(key))));
               routes.putAll(routerMap);
 
-              acker.tell(new GimmeTime(), self());
+              committer.tell(new GimmeLastCommit(), self());
               getContext().become(deploying());
             })
             .matchAny(m -> stash())
@@ -150,7 +156,7 @@ public class GraphManager extends LoggingActor {
                         .ifPresent(v -> sinkComponent = component);
               });
 
-              acker.tell(new Ready(), self());
+              committer.tell(new Ready(), self());
               unstashAll();
               getContext().become(managing());
             })
@@ -190,7 +196,7 @@ public class GraphManager extends LoggingActor {
                                       .subState(prepare.globalTime(), groupingWindows.get(e.getKey()))
                       ))
       ));
-      acker.tell(new Prepared(), self());
+      committer.tell(new Prepared(), self());
     });
   }
 

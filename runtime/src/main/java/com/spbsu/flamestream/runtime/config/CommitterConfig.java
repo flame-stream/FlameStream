@@ -1,11 +1,11 @@
 package com.spbsu.flamestream.runtime.config;
 
-public class AckerConfig {
+public class CommitterConfig {
   private final int maxElementsInGraph;
   private final int millisBetweenCommits;
   private final long defaultMinimalTime;
 
-  public AckerConfig(int maxElementsInGraph, int millisBetweenCommits, long defaultMinimalTime) {
+  public CommitterConfig(int maxElementsInGraph, int millisBetweenCommits, long defaultMinimalTime) {
     this.maxElementsInGraph = maxElementsInGraph;
     this.millisBetweenCommits = millisBetweenCommits;
     this.defaultMinimalTime = defaultMinimalTime;
@@ -25,6 +25,6 @@ public class AckerConfig {
 
   @Override
   public String toString() {
-    return "AckerConfig{maxElementsInGraph=" + maxElementsInGraph + '}';
+    return "CommitterConfig{maxElementsInGraph=" + maxElementsInGraph + '}';
   }
 }
