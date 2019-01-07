@@ -122,7 +122,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 .link(filterDoc, idfAggregator)
                 .link(idfAggregator, groupingDoc)
 
-                .colocate(groupingDoc, filterDoc, counterWord)
+                .colocate(groupingDoc, filterDoc, idfAggregator)
                 .colocate(groupingWord, filterWord, counterWord, sink)
 
                 .link(counterWord, sink)
