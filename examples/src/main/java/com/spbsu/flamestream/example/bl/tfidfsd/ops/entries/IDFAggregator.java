@@ -2,11 +2,13 @@ package com.spbsu.flamestream.example.bl.tfidfsd.ops.entries;
 
 //import com.spbsu.flamestream.example.bl.tfidfsd.model.IDFObject;
 //import com.spbsu.flamestream.example.bl.tfidfsd.model.IDFObject;
+import com.spbsu.flamestream.example.bl.tfidfsd.model.IDFObject;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.TFObject;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.DocContainer;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.counters.DocCounter;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.counters.WordCounter;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -26,7 +28,7 @@ public class IDFAggregator implements Function<List<DocContainer>, Stream<DocCon
                 return Stream.of(new IDFObject(single.document(), wc.word(), wc.count()));
             }
             */
-            //if (single instanceof IDFObject) return Stream.of(single);
+            if (single instanceof IDFObject) return Stream.of(single);
             if (single instanceof TFObject) return Stream.of(single);
             throw new IllegalArgumentException("Unexpected data type: " + single);
         } else {
@@ -34,19 +36,40 @@ public class IDFAggregator implements Function<List<DocContainer>, Stream<DocCon
             DocContainer first = docContainers.get(0);
             DocContainer second = docContainers.get(1);
 
-            if (second instanceof TFObject && first instanceof WordCounter) {
+            if (second instanceof IDFObject && first instanceof IDFObject) {
+                IDFObject firstIdf = (IDFObject)first;
+                IDFObject secondIdf = (IDFObject)second;
+
+
+                System.out.println("IDFO - IDFO");
+                System.out.format("1: %s%n", firstIdf);
+                System.out.format("2: %s%n", secondIdf);
+
+                if (firstIdf.equals(secondIdf)) {
+                    return Stream.of();
+                } else {
+                    IDFObject res = firstIdf.merge(secondIdf);
+                    System.out.format("merged: %s%n", res);
+                    return Stream.of(res);
+                }
+            }
+
+
+            if (second instanceof TFObject && first instanceof IDFObject) {
                 DocContainer t = first;
                 first = second;
                 second = t;
             }
 
-            if (first instanceof TFObject && second instanceof WordCounter) {
+            if (first instanceof TFObject && second instanceof IDFObject) {
                 TFObject tfObject = (TFObject)first;
-                WordCounter wc = (WordCounter) second;
+                IDFObject wc = (IDFObject) second;
 
                 System.out.format("DC22: %d%n", tfObject.idfSize());
 
-                tfObject.addKey(wc.word(), wc.count());
+                for (String w: wc.keys()) {
+                    tfObject.addKey(w);
+                }
                 //System.out.format("====: %s %s %s%n", System.identityHashCode(tfObject), System.identityHashCode(newTF), newTF);
                 return Stream.of(tfObject);
             }

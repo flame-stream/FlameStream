@@ -8,6 +8,7 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import com.spbsu.flamestream.example.bl.tfidfsd.model.IDFObject;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.TFObject;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.TextDocument;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.DocContainer;
@@ -106,6 +107,12 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 List.class
         );
 
+        final FlameMap<WordCounter, IDFObject> wc2IDFObject = new FlameMap<>(
+                wc -> Stream.of(new IDFObject(wc.document(), wc.word(), wc.count())),
+                WordCounter.class
+        );
+
+
         final Sink sink = new Sink();
         return new Graph.Builder()
                 .link(source, splitterTF)
@@ -116,13 +123,18 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 .link(filterWord, counterWord)
                 .link(counterWord, groupingWord)
 
-                .link(counterWord, groupingDoc)
+                .link(counterWord, wc2IDFObject)
+
+                .link(wc2IDFObject, groupingDoc)
+
+                .link(wc2IDFObject, groupingDoc)
                 .link(splitterTF, groupingDoc)
                 .link(groupingDoc, filterDoc)
                 .link(filterDoc, idfAggregator)
                 .link(idfAggregator, groupingDoc)
 
-                .colocate(groupingDoc, filterDoc, counterWord)
+
+                .colocate(groupingDoc, filterDoc, idfAggregator)
                 .colocate(groupingWord, filterWord, counterWord, sink)
 
                 .link(counterWord, sink)

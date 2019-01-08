@@ -36,10 +36,10 @@ public class TFObject implements DocContainer {
     }
 
 
-    public void addKey(String key, int value) {
+    public void addKey(String key) {
         //TFObject result = new TFObject(this);
         //result.
-                idfCounts.put(key, value);
+                idfCounts.put(key, idfCounts.getOrDefault(key, 0) + 1);
         //return result;
     }
 
@@ -50,7 +50,7 @@ public class TFObject implements DocContainer {
 
     @Override
     public String toString() {
-        return String.format("doc: %s, idf: %s, words: %s", docName, idfCounts, counts);
+        return String.format("<TFO> doc hash: %d, doc: %s, idf: %s, words: %s", docName.hashCode(), docName, idfCounts, counts);
     }
 
     @Override

@@ -24,11 +24,16 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
 
   @Override
   public void insert(DataItem insertee) {
+    System.out.println("di: " + innerList.size());
+    innerList.stream().forEach(System.out::println);
     if (!insertee.meta().isTombstone()) {
       final int position = lowerBound(insertee.meta());
       innerList.add(position, insertee);
     } else {
       final int position = lowerBound(insertee.meta()) - 1;
+      System.out.println("pos: " + position);
+      System.out.println("m1: " + innerList.get(position).meta());
+      System.out.println("m2: " + insertee.meta());
       if (!innerList.get(position).meta().isInvalidedBy(insertee.meta())) {
         throw new IllegalStateException("There is no invalidee");
       }

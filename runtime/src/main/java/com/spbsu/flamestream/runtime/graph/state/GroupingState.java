@@ -7,6 +7,7 @@ import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.SynchronizedArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
+import com.spbsu.flamestream.core.graph.Grouping;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +29,10 @@ public class GroupingState {
   public InvalidatingBucket bucketFor(DataItem item, HashFunction hash, Equalz equalz) {
     final int hashValue = hash.applyAsInt(item);
     final Object obj = buffers.get(hashValue);
-    //System.out.format("bucketFor: %s %s %s%n", item.payload(Object.class).getClass(), hashValue, obj);
+    //System.out.format("bucketFor-0: %s%n", hash);
+    //System.out.format("bucketFor-1: %s%n", item.payload(Object.class));
+    //System.out.format("bucketFor-2: %d %d%n", item.payload(Object.class).hashCode(), hashValue);
+    //System.out.format("bucketFor-3: %s %s %s%n", item.payload(Object.class).getClass(), hashValue, obj);
     if (obj == null) {
       final InvalidatingBucket newBucket = new SynchronizedArrayInvalidatingBucket();
       buffers.put(hashValue, newBucket);
@@ -75,5 +79,10 @@ public class GroupingState {
       }
     });
     return new GroupingState(subState);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("<GS> %s", buffers);
   }
 }

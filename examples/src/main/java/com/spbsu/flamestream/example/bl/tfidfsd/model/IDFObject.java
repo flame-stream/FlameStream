@@ -2,28 +2,44 @@ package com.spbsu.flamestream.example.bl.tfidfsd.model;
 
 import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.DocContainer;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/*
+
 public class IDFObject implements DocContainer {
-    private final Map<String, Integer> counts;
+    private final Map<String, Integer> counts = new ConcurrentHashMap<>();
     private final String docName;
 
-    public IDFObject(String docName, String word, int count) {
+    public IDFObject(String docName, String word, Integer count) {
         this.docName = docName;
-        counts = new ConcurrentHashMap();
         counts.put(word, count);
     }
 
-    public boolean isDefined(String key) {
-        return counts.getOrDefault(key, 0) > 0;
+    private IDFObject(String docName) {
+        this.docName = docName;
     }
 
-    public void add(String key, int value) {
-        counts.put(key, value);
+    public IDFObject merge(IDFObject other) {
+        IDFObject result = new IDFObject(docName);
+        for (Map.Entry<String, Integer> entry: other.counts.entrySet()) {
+            result.counts.put(entry.getKey(), entry.getValue());
+        }
+        for (Map.Entry<String, Integer> entry: counts.entrySet()) {
+            result.counts.put(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+    public boolean isDefined(String key) {
+        return counts.containsKey(key);
+    }
+
+
+    public void drop(String key) {
+        counts.remove(key);
     }
 
     @Override
@@ -33,8 +49,13 @@ public class IDFObject implements DocContainer {
 
     @Override
     public String toString() {
-        return String.format("%s", counts);
+        return String.format("<IDFO> %s", counts);
     }
+
+    public Set<String> keys() {
+        return counts.keySet();
+    }
+
 
     @Override
     public boolean equals(Object o) {
@@ -53,4 +74,3 @@ public class IDFObject implements DocContainer {
         return Objects.hash(counts.hashCode());
     }
 }
-*/

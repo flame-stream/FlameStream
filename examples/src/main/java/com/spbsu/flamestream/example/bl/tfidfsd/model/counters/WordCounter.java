@@ -51,6 +51,6 @@ public class WordCounter implements WordContainer, DocContainer {
 
     @Override
     public String toString() {
-        return String.format("%s: %d", wordEntry, count);
+        return String.format("<WC>%s: %d", wordEntry, count);
     }
 }

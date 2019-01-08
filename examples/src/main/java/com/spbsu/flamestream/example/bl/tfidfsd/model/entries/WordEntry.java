@@ -26,7 +26,7 @@ public class WordEntry implements WordContainer, DocContainer {
 
     @Override
     public String toString() {
-        return String.format("word: >%s<, doc: >%s<", word, docId);
+        return String.format("<WE> doc hash: %d,  word: >%s<, doc: >%s<", document().hashCode(), word, docId);
     }
 
     @Override

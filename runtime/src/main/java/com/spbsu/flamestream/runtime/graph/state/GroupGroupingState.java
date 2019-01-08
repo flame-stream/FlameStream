@@ -27,6 +27,10 @@ public class GroupGroupingState {
   public InvalidatingBucket bucketFor(DataItem item, HashFunction hashFunction, Equalz equalz) {
     final int hash = hashFunction.hash(item);
     final GroupingState state = unitStates.get(hash);
+    if (state == null) {
+      System.out.format("SSS-1: %s %d %s%n", state, hash, item);
+      System.out.format("SSS-2: %s%n", unitStates);
+    }
     InvalidatingBucket res = state.bucketFor(item, hashFunction, equalz);
     //System.out.println("RES: " + res.size());
     if (res.size() > 0) {
