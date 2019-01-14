@@ -7,19 +7,24 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class IDFObject implements DocContainer {
     private final Map<String, Integer> counts = new ConcurrentHashMap<>();
     private final String docName;
+    private AtomicBoolean selfGrouped;
 
     public IDFObject(String docName, String word, Integer count) {
         this.docName = docName;
         counts.put(word, count);
+        selfGrouped = new AtomicBoolean(false);
     }
 
     private IDFObject(String docName) {
+
         this.docName = docName;
+        selfGrouped = new AtomicBoolean(false);
     }
 
     public IDFObject merge(IDFObject other) {
@@ -37,6 +42,13 @@ public class IDFObject implements DocContainer {
         return counts.containsKey(key);
     }
 
+    public boolean isSelfGrouped() {
+        return selfGrouped.get();
+    }
+
+    public void setSelfGrouped() {
+        selfGrouped.set(true);
+    }
 
     public void drop(String key) {
         counts.remove(key);
@@ -73,4 +85,5 @@ public class IDFObject implements DocContainer {
     public int hashCode() {
         return Objects.hash(counts.hashCode());
     }
+
 }

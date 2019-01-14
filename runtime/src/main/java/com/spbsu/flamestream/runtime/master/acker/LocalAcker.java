@@ -55,11 +55,17 @@ public class LocalAcker extends LoggingActor {
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, heartbeatCache::add)
             .match(Flush.class, flush -> flush())
-            .matchAny(m -> globalAcker.forward(m, context()))
+            .matchAny(m -> {
+              //System.out.format("LocalAcker <default> got something %s %n", m);
+              globalAcker.forward(m, context());
+            })
             .build();
   }
 
   private void handleAck(Ack ack) {
+    //System.out.format("LocalAcker <default> got Ack %s%n", ack);
+    //if (ackCache.size() > 0) System.out.format("LocalAcker <default> ack cache %s%n", ackCache);
+
     ackCache.compute(ack.time(), (globalTime, xor) -> {
       if (xor == null) {
         return ack.xor();
@@ -76,7 +82,14 @@ public class LocalAcker extends LoggingActor {
   }
 
   private void flush() {
-    ackCache.forEach((globalTime, xor) -> globalAcker.tell(new Ack(globalTime, xor), context().parent()));
+    //System.out.format("LocalAcker <default> got Flush from %s%n", context().sender());
+    //if (ackCache.size() > 0) {
+    //  System.out.format("LocalAcker <default> got Flush ack cache %s%n", ackCache);
+    //}
+    ackCache.forEach((globalTime, xor) -> {
+
+      globalAcker.tell(new Ack(globalTime, xor), context().parent());
+    });
     ackCache.clear();
 
     heartbeatCache.forEach(heartbeat -> globalAcker.tell(heartbeat, self()));

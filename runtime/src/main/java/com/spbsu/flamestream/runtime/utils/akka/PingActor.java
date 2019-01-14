@@ -24,6 +24,8 @@ public class PingActor extends LoggingActor {
   private Cancellable scheduler;
 
   private PingActor(ActorRef actorToPing, Object objectForPing) {
+    System.out.format("PingActor ctr, toPing %s%n", actorToPing);
+    System.out.format("PingActor ctr, object %s%n", objectForPing);
     this.actorToPing = actorToPing;
     this.objectForPing = objectForPing;
   }
@@ -42,18 +44,22 @@ public class PingActor extends LoggingActor {
   public Receive createReceive() {
     return receiveBuilder()
             .match(Start.class, start -> {
+              System.out.format("PingActor got Start %s %s%n", started, start);
+              System.out.format("PingActor got Start from %s (%s)%n", context().sender(), context().self());
               if (!started) {
                 start(start.delayInNanos());
                 started = true;
               }
             })
             .match(Stop.class, stop -> {
+              System.out.format("PingActor got Stop %s %s%n", started, stop);
               if (started) {
                 stop();
                 started = false;
               }
             })
             .match(InnerPing.class, innerPing -> {
+              //System.out.format("PingActor got InnerPing %s from %s%n", innerPing, context().sender());
               if (started) {
                 handleInnerPing();
               }
@@ -99,6 +105,9 @@ public class PingActor extends LoggingActor {
     private long delayInNanos() {
       return delayInNanos;
     }
+
+    @Override
+    public String toString() { return String.format("Start delay %d", delayInNanos); }
   }
 
   public static class Stop {

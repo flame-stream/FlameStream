@@ -34,6 +34,7 @@ public class SinkJoba implements Joba {
   private GlobalTime minTime = GlobalTime.MIN;
 
   SinkJoba(ActorContext context) {
+    System.out.format("SinkJoba ctr %s %s%n", System.identityHashCode(this), System.identityHashCode(invalidatingBucket));
     log = Logging.getLogger(context.system(), context.self());
   }
 
@@ -45,6 +46,7 @@ public class SinkJoba implements Joba {
 
   public void attachRear(ActorRef rear) {
     try {
+      System.out.println("ASK GLB");
       final Batch batch = PatternsCS.ask(rear, new GimmeLastBatch(), FlameConfig.config.bigTimeout())
               .thenApply(e -> (Batch) e)
               .toCompletableFuture().get();
@@ -115,6 +117,11 @@ public class SinkJoba implements Joba {
     @Override
     public <T> Stream<T> payload(Class<T> clazz) {
       return items.stream().map(i -> i.payload(clazz));
+    }
+
+    @Override
+    public String toString() {
+      return String.format("BatchImpl time %s, items %s%n", time, items);
     }
   }
 }

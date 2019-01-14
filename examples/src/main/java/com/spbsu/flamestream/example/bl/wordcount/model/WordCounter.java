@@ -42,6 +42,6 @@ public class WordCounter implements WordContainer {
 
   @Override
   public String toString() {
-    return word;
+    return String.format("%s: %d", word, count);
   }
 }

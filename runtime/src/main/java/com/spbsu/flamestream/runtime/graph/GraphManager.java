@@ -61,7 +61,11 @@ public class GraphManager extends LoggingActor {
                        ActorRef acker,
                        ComputationProps computationProps,
                        StateStorage storage) {
-    this.nodeId = nodeId;
+      System.out.format("GraphManager ctr, node %s%n", nodeId);
+      System.out.format("GraphManager ctr, compProps %s%n", computationProps);
+      System.out.format("GraphManager ctr, storage class %s%n", storage.getClass());
+      System.out.format("GraphManager ctr, storage %s%n", storage);
+      this.nodeId = nodeId;
     this.storage = storage;
     this.computationProps = computationProps;
     this.graph = graph;
@@ -83,23 +87,32 @@ public class GraphManager extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Map.class, managers -> {
               log().info("Finishing constructor");
+              System.out.format("GraphManager <default> got Map %s%n", managers);
               final Map<HashUnit, ActorRef> routerMap = new HashMap<>();
               computationProps.hashGroups()
                       .forEach((key, value) -> value.units()
-                              .forEach(unit -> routerMap.put(unit, (ActorRef) managers.get(key))));
+                              .forEach(unit -> {
+                                  System.out.format("unit %s, key %s%n", unit, key);
+                                  routerMap.put(unit, (ActorRef) managers.get(key));
+                              }));
               routes.putAll(routerMap);
 
               acker.tell(new GimmeTime(), self());
               getContext().become(deploying());
             })
-            .matchAny(m -> stash())
+            .matchAny(m -> {
+                System.out.format("GraphManager <default> got something %s%n", m);
+                stash();
+            })
             .build();
   }
 
   private Receive deploying() {
     return ReceiveBuilder.create()
             .match(LastCommit.class, lastCommit -> {
-              log().info("Received last commit '{}'", lastCommit);
+                System.out.format("GraphManager <deploying> got LastCommit %s%n", lastCommit);
+
+                log().info("Received last commit '{}'", lastCommit);
               final Map<String, GroupGroupingState> stateByVertex = new HashMap<>();
               final HashGroup localGroup = computationProps.hashGroups().get(nodeId);
               for (final HashUnit unit : localGroup.units()) {
@@ -160,15 +173,24 @@ public class GraphManager extends LoggingActor {
 
   private Receive managing() {
     return ReceiveBuilder.create()
-            .match(DataItem.class, dataItem -> sourceComponent.forward(dataItem, context()))
+            .match(DataItem.class, dataItem -> {
+                System.out.format("GraphManager <managing> got DataItem %s%n", dataItem);
+                sourceComponent.forward(dataItem, context());
+            })
             .match(
                     AddressedItem.class,
-                    addressedItem -> verticesComponents.get(addressedItem.destination())
-                            .forward(addressedItem, context())
+                    addressedItem -> {
+                        System.out.format("GraphManager <managing> got AddressedItem %s%n", addressedItem);
+                        verticesComponents.get(addressedItem.destination())
+                                .forward(addressedItem, context());
+                    }
             )
             .match(
                     MinTimeUpdate.class,
-                    minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
+                    minTimeUpdate -> {
+                        System.out.format("GraphManager <managing> got MinTimeUpdate %s%n", minTimeUpdate);
+                        components.forEach(c -> c.forward(minTimeUpdate, context()));
+                    }
             )
             .match(Prepare.class, this::onPrepare)
             .match(NewRear.class, newRear -> sinkComponent.forward(newRear, context()))
@@ -178,7 +200,9 @@ public class GraphManager extends LoggingActor {
   }
 
   private void onPrepare(Prepare prepare) {
-    PatternsCS.ask(sinkComponent, prepare, FlameConfig.config.smallTimeout()).thenRun(() -> {
+      System.out.format("GraphManager <managing> got Prepare %s%n", prepare);
+
+      PatternsCS.ask(sinkComponent, prepare, FlameConfig.config.smallTimeout()).thenRun(() -> {
       unitStates.forEach((hashUnit, stateMap) -> storage.putState(
               hashUnit,
               prepare.globalTime(),

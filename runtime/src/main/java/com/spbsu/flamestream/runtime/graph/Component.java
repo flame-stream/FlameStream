@@ -65,8 +65,10 @@ public class Component extends LoggingActor {
     this.acker = acker;
 
     {
+      System.out.format("Component ctr vertices %d %s%n",componentVertices.size(), componentVertices);
       jobas = new HashMap<>();
       for (Graph.Vertex vertex : componentVertices) {
+        System.out.format("Component ctr vertex %s%n", vertex);
         final Joba joba;
         if (vertex instanceof Sink) {
           joba = new SinkJoba(context());
@@ -79,6 +81,9 @@ public class Component extends LoggingActor {
                   .stream()
                   .flatMap(g -> g.units().stream())
                   .collect(Collectors.toSet());
+          System.out.format("Component ctr grouping vertex %s%n", values);
+          values.forEach(System.out::println);
+
           stateByVertex.putIfAbsent(vertex.id(), new GroupGroupingState(values));
           joba = new GroupingJoba(grouping, stateByVertex.get(vertex.id()));
         } else if (vertex instanceof Source) {
@@ -98,6 +103,8 @@ public class Component extends LoggingActor {
 
     for (Graph.Vertex from : componentVertices) {
       final GraphManager.Destination fromDest = GraphManager.Destination.fromVertexId(from.id());
+
+
 
       final Set<Consumer<DataItem>> sinks = graph.adjacent(from)
               .map(to -> {
@@ -123,6 +130,8 @@ public class Component extends LoggingActor {
               })
               .collect(Collectors.toSet());
 
+      System.out.format("Component ctr sinks %d %s%n", sinks.size(), sinks);
+
       if (sinks.size() == 1) {
         downstreams.put(fromDest, sinks.stream().findAny().get());
       } else if (sinks.size() > 1) {
@@ -130,6 +139,7 @@ public class Component extends LoggingActor {
           final int[] childId = {0};
           for (Consumer<DataItem> sink : sinks) {
             final Meta newMeta = new Meta(item.meta(), 0, childId[0]);
+            System.out.format("Component ctr from %s new meta %s%n", item.meta(), newMeta);
             final DataItem newItem = new BroadcastDataItem(item, newMeta);
             sink.accept(newItem);
             childId[0]++;
@@ -188,6 +198,7 @@ public class Component extends LoggingActor {
   }
 
   private void accept(DataItem item) {
+    System.out.format("Component <default> got DataItem %s%n", item);
     if (sourceJoba != null) {
       acceptInTracer.log(item.xor());
       sourceJoba.addFront(item.meta().globalTime().frontId(), sender());
@@ -230,6 +241,11 @@ public class Component extends LoggingActor {
     @Override
     public long xor() {
       return xor;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("BroadcastDataItem inner %s newMeta %s xor %d", inner, newMeta, xor);
     }
   }
 }

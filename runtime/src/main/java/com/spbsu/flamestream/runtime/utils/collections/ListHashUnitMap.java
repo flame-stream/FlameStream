@@ -37,16 +37,16 @@ public class ListHashUnitMap<T> implements HashUnitMap<T> {
 
   @Override
   public void putAll(Map<HashUnit, T> map) {
-    System.out.format("LHUM putAll: %s%n", map);
+    //System.out.format("LHUM putAll: %s%n", map);
     mapping.addAll(map.entrySet());
     mapping.forEach(e -> {
-      System.out.format("LHUM key: %s%n", e.getKey());
+      //System.out.format("LHUM key: %s%n", e.getKey());
     });
   }
 
   @Override
   public void put(HashUnit unit, T value) {
-    System.out.format("LHUM put: %s %s%n", unit, value);
+   // System.out.format("LHUM put: %s %s%n", unit, value);
     mapping.add(new Entry<>(unit, value));
   }
 

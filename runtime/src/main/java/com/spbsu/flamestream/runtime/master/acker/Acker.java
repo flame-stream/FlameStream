@@ -69,6 +69,10 @@ public class Acker extends LoggingActor {
   private boolean commitRuns = false;
 
   private Acker(int managersCount, long defaultMinimalTime, int millisBetweenCommits, Registry registry) {
+    System.out.format("Acker ctr managersCount %d defaultMinimalTime %d between %d%n",
+            managersCount, defaultMinimalTime, millisBetweenCommits);
+    System.out.format("Acker ctr registry class %s%n", registry.getClass());
+    System.out.format("Acker ctr registry %s%n", registry);
     this.managersCount = managersCount;
     this.defaultMinimalTime = defaultMinimalTime;
     this.millisBetweenCommits = millisBetweenCommits;
@@ -110,16 +114,22 @@ public class Acker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(GimmeTime.class, gimmeTime -> {
               log().info("Got gimme '{}'", gimmeTime);
+              //System.out.format("acker <default> got GimmeTime %s%n", gimmeTime);
               sender().tell(new LastCommit(new GlobalTime(registry.lastCommit(), EdgeId.MIN)), self());
             })
             .match(Ready.class, ready -> {
+              //System.out.format("acker <default> got Ready %s%n", ready);
+              //System.out.format("acker <default> got Ready managers before %s%n", managers);
               managers.add(sender());
               if (managers.size() == managersCount) {
                 unstashAll();
                 getContext().become(acking());
               }
             })
-            .matchAny(m -> stash())
+            .matchAny(m -> {
+              System.out.format("acker <default> got something %s%n", m);
+              stash();
+            })
             .build();
   }
 
@@ -136,10 +146,14 @@ public class Acker extends LoggingActor {
   private Receive committing() {
     return acking().orElse(ReceiveBuilder.create()
             .match(Prepared.class, c -> {
+              System.out.format("acker <commiting> got Prepared %s%n", c);
               committed++;
               log().info("Manager '{}' has prepared", sender());
+              System.out.format("acker Prepared %d/%d%n", committed, managersCount);
               if (committed == managersCount) {
                 log().info("All managers have prepared, committing");
+                System.out.format("acker <commiting> all managers have prepared, committing %s", registry);
+
                 registry.committed(lastPrepareTime.time());
                 committed = 0;
                 commitRuns = false;
@@ -150,6 +164,7 @@ public class Acker extends LoggingActor {
   }
 
   private void commit(GlobalTime time) {
+    //System.out.format("acker <acking> got Commit %s%n", time);
     if (!commitRuns && !time.equals(lastPrepareTime)) {
       log().info("Initiating commit for time '{}'", time);
       managers.forEach(m -> m.tell(new Prepare(time), self()));
@@ -160,6 +175,7 @@ public class Acker extends LoggingActor {
   }
 
   private void registerFront(EdgeId frontId) {
+    //System.out.format("acker <acking> got RegisterFront %s%n", frontId);
     final long registeredTime = registry.registeredTime(frontId);
     if (registeredTime == -1) {
       final GlobalTime min = minAmongTables();
@@ -180,6 +196,8 @@ public class Acker extends LoggingActor {
   }
 
   private void unregisterFront(EdgeId frontId) {
+    //System.out.format("acker <acking> got UnregisterFront %s%n", frontId);
+
     log().info("Unregistering front {}", frontId);
     final GlobalTime removed = maxHeartbeats.remove(frontId);
     if (removed == null) {
@@ -191,6 +209,7 @@ public class Acker extends LoggingActor {
   }
 
   private void handleHeartBeat(Heartbeat heartbeat) {
+    System.out.format("acker <acking> got HB %s%n", heartbeat);
     final GlobalTime time = heartbeat.time();
     final GlobalTime previousHeartbeat = maxHeartbeats.get(heartbeat.time().frontId());
     if (heartbeat.time().compareTo(previousHeartbeat) < 0) {
@@ -204,6 +223,8 @@ public class Acker extends LoggingActor {
 
   private void handleAck(Ack ack) {
     tracer.log(ack.xor());
+    //System.out.format("acker <acking> got Ack %s%n", ack);
+
     managers.add(sender());
     if (table.ack(ack.time().time(), ack.xor())) {
       checkMinTime();

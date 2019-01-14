@@ -24,16 +24,26 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
 
   @Override
   public void insert(DataItem insertee) {
-    System.out.println("di: " + innerList.size());
-    innerList.stream().forEach(System.out::println);
+    System.out.format("AIB.insert %s di: %s%n", System.identityHashCode(innerList), innerList.size());
+    innerList.stream().forEach(e -> {
+      System.out.format(">>> %s%n", e);
+    });
+
     if (!insertee.meta().isTombstone()) {
       final int position = lowerBound(insertee.meta());
+
+      System.out.format("AIB.insert is NOT tombstone %d %s%n", position, insertee);
+      //final int position = lowerBound(insertee.meta());
       innerList.add(position, insertee);
     } else {
       final int position = lowerBound(insertee.meta()) - 1;
-      System.out.println("pos: " + position);
-      System.out.println("m1: " + innerList.get(position).meta());
-      System.out.println("m2: " + insertee.meta());
+      System.out.format("ins: %s%n", insertee);
+      System.out.format("pos-1: %d %s%n", position, innerList.get(position).meta());
+      if (position < innerList.size() - 1) {
+        System.out.format("pos-2: %d %s%n", position + 1, innerList.get(position + 1).meta());
+      }
+      System.out.println("m1 data: " + innerList.get(position).payload(Object.class));
+      System.out.println("m2 data: " + insertee.payload(Object.class));
       if (!innerList.get(position).meta().isInvalidedBy(insertee.meta())) {
         throw new IllegalStateException("There is no invalidee");
       }

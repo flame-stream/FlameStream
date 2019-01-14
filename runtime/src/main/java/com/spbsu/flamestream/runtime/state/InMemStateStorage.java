@@ -31,4 +31,9 @@ public class InMemStateStorage implements StateStorage {
   public void close() throws Exception {
 
   }
+
+  @Override
+  public String toString() {
+    return String.format("InMemStateStorage inner: %s%n", inner);
+  }
 }

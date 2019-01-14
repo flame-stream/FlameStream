@@ -19,4 +19,7 @@ public class NewFront {
   public ActorRef front() {
     return front;
   }
+
+  @Override
+  public String toString() { return String.format("NewFront %s %s", frontId, front); }
 }

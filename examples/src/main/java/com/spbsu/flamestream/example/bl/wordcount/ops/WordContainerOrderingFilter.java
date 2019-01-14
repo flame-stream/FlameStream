@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 public class WordContainerOrderingFilter implements Function<List<WordContainer>, Stream<List<WordContainer>>> {
   @Override
   public Stream<List<WordContainer>> apply(List<WordContainer> wordContainers) {
+    System.out.println("WC: " + wordContainers);
     if (wordContainers.size() > 2) {
       throw new IllegalStateException("Group size should be <= 2");
     }

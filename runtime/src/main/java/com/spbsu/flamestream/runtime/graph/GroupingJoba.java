@@ -31,7 +31,7 @@ public class GroupingJoba implements Joba {
     tracer.log(item.xor());
 
     final InvalidatingBucket bucket = state.bucketFor(item, grouping.hash(), grouping.equalz());
-    //System.out.println("QQQQ:" + item);
+    System.out.println("Grouping joba. accept:" + item);
     instance.apply(item, bucket).forEach(sink);
     { //clear outdated
       final int position = Math.max(bucket.lowerBound(new Meta(currentMinTime)) - grouping.window() + 1, 0);

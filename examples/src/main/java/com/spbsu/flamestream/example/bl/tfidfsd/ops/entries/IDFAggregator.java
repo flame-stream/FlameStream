@@ -46,8 +46,14 @@ public class IDFAggregator implements Function<List<DocContainer>, Stream<DocCon
                 System.out.format("2: %s%n", secondIdf);
 
                 if (firstIdf.equals(secondIdf)) {
-                    return Stream.of();
+                    if (((IDFObject) first).isSelfGrouped() || ((IDFObject) second).isSelfGrouped()) {
+                        return Stream.of();
+                    } else {
+                        ((IDFObject) first).setSelfGrouped();
+                        return Stream.of(first);
+                    }
                 } else {
+
                     IDFObject res = firstIdf.merge(secondIdf);
                     System.out.format("merged: %s%n", res);
                     return Stream.of(res);

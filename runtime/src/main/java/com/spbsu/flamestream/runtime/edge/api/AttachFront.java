@@ -19,4 +19,9 @@ public class AttachFront<F extends Front> {
   public FlameRuntime.FrontInstance<F> instance() {
     return instance;
   }
+
+  @Override
+  public String toString() {
+    return String.format("AttachFront id %s instance %s", id, instance);
+  }
 }

@@ -32,25 +32,29 @@ import static java.util.stream.Collectors.toMap;
  * Date: 19.12.2017
  */
 public class WordCountTest extends FlameAkkaSuite {
-  @Test(invocationCount = 10)
+  @Test(invocationCount = 1)
   public void localEnvironmentTest() throws InterruptedException {
+    System.out.println("Start...");
     try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
             .millisBetweenCommits(500)
             .build()) {
       final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
       {
-        final int lineSize = 50;
-        final int streamSize = 2000;
+        final int lineSize = 5;
+        final int streamSize = 10;
         final Queue<String> input = Stream.generate(() -> {
-          final String[] words = {"repka", "dedka", "babka", "zhuchka", "vnuchka"};
-          return new Random().ints(lineSize, 0, words.length).mapToObj(i -> words[i])
+          final String[] words = {"repka", "dedka"/*, "babka", "zhuchka", "vnuchka"*/};
+          return new Random(32).ints(lineSize, 0, words.length).mapToObj(i -> words[i])
                   .collect(joining(" "));
         }).limit(streamSize).collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+        System.out.println("input: " + input);
         final Pattern pattern = Pattern.compile("\\s");
         final Map<String, Integer> expected = input.stream()
                 .map(pattern::split)
                 .flatMap(Arrays::stream)
                 .collect(toMap(Function.identity(), o -> 1, Integer::sum));
+
+        System.out.println("expected: " + expected);
 
         final AwaitResultConsumer<WordCounter> awaitConsumer = new AwaitResultConsumer<>(
                 lineSize * streamSize
@@ -69,7 +73,6 @@ public class WordCountTest extends FlameAkkaSuite {
           actual.putIfAbsent(wordContainer.word(), 0);
           actual.computeIfPresent(wordContainer.word(), (uid, old) -> Math.max(wordContainer.count(), old));
         });
-
         Assert.assertEquals(actual, expected);
       }
     }

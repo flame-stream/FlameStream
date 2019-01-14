@@ -48,7 +48,7 @@ public class LentaTest extends FlameAkkaSuite {
 
     private Stream<TextDocument> documents() throws IOException {
         CSVParser csvFileParser = CSVParser.parse(
-                new File("C:/work/projects/2/FlameStream/news_lenta.csv"), Charset.defaultCharset(), CSVFormat.DEFAULT
+                new File("/Users/sergeyreznick/Downloads/lenta-ru-news.csv"), Charset.defaultCharset(), CSVFormat.DEFAULT
         );
         Iterator<CSVRecord> iter = csvFileParser.iterator();
         iter.next();

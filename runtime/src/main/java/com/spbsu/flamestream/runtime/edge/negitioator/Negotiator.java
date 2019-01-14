@@ -36,7 +36,11 @@ public class Negotiator extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(NewFront.class, newFront -> {
+                System.out.format("Negotiator got NewFront %s from %s%n", newFront, context().sender());
               localFronts.put(newFront.frontId(), newFront.front());
+                System.out.format("Negotiator got NewFront localFronts %s%n", localFronts);
+                System.out.format("Negotiator got NewFront localFronts keys %s %s%n", context().self(), localFronts.keySet());
+
               log().info("Requesting ticket for the frontClass {}", newFront.frontId());
               asyncAttach(newFront.frontId());
             })

@@ -22,6 +22,11 @@ public class AkkaRearType<T> implements FlameRuntime.RearType<AkkaRear, AkkaRear
   }
 
   @Override
+  public String toString() {
+    return String.format("AkkaRearType: class %s", clazz);
+  }
+
+  @Override
   public FlameRuntime.RearInstance<AkkaRear> instance() {
     final Address address = system.provider().getDefaultAddress();
     final ActorPath path = RootActorPath.apply(address, "/").child("user");

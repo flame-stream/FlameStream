@@ -12,6 +12,7 @@ public class PayloadDataItem implements DataItem {
   private final long xor;
 
   public PayloadDataItem(Meta meta, Object payload) {
+    System.out.format("PayloadDataItem ctr meta %s, payload %s%n", meta, payload);
     this.payload = payload;
     this.meta = meta;
     this.xor = ThreadLocalRandom.current().nextLong();

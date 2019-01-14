@@ -32,14 +32,16 @@ public class EdgeManager extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(AttachFront.class, attachFront -> {
-              final ActorRef frontRef = context().actorOf(FrontActor.props(
+                System.out.format("EdgeManager <default> got AttachFront %s%n", attachFront);
+                final ActorRef frontRef = context().actorOf(FrontActor.props(
                       new SystemEdgeContext(nodePath, nodeId, attachFront.id()),
                       attachFront.instance()
               ), attachFront.id());
               negotiator.tell(new NewFront(new EdgeId(attachFront.id(), nodeId), frontRef), self());
             })
             .match(AttachRear.class, attachRear -> {
-              final ActorRef rearRef = context().actorOf(RearActor.props(
+                System.out.format("EdgeManager <default> got AttachRear %s%n", attachRear);
+                final ActorRef rearRef = context().actorOf(RearActor.props(
                       new SystemEdgeContext(nodePath, nodeId, attachRear.id()),
                       attachRear.instance()
               ), attachRear.id());

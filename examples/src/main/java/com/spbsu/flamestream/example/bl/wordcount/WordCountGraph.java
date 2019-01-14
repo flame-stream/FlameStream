@@ -40,6 +40,7 @@ public class WordCountGraph implements Supplier<Graph> {
 
       @Override
       public Stream<WordEntry> apply(String s) {
+
         return Arrays.stream(pattern.split(s)).map(WordEntry::new);
       }
     }, String.class);

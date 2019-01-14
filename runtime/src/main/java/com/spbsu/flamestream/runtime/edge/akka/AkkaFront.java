@@ -80,12 +80,22 @@ public class AkkaFront implements Front {
     public Receive createReceive() {
       return ReceiveBuilder.create()
               .match(MediatorStart.class, s -> {
+                System.out.format("AkkaFront.RemoteMediator <default> got MediatorStart %s%n", s);
                 hole = s.hole;
                 localMediator.tell(new Start(self(), s.from), self());
               })
-              .match(DataItem.class, t2 -> hole.accept(t2))
-              .match(Heartbeat.class, t1 -> hole.accept(t1))
-              .match(UnregisterFront.class, t -> hole.accept(t))
+              .match(DataItem.class, t2 -> {
+                System.out.format("AkkaFront.RemoteMediator <default> got DataItem %s%n", t2);
+                hole.accept(t2);
+              })
+              .match(Heartbeat.class, t1 -> {
+                System.out.format("AkkaFront.RemoteMediator <default> got Heartbeat %s%n", t1);
+                hole.accept(t1);
+              })
+              .match(UnregisterFront.class, t -> {
+                System.out.format("AkkaFront.RemoteMediator <default> got Unregister %s%n", t);
+                hole.accept(t);
+              })
               .match(RequestNext.class, r -> localMediator.tell(r, self()))
               .match(Checkpoint.class, c -> localMediator.tell(c, self()))
               .build();
@@ -152,9 +162,12 @@ public class AkkaFront implements Front {
               })
               .match(Checkpoint.class, checkpoint -> log.headMap(checkpoint.time()).clear())
               .match(Raw.class, raw -> {
+                System.out.format("AkkaFront.LocalMediator <processing> got Raw %s%n", raw);
                 sender = sender();
                 final GlobalTime globalTime = new GlobalTime(++time, edgeContext.edgeId());
                 log.put(globalTime, new PayloadDataItem(new Meta(globalTime), raw.raw));
+                System.out.format("AkkaFront.LocalMediator <processing> got Raw, log %s %d %s%n",
+                        context().self(), log.size(), log);
                 producerWait = globalTime;
                 tryProcess();
               })
@@ -219,6 +232,7 @@ public class AkkaFront implements Front {
     @Override
     public void accept(T value) {
       try {
+        System.out.format("AkkaFront.accept %s %s%n", value.getClass(), value);
         PatternsCS.ask(localMediator, new Raw(value), FlameConfig.config.bigTimeout()).toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
@@ -240,6 +254,9 @@ public class AkkaFront implements Front {
         throw new RuntimeException(e);
       }
     }
+
+    @Override
+    public String toString() { return String.format("FrontHandler localMediator %s", localMediator); }
   }
 
   private static class Raw {
@@ -255,4 +272,5 @@ public class AkkaFront implements Front {
     UNREGISTER,
     OK
   }
+
 }

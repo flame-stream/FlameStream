@@ -75,6 +75,7 @@ public class AkkaRear implements Rear {
     public Receive createReceive() {
       return ReceiveBuilder.create()
               .match(Batch.class, b -> {
+                System.out.format("AkkaRear.RemoteMediator <default> got Batch %s%n", b);
                 final ActorRef sender = sender();
                 PatternsCS.ask(localMediator, b, FlameConfig.config.smallTimeout())
                         .thenRun(() -> sender.tell(new BatchAccepted(), self()));
@@ -100,19 +101,27 @@ public class AkkaRear implements Rear {
     }
 
     public static <T> Props props(Class<T> clazz) {
+      System.out.format("AkkaRear.LocalMediator %s%n", clazz);
       return Props.create(LocalMediator.class, clazz);
     }
+
+
+
 
     @Override
     public Receive createReceive() {
       return ReceiveBuilder.create()
               .match(Consumer.class, c -> {
                 //noinspection unchecked
+                System.out.format("AkkaRear.LocalMediator <default> got consumer %s%n", c);
                 this.consumer = c;
                 unstashAll();
                 getContext().become(serving());
               })
-              .matchAny(a -> stash())
+              .matchAny(a -> {
+                System.out.format("AkkaRear.LocalMediator.receive %s%n", a);
+                stash();
+              })
               .build();
     }
 
@@ -120,14 +129,24 @@ public class AkkaRear implements Rear {
       return ReceiveBuilder.create()
               .match(Consumer.class, c -> {
                 //noinspection unchecked
+                System.out.format("AkkaRear.LocalMediator <serving> got consumer %s%n", c);
                 consumer = c;
               })
               .match(Batch.class, b -> {
+                System.out.format("AkkaRear.LocalMediator <serving> got Batch %s %s%n", b.getClass(), b);
+                System.out.format("AkkaRear.LocalMediator <serving> got Batch from %s%n", context().sender());
                 lastBatch = b;
-                b.payload(clazz).forEach(consumer);
+                System.out.format("AkkaRear.LocalMediator <serving> %s got Batch with payload %s%n", clazz, b.payload(clazz));
+                b.payload(clazz).forEach(e -> {
+                  System.out.format("AkkaRear.LocalMediator <serving> got Batch with payload item %s %s%n", e, e.getClass());
+                  consumer.accept(e);
+                } );
                 sender().tell(new BatchAccepted(), self());
               })
-              .match(GimmeLastBatch.class, g -> sender().tell(lastBatch, self()))
+              .match(GimmeLastBatch.class, g -> {
+                System.out.format("AkkaRear.LocalMediator <serving> got GimmeLastBatch %s from 5s%n", g, context().sender());
+                sender().tell(lastBatch, self());
+              })
               .build();
     }
   }
@@ -142,5 +161,8 @@ public class AkkaRear implements Rear {
     public void addListener(Consumer<T> sink) {
       localMediator.tell(sink, ActorRef.noSender());
     }
+
+    @Override
+    public String toString() { return String.format("Handle localMediator %s", localMediator); }
   }
 }
