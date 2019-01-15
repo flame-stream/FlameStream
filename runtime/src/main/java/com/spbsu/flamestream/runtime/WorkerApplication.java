@@ -150,7 +150,7 @@ public class WorkerApplication implements Runnable {
               '}';
     }
 
-    static class Builder {
+    public static class Builder {
       private String snapshotPath = null;
       private Guarantees guarantees = Guarantees.AT_MOST_ONCE;
 
@@ -158,12 +158,12 @@ public class WorkerApplication implements Runnable {
       private int millisBetweenCommits = 100;
       private int defaultMinimalTime = 0;
 
-      Builder snapshotPath(String snapshotPath) {
+      public Builder snapshotPath(String snapshotPath) {
         this.snapshotPath = snapshotPath;
         return this;
       }
 
-      Builder guarantees(Guarantees guarantees) {
+      public Builder guarantees(Guarantees guarantees) {
         this.guarantees = guarantees;
         return this;
       }
@@ -178,12 +178,12 @@ public class WorkerApplication implements Runnable {
         return this;
       }
 
-      Builder defaultMinimalTime(int defaultMinimalTime) {
+      public Builder defaultMinimalTime(int defaultMinimalTime) {
         this.defaultMinimalTime = defaultMinimalTime;
         return this;
       }
 
-      WorkerConfig build(String id, DumbInetSocketAddress localAddress, String zkString) {
+      public WorkerConfig build(String id, DumbInetSocketAddress localAddress, String zkString) {
         return new WorkerConfig(
                 id,
                 localAddress,
