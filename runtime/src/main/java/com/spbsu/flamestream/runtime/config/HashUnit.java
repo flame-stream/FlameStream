@@ -46,6 +46,9 @@ public class HashUnit {
 
   public static Stream<HashUnit> covering(int n) {
     final Set<HashUnit> result = new HashSet<>();
+    if (n == 0) {
+      return result.stream();
+    }
     final int step = (int) (((long) Integer.MAX_VALUE - Integer.MIN_VALUE) / n);
     long left = Integer.MIN_VALUE;
     long right = left + step;
