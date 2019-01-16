@@ -55,7 +55,7 @@ public class ClusterConfig {
     final Map<String, ActorPath> paths = workers.stream()
             .collect(Collectors.toMap(ZookeeperWorkersNode.Worker::id, ZookeeperWorkersNode.Worker::actorPath));
     final Map<String, HashGroup> ranges = new HashMap<>();
-    final List<HashUnit> covering = HashUnit.covering(paths.size())
+    final List<HashUnit> covering = HashUnit.covering(paths.size() - 1)
             .collect(Collectors.toCollection(ArrayList::new));
     final String masterLocation = workers.get(0).id;
     paths.keySet().forEach(s -> {
