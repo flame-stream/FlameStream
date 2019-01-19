@@ -12,9 +12,6 @@ public class WordContainerOrderingFilter implements Function<List<WordContainer>
 
     @Override
     public Stream<List<WordContainer>> apply(List<WordContainer> wordContainers) {
-        if (wordContainers.size() == 2) {
-//            System.out.format("WCOF2: %s %s%n", wordContainers.get(0).getClass(), wordContainers.get(1).getClass());
-        }
         if (wordContainers.size() > 2) {
             throw new IllegalStateException("Group size should be <= 2");
         }

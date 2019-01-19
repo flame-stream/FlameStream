@@ -20,7 +20,7 @@ public abstract class LoggingActor extends AbstractActorWithStash {
   @Override
   public void preStart() throws Exception {
     log().info("Starting...");
-    System.out.println("starting " + this.getClass());
+    //System.out.println("starting " + this.getClass());
     super.preStart();
   }
 

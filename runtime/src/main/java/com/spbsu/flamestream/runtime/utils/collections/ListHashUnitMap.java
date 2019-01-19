@@ -12,12 +12,12 @@ public class ListHashUnitMap<T> implements HashUnitMap<T> {
   private final Set<Map.Entry<HashUnit, T>> mapping;
 
   public ListHashUnitMap() {
-    System.out.println("CREATE LHUM");
+    //System.out.println("CREATE LHUM");
     mapping = new HashSet<>();
   }
 
   public ListHashUnitMap(Map<HashUnit, T> nodeMapping) {
-    System.out.println("CREATE LHUM: " + nodeMapping);
+    //System.out.println("CREATE LHUM: " + nodeMapping);
     this.mapping = nodeMapping.entrySet()
             .stream()
             .map(e -> new Entry<>(e.getKey(), e.getValue()))

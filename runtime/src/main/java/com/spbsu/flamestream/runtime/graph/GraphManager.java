@@ -61,10 +61,10 @@ public class GraphManager extends LoggingActor {
                        ActorRef acker,
                        ComputationProps computationProps,
                        StateStorage storage) {
-      System.out.format("GraphManager ctr, node %s%n", nodeId);
-      System.out.format("GraphManager ctr, compProps %s%n", computationProps);
-      System.out.format("GraphManager ctr, storage class %s%n", storage.getClass());
-      System.out.format("GraphManager ctr, storage %s%n", storage);
+      //System.out.format("GraphManager ctr, node %s%n", nodeId);
+      //System.out.format("GraphManager ctr, compProps %s%n", computationProps);
+      //System.out.format("GraphManager ctr, storage class %s%n", storage.getClass());
+      //System.out.format("GraphManager ctr, storage %s%n", storage);
       this.nodeId = nodeId;
     this.storage = storage;
     this.computationProps = computationProps;
@@ -87,12 +87,12 @@ public class GraphManager extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Map.class, managers -> {
               log().info("Finishing constructor");
-              System.out.format("GraphManager <default> got Map %s%n", managers);
+              //System.out.format("GraphManager <default> got Map %s%n", managers);
               final Map<HashUnit, ActorRef> routerMap = new HashMap<>();
               computationProps.hashGroups()
                       .forEach((key, value) -> value.units()
                               .forEach(unit -> {
-                                  System.out.format("unit %s, key %s%n", unit, key);
+                                  //System.out.format("unit %s, key %s%n", unit, key);
                                   routerMap.put(unit, (ActorRef) managers.get(key));
                               }));
               routes.putAll(routerMap);
@@ -174,13 +174,13 @@ public class GraphManager extends LoggingActor {
   private Receive managing() {
     return ReceiveBuilder.create()
             .match(DataItem.class, dataItem -> {
-                System.out.format("GraphManager <managing> got DataItem %s%n", dataItem);
+                //System.out.format("GraphManager <managing> got DataItem %s%n", dataItem);
                 sourceComponent.forward(dataItem, context());
             })
             .match(
                     AddressedItem.class,
                     addressedItem -> {
-                        System.out.format("GraphManager <managing> got AddressedItem %s%n", addressedItem);
+                        //System.out.format("GraphManager <managing> got AddressedItem %s%n", addressedItem);
                         verticesComponents.get(addressedItem.destination())
                                 .forward(addressedItem, context());
                     }
@@ -188,7 +188,7 @@ public class GraphManager extends LoggingActor {
             .match(
                     MinTimeUpdate.class,
                     minTimeUpdate -> {
-                        System.out.format("GraphManager <managing> got MinTimeUpdate %s%n", minTimeUpdate);
+                        //System.out.format("GraphManager <managing> got MinTimeUpdate %s%n", minTimeUpdate);
                         components.forEach(c -> c.forward(minTimeUpdate, context()));
                     }
             )
@@ -200,7 +200,7 @@ public class GraphManager extends LoggingActor {
   }
 
   private void onPrepare(Prepare prepare) {
-      System.out.format("GraphManager <managing> got Prepare %s%n", prepare);
+      //System.out.format("GraphManager <managing> got Prepare %s%n", prepare);
 
       PatternsCS.ask(sinkComponent, prepare, FlameConfig.config.smallTimeout()).thenRun(() -> {
       unitStates.forEach((hashUnit, stateMap) -> storage.putState(

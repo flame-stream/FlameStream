@@ -24,8 +24,8 @@ public class PingActor extends LoggingActor {
   private Cancellable scheduler;
 
   private PingActor(ActorRef actorToPing, Object objectForPing) {
-    System.out.format("PingActor ctr, toPing %s%n", actorToPing);
-    System.out.format("PingActor ctr, object %s%n", objectForPing);
+    // System.out.format("PingActor ctr, toPing %s%n", actorToPing);
+    // System.out.format("PingActor ctr, object %s%n", objectForPing);
     this.actorToPing = actorToPing;
     this.objectForPing = objectForPing;
   }

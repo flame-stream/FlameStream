@@ -5,12 +5,29 @@ import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.DocContainer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TFObject implements DocContainer {
     private final Map<String, Integer> counts;
     private final Map<String, Integer> idfCounts;
     private final String docName;
+    private final int idfCardinality;
+
+    public Set<String> tfKeys() {
+        return counts.keySet();
+    }
+    public Set<String> idfKeys() {
+        return idfCounts.keySet();
+    }
+
+    public int tfCount(String key) {
+        return counts.get(key);
+    }
+
+    public int idfCount(String key) {
+        return idfCounts.get(key);
+    }
 
     public TFObject(String docName, String words[]) {
         this.docName = docName;
@@ -19,12 +36,25 @@ public class TFObject implements DocContainer {
         for (String s: words) {
             counts.put(s, counts.getOrDefault(s, 0) + 1);
         }
+        idfCardinality = 0;
+    }
+
+    public TFObject withIdf(Map idf) {
+        return new TFObject(docName, counts, idf);
     }
 
     public TFObject(TFObject other) {
         this.docName = other.docName;
         this.counts = other.counts;
         this.idfCounts = new ConcurrentHashMap<>(other.idfCounts);
+        idfCardinality = 0;
+    }
+
+    public TFObject(String docName, Map counts, Map idfCounts) {
+        this.docName = docName;
+        this.counts = counts;
+        this.idfCounts = idfCounts;
+        idfCardinality = 0;
     }
 
     public boolean isDefinedIdf(String key) {
@@ -46,6 +76,11 @@ public class TFObject implements DocContainer {
     @Override
     public String document() {
         return docName;
+    }
+
+    @Override
+    public int idfCardinality() {
+        return idfCardinality;
     }
 
     @Override

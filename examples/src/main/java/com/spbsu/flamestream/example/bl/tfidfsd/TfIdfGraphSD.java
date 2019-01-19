@@ -21,8 +21,7 @@ import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordDocEntry;
 import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordEntry;
 import com.spbsu.flamestream.example.bl.tfidfsd.ops.entries.CountWordEntries;
 import com.spbsu.flamestream.example.bl.tfidfsd.ops.entries.IDFAggregator;
-import com.spbsu.flamestream.example.bl.tfidfsd.ops.filtering.DocContainerOrderingFilter;
-import com.spbsu.flamestream.example.bl.tfidfsd.ops.filtering.WordContainerOrderingFilter;
+import com.spbsu.flamestream.example.bl.tfidfsd.ops.filtering.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,6 +63,8 @@ public class TfIdfGraphSD implements Supplier<Graph> {
         final Grouping<DocContainer> groupingDoc =
                 new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
 
+        final Grouping<DocContainer> gropingTfIdf =
+                new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
 
         final FlameMap<TextDocument, WordEntry> splitterWord = new FlameMap<>(new Function<TextDocument, Stream<WordEntry>>() {
             private final Pattern pattern = Pattern.compile("\\s");
@@ -75,7 +76,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                     counter.put(w, counter.getOrDefault(w, 0) + 1);
                 }
                 return counter.entrySet().stream()
-                        .map(word -> new WordEntry(word.getKey(), s.name()));
+                        .map(word -> new WordEntry(word.getKey(), s.name(), counter.size()));
             }
         }, TextDocument.class);
 
@@ -85,6 +86,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
             @Override
             public Stream<TFObject> apply(TextDocument s) {
                 TFObject tfObject = new TFObject(s.name(), pattern.split(s.content()));
+                System.out.println("TFO: " + tfObject);
                 return Stream.of(tfObject);
             }
         }, TextDocument.class);
@@ -107,11 +109,20 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 List.class
         );
 
-        final FlameMap<WordCounter, IDFObject> wc2IDFObject = new FlameMap<>(
-                wc -> Stream.of(new IDFObject(wc.document(), wc.word(), wc.count())),
-                WordCounter.class
+        final FlameMap<List<DocContainer>, DocContainer> filterTfIdf = new FlameMap<>(
+                new TfIdfFilter(),
+                List.class
         );
 
+        final FlameMap<IDFObject, IDFObject> idfObjectCompleteFilter = new FlameMap<>(
+                new IDFObjectCompleteFilter(),
+                IDFObject.class
+        );
+
+        final FlameMap<IDFObject, IDFObject> idfObjectCompleteFilter2 = new FlameMap<>(
+                new IDFObjectCompleteFilter2(),
+                IDFObject.class
+        );
 
         final Sink sink = new Sink();
         return new Graph.Builder()
@@ -123,21 +134,29 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 .link(filterWord, counterWord)
                 .link(counterWord, groupingWord)
 
-                .link(counterWord, wc2IDFObject)
+  //              .link(counterWord, wc2IDFObject)
 
-                .link(wc2IDFObject, groupingDoc)
-
-                .link(wc2IDFObject, groupingDoc)
-                .link(splitterTF, groupingDoc)
+                .link(counterWord, groupingDoc)
                 .link(groupingDoc, filterDoc)
                 .link(filterDoc, idfAggregator)
-                .link(idfAggregator, groupingDoc)
+                .link(idfAggregator, idfObjectCompleteFilter2)
+                .link(idfObjectCompleteFilter2, groupingDoc)
+
+                .link(idfAggregator, idfObjectCompleteFilter)
+   //             .link(wc2IDFObject, groupingDoc)
+   //             .link(splitterTF, groupingDoc)
+   //             .link(groupingDoc, filterDoc)
+   //             .link(filterDoc, idfAggregator)
+   //             .link(idfAggregator, groupingDoc)
+
+                .link(idfObjectCompleteFilter, gropingTfIdf)
+                .link(splitterTF, gropingTfIdf)
+                .link(gropingTfIdf, filterTfIdf)
 
                 .colocate(groupingDoc, filterDoc, idfAggregator)
                 .colocate(groupingWord, filterWord, counterWord, sink)
 
-                .link(counterWord, sink)
-                .link(splitterTF, sink)
+                .link(filterTfIdf, sink)
 
                 .build(source, sink);
     }

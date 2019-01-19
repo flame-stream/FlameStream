@@ -23,7 +23,7 @@ public class AwaitResultConsumer<T> implements Consumer<T> {
 
   @Override
   public void accept(T value) {
-    System.out.format("ARC.accept: %s %s%n", value.getClass(), value);
+    //System.out.format("ARC.accept: %s %s%n", value.getClass(), value);
     synchronized (result) {
       result.add(value);
       if (result.size() == expectedSize && !finished) {

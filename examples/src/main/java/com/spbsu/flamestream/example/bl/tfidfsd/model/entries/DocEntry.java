@@ -6,14 +6,21 @@ import java.util.Objects;
 
 public class DocEntry implements DocContainer {
     private final String document;
+    private final int idfCardinality;
 
-    public DocEntry(String document) {
+    public DocEntry(String document, int idfCardinality) {
+        this.idfCardinality = idfCardinality;
         this.document = document;
     }
 
     @Override
     public String document() {
         return document;
+    }
+
+    @Override
+    public int idfCardinality() {
+        return idfCardinality;
     }
 
     @Override

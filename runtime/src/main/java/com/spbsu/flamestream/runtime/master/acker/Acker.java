@@ -69,10 +69,10 @@ public class Acker extends LoggingActor {
   private boolean commitRuns = false;
 
   private Acker(int managersCount, long defaultMinimalTime, int millisBetweenCommits, Registry registry) {
-    System.out.format("Acker ctr managersCount %d defaultMinimalTime %d between %d%n",
-            managersCount, defaultMinimalTime, millisBetweenCommits);
-    System.out.format("Acker ctr registry class %s%n", registry.getClass());
-    System.out.format("Acker ctr registry %s%n", registry);
+    // System.out.format("Acker ctr managersCount %d defaultMinimalTime %d between %d%n",
+    //        managersCount, defaultMinimalTime, millisBetweenCommits);
+    // System.out.format("Acker ctr registry class %s%n", registry.getClass());
+    // System.out.format("Acker ctr registry %s%n", registry);
     this.managersCount = managersCount;
     this.defaultMinimalTime = defaultMinimalTime;
     this.millisBetweenCommits = millisBetweenCommits;
@@ -146,13 +146,13 @@ public class Acker extends LoggingActor {
   private Receive committing() {
     return acking().orElse(ReceiveBuilder.create()
             .match(Prepared.class, c -> {
-              System.out.format("acker <commiting> got Prepared %s%n", c);
+              //System.out.format("acker <commiting> got Prepared %s%n", c);
               committed++;
               log().info("Manager '{}' has prepared", sender());
-              System.out.format("acker Prepared %d/%d%n", committed, managersCount);
+              //System.out.format("acker Prepared %d/%d%n", committed, managersCount);
               if (committed == managersCount) {
                 log().info("All managers have prepared, committing");
-                System.out.format("acker <commiting> all managers have prepared, committing %s", registry);
+                //System.out.format("acker <commiting> all managers have prepared, committing %s", registry);
 
                 registry.committed(lastPrepareTime.time());
                 committed = 0;

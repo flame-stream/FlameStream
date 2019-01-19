@@ -8,10 +8,12 @@ import java.util.Objects;
 public class WordEntry implements WordContainer, DocContainer {
     private final String word;
     private final String docId;
+    private final int idfCardinality;
 
-    public WordEntry(String word, String docId) {
+    public WordEntry(String word, String docId, int idfCardinality) {
         this.word = word;
         this.docId = docId;
+        this.idfCardinality = idfCardinality;
     }
 
     @Override
@@ -25,8 +27,14 @@ public class WordEntry implements WordContainer, DocContainer {
     }
 
     @Override
+    public int idfCardinality() {
+        return idfCardinality;
+    }
+
+    @Override
     public String toString() {
-        return String.format("<WE> doc hash: %d,  word: >%s<, doc: >%s<", document().hashCode(), word, docId);
+        return String.format("<WE> doc hash: %d,  word: >%s<, doc: >%s< idf cardinality %d",
+                document().hashCode(), word, docId, idfCardinality);
     }
 
     @Override

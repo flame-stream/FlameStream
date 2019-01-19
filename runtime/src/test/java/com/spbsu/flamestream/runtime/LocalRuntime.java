@@ -74,10 +74,10 @@ public class LocalRuntime implements FlameRuntime {
       public <R extends Rear, H> Stream<H> attachRear(String id, RearType<R, H> type) {
         try {
           //noinspection unchecked
-          System.out.format("Flame.attachRear %s - %s%n", id, type);
+          //System.out.format("Flame.attachRear %s - %s%n", id, type);
           List<H> res = PatternsCS.ask(cluster, new FlameUmbrella.RearTypeWithId<>(id, type), FlameConfig.config.bigTimeout())
                   .thenApply(a -> (List<H>) a).toCompletableFuture().get();
-          System.out.format("Flame.attachRear result: %s%n", res);
+          //System.out.format("Flame.attachRear result: %s%n", res);
           return res.stream();
         } catch (InterruptedException | ExecutionException e) {
           throw new RuntimeException(e);

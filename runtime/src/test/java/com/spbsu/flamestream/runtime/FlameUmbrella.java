@@ -48,13 +48,13 @@ class Cluster extends LoggingActor {
                   boolean blinking) {
     this.blinking = blinking;
 
-    System.out.println("cluster parallelism: " + parallelism);
-    System.out.println("cluster maxElementsInGraph: " + maxElementsInGraph);
+   // System.out.println("cluster parallelism: " + parallelism);
+   // System.out.println("cluster maxElementsInGraph: " + maxElementsInGraph);
 
     final Map<String, HashGroup> ranges = new HashMap<>();
     final Map<String, ActorPath> paths = new HashMap<>();
     final List<HashUnit> ra = HashUnit.covering(parallelism).collect(Collectors.toList());
-    System.out.println("cluster ra: " + ra);
+    //System.out.println("cluster ra: " + ra);
     for (int i = 0; i < parallelism; ++i) {
       final String id = "node-" + i;
       final HashUnit range = ra.get(i);
@@ -68,8 +68,8 @@ class Cluster extends LoggingActor {
       );
       ranges.put(id, new HashGroup(Collections.singleton(range)));
     }
-    System.out.println("cluster ranges: " + ranges);
-    System.out.println("cluster paths: " + paths);
+  //  System.out.println("cluster ranges: " + ranges);
+  //  System.out.println("cluster paths: " + paths);
     final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
     final AckerConfig ackerConfig = new AckerConfig(maxElementsInGraph, millisBetweenCommits, 0);
 
@@ -79,7 +79,7 @@ class Cluster extends LoggingActor {
       final Props props = FlameNode.props(id, g, clusterConfig, ackerConfig, registry, stateStorage);
       nodeProps.put(id, props);
     });
-    System.out.println("cluster node props: " + nodeProps);
+  //  System.out.println("cluster node props: " + nodeProps);
     inner = context().actorOf(FlameUmbrella.props(nodeProps, paths), "cluster");
   }
 
@@ -104,7 +104,7 @@ class Cluster extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .matchAny(m -> {
-              System.out.format("cluster got %s%n", m);
+            //  System.out.format("cluster got %s%n", m);
               inner.forward(m, context());
             })
             .build();
@@ -143,14 +143,14 @@ class FlameUmbrella extends LoggingActor {
   private final Map<String, ActorPath> paths;
 
   private FlameUmbrella(Map<String, Props> props, Map<String, ActorPath> paths, List<Object> toBeTold) {
-    System.out.format("FlameUmbrella props: %s%n", props);
-    System.out.format("FlameUmbrella paths: %s%n", paths);
-    System.out.format("FlameUmbrella toBeTold: %s%n", toBeTold);
+    //System.out.format("FlameUmbrella props: %s%n", props);
+    //System.out.format("FlameUmbrella paths: %s%n", paths);
+    //System.out.format("FlameUmbrella toBeTold: %s%n", toBeTold);
 
     this.paths = paths;
     this.toBeTold = toBeTold;
     props.forEach((id, prop) -> {
-      System.out.format("FlameUmbrella create actor %s, props %s%n", id, prop);
+      //System.out.format("FlameUmbrella create actor %s, props %s%n", id, prop);
       context().actorOf(prop, id);
     });
 
@@ -171,36 +171,36 @@ class FlameUmbrella extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(FrontTypeWithId.class, a -> {
-              System.out.format("FlameUmbrella got FrontTypeWithId %s from %s%n", a, context().sender());
-              System.out.format("FlameUmbrella front toBeTold %s%n", toBeTold);
+              //System.out.format("FlameUmbrella got FrontTypeWithId %s from %s%n", a, context().sender());
+              //System.out.format("FlameUmbrella front toBeTold %s%n", toBeTold);
               final AttachFront attach = new AttachFront<>(a.id, a.type.instance());
 
               toBeTold.add(attach);
               getContext().getChildren().forEach(n -> {
-                System.out.format("FlameUmbrella front child: %s%n", n);
+                //System.out.format("FlameUmbrella front child: %s%n", n);
                 n.tell(attach, self());
               });
               final List<Object> collect = paths.entrySet().stream()
                       .map(node -> a.type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), a.id)))
                       .collect(Collectors.toList());
-              System.out.format("FlameUmbrella front collect %s%n", collect);
-              collect.forEach(System.out::println);
+              //System.out.format("FlameUmbrella front collect %s%n", collect);
+              //collect.forEach(System.out::println);
               sender().tell(collect, self());
             })
             .match(RearTypeWithId.class, a -> {
-              System.out.format("FlameUmbrella got RearTypeWithId %s%n", a);
-              System.out.format("FlameUmbrella rear toBeTold: %s%n", toBeTold);
+              //System.out.format("FlameUmbrella got RearTypeWithId %s%n", a);
+              //System.out.format("FlameUmbrella rear toBeTold: %s%n", toBeTold);
               final AttachRear attach = new AttachRear(a.id, a.type.instance());
               toBeTold.add(attach);
               getContext().getChildren().forEach(n -> {
-                System.out.format("FlameUmbrella rear child: %s%n", n);
+                //System.out.format("FlameUmbrella rear child: %s%n", n);
                 n.tell(attach, self());
               });
               final List<Object> collect = paths.entrySet().stream()
                       .map(node -> a.type.handle(new SystemEdgeContext(node.getValue(), node.getKey(), a.id)))
                       .collect(Collectors.toList());
       //        System.out.format("FlameUmbrella rear collect %s%n", collect);
-              collect.forEach(System.out::println);
+      //        collect.forEach(System.out::println);
               sender().tell(collect, self());
             })
             .build();

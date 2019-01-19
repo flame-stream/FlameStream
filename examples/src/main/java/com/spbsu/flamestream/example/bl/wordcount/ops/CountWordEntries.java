@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.example.bl.wordcount.ops;
 
+import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordDocEntry;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordContainer;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordEntry;
@@ -17,11 +18,12 @@ public class CountWordEntries implements Function<List<WordContainer>, Stream<Wo
   @Override
   public Stream<WordCounter> apply(List<WordContainer> wordContainers) {
     if (wordContainers.size() == 1) {
-      final WordEntry wordEntry = (WordEntry) wordContainers.get(0);
-      return Stream.of(new WordCounter(wordEntry.word(), 1));
+      final WordDocEntry wordDocEntry = (WordDocEntry) wordContainers.get(0);
+      return Stream.of(new WordCounter(wordDocEntry, 1));
     } else {
       final WordCounter counter = (WordCounter) wordContainers.get(0);
-      return Stream.of(new WordCounter(counter.word(), counter.count() + 1));
+      final WordDocEntry wordDocEntry = (WordDocEntry) wordContainers.get(1);
+      return Stream.of(new WordCounter(wordDocEntry, counter.count() + 1));
     }
   }
 }

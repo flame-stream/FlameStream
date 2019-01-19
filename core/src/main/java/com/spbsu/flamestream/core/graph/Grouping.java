@@ -61,7 +61,7 @@ public class Grouping<T> extends HashingVertexStub {
     public Stream<DataItem> apply(DataItem dataItem, InvalidatingBucket bucket) {
       final Collection<DataItem> items = new ArrayList<>();
 
-      System.out.format("GO apply: %s%n", dataItem);
+      //System.out.format("GO apply: %s%n", dataItem);
 
       if (!dataItem.meta().isTombstone()) {
         final int positionToBeInserted = bucket.lowerBound(dataItem.meta());
@@ -75,7 +75,7 @@ public class Grouping<T> extends HashingVertexStub {
         items.addAll(replayAround(positionToBeCleared, bucket, false, false));
       }
 
-      System.out.format("GO apply result: %s%n", items);
+      //System.out.format("GO apply result: %s%n", items);
 
       return items.stream();
     }

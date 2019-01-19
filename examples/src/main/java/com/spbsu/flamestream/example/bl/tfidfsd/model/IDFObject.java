@@ -14,21 +14,28 @@ public class IDFObject implements DocContainer {
     private final Map<String, Integer> counts = new ConcurrentHashMap<>();
     private final String docName;
     private AtomicBoolean selfGrouped;
+    private final int idfCardinality;
 
-    public IDFObject(String docName, String word, Integer count) {
+    public boolean isComplete() {
+        return counts.size() == idfCardinality;
+    }
+
+    public IDFObject(String docName, String word, Integer count, int idfCardinality) {
         this.docName = docName;
         counts.put(word, count);
         selfGrouped = new AtomicBoolean(false);
+        this.idfCardinality = idfCardinality;
     }
 
-    private IDFObject(String docName) {
+    private IDFObject(String docName, int idfCardinality) {
 
         this.docName = docName;
         selfGrouped = new AtomicBoolean(false);
+        this.idfCardinality = idfCardinality;
     }
 
     public IDFObject merge(IDFObject other) {
-        IDFObject result = new IDFObject(docName);
+        IDFObject result = new IDFObject(docName, idfCardinality);
         for (Map.Entry<String, Integer> entry: other.counts.entrySet()) {
             result.counts.put(entry.getKey(), entry.getValue());
         }
@@ -60,6 +67,11 @@ public class IDFObject implements DocContainer {
     }
 
     @Override
+    public int idfCardinality() {
+        return idfCardinality;
+    }
+
+    @Override
     public String toString() {
         return String.format("<IDFO> %s", counts);
     }
@@ -68,6 +80,9 @@ public class IDFObject implements DocContainer {
         return counts.keySet();
     }
 
+    public Map<String, Integer> counts() {
+        return counts;
+    }
 
     @Override
     public boolean equals(Object o) {

@@ -1,22 +1,26 @@
 package com.spbsu.flamestream.example.bl.wordcount.model;
 
+import com.spbsu.flamestream.example.bl.tfidfsd.model.containers.DocContainer;
+import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordDocEntry;
+
 /**
  * User: Artem
  * Date: 19.06.2017
  */
 public class WordCounter implements WordContainer {
-  private final String word;
+  private final WordDocEntry wordDocEntry;
   private final int count;
 
-  public WordCounter(String word, int count) {
-    this.word = word;
+  public WordCounter(WordDocEntry wordDocEntry, int count) {
+    this.wordDocEntry = wordDocEntry;
     this.count = count;
   }
 
   @Override
   public String word() {
-    return word;
+    return wordDocEntry.word();
   }
+
 
   public int count() {
     return count;
@@ -32,16 +36,16 @@ public class WordCounter implements WordContainer {
     }
 
     final WordCounter that = (WordCounter) o;
-    return count == that.count && word.equals(that.word);
+    return count == that.count && wordDocEntry.word().equals(that.wordDocEntry.word());
   }
 
   @Override
   public int hashCode() {
-    return word.hashCode();
+    return wordDocEntry.word().hashCode();
   }
 
   @Override
   public String toString() {
-    return String.format("%s: %d", word, count);
+    return String.format("%s: %d", wordDocEntry, count);
   }
 }

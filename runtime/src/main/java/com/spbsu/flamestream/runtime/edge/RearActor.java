@@ -42,7 +42,7 @@ public class RearActor extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(Batch.class, b -> {
-              System.out.format("RearFront <default> got Batch %s %s%n", b, rear);
+              //System.out.format("RearFront <default> got Batch %s %s%n", b, rear);
               rear.accept(b);
               sender().tell(new BatchAccepted(), self());
             })

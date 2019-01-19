@@ -56,9 +56,9 @@ public class FlameMap<T, R> extends HashingVertexStub {
       final Stream<R> result = function.apply(dataItem.payload((Class<T>) clazz));
       final int[] childId = {0};
       return result.map(r -> {
-        System.out.format("FM.apply r %s%n", r);
+        //System.out.format("FM.apply r %s%n", r);
         final Meta newMeta = new Meta(dataItem.meta(), physicalId, childId[0]++);
-        System.out.format("111111 from %s new meta %s%n", dataItem.meta(), newMeta);
+        //System.out.format("111111 from %s new meta %s%n", dataItem.meta(), newMeta);
         return new PayloadDataItem(newMeta, r);
       });
     }

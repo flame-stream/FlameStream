@@ -22,6 +22,11 @@ public class WordDocCounter implements WordDocContainer {
         return wordDocEntry.document();
     }
 
+    @Override
+    public int idfCardinality() {
+        return wordDocEntry.idfCardinality();
+    }
+
     public WordDocEntry wordDocEntry() {
         return wordDocEntry;
     }
