@@ -25,4 +25,10 @@ public class QueuedConsumer<T> implements Consumer<T> {
             return result.stream();
         }
     }
+
+    public Queue<T> queue() {
+        synchronized (result) {
+            return result;
+        }
+    }
 }

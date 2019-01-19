@@ -90,35 +90,51 @@ public class LentaTest extends FlameAkkaSuite {
                 handles.get(i).unregister();
             }
 
-            documents().forEach(front);
+            System.out.println("1111111111");
+            Thread t = new Thread(() -> {
+                Iterator<TextDocument> toCheckIter = toCheck.iterator();
+                IDFData idfExpected = new IDFData();
+                Queue q = awaitConsumer.queue();
+                for (int i = 0; i < nExpected; i++) {
+                    Object o = q.poll();
+                    while (o == null){
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {}
+                        o = q.poll();
+                    }
+                    if (o instanceof TFObject) {
+                        TextDocument processedDoc = toCheckIter.next();
+                        List<String> pdWords = TextUtils.words(processedDoc.content());
+                        idfExpected.addWords(new HashSet(pdWords));
+                        System.out.format("pdWords: %d %d %s%n", pdWords.size(), i, pdWords);
+                        TFData pdTF = TextUtils.tfData(processedDoc.content());
+                        TFObject tfoResult = (TFObject) o;
+
+                        Assert.assertEquals(processedDoc.name(), tfoResult.document());
+                        Assert.assertEquals(pdTF.keys(), tfoResult.tfKeys());
+                        for (String key: pdTF.keys()) {
+                            Assert.assertEquals(pdTF.value(key), tfoResult.tfCount(key));
+                        }
+                        Assert.assertEquals(pdTF.keys(), tfoResult.idfKeys());
+                        for (String key: pdTF.keys()) {
+                            Assert.assertEquals(idfExpected.value(key), tfoResult.idfCount(key));
+                        }
+                    } else {
+                        System.out.println("unexpected: " + o);
+                    }
+                }
+                System.out.println("DONE");
+            });
+
+            t.start();
+            System.out.println("2222222222");
 
             //awaitConsumer.await(500, TimeUnit.MINUTES);
 
-            Iterator<TextDocument> toCheckIter = toCheck.iterator();
-            IDFData idfExpected = new IDFData();
-            awaitConsumer.result().forEach(o -> {
-                if (o instanceof TFObject) {
-                    TextDocument processedDoc = toCheckIter.next();
-                    List<String> pdWords = TextUtils.words(processedDoc.content());
-                    idfExpected.addWords(new HashSet(pdWords));
-                    //System.out.format("pdWords: %d %s%n", pdWords.size(), pdWords);
-                    TFData pdTF = TextUtils.tfData(processedDoc.content());
-                    TFObject tfoResult = (TFObject) o;
+            documents().forEach(front);
 
-                    Assert.assertEquals(processedDoc.name(), tfoResult.document());
-                    Assert.assertEquals(pdTF.keys(), tfoResult.tfKeys());
-                    for (String key: pdTF.keys()) {
-                        Assert.assertEquals(pdTF.value(key), tfoResult.tfCount(key));
-                    }
-                    Assert.assertEquals(pdTF.keys(), tfoResult.idfKeys());
-                    for (String key: pdTF.keys()) {
-                        Assert.assertEquals(idfExpected.value(key), tfoResult.idfCount(key));
-                    }
-                } else {
-                    System.out.println("unexpected: " + o);
-                }
-            });
-            System.out.println("DONE");
+            t.join();
         }
     }
 }

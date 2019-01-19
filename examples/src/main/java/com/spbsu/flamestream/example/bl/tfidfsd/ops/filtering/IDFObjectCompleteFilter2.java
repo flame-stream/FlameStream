@@ -10,7 +10,7 @@ public class IDFObjectCompleteFilter2 implements Function<IDFObject, Stream<IDFO
     @Override
     public Stream<IDFObject> apply(IDFObject idfObject) {
         if (idfObject.isComplete()) {
-            //System.out.println("11111111: " + idfObject);
+            System.out.println("9999999999999: " + idfObject);
             return Stream.of();
         } else {
             return Stream.of(idfObject);
