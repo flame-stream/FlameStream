@@ -21,7 +21,7 @@
 
 - name: Start the flink bench
   shell: >
-    java -Xms500m -Xmx500m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError
+    java -Xms1500m -Xmx1500m -XX:+PrintGC -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError
     -cp {{ flink_dir }}/flink-benchmark-1.0-SNAPSHOT-uber.jar
     com.spbsu.benchmark.flink.index.FlinkBench
     {{ flink_dir }}/bench.conf {{ flink_dir }}/deployer.conf > {{ flink_dir }}/bench.log 2>&1

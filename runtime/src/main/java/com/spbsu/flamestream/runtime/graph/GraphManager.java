@@ -174,7 +174,13 @@ public class GraphManager extends LoggingActor {
   private Receive managing() {
     return ReceiveBuilder.create()
             .match(DataItem.class, dataItem -> {
-                //System.out.format("GraphManager <managing> got DataItem %s%n", dataItem);
+                unitStates.values().forEach(m -> {
+                    m.values().forEach(e -> {
+                        System.out.println("eeeeeee: " + e.getBuffers().size());
+                    });
+                    System.out.println("---------- " + m);
+                });
+                System.out.format("GraphManager <managing> got DataItem %s%n", dataItem);
                 sourceComponent.forward(dataItem, context());
             })
             .match(

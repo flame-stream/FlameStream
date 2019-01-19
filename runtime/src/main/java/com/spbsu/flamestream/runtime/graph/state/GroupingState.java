@@ -10,6 +10,7 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.Grouping;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -79,6 +80,10 @@ public class GroupingState {
       }
     });
     return new GroupingState(subState);
+  }
+
+  public Map<Integer, Object> getBuffers() {
+    return buffers;
   }
 
   @Override

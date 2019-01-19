@@ -63,12 +63,13 @@ public class LentaTest extends FlameAkkaSuite {
                 text.append(m.group());
             }
             return new TextDocument(r.get(0), text.substring(1));
-        }).limit(1024);
+        }).limit(2048);
     }
 
     @Test
     public void lentaTest() throws InterruptedException, IOException {
-        int nExpected = 1024;
+        int nExpected = 2048
+                ;
         final /*AwaitResultConsumer*/ QueuedConsumer<Object> awaitConsumer = new QueuedConsumer<>(nExpected);
 
         Stream<TextDocument> toCheck = documents();
@@ -107,7 +108,7 @@ public class LentaTest extends FlameAkkaSuite {
                         TextDocument processedDoc = toCheckIter.next();
                         List<String> pdWords = TextUtils.words(processedDoc.content());
                         idfExpected.addWords(new HashSet(pdWords));
-                        System.out.format("pdWords: %d %d %s%n", pdWords.size(), i, pdWords);
+                        System.out.format("pdWords: %d %d %d %s%n", pdWords.size(), idfExpected.keys().size(), i, pdWords);
                         TFData pdTF = TextUtils.tfData(processedDoc.content());
                         TFObject tfoResult = (TFObject) o;
 
