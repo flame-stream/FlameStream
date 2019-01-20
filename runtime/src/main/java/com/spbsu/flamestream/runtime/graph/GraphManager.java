@@ -6,6 +6,7 @@ import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.data.invalidation.SynchronizedArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
@@ -177,6 +178,13 @@ public class GraphManager extends LoggingActor {
                 unitStates.values().forEach(m -> {
                     m.values().forEach(e -> {
                         System.out.println("eeeeeee: " + e.getBuffers().size());
+                        e.getBuffers().values().stream().limit(10).forEach(ee -> {
+                            SynchronizedArrayInvalidatingBucket saib = (SynchronizedArrayInvalidatingBucket)ee;
+                            System.out.println("******** " + saib.size());
+                            for (int k = 0; k < Math.min(3, saib.size()); k++) {
+                                System.out.println("=== " + saib.get(k) + "===");
+                            }
+                        });
                     });
                     System.out.println("---------- " + m);
                 });
