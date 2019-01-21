@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.bl.tfidfsd;
+package com.spbsu.flamestream.example.bl.predicttest;
 
 import com.spbsu.flamestream.example.bl.classifier.Predictor;
 import org.apache.commons.io.FileUtils;
