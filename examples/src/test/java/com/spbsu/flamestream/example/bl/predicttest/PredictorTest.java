@@ -19,18 +19,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 public class PredictorTest {
-    private static final String link = "https://www.dropbox.com/s/lu4b7e5w20xpho1/test_data?dl=1";
-    private static File testData = null;
-
-    @BeforeTest
-    public void downloadSample() throws IOException {
-        testData = new File("src/test/resources/test_data");
-
-        if (!testData.exists()) {
-            URL url = new URL(link);
-            FileUtils.copyURLToFile(url, testData);
-        }
-    }
+    private static File testData = new File("src/test/resources/test_data");
 
     @Test
     public void fiveDocumentTest() throws IOException {

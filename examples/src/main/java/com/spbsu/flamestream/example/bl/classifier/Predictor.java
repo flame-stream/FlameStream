@@ -13,17 +13,12 @@ import java.util.Arrays;
 import static org.jblas.MatrixFunctions.exp;
 
 public class Predictor {
-    private static final String url = "https://www.dropbox.com/s/t3w15pprjqlv4wl/meta_data?dl=1";
     private static final int sklearnFeatures = 371432;
     private final double[] intercept;
     private final DoubleMatrix weights;
 
     public Predictor() throws IOException {
         File metaData = new File("src/main/resources/meta_data");
-
-        if (!metaData.exists()) {
-            FileUtils.copyURLToFile(new URL(url), metaData);
-        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(metaData))) {
             int classes = Integer.parseInt(br.readLine());
