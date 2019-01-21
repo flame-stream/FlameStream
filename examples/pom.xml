@@ -13,6 +13,13 @@
     <artifactId>flamestream-examples</artifactId>
 
     <dependencies>
+        <!-- matrix multiplication -->
+        <dependency>
+            <groupId>org.jblas</groupId>
+            <artifactId>jblas</artifactId>
+            <version>1.2.4</version>
+        </dependency>
+
         <!--FlameStream-->
         <dependency>
             <groupId>com.spbsu.flamestream</groupId>
@@ -88,6 +95,15 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.9</version>
+                <configuration>
+                    <argLine>-Xms7000M</argLine>
+                    <argLine>-Xmx7000M</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>
