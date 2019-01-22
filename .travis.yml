@@ -16,8 +16,8 @@ cache:
 
 env:
   global:
-    - MAVEN_OPTS="-Xmx512m -Xms512m"
-    - JAVA_OPTS="-Xmx512m -Xms512m"
+    - MAVEN_OPTS="-Xmx2048m -Xms2048m"
+    - JAVA_OPTS="-Xmx2048m -Xms2048m"
 
 install: true
 
