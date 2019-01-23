@@ -147,8 +147,8 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 .link(splitterTF, gropingTfIdf)
                 .link(gropingTfIdf, filterTfIdf)
 
-                .colocate(groupingDoc, filterDoc, idfAggregator, idfObjectCompleteFilter, gropingTfIdf, filterTfIdf)
-                .colocate(groupingWord, filterWord, counterWord, sink)
+                .colocate(groupingDoc, filterDoc, idfAggregator, idfObjectCompleteFilter, gropingTfIdf, filterTfIdf, sink)
+                .colocate(groupingWord, filterWord, counterWord)
 
                 .link(filterTfIdf, sink)
 
