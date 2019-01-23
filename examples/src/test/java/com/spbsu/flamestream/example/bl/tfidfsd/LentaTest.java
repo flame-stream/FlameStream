@@ -76,6 +76,7 @@ public class LentaTest extends FlameAkkaSuite {
 
         try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
                 .millisBetweenCommits(500)
+                .withStateStorage(new DevNullStateStorage())
                 .build()) {
 
             final FlameRuntime.Flame flame = runtime.run(new TfIdfGraphSD().get());
