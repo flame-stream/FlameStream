@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class GraphManager extends LoggingActor {
@@ -62,11 +63,11 @@ public class GraphManager extends LoggingActor {
                        ActorRef acker,
                        ComputationProps computationProps,
                        StateStorage storage) {
-      //System.out.format("GraphManager ctr, node %s%n", nodeId);
-      //System.out.format("GraphManager ctr, compProps %s%n", computationProps);
-      //System.out.format("GraphManager ctr, storage class %s%n", storage.getClass());
-      //System.out.format("GraphManager ctr, storage %s%n", storage);
-      this.nodeId = nodeId;
+    //System.out.format("GraphManager ctr, node %s%n", nodeId);
+    //System.out.format("GraphManager ctr, compProps %s%n", computationProps);
+    //System.out.format("GraphManager ctr, storage class %s%n", storage.getClass());
+    //System.out.format("GraphManager ctr, storage %s%n", storage);
+    this.nodeId = nodeId;
     this.storage = storage;
     this.computationProps = computationProps;
     this.graph = graph;
@@ -93,8 +94,8 @@ public class GraphManager extends LoggingActor {
               computationProps.hashGroups()
                       .forEach((key, value) -> value.units()
                               .forEach(unit -> {
-                                  //System.out.format("unit %s, key %s%n", unit, key);
-                                  routerMap.put(unit, (ActorRef) managers.get(key));
+                                //System.out.format("unit %s, key %s%n", unit, key);
+                                routerMap.put(unit, (ActorRef) managers.get(key));
                               }));
               routes.putAll(routerMap);
 
@@ -102,8 +103,8 @@ public class GraphManager extends LoggingActor {
               getContext().become(deploying());
             })
             .matchAny(m -> {
-                System.out.format("GraphManager <default> got something %s%n", m);
-                stash();
+              System.out.format("GraphManager <default> got something %s%n", m);
+              stash();
             })
             .build();
   }
@@ -111,9 +112,9 @@ public class GraphManager extends LoggingActor {
   private Receive deploying() {
     return ReceiveBuilder.create()
             .match(LastCommit.class, lastCommit -> {
-                //System.out.format("GraphManager <deploying> got LastCommit %s%n", lastCommit);
+              //System.out.format("GraphManager <deploying> got LastCommit %s%n", lastCommit);
 
-                log().info("Received last commit '{}'", lastCommit);
+              log().info("Received last commit '{}'", lastCommit);
               final Map<String, GroupGroupingState> stateByVertex = new HashMap<>();
               final HashGroup localGroup = computationProps.hashGroups().get(nodeId);
               for (final HashUnit unit : localGroup.units()) {
@@ -175,35 +176,35 @@ public class GraphManager extends LoggingActor {
   private Receive managing() {
     return ReceiveBuilder.create()
             .match(DataItem.class, dataItem -> {
-                unitStates.values().forEach(m -> {
-                    m.values().forEach(e -> {
-                        //System.out.println("eeeeeee: " + e.getBuffers().size());
-                        e.getBuffers().values().stream().limit(10).forEach(ee -> {
-                            SynchronizedArrayInvalidatingBucket saib = (SynchronizedArrayInvalidatingBucket)ee;
-                            //System.out.println("******** " + saib.size());
-                            for (int k = 0; k < Math.min(3, saib.size()); k++) {
-                                //System.out.println("=== " + saib.get(k) + "===");
-                            }
-                        });
-                    });
-                    //System.out.println("---------- " + m);
+              unitStates.values().forEach(m -> {
+                m.values().forEach(e -> {
+                  //System.out.println("eeeeeee: " + e.getBuffers().size());
+                  e.getBuffers().values().stream().limit(10).forEach(ee -> {
+                    SynchronizedArrayInvalidatingBucket saib = (SynchronizedArrayInvalidatingBucket) ee;
+                    //System.out.println("******** " + saib.size());
+                    for (int k = 0; k < Math.min(3, saib.size()); k++) {
+                      //System.out.println("=== " + saib.get(k) + "===");
+                    }
+                  });
                 });
-                //System.out.format("GraphManager <managing> got DataItem %s%n", dataItem);
-                sourceComponent.forward(dataItem, context());
+                //System.out.println("---------- " + m);
+              });
+              //System.out.format("GraphManager <managing> got DataItem %s%n", dataItem);
+              sourceComponent.forward(dataItem, context());
             })
             .match(
                     AddressedItem.class,
                     addressedItem -> {
-                        //System.out.format("GraphManager <managing> got AddressedItem %s%n", addressedItem);
-                        verticesComponents.get(addressedItem.destination())
-                                .forward(addressedItem, context());
+                      //System.out.format("GraphManager <managing> got AddressedItem %s%n", addressedItem);
+                      verticesComponents.get(addressedItem.destination())
+                              .forward(addressedItem, context());
                     }
             )
             .match(
                     MinTimeUpdate.class,
                     minTimeUpdate -> {
-                        //System.out.format("GraphManager <managing> got MinTimeUpdate %s%n", minTimeUpdate);
-                        components.forEach(c -> c.forward(minTimeUpdate, context()));
+                      //System.out.format("GraphManager <managing> got MinTimeUpdate %s%n", minTimeUpdate);
+                      components.forEach(c -> c.forward(minTimeUpdate, context()));
                     }
             )
             .match(Prepare.class, this::onPrepare)
@@ -214,9 +215,13 @@ public class GraphManager extends LoggingActor {
   }
 
   private void onPrepare(Prepare prepare) {
-      //System.out.format("GraphManager <managing> got Prepare %s%n", prepare);
-
-      PatternsCS.ask(sinkComponent, prepare, FlameConfig.config.smallTimeout()).thenRun(() -> {
+    final CompletableFuture[] futures = new CompletableFuture[components.size()];
+    int index = 0;
+    for (ActorRef component : components) {
+      futures[index++] = PatternsCS.ask(component, prepare, FlameConfig.config.smallTimeout()).toCompletableFuture();
+    }
+    final CompletableFuture<Void> allOf = CompletableFuture.allOf(futures);
+    allOf.thenRun(() -> {
       unitStates.forEach((hashUnit, stateMap) -> storage.putState(
               hashUnit,
               prepare.globalTime(),

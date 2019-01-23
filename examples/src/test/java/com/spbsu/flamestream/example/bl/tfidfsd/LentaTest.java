@@ -76,8 +76,8 @@ public class LentaTest extends FlameAkkaSuite {
 
         Stream<TextDocument> toCheck = documents();
 
-        try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
-                .millisBetweenCommits(100)
+        try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(100)
+                .millisBetweenCommits(1000)
                 .withStateStorage(new DevNullStateStorage())
                 .build()) {
 
@@ -108,7 +108,11 @@ public class LentaTest extends FlameAkkaSuite {
                         } catch (InterruptedException e) {}
                         o = q.poll();
                     }
-                    System.out.println("RESULT " + counter.incrementAndGet());
+
+                    final int get = counter.incrementAndGet();
+                    if (get % 1000 == 0) {
+                        System.out.println("RESULT " + get);
+                    }
                     if (o instanceof TFObject) {
                         TextDocument processedDoc = toCheckIter.next();
                         List<String> pdWords = TextUtils.words(processedDoc.content());
