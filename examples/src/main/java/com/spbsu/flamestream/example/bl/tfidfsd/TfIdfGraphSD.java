@@ -86,7 +86,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
             @Override
             public Stream<TFObject> apply(TextDocument s) {
                 TFObject tfObject = new TFObject(s.name(), pattern.split(s.content()));
-                System.out.println("TFO: " + tfObject);
+                //System.out.println("TFO: " + tfObject);
                 return Stream.of(tfObject);
             }
         }, TextDocument.class);
@@ -119,7 +119,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 IDFObject.class
         );
 
-        final FlameMap<IDFObject, IDFObject> idfObjectCompleteFilter2 = new FlameMap<>(
+        final FlameMap<IDFObject, DocContainer> idfObjectCompleteFilter2 = new FlameMap<>(
                 new IDFObjectCompleteFilter2(),
                 IDFObject.class
         );

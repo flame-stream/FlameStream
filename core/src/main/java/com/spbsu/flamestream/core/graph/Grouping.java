@@ -61,27 +61,42 @@ public class Grouping<T> extends HashingVertexStub {
     public Stream<DataItem> apply(DataItem dataItem, InvalidatingBucket bucket) {
       final Collection<DataItem> items = new ArrayList<>();
 
-      System.out.format("GO apply: %d %b %s%n", bucket.size(), dataItem.meta().isTombstone(), dataItem);
+      //System.out.format("GO apply: %d %b %s%n", bucket.size(), dataItem.meta().isTombstone(), dataItem);
+      //for (int i = 0; i < bucket.size(); i++) {
+      //  System.out.format("III %d/%d   %s%n", i, bucket.size(), bucket.get(i));
+      //}
 
       if (!dataItem.meta().isTombstone()) {
         final int positionToBeInserted = bucket.lowerBound(dataItem.meta());
+        //System.out.println("1 ITEMS pos: " + positionToBeInserted);
+
         items.addAll(replayAround(positionToBeInserted, bucket, true, false));
+        //System.out.println("1 ITEMS-1: " + items);
         bucket.insert(dataItem);
         items.addAll(replayAround(positionToBeInserted, bucket, false, true));
       } else {
         final int positionToBeCleared = bucket.lowerBound(dataItem.meta()) - 1;
+        //System.out.println("2 ITEMS pos: " + positionToBeCleared);
         items.addAll(replayAround(positionToBeCleared, bucket, true, true));
+        //System.out.println("2 ITEMS-1: " + items);
         bucket.insert(dataItem);
         items.addAll(replayAround(positionToBeCleared, bucket, false, false));
       }
+      //System.out.format(">>> GO apply: %d %b %s%n", bucket.size(), dataItem.meta().isTombstone(), dataItem);
+      //for (int i = 0; i < bucket.size(); i++) {
+      //  System.out.format(">>> III %d/%d   %s%n", i, bucket.size(), bucket.get(i));
+      //}
 
-      System.out.format("GO apply result: %d %s%n", bucket.size(), items);
+      //System.out.format("GO apply result: %d %s%n", bucket.size(), items);
+
+      // System.out.println("ITEMS: " + items);
 
       return items.stream();
     }
 
     private List<DataItem> replayAround(int index, InvalidatingBucket bucket, boolean areTombs, boolean include) {
       final List<DataItem> items = new ArrayList<>();
+      //System.out.println("");
       for (int right = index + 1; right <= Math.min(index + window - (include ? 0 : 1), bucket.size()); ++right) {
         final int left = Math.max(right - window, 0);
         final List<T> groupingResult = new ArrayList<>();

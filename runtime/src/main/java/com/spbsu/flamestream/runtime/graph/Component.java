@@ -198,7 +198,7 @@ public class Component extends LoggingActor {
   }
 
   private void accept(DataItem item) {
-    System.out.format("Component <default> got DataItem %s%n", item);
+    //System.out.format("Component <default> got DataItem %s%n", item);
     if (sourceJoba != null) {
       acceptInTracer.log(item.xor());
       sourceJoba.addFront(item.meta().globalTime().frontId(), sender());

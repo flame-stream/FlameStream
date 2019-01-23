@@ -44,15 +44,15 @@ public class PingActor extends LoggingActor {
   public Receive createReceive() {
     return receiveBuilder()
             .match(Start.class, start -> {
-              System.out.format("PingActor got Start %s %s%n", started, start);
-              System.out.format("PingActor got Start from %s (%s)%n", context().sender(), context().self());
+              //System.out.format("PingActor got Start %s %s%n", started, start);
+             // System.out.format("PingActor got Start from %s (%s)%n", context().sender(), context().self());
               if (!started) {
                 start(start.delayInNanos());
                 started = true;
               }
             })
             .match(Stop.class, stop -> {
-              System.out.format("PingActor got Stop %s %s%n", started, stop);
+              //System.out.format("PingActor got Stop %s %s%n", started, stop);
               if (started) {
                 stop();
                 started = false;

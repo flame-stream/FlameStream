@@ -30,12 +30,14 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
     //});
 
     if (!insertee.meta().isTombstone()) {
+      //System.out.println("IIIIIIIIII: " + insertee);
       final int position = lowerBound(insertee.meta());
 
       //System.out.format("AIB.insert is NOT tombstone %d %s%n", position, insertee);
       //final int position = lowerBound(insertee.meta());
       innerList.add(position, insertee);
     } else {
+      //System.out.println("TTTTTTTTTTTT: " + insertee);
       final int position = lowerBound(insertee.meta()) - 1;
       //System.out.format("ins: %s%n", insertee);
       //System.out.format("pos-1: %d %s%n", position, innerList.get(position).meta());

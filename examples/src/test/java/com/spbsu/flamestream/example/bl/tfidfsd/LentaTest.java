@@ -63,12 +63,12 @@ public class LentaTest extends FlameAkkaSuite {
                 text.append(m.group());
             }
             return new TextDocument(r.get(0), text.substring(1));
-        }).limit(/*2048*/ 4);
+        }).limit(70000);
     }
 
     @Test
     public void lentaTest() throws InterruptedException, IOException {
-        int nExpected = /*2048*/4
+        int nExpected = 70000
                 ;
         final /*AwaitResultConsumer*/ QueuedConsumer<Object> awaitConsumer = new QueuedConsumer<>(nExpected);
 
@@ -108,7 +108,7 @@ public class LentaTest extends FlameAkkaSuite {
                         TextDocument processedDoc = toCheckIter.next();
                         List<String> pdWords = TextUtils.words(processedDoc.content());
                         idfExpected.addWords(new HashSet(pdWords));
-                        System.out.format("pdWords: %d %d %d %s%n", pdWords.size(), idfExpected.keys().size(), i, pdWords);
+                        //System.out.format("pdWords: %d %d %d %s%n", pdWords.size(), idfExpected.keys().size(), i, pdWords);
                         TFData pdTF = TextUtils.tfData(processedDoc.content());
                         TFObject tfoResult = (TFObject) o;
 
@@ -154,7 +154,7 @@ public class LentaTest extends FlameAkkaSuite {
 
     @Test
     public void smallTest() throws InterruptedException, IOException {
-        int nExpected = /*2048*/4
+        int nExpected = 4
                 ;
         final /*AwaitResultConsumer*/ QueuedConsumer<Object> awaitConsumer = new QueuedConsumer<>(nExpected);
 
@@ -194,7 +194,7 @@ public class LentaTest extends FlameAkkaSuite {
                         TextDocument processedDoc = toCheckIter.next();
                         List<String> pdWords = TextUtils.words(processedDoc.content());
                         idfExpected.addWords(new HashSet(pdWords));
-                        System.out.format("pdWords: %d %d %d %s%n", pdWords.size(), idfExpected.keys().size(), i, pdWords);
+                        //System.out.format("pdWords: %d %d %d %s%n", pdWords.size(), idfExpected.keys().size(), i, pdWords);
                         TFData pdTF = TextUtils.tfData(processedDoc.content());
                         TFObject tfoResult = (TFObject) o;
 

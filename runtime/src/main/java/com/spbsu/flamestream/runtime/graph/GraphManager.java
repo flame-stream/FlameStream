@@ -111,7 +111,7 @@ public class GraphManager extends LoggingActor {
   private Receive deploying() {
     return ReceiveBuilder.create()
             .match(LastCommit.class, lastCommit -> {
-                System.out.format("GraphManager <deploying> got LastCommit %s%n", lastCommit);
+                //System.out.format("GraphManager <deploying> got LastCommit %s%n", lastCommit);
 
                 log().info("Received last commit '{}'", lastCommit);
               final Map<String, GroupGroupingState> stateByVertex = new HashMap<>();
@@ -177,18 +177,18 @@ public class GraphManager extends LoggingActor {
             .match(DataItem.class, dataItem -> {
                 unitStates.values().forEach(m -> {
                     m.values().forEach(e -> {
-                        System.out.println("eeeeeee: " + e.getBuffers().size());
+                        //System.out.println("eeeeeee: " + e.getBuffers().size());
                         e.getBuffers().values().stream().limit(10).forEach(ee -> {
                             SynchronizedArrayInvalidatingBucket saib = (SynchronizedArrayInvalidatingBucket)ee;
-                            System.out.println("******** " + saib.size());
+                            //System.out.println("******** " + saib.size());
                             for (int k = 0; k < Math.min(3, saib.size()); k++) {
-                                System.out.println("=== " + saib.get(k) + "===");
+                                //System.out.println("=== " + saib.get(k) + "===");
                             }
                         });
                     });
-                    System.out.println("---------- " + m);
+                    //System.out.println("---------- " + m);
                 });
-                System.out.format("GraphManager <managing> got DataItem %s%n", dataItem);
+                //System.out.format("GraphManager <managing> got DataItem %s%n", dataItem);
                 sourceComponent.forward(dataItem, context());
             })
             .match(

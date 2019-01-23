@@ -61,7 +61,7 @@ public class LocalRuntime implements FlameRuntime {
       @Override
       public <F extends Front, H> Stream<H> attachFront(String id, FrontType<F, H> type) {
         try {
-          System.out.format("Flame.attachFront %s - %s%n", id, type);
+          //System.out.format("Flame.attachFront %s - %s%n", id, type);
           //noinspection unchecked
           return PatternsCS.ask(cluster, new FlameUmbrella.FrontTypeWithId<>(id, type), FlameConfig.config.bigTimeout())
                   .thenApply(a -> (List<H>) a).toCompletableFuture().get().stream();

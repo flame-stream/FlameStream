@@ -8,17 +8,17 @@ import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordDocEntry;
  * Date: 19.06.2017
  */
 public class WordCounter implements WordContainer {
-  private final WordDocEntry wordDocEntry;
+  private final WordEntry wordEntry;
   private final int count;
 
-  public WordCounter(WordDocEntry wordDocEntry, int count) {
-    this.wordDocEntry = wordDocEntry;
+  public WordCounter(WordEntry wordEntry, int count) {
+    this.wordEntry = wordEntry;
     this.count = count;
   }
 
   @Override
   public String word() {
-    return wordDocEntry.word();
+    return wordEntry.word();
   }
 
 
@@ -36,16 +36,16 @@ public class WordCounter implements WordContainer {
     }
 
     final WordCounter that = (WordCounter) o;
-    return count == that.count && wordDocEntry.word().equals(that.wordDocEntry.word());
+    return count == that.count && wordEntry.word().equals(that.wordEntry.word());
   }
 
   @Override
   public int hashCode() {
-    return wordDocEntry.word().hashCode();
+    return wordEntry.word().hashCode();
   }
 
   @Override
   public String toString() {
-    return String.format("%s: %d", wordDocEntry, count);
+    return String.format("%s: %d", wordEntry, count);
   }
 }

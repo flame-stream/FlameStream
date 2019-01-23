@@ -101,10 +101,9 @@ public class AkkaRear implements Rear {
     }
 
     public static <T> Props props(Class<T> clazz) {
-      System.out.format("AkkaRear.LocalMediator %s%n", clazz);
+      //System.out.format("AkkaRear.LocalMediator %s%n", clazz);
       return Props.create(LocalMediator.class, clazz);
     }
-
 
 
 
@@ -113,13 +112,13 @@ public class AkkaRear implements Rear {
       return ReceiveBuilder.create()
               .match(Consumer.class, c -> {
                 //noinspection unchecked
-                System.out.format("AkkaRear.LocalMediator <default> got consumer %s%n", c);
+                //System.out.format("AkkaRear.LocalMediator <default> got consumer %s%n", c);
                 this.consumer = c;
                 unstashAll();
                 getContext().become(serving());
               })
               .matchAny(a -> {
-                System.out.format("AkkaRear.LocalMediator.receive %s%n", a);
+                //System.out.format("AkkaRear.LocalMediator.receive %s%n", a);
                 stash();
               })
               .build();

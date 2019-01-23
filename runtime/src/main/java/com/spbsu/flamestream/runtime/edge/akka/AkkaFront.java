@@ -232,7 +232,7 @@ public class AkkaFront implements Front {
     @Override
     public void accept(T value) {
       try {
-        System.out.format("AkkaFront.accept %s %s%n", value.getClass(), value);
+        //System.out.format("AkkaFront.accept %s %s%n", value.getClass(), value);
         PatternsCS.ask(localMediator, new Raw(value), FlameConfig.config.bigTimeout()).toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);

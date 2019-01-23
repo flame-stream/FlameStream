@@ -127,7 +127,7 @@ public class Acker extends LoggingActor {
               }
             })
             .matchAny(m -> {
-              System.out.format("acker <default> got something %s%n", m);
+              //System.out.format("acker <default> got something %s%n", m);
               stash();
             })
             .build();
@@ -209,7 +209,7 @@ public class Acker extends LoggingActor {
   }
 
   private void handleHeartBeat(Heartbeat heartbeat) {
-    System.out.format("acker <acking> got HB %s%n", heartbeat);
+    //System.out.format("acker <acking> got HB %s%n", heartbeat);
     final GlobalTime time = heartbeat.time();
     final GlobalTime previousHeartbeat = maxHeartbeats.get(heartbeat.time().frontId());
     if (heartbeat.time().compareTo(previousHeartbeat) < 0) {

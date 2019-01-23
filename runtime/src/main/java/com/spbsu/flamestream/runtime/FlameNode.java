@@ -75,7 +75,7 @@ public class FlameNode extends LoggingActor {
     return ReceiveBuilder.create()
             .match(AttachFront.class, f -> edgeManager.forward(f, context()))
             .match(AttachRear.class, f -> {
-              System.out.format("FlameNode <default> got AttachRear %s%n", f);
+              //System.out.format("FlameNode <default> got AttachRear %s%n", f);
               edgeManager.forward(f, context());
             })
             .build();
