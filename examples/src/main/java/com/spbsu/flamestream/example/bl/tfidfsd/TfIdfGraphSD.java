@@ -35,7 +35,7 @@ import java.util.stream.StreamSupport;
 public class TfIdfGraphSD implements Supplier<Graph> {
     private final HashFunction wordHash = HashFunction.uniformHash(HashFunction.objectHash(WordContainer.class));
     private final HashFunction docHash = HashFunction.uniformHash(
-            dataItem -> dataItem.payload(DocContainer.class).document().hashCode()
+            dataItem -> dataItem.payload(DocContainer.class).partitioning().hashCode()
     );
 
     @SuppressWarnings("Convert2Lambda")
@@ -50,7 +50,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
     private final Equalz equalzDoc = new Equalz() {
         @Override
         public boolean test(DataItem o1, DataItem o2) {
-            return o1.payload(DocContainer.class).document().equals(o2.payload(DocContainer.class).document());
+            return o1.payload(DocContainer.class).partitioning().equals(o2.payload(DocContainer.class).partitioning());
         }
     };
 
@@ -76,7 +76,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                     counter.put(w, counter.getOrDefault(w, 0) + 1);
                 }
                 return counter.entrySet().stream()
-                        .map(word -> new WordEntry(word.getKey(), s.name(), counter.size()));
+                        .map(word -> new WordEntry(word.getKey(), s.name(), counter.size(), s.partitioning()));
             }
         }, TextDocument.class);
 
@@ -85,7 +85,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
 
             @Override
             public Stream<TFObject> apply(TextDocument s) {
-                TFObject tfObject = new TFObject(s.name(), pattern.split(s.content()));
+                TFObject tfObject = new TFObject(s.name(), pattern.split(s.content()), s.partitioning());
                 //System.out.println("TFO: " + tfObject);
                 return Stream.of(tfObject);
             }
@@ -119,11 +119,6 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 IDFObject.class
         );
 
-        final FlameMap<IDFObject, DocContainer> idfObjectCompleteFilter2 = new FlameMap<>(
-                new IDFObjectCompleteFilter2(),
-                IDFObject.class
-        );
-
         final Sink sink = new Sink();
         return new Graph.Builder()
                 .link(source, splitterTF)
@@ -139,8 +134,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 .link(counterWord, groupingDoc)
                 .link(groupingDoc, filterDoc)
                 .link(filterDoc, idfAggregator)
-                .link(idfAggregator, idfObjectCompleteFilter2)
-                .link(idfObjectCompleteFilter2, groupingDoc)
+                .link(idfAggregator, groupingDoc)
 
                 .link(idfAggregator, idfObjectCompleteFilter)
    //             .link(wc2IDFObject, groupingDoc)
@@ -153,7 +147,7 @@ public class TfIdfGraphSD implements Supplier<Graph> {
                 .link(splitterTF, gropingTfIdf)
                 .link(gropingTfIdf, filterTfIdf)
 
-                .colocate(groupingDoc, filterDoc, idfAggregator, idfObjectCompleteFilter2, idfObjectCompleteFilter)
+                .colocate(groupingDoc, filterDoc, idfAggregator, idfObjectCompleteFilter, gropingTfIdf, filterTfIdf)
                 .colocate(groupingWord, filterWord, counterWord, sink)
 
                 .link(filterTfIdf, sink)

@@ -8,12 +8,14 @@ import java.util.Objects;
 public class WordEntry implements WordContainer, DocContainer {
     private final String word;
     private final String docId;
+    private final String partitioning;
     private final int idfCardinality;
 
-    public WordEntry(String word, String docId, int idfCardinality) {
+    public WordEntry(String word, String docId, int idfCardinality, String partitioning) {
         this.word = word;
         this.docId = docId;
         this.idfCardinality = idfCardinality;
+        this.partitioning = partitioning;
     }
 
     @Override
@@ -24,6 +26,11 @@ public class WordEntry implements WordContainer, DocContainer {
     @Override
     public String document() {
         return docId;
+    }
+
+    @Override
+    public String partitioning() {
+        return partitioning;
     }
 
     @Override

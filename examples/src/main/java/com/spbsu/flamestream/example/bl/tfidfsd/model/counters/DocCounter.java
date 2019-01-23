@@ -7,16 +7,23 @@ public class DocCounter implements DocContainer {
     private final DocEntry docEntry;
     private final int count;
     private final int idfCardinality;
+    private final String partitioning;
 
-    public DocCounter(DocEntry docEntry, int count, int idfCardinality) {
+    public DocCounter(DocEntry docEntry, int count, int idfCardinality, String partitioning) {
         this.docEntry = docEntry;
         this.count = count;
         this.idfCardinality = idfCardinality;
+        this.partitioning = partitioning;
     }
 
     @Override
     public String document() {
         return docEntry.document();
+    }
+
+    @Override
+    public String partitioning() {
+        return partitioning;
     }
 
     @Override

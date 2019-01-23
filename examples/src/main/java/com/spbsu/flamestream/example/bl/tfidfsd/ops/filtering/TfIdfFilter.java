@@ -13,7 +13,7 @@ public class TfIdfFilter implements Function<List<DocContainer>, Stream<DocConta
 
     @Override
     public Stream<DocContainer> apply(List<DocContainer> elements) {
-        if (elements.size() < 2) {
+        if (elements.size() < 2 || !elements.get(0).document().equals(elements.get(1).document())) {
             return Stream.of();
         } else {
             if (elements.get(0) instanceof TFObject && elements.get(1) instanceof  IDFObject) {

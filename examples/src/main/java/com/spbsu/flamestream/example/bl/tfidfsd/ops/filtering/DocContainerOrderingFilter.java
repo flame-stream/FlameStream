@@ -8,6 +8,7 @@ import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordDocEntry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,6 +29,9 @@ public class DocContainerOrderingFilter implements Function<List<DocContainer>, 
 
         if (docContainers.size() == 1 || (docContainers.get(0) instanceof IDFObject
                 && docContainers.get(1) instanceof WordCounter)) {
+            if (docContainers.size() == 2 && !docContainers.get(0).document().equals(docContainers.get(1).document())) {
+                return Stream.of(Collections.singletonList(docContainers.get(1)));
+            }
             return Stream.of(docContainers);
         } else {
             return Stream.empty();

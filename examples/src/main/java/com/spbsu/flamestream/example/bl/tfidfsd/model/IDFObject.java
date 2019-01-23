@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IDFObject implements DocContainer {
     private final Map<String, Integer> counts = new ConcurrentHashMap<>();
     private final String docName;
+    private final String partitioning;
     private AtomicBoolean selfGrouped;
     private final int idfCardinality;
 
@@ -20,22 +21,23 @@ public class IDFObject implements DocContainer {
         return counts.size() == idfCardinality;
     }
 
-    public IDFObject(String docName, String word, Integer count, int idfCardinality) {
+    public IDFObject(String docName, String word, Integer count, int idfCardinality, String partitioning) {
         this.docName = docName;
+        this.partitioning = partitioning;
         counts.put(word, count);
         selfGrouped = new AtomicBoolean(false);
         this.idfCardinality = idfCardinality;
     }
 
-    private IDFObject(String docName, int idfCardinality) {
-
+    private IDFObject(String docName, int idfCardinality, String partitioning) {
         this.docName = docName;
+        this.partitioning = partitioning;
         selfGrouped = new AtomicBoolean(false);
         this.idfCardinality = idfCardinality;
     }
 
     public IDFObject merge(IDFObject other) {
-        IDFObject result = new IDFObject(docName, idfCardinality);
+        IDFObject result = new IDFObject(docName, idfCardinality, partitioning);
         for (Map.Entry<String, Integer> entry: other.counts.entrySet()) {
             result.counts.put(entry.getKey(), entry.getValue());
         }
@@ -64,6 +66,11 @@ public class IDFObject implements DocContainer {
     @Override
     public String document() {
         return docName;
+    }
+
+    @Override
+    public String partitioning() {
+        return partitioning;
     }
 
     @Override

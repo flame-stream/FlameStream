@@ -6,10 +6,12 @@ import com.spbsu.flamestream.example.bl.tfidfsd.model.entries.WordDocEntry;
 public class WordDocCounter implements WordDocContainer {
     private final WordDocEntry wordDocEntry;
     private final int count;
+    private final String partitioning;
 
-    public WordDocCounter(WordDocEntry wordDocEntry, int count) {
+    public WordDocCounter(WordDocEntry wordDocEntry, int count, String partitioning) {
         this.wordDocEntry = wordDocEntry;
         this.count = count;
+        this.partitioning = partitioning;
     }
 
     @Override
@@ -20,6 +22,11 @@ public class WordDocCounter implements WordDocContainer {
     @Override
     public String document() {
         return wordDocEntry.document();
+    }
+
+    @Override
+    public String partitioning() {
+        return partitioning;
     }
 
     @Override

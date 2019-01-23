@@ -7,17 +7,24 @@ import java.util.Objects;
 public class WordDocEntry implements WordDocContainer {
     private final String word;
     private final String document;
+    private final String partitioning;
     private final int idfCardinality;
 
-    public WordDocEntry(String document, String word, int idfCardinality) {
+    public WordDocEntry(String document, String word, int idfCardinality, String partitioning) {
         this.document = document;
         this.word = word;
         this.idfCardinality = idfCardinality;
+        this.partitioning = partitioning;
     }
 
     @Override
     public String document() {
         return document;
+    }
+
+    @Override
+    public String partitioning() {
+        return partitioning;
     }
 
     @Override

@@ -12,6 +12,7 @@ public class TFObject implements DocContainer {
     private final Map<String, Integer> counts;
     private final Map<String, Integer> idfCounts;
     private final String docName;
+    private final String partitioning;
     private final int idfCardinality;
 
     public Set<String> tfKeys() {
@@ -29,8 +30,9 @@ public class TFObject implements DocContainer {
         return idfCounts.get(key);
     }
 
-    public TFObject(String docName, String words[]) {
+    public TFObject(String docName, String words[], String partitioning) {
         this.docName = docName;
+        this.partitioning = partitioning;
         counts = new ConcurrentHashMap();
         idfCounts = new ConcurrentHashMap();
         for (String s: words) {
@@ -40,7 +42,7 @@ public class TFObject implements DocContainer {
     }
 
     public TFObject withIdf(Map idf) {
-        return new TFObject(docName, counts, idf);
+        return new TFObject(docName, counts, idf, partitioning);
     }
 
     public TFObject(TFObject other) {
@@ -48,12 +50,14 @@ public class TFObject implements DocContainer {
         this.counts = other.counts;
         this.idfCounts = new ConcurrentHashMap<>(other.idfCounts);
         idfCardinality = 0;
+        partitioning = other.partitioning;
     }
 
-    public TFObject(String docName, Map counts, Map idfCounts) {
+    public TFObject(String docName, Map counts, Map idfCounts, String partitioning) {
         this.docName = docName;
         this.counts = counts;
         this.idfCounts = idfCounts;
+        this.partitioning = partitioning;
         idfCardinality = 0;
     }
 
@@ -76,6 +80,11 @@ public class TFObject implements DocContainer {
     @Override
     public String document() {
         return docName;
+    }
+
+    @Override
+    public String partitioning() {
+        return partitioning;
     }
 
     @Override
