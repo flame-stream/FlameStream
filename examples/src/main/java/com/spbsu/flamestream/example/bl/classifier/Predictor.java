@@ -1,32 +1,17 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
 import org.jblas.DoubleMatrix;
+import org.jblas.MatrixFunctions;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 
 import static org.jblas.MatrixFunctions.exp;
 
-class Topic {
-  String name;
-  String id;
-  double probability;
-}
-
-class Document {
-  Map<String, Integer> tf;
-  Map<String, Integer> idf;
-}
-
-interface TopicsPredictor {
-  Topic[] predict(Document document);
-}
-
-public class Predictor {
+public class Predictor implements TopicsPredictor {
   private static final int SKLEARN_FEATURES = 371432;
   private final double[] intercept;
   private final DoubleMatrix weights;
@@ -38,7 +23,6 @@ public class Predictor {
       int classes = Integer.parseInt(br.readLine());
       double[][] inputCoef = new double[classes][SKLEARN_FEATURES];
 
-      //int index = 0;
       String line;
       for (int index = 0; index < classes; index++) {
         line = br.readLine();
@@ -51,12 +35,16 @@ public class Predictor {
       line = br.readLine();
       intercept = readLineDouble(line);
       // 87 371432
-      //System.out.println(inputCoef.length + " " + inputCoef[0].length);
 
       weights = new DoubleMatrix(inputCoef).transpose();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public Topic[] predict(Document document) {
+    return new Topic[0];
   }
 
   static double[] readLineDouble(String line) {
@@ -73,13 +61,7 @@ public class Predictor {
     probabilities = probabilities.mul(-1);
     probabilities = exp(probabilities);
     probabilities.add(1);
-
-    for (int i = 0; i < probabilities.rows; i++) {
-      for (int j = 0; j < probabilities.columns; j++) {
-        final double reciprocal = 1.0 / probabilities.get(i, j);
-        probabilities.put(i, j, reciprocal);
-      }
-    }
+    probabilities = MatrixFunctions.powi(probabilities, -1);
 
     DoubleMatrix res;
     //if (probabilities.rows == 1) { // not quite...
@@ -104,10 +86,6 @@ public class Predictor {
 
   public DoubleMatrix predictProba(double[] document) {
     return predictProba(new DoubleMatrix(document));
-  }
-
-  private DoubleMatrix decisionFunction(double[] document) {
-    return decisionFunction(new DoubleMatrix(document));
   }
 
   private DoubleMatrix decisionFunction(DoubleMatrix documents) {
