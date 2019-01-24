@@ -12,30 +12,33 @@ import java.util.Arrays;
 import static org.jblas.MatrixFunctions.exp;
 
 public class Predictor implements TopicsPredictor {
-  private static final int SKLEARN_FEATURES = 371432;
-  private final double[] intercept;
-  private final DoubleMatrix weights;
+  private int CURRENT_FEATURES;
+  private final String matrixPath = "src/main/resources/meta_data";
+  private double[] intercept;
+  private DoubleMatrix weights;
 
-  public Predictor() {
-    File metaData = new File("src/main/resources/meta_data");
+  public Predictor() {}
 
-    try (BufferedReader br = new BufferedReader(new FileReader(metaData))) {
-      int classes = Integer.parseInt(br.readLine());
-      double[][] inputCoef = new double[classes][SKLEARN_FEATURES];
+  private void loadWeights() {
+    final File metaData = new File(matrixPath);
+
+    try (final BufferedReader br = new BufferedReader(new FileReader(metaData))) {
+      final double[] meta = readLineDouble(br.readLine());
+      final int classes = (int) meta[0];
+      CURRENT_FEATURES = (int) meta[1];
+      final double[][] inputCoef = new double[classes][CURRENT_FEATURES];
 
       String line;
       for (int index = 0; index < classes; index++) {
         line = br.readLine();
-        double[] numbers = readLineDouble(line);
+        final double[] numbers = readLineDouble(line);
 
-        assert numbers.length == SKLEARN_FEATURES;
+        assert numbers.length == CURRENT_FEATURES;
         inputCoef[index] = numbers;
       }
 
       line = br.readLine();
       intercept = readLineDouble(line);
-      // 87 371432
-
       weights = new DoubleMatrix(inputCoef).transpose();
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -63,25 +66,23 @@ public class Predictor implements TopicsPredictor {
     probabilities.add(1);
     probabilities = MatrixFunctions.powi(probabilities, -1);
 
-    DoubleMatrix res;
-    //if (probabilities.rows == 1) { // not quite...
-    //    DoubleMatrix top = probabilities.mul(-1).add(1);
-    //    res = DoubleMatrix.concatVertically(top, probabilities).transpose();
-    //}
+    if (probabilities.rows == 1) {
+        DoubleMatrix top = probabilities.mul(-1).add(1);
+        return DoubleMatrix.concatVertically(top, probabilities).transpose();
+    }
 
-    double[] vector = new double[probabilities.rows];
-    DoubleMatrix sums = probabilities.rowSums();
+    final double[] vector = new double[probabilities.rows];
+    final DoubleMatrix sums = probabilities.rowSums();
     for (int i = 0; i < probabilities.rows; i++) {
       vector[i] = sums.get(i, 0);
     }
 
-    double[][] matrix = new double[1][probabilities.rows];
+    final double[][] matrix = new double[1][probabilities.rows];
     matrix[0] = vector;
-    DoubleMatrix denominator = new DoubleMatrix(matrix);
+    final DoubleMatrix denominator = new DoubleMatrix(matrix);
     denominator.reshape(probabilities.rows, probabilities.rows);
 
-    res = probabilities.div(denominator);
-    return res;
+    return probabilities.div(denominator);
   }
 
   public DoubleMatrix predictProba(double[] document) {
@@ -89,9 +90,12 @@ public class Predictor implements TopicsPredictor {
   }
 
   private DoubleMatrix decisionFunction(DoubleMatrix documents) {
-    DoubleMatrix inter = new DoubleMatrix(1, intercept.length, intercept);
+    if (weights == null) {
+      loadWeights();
+    }
 
-    DoubleMatrix score = documents.transpose().mmul(weights);
+    final DoubleMatrix inter = new DoubleMatrix(1, intercept.length, intercept);
+    final DoubleMatrix score = documents.transpose().mmul(weights);
     return score.add(inter);
   }
 }
