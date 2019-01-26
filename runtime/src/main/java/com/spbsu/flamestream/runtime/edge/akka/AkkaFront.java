@@ -212,6 +212,7 @@ public class AkkaFront implements Front {
         requestDebt--;
         remoteMediator.tell(entry.getValue(), self());
         remoteMediator.tell(new Heartbeat(new GlobalTime(entry.getKey().time() + 1, entry.getKey().frontId())), self());
+        log.remove(entry.getKey());
 
         lastEmitted = entry.getKey();
         if (producerWait != null && lastEmitted.equals(producerWait)) {
