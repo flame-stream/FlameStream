@@ -11,4 +11,8 @@ class Topic {
         this.id = id;
         this.probability = probability;
     }
+
+    public double getProbability() {
+        return probability;
+    }
 }

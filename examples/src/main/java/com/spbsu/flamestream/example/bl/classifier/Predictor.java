@@ -15,6 +15,7 @@ public class Predictor implements TopicsPredictor {
   private final String matrixPath = "src/main/resources/meta_data";
   private double[] intercept;
   private DoubleMatrix weights;
+  private String[] topics;
 
   public Predictor() {}
 
@@ -22,22 +23,27 @@ public class Predictor implements TopicsPredictor {
     final File metaData = new File(matrixPath);
 
     try (final BufferedReader br = new BufferedReader(new FileReader(metaData))) {
-      final double[] meta = readLineDouble(br.readLine());
+      final double[] meta = parseDoubles(br.readLine());
       final int classes = (int) meta[0];
-      int CURRENT_FEATURES = (int) meta[1];
-      final double[][] inputCoef = new double[classes][CURRENT_FEATURES];
+      int currentFeatures = (int) meta[1];
+      topics = new String[classes];
+      for (int i = 0; i < classes; i++) {
+        topics[i] = br.readLine();
+      }
+
+      final double[][] inputCoef = new double[classes][currentFeatures];
 
       String line;
       for (int index = 0; index < classes; index++) {
         line = br.readLine();
-        final double[] numbers = readLineDouble(line);
+        final double[] numbers = parseDoubles(line);
 
-        assert numbers.length == CURRENT_FEATURES;
+        assert numbers.length == currentFeatures;
         inputCoef[index] = numbers;
       }
 
       line = br.readLine();
-      intercept = readLineDouble(line);
+      intercept = parseDoubles(line);
       weights = new DoubleMatrix(inputCoef).transpose();
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -49,13 +55,13 @@ public class Predictor implements TopicsPredictor {
     final DoubleMatrix probs = predictProba(new DoubleMatrix(document.getTfidfRepresentation()));
     final Topic[] result = new Topic[probs.length];
     for (int index = 0; index < probs.data.length; index++) {
-      result[index] = new Topic("get name from meta data", Integer.toString(index), probs.data[index]);
+      result[index] = new Topic(topics[index], Integer.toString(index), probs.data[index]);
     }
 
     return result;
   }
 
-  static double[] readLineDouble(String line) {
+  static double[] parseDoubles(String line) {
     return Arrays
             .stream(line.split(" "))
             .mapToDouble(Double::parseDouble)
