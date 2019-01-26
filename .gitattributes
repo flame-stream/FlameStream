@@ -1,1 +1,1 @@
-examples/src/main/resources/meta_data filter=lfs diff=lfs merge=lfs -text
+examples/src/main/resources/classifier_weights filter=lfs diff=lfs merge=lfs -text
