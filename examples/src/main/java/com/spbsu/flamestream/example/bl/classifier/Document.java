@@ -1,8 +1,13 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
-import java.util.Map;
-
 class Document {
-    Map<String, Integer> tf;
-    Map<String, Integer> idf;
+    private final double[] tfidf;
+
+    public Document(double[] tfidf) {
+        this.tfidf = tfidf;
+    }
+
+    public double[] getTfidfRepresentation() {
+        return tfidf;
+    }
 }

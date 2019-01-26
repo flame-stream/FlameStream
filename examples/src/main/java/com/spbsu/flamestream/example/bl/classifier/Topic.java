@@ -1,7 +1,14 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
 class Topic {
-    String name;
-    String id;
-    double probability;
+    private final String name;
+    private final String id;
+    private final double probability;
+
+
+    public Topic(String name, String id, double probability) {
+        this.name = name;
+        this.id = id;
+        this.probability = probability;
+    }
 }

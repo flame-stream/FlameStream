@@ -12,20 +12,19 @@ import java.util.Arrays;
 import static org.jblas.MatrixFunctions.exp;
 
 public class Predictor implements TopicsPredictor {
-  private int CURRENT_FEATURES;
   private final String matrixPath = "src/main/resources/meta_data";
   private double[] intercept;
   private DoubleMatrix weights;
 
   public Predictor() {}
 
-  private void loadWeights() {
+  private void loadMeta() {
     final File metaData = new File(matrixPath);
 
     try (final BufferedReader br = new BufferedReader(new FileReader(metaData))) {
       final double[] meta = readLineDouble(br.readLine());
       final int classes = (int) meta[0];
-      CURRENT_FEATURES = (int) meta[1];
+      int CURRENT_FEATURES = (int) meta[1];
       final double[][] inputCoef = new double[classes][CURRENT_FEATURES];
 
       String line;
@@ -47,7 +46,13 @@ public class Predictor implements TopicsPredictor {
 
   @Override
   public Topic[] predict(Document document) {
-    return new Topic[0];
+    final DoubleMatrix probs = predictProba(new DoubleMatrix(document.getTfidfRepresentation()));
+    final Topic[] result = new Topic[probs.length];
+    for (int index = 0; index < probs.data.length; index++) {
+      result[index] = new Topic("get name from meta data", Integer.toString(index), probs.data[index]);
+    }
+
+    return result;
   }
 
   static double[] readLineDouble(String line) {
@@ -58,7 +63,7 @@ public class Predictor implements TopicsPredictor {
   }
 
   // see _predict_proba_lr in base.py sklearn
-  public DoubleMatrix predictProba(DoubleMatrix documents) {
+  DoubleMatrix predictProba(DoubleMatrix documents) {
     DoubleMatrix probabilities = decisionFunction(documents);
 
     probabilities = probabilities.mul(-1);
@@ -71,27 +76,17 @@ public class Predictor implements TopicsPredictor {
         return DoubleMatrix.concatVertically(top, probabilities).transpose();
     }
 
-    final double[] vector = new double[probabilities.rows];
-    final DoubleMatrix sums = probabilities.rowSums();
-    for (int i = 0; i < probabilities.rows; i++) {
-      vector[i] = sums.get(i, 0);
-    }
-
     final double[][] matrix = new double[1][probabilities.rows];
-    matrix[0] = vector;
+    matrix[0] = probabilities.rowSums().data;
     final DoubleMatrix denominator = new DoubleMatrix(matrix);
     denominator.reshape(probabilities.rows, probabilities.rows);
 
     return probabilities.div(denominator);
   }
 
-  public DoubleMatrix predictProba(double[] document) {
-    return predictProba(new DoubleMatrix(document));
-  }
-
   private DoubleMatrix decisionFunction(DoubleMatrix documents) {
     if (weights == null) {
-      loadWeights();
+      loadMeta();
     }
 
     final DoubleMatrix inter = new DoubleMatrix(1, intercept.length, intercept);
