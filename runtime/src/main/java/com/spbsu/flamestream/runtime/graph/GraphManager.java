@@ -19,6 +19,7 @@ import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.GimmeLastCommit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.LastCommit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
@@ -178,6 +179,7 @@ public class GraphManager extends LoggingActor {
                     minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
             )
             .match(Prepare.class, this::onPrepare)
+            .match(Commit.class, commit -> sourceComponent.forward(commit, context()))
             .match(NewRear.class, newRear -> sinkComponent.forward(newRear, context()))
             .match(Heartbeat.class, gt -> sourceComponent.forward(gt, context()))
             .match(UnregisterFront.class, u -> sourceComponent.forward(u, context()))

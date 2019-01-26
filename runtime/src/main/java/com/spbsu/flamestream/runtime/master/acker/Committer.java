@@ -7,6 +7,7 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.GimmeLastCommit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.LastCommit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
@@ -110,6 +111,7 @@ public class Committer extends LoggingActor {
                 registry.committed(lastPrepareTime.time());
                 committed = 0;
                 commitRuns = false;
+                managers.forEach(actorRef -> actorRef.tell(new Commit(lastPrepareTime), self()));
                 getContext().unbecome();
               }
             })
