@@ -8,21 +8,37 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
 import static org.jblas.MatrixFunctions.exp;
 
 public class Predictor implements TopicsPredictor {
-  private final String matrixPath = "src/main/resources/meta_data";
+  private final String weightsPath = "src/main/resources/classifier_weights";
+  private final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
   private double[] intercept;
   private DoubleMatrix weights;
   private String[] topics;
+  private Map<Integer, String> inverseCountVectorizer;
 
   public Predictor() {}
 
   private void loadMeta() {
-    final File metaData = new File(matrixPath);
+    final File metaData = new File(weightsPath);
+    final File countFile = new File(cntVectorizerPath);
 
-    try (final BufferedReader br = new BufferedReader(new FileReader(metaData))) {
+    try (final BufferedReader br = new BufferedReader(new FileReader(metaData));
+         final BufferedReader countFileReader = new BufferedReader(new FileReader(countFile))
+         ) {
+
+      String line;
+      while ((line = countFileReader.readLine()) != null) {
+        String[] items = line.split("");
+        String key = items[0];
+        Integer value = Integer.valueOf(items[1]);
+
+        inverseCountVectorizer.put(value, key);
+      }
+
       final double[] meta = parseDoubles(br.readLine());
       final int classes = (int) meta[0];
       int currentFeatures = (int) meta[1];
@@ -33,7 +49,6 @@ public class Predictor implements TopicsPredictor {
 
       final double[][] inputCoef = new double[classes][currentFeatures];
 
-      String line;
       for (int index = 0; index < classes; index++) {
         line = br.readLine();
         final double[] numbers = parseDoubles(line);
@@ -52,7 +67,7 @@ public class Predictor implements TopicsPredictor {
 
   @Override
   public Topic[] predict(Document document) {
-    final DoubleMatrix probs = predictProba(new DoubleMatrix(document.getTfidfRepresentation()));
+    final DoubleMatrix probs = predictProba(new DoubleMatrix(document.getTfidfRepresentation(inverseCountVectorizer)));
     final Topic[] result = new Topic[probs.length];
 
     for (int index = 0; index < probs.data.length; index++) {

@@ -1,13 +1,24 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
-class Document {
-    private final double[] tfidf;
+import java.util.Map;
 
-    public Document(double[] tfidf) {
-        this.tfidf = tfidf;
+class Document {
+    //private final Map<String, Double> tf;
+    //private final Map<String, Double> idf;
+    private final Map<String, Double> tfidf;
+
+    public Document(Map<String, Double> tfidf) {
+      this.tfidf = tfidf;
     }
 
-    public double[] getTfidfRepresentation() {
-        return tfidf;
+    public double[] getTfidfRepresentation(Map<Integer, String> inverseCountVectorizer) {
+      final double[] res = new double[inverseCountVectorizer.size()];
+
+      for (int i = 0; i < inverseCountVectorizer.size(); i++) {
+        final String word = inverseCountVectorizer.get(i);
+        res[i] = tfidf.get(word);
+      }
+
+      return res;
     }
 }

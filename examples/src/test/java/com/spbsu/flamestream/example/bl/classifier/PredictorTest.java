@@ -13,7 +13,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 public class PredictorTest {
-  private static File testData = new File("src/test/resources/test_data");
+  private static File testData = new File("src/test/resources/sklearn_prediction");
 
   @Test
   public void fiveDocumentTest() throws IOException {
@@ -22,7 +22,7 @@ public class PredictorTest {
       final int testCount = Integer.parseInt(br.readLine());
       // five python predictions provided by script
       for (int i = 0; i < testCount; i++) {
-        final Document document = new Document(parseDoubles(br.readLine()));
+        final Document document = new Document(null); // replace with map
         final double[] pyPrediction = parseDoubles(br.readLine());
         final Topic[] prediction = predictor.predict(document);
 

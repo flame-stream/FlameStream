@@ -42,9 +42,16 @@ def get_data():
     X = df['text']
     y = df['tags']
 
-    X = CountVectorizer().fit_transform(X)
+    cntVectorizer = CountVectorizer()
+    X = cntVectorizer.fit_transform(X)
     X = TfidfTransformer().fit_transform(X)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+
+    with open("cnt_vectorizer", 'w') as f:
+        cnt_dict = cntVectorizer.vocabulary_
+        for key in cnt_dict:
+            f.write("%s " % key)
+            f.write("%s \n" % cnt_dict[key])
 
     # save sample: csv lenta too long
     pickle.dump(X_train, open("X_train", 'wb'))
@@ -57,10 +64,10 @@ def get_data():
 
 def save_weights(classifier, X_test, classes):
     if os.path.isfile('meta_data') and os.path.isfile('test_data'):
-        print("weights already saved")
+        print("classifier_weights already saved")
         return
 
-    with open('meta_data', 'w') as f:
+    with open('classifier_weights', 'w') as f:
         f.write("%s " % classifier.coef_.shape[0])  # amount of classes
         f.write("%s \n" % classifier.coef_.shape[1])  # amount of features
 
@@ -76,7 +83,7 @@ def save_weights(classifier, X_test, classes):
             f.write("%s " % item)
 
     test_amount = 5
-    with open('test_data', 'w') as t:
+    with open('sklearn_prediction', 'w') as t:
         prevX = X_test
         X_test = X_test.toarray()
 
@@ -99,7 +106,7 @@ def save_weights(classifier, X_test, classes):
             if count == test_amount:
                 break
 
-    print("weights for lenta ru saved")
+    print("classifier_weights for lenta ru saved")
 
 
 def main():
