@@ -75,7 +75,6 @@ def save_weights(classifier, X_test, classes):
         for item in classifier.intercept_:
             f.write("%s " % item)
 
-    print()
     test_amount = 5
     with open('test_data', 'w') as t:
         prevX = X_test
@@ -90,7 +89,6 @@ def save_weights(classifier, X_test, classes):
             t.write("\n")
 
             probs = classifier.predict_proba(prevX[count])
-            print(probs.shape)
             for prob_vector in probs:  # only one row
                 for item in prob_vector:
                     t.write("%s " % item)
