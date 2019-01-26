@@ -29,7 +29,7 @@ public class PredictorTest {
         assertEquals(prediction.length, pyPrediction.length);
         for (int j = 0; j < prediction.length; j++) {
           double diff = abs(pyPrediction[j] - prediction[j].getProbability());
-          assertTrue(diff > 5e-3);
+          assertTrue(diff < 2e-2);
         }
       }
     }

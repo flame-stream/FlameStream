@@ -54,6 +54,7 @@ public class Predictor implements TopicsPredictor {
   public Topic[] predict(Document document) {
     final DoubleMatrix probs = predictProba(new DoubleMatrix(document.getTfidfRepresentation()));
     final Topic[] result = new Topic[probs.length];
+
     for (int index = 0; index < probs.data.length; index++) {
       result[index] = new Topic(topics[index], Integer.toString(index), probs.data[index]);
     }
@@ -76,11 +77,6 @@ public class Predictor implements TopicsPredictor {
     probabilities = exp(probabilities);
     probabilities.add(1);
     probabilities = MatrixFunctions.powi(probabilities, -1);
-
-    if (probabilities.rows == 1) {
-        DoubleMatrix top = probabilities.mul(-1).add(1);
-        return DoubleMatrix.concatVertically(top, probabilities).transpose();
-    }
 
     final double[][] matrix = new double[1][probabilities.rows];
     matrix[0] = probabilities.rowSums().data;
