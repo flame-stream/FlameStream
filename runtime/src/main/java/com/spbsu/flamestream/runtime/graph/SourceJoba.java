@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ public class SourceJoba implements Joba {
 
   private int unutilizedRequests;
 
-  public SourceJoba(int maxInFlightItems, ActorContext context) {
+  SourceJoba(int maxInFlightItems, ActorContext context) {
     this.maxInFlightItems = maxInFlightItems;
     this.context = context;
     this.unutilizedRequests = maxInFlightItems;
@@ -36,20 +37,24 @@ public class SourceJoba implements Joba {
     requestNext();
   }
 
-  private void requestNext() {
-    while (inFlight.size() + unutilizedRequests < maxInFlightItems) {
-      unutilizedRequests++;
-      fronts.values().forEach(f -> f.tell(new RequestNext(), context.self()));
-    }
+  @Override
+  public void onMinTime(GlobalTime minTime) {
+    inFlight.removeIf(nextTime -> nextTime.compareTo(minTime) < 0);
+    requestNext();
   }
 
   public void addFront(EdgeId front, ActorRef actorRef) {
     fronts.putIfAbsent(front, actorRef);
   }
 
-  @Override
-  public void onMinTime(GlobalTime minTime) {
-    inFlight.removeIf(nextTime -> nextTime.compareTo(minTime) < 0);
-    requestNext();
+  public void checkpoint(GlobalTime globalTime) {
+    fronts.values().forEach(actorRef -> actorRef.tell(new Checkpoint(globalTime), context.self()));
+  }
+
+  private void requestNext() {
+    while (inFlight.size() + unutilizedRequests < maxInFlightItems) {
+      unutilizedRequests++;
+      fronts.values().forEach(f -> f.tell(new RequestNext(), context.self()));
+    }
   }
 }

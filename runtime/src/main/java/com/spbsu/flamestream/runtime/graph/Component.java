@@ -14,6 +14,7 @@ import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
@@ -30,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
@@ -40,7 +42,6 @@ public class Component extends LoggingActor {
   private final Map<GraphManager.Destination, Joba> jobas;
   private final Map<GraphManager.Destination, Consumer<DataItem>> downstreams = new HashMap<>();
 
-  private final Tracing.Tracer shuffleSendTracer = Tracing.TRACING.forEvent("shuffle-send");
   private final Tracing.Tracer groupingSendTracer = Tracing.TRACING.forEvent("fm-send");
   private final Tracing.Tracer acceptInTracer = Tracing.TRACING.forEvent("accept-in", 1000, 1);
   private final Tracing.Tracer acceptOutTracer = Tracing.TRACING.forEvent("accept-in", 1000, 1);
@@ -110,7 +111,7 @@ public class Component extends LoggingActor {
                   sink = item -> {
                     groupingSendTracer.log(item.xor());
                     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
-                    routes.get(((HashingVertexStub) to).hash().applyAsInt(item))
+                    routes.get(Objects.requireNonNull(((HashingVertexStub) to).hash()).applyAsInt(item))
                             .tell(new AddressedItem(item, toDest), self());
                   };
                 } else {
@@ -163,7 +164,14 @@ public class Component extends LoggingActor {
             .match(Heartbeat.class, h -> acker.forward(h, context()))
             .match(UnregisterFront.class, u -> acker.forward(u, context()))
             .match(Prepare.class, this::onPrepare)
+            .match(Commit.class, this::onCommit)
             .build();
+  }
+
+  private void onCommit(Commit commit) {
+    if (sourceJoba != null) {
+      sourceJoba.checkpoint(commit.globalTime());
+    }
   }
 
   private void onPrepare(Prepare prepare) {
