@@ -22,9 +22,10 @@ public class IDFAggregator implements Function<List<DocContainer>, Stream<DocCon
         } else {
             final IDFObject counter = (IDFObject) docContainers.get(0);
             final WordCounter wordCounter = (WordCounter) docContainers.get(1);
-            IDFObject result = counter.merge(new IDFObject(wordCounter.document(), wordCounter.word(), wordCounter.count(), wordCounter.idfCardinality(), wordCounter.partitioning()));
+//            IDFObject result = counter.merge(new IDFObject(wordCounter.document(), wordCounter.word(), wordCounter.count(), wordCounter.idfCardinality(), wordCounter.partitioning()));
+            counter.counts().put(wordCounter.word(), wordCounter.count());
             //System.out.println("RES: " + result);
-            return Stream.of(result);
+            return Stream.of(counter);
         }
     }
 }

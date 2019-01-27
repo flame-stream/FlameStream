@@ -110,8 +110,9 @@ public class LentaTest extends FlameAkkaSuite {
                     }
 
                     final int get = counter.incrementAndGet();
-                    if (get % 1000 == 0) {
+                    if (get % 100 == 0) {
                         System.out.println("RESULT " + get);
+                        System.out.println("Unique " + idfExpected.keys().size());
                     }
                     if (o instanceof TFObject) {
                         TextDocument processedDoc = toCheckIter.next();

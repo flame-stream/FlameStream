@@ -29,7 +29,7 @@ public class IDFObject implements DocContainer {
         this.idfCardinality = idfCardinality;
     }
 
-    private IDFObject(String docName, int idfCardinality, String partitioning) {
+    public IDFObject(String docName, int idfCardinality, String partitioning) {
         this.docName = docName;
         this.partitioning = partitioning;
         selfGrouped = new AtomicBoolean(false);
