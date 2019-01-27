@@ -190,7 +190,7 @@ public class GraphManager extends LoggingActor {
     final CompletableFuture[] futures = new CompletableFuture[components.size()];
     int index = 0;
     for (ActorRef component : components) {
-      futures[index++] = PatternsCS.ask(component, prepare, FlameConfig.config.smallTimeout()).toCompletableFuture();
+      futures[index++] = PatternsCS.ask(component, prepare, FlameConfig.config.bigTimeout()).toCompletableFuture();
     }
     final CompletableFuture<Void> allOf = CompletableFuture.allOf(futures);
     allOf.thenRun(() -> {
