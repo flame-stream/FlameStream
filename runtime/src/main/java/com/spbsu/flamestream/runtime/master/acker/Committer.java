@@ -14,6 +14,7 @@ import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListen
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepared;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Ready;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 
@@ -34,6 +35,7 @@ public class Committer extends LoggingActor {
   private GlobalTime lastPrepareTime = GlobalTime.MIN;
   private int committed;
   private boolean commitRuns = false;
+  private long commitStartTime = -1;
 
   private Committer(int managersCount,
                     long defaultMinimalTime,
@@ -124,7 +126,12 @@ public class Committer extends LoggingActor {
       managers.forEach(m -> m.tell(new Prepare(time), self()));
       lastPrepareTime = time;
       commitRuns = true;
+      commitStartTime = System.nanoTime();
       getContext().become(committing(), false);
+    } else if (commitRuns && (System.nanoTime() - commitStartTime) > FlameConfig.config.bigTimeout()
+            .duration()
+            .toNanos()) {
+      throw new RuntimeException("Commit timeout exceeded");
     }
   }
 
