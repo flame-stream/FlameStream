@@ -33,6 +33,11 @@ public class PayloadDataItem implements DataItem {
   }
 
   @Override
+  public DataItem cloneWith(Meta newMeta) {
+    return new PayloadDataItem(newMeta, this.payload);
+  }
+
+  @Override
   public String toString() {
     return '{' + "meta=" + meta + ", payload=" + payload + '}';
   }
