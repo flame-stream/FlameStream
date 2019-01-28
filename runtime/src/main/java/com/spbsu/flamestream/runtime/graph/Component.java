@@ -11,18 +11,18 @@ import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.HashingVertexStub;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import com.spbsu.flamestream.runtime.config.ComputationProps;
+import com.spbsu.flamestream.runtime.config.HashUnit;
+import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
+import com.spbsu.flamestream.runtime.graph.api.ComponentPrepared;
+import com.spbsu.flamestream.runtime.graph.api.NewRear;
+import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
-import com.spbsu.flamestream.runtime.config.ComputationProps;
-import com.spbsu.flamestream.runtime.config.HashUnit;
-import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
-import com.spbsu.flamestream.runtime.graph.api.NewRear;
-import com.spbsu.flamestream.runtime.graph.api.ComponentPrepared;
-import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -131,7 +130,7 @@ public class Component extends LoggingActor {
           final int[] childId = {0};
           for (Consumer<DataItem> sink : sinks) {
             final Meta newMeta = new Meta(item.meta(), 0, childId[0]);
-            final DataItem newItem = new BroadcastDataItem(item, newMeta);
+            final DataItem newItem = item.cloneWith(newMeta);
             sink.accept(newItem);
             childId[0]++;
           }
@@ -211,33 +210,6 @@ public class Component extends LoggingActor {
       sinkJoba.attachRear(attachRear.rear());
     } else {
       throw new IllegalStateException("Sink doesn't belong to this component");
-    }
-  }
-
-  private static class BroadcastDataItem implements DataItem {
-    private final DataItem inner;
-    private final Meta newMeta;
-    private final long xor;
-
-    BroadcastDataItem(DataItem inner, Meta newMeta) {
-      this.inner = inner;
-      this.newMeta = newMeta;
-      this.xor = ThreadLocalRandom.current().nextLong();
-    }
-
-    @Override
-    public Meta meta() {
-      return newMeta;
-    }
-
-    @Override
-    public <T> T payload(Class<T> expectedClass) {
-      return inner.payload(expectedClass);
-    }
-
-    @Override
-    public long xor() {
-      return xor;
     }
   }
 }
