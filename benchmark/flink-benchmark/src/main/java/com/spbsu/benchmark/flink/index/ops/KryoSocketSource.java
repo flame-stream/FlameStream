@@ -98,6 +98,7 @@ public class KryoSocketSource extends RichParallelSourceFunction<WikipediaPage> 
     if (globalTs <= prevGlobalTs) {
       globalTs = prevGlobalTs + 1;
     }
+    prevGlobalTs = globalTs;
     return globalTs;
   }
 
