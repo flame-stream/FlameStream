@@ -7,7 +7,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.jblas.MatrixFunctions.exp;
@@ -18,7 +20,7 @@ public class Predictor implements TopicsPredictor {
   private double[] intercept;
   private DoubleMatrix weights;
   private String[] topics;
-  private Map<Integer, String> inverseCountVectorizer;
+  private ArrayList<String> countVectorizer = new ArrayList<>();
 
   public Predictor() {}
 
@@ -32,16 +34,15 @@ public class Predictor implements TopicsPredictor {
 
       String line;
       while ((line = countFileReader.readLine()) != null) {
-        String[] items = line.split("");
-        String key = items[0];
-        Integer value = Integer.valueOf(items[1]);
-
-        inverseCountVectorizer.put(value, key);
+        final String[] items = line.split("");
+        final String key = items[0];
+        final int value = Integer.parseInt(items[1]);
+        countVectorizer.set(value, key);
       }
 
       final double[] meta = parseDoubles(br.readLine());
       final int classes = (int) meta[0];
-      int currentFeatures = (int) meta[1];
+      final int currentFeatures = (int) meta[1];
       topics = new String[classes];
       for (int i = 0; i < classes; i++) {
         topics[i] = br.readLine();
@@ -67,7 +68,7 @@ public class Predictor implements TopicsPredictor {
 
   @Override
   public Topic[] predict(Document document) {
-    final DoubleMatrix probs = predictProba(new DoubleMatrix(document.getTfidfRepresentation(inverseCountVectorizer)));
+    final DoubleMatrix probs = predictProba(new DoubleMatrix(document.getTfidfRepresentation(countVectorizer)));
     final Topic[] result = new Topic[probs.length];
 
     for (int index = 0; index < probs.data.length; index++) {

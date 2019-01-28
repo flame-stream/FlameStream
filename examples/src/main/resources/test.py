@@ -44,8 +44,16 @@ def get_data():
 
     cntVectorizer = CountVectorizer()
     X = cntVectorizer.fit_transform(X)
-    X = TfidfTransformer().fit_transform(X)
+
+    tfidfVectorizer = TfidfTransformer()
+    X = tfidfVectorizer.fit_transform(X)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+
+    with open("idf_matrix", 'w') as f:
+        for item in tfidfVectorizer.idf_:
+            f.write("%s " % item)
+
+        f.write("\n")
 
     with open("cnt_vectorizer", 'w') as f:
         cnt_dict = cntVectorizer.vocabulary_
@@ -63,7 +71,7 @@ def get_data():
 
 
 def save_weights(classifier, X_test, classes):
-    if os.path.isfile('meta_data') and os.path.isfile('test_data'):
+    if os.path.isfile('classifier_weights') and os.path.isfile('sklearn_prediction'):
         print("classifier_weights already saved")
         return
 
