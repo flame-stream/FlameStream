@@ -23,6 +23,7 @@ def get_model(X_train, y_train):
 
     return classifier
 
+
 # news_lenta.csv -- locally saved
 def get_data():
     model_filename = 'model.sav'
@@ -31,17 +32,22 @@ def get_data():
         X_test = pickle.load(open("X_test", 'rb'))
         y_train = pickle.load(open("y_train", 'rb'))
         y_test = pickle.load(open("y_test", 'rb'))
+        X = pickle.load(open("X", 'rb'))
+        original_docs = pickle.load(open("original_docs", 'rb'))
 
-        return X_train, X_test, y_train, y_test
+        return original_docs, X, X_train, X_test, y_train, y_test
 
-    df = pd.read_csv('news_lenta.csv').head(100000)
-    df = df.dropna()
+    limit = 100000
+    df = pd.read_csv('news_lenta.csv')
+    print(df.shape)
+    df = df.head(limit).dropna()
     df = df[df['tags'] != 'Все']
 
     # Prepare features
     X = df['text']
     y = df['tags']
 
+    original_docs = X
     cntVectorizer = CountVectorizer()
     X = cntVectorizer.fit_transform(X)
 
@@ -66,15 +72,13 @@ def get_data():
     pickle.dump(X_test, open("X_test", 'wb'))
     pickle.dump(y_train, open("y_train", 'wb'))
     pickle.dump(y_test, open("y_test", 'wb'))
+    pickle.dump(X, open("X", 'wb'))
+    pickle.dump(original_docs, open("original_docs", 'wb'))
 
-    return X_train, X_test, y_train, y_test
+    return original_docs, X, X_train, X_test, y_train, y_test
 
 
-def save_weights(classifier, X_test, classes):
-    if os.path.isfile('classifier_weights') and os.path.isfile('sklearn_prediction'):
-        print("classifier_weights already saved")
-        return
-
+def save_classifier_weights(classifier, classes):
     with open('classifier_weights', 'w') as f:
         f.write("%s " % classifier.coef_.shape[0])  # amount of classes
         f.write("%s \n" % classifier.coef_.shape[1])  # amount of features
@@ -90,23 +94,67 @@ def save_weights(classifier, X_test, classes):
         for item in classifier.intercept_:
             f.write("%s " % item)
 
-    test_amount = 5
+
+def save_weights(classifier, original_docs, X, X_test, classes):
+    if os.path.isfile('classifier_weights') and os.path.isfile('sklearn_prediction'):
+        print("classifier_weights already saved")
+        return
+
+    save_classifier_weights(classifier, classes)
+    test_amount = 3
+
+    """
+        probs ans
+        original text
+        tfidf representation
+    """
     with open('sklearn_prediction', 'w') as t:
         prevX = X_test
         X_test = X_test.toarray()
 
-        t.write("%s\n" % test_amount)
+        t.write("%s %s\n" % (test_amount, X_test.shape[1]))
         count = 0
+
         for test_line in X_test:
-            for test_item in test_line:
-                t.write("%s " % test_item)
+            #for test_item in test_line:
+            #    t.write("%s " % test_item)
 
-            t.write("\n")
+            #t.write("\n")
 
-            probs = classifier.predict_proba(prevX[count])
+            doc = prevX[count]
+            probs = classifier.predict_proba(doc)
             for prob_vector in probs:  # only one row
                 for item in prob_vector:
                     t.write("%s " % item)
+
+            t.write("\n")
+
+            ind = -1
+            print(X.shape)
+            """
+                extremeeeely dangerous
+                X -- csr matrix, it's has non-consecutive indices
+                
+                we need an index of the document, for retrieving original document, but it's very full of caveats...
+            """
+            for i in range(X.shape[0]):
+                line = X.getrow(i)
+                diff = line - doc
+
+                if diff.nnz == 0:
+                    ind = i
+                    break
+
+            print(original_docs.shape)
+            print(ind)
+            orig_doc = original_docs[ind]
+
+            # tfidf map
+            print(orig_doc)
+            print()
+            t.write("%s \n" % orig_doc)
+            for item in doc.toarray()[0]:
+                t.write("%s " % item)
 
             t.write("\n")
 
@@ -118,12 +166,12 @@ def save_weights(classifier, X_test, classes):
 
 
 def main():
-    X_train, X_test, y_train, y_test = get_data()
+    original_docs, X, X_train, X_test, y_train, y_test = get_data()
     classifier = get_model(X_train, y_train)
 
     predicted = classifier.predict(X_test)
     classes = np.unique(y_train)
-    save_weights(classifier, X_test, classes)
+    save_weights(classifier, original_docs, X, X_test, classes)
 
     # check predict proba lr of the first document
     first = X_test[0]
