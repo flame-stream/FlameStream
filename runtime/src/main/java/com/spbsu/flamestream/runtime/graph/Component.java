@@ -62,7 +62,8 @@ public class Component extends LoggingActor {
   @Nullable
   private JobaWrapper<SinkJoba> wrappedSinkJoba;
 
-  private Component(Set<Graph.Vertex> componentVertices,
+  private Component(String nodeId,
+                    Set<Graph.Vertex> componentVertices,
                     Graph graph,
                     HashUnitMap<ActorRef> routes,
                     ActorRef localManager,
@@ -74,6 +75,7 @@ public class Component extends LoggingActor {
     this.wrappedJobas = componentVertices.stream().collect(Collectors.toMap(
             vertex -> GraphManager.Destination.fromVertexId(vertex.id()),
             vertex -> {
+              final Joba.Id jobaId = new Joba.Id(nodeId, vertex.id());
               final List<Consumer<DataItem>> sinks = graph.adjacent(vertex)
                       .map(to -> {
                         final GraphManager.Destination toDest = GraphManager.Destination.fromVertexId(to.id());
@@ -115,9 +117,9 @@ public class Component extends LoggingActor {
               }
               final Joba joba;
               if (vertex instanceof Sink) {
-                return wrappedSinkJoba = new JobaWrapper<>(new SinkJoba(context()), downstream);
+                return wrappedSinkJoba = new JobaWrapper<>(new SinkJoba(jobaId, context()), downstream);
               } else if (vertex instanceof FlameMap) {
-                joba = new MapJoba((FlameMap<?, ?>) vertex);
+                joba = new MapJoba(jobaId, (FlameMap<?, ?>) vertex);
               } else if (vertex instanceof Grouping) {
                 final Grouping grouping = (Grouping) vertex;
                 final Collection<HashUnit> values = props.hashGroups()
@@ -126,10 +128,10 @@ public class Component extends LoggingActor {
                         .flatMap(g -> g.units().stream())
                         .collect(Collectors.toSet());
                 stateByVertex.putIfAbsent(vertex.id(), new GroupGroupingState(values));
-                joba = new GroupingJoba(grouping, stateByVertex.get(vertex.id()));
+                joba = new GroupingJoba(jobaId, grouping, stateByVertex.get(vertex.id()));
               } else if (vertex instanceof Source) {
                 return wrappedSourceJoba =
-                        new JobaWrapper<>(new SourceJoba(props.maxElementsInGraph(), context()), downstream);
+                        new JobaWrapper<>(new SourceJoba(jobaId, props.maxElementsInGraph(), context()), downstream);
               } else {
                 throw new RuntimeException("Invalid vertex type");
               }
@@ -139,15 +141,25 @@ public class Component extends LoggingActor {
     ));
   }
 
-  public static Props props(Set<Graph.Vertex> componentVertices,
+  public static Props props(String nodeId,
+                            Set<Graph.Vertex> componentVertices,
                             Graph graph,
                             HashUnitMap<ActorRef> localManager,
                             ActorRef routes,
                             ActorRef acker,
                             ComputationProps props,
                             Map<String, GroupGroupingState> stateByVertex) {
-    return Props.create(Component.class, componentVertices, graph, localManager, routes, acker, props, stateByVertex)
-            .withDispatcher("processing-dispatcher");
+    return Props.create(
+            Component.class,
+            nodeId,
+            componentVertices,
+            graph,
+            localManager,
+            routes,
+            acker,
+            props,
+            stateByVertex
+    ).withDispatcher("processing-dispatcher");
   }
 
   @Override
