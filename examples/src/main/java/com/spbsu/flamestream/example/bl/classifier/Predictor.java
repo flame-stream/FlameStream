@@ -16,40 +16,28 @@ import static org.jblas.MatrixFunctions.exp;
 
 public class Predictor implements TopicsPredictor {
   private final String weightsPath = "src/main/resources/classifier_weights";
-  private final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
+  private CountVectorizer vectorizer;
   private double[] intercept;
   private DoubleMatrix weights;
   private String[] topics;
-  private ArrayList<String> countVectorizer = new ArrayList<>();
 
   public Predictor() {}
 
   private void loadMeta() {
     final File metaData = new File(weightsPath);
-    final File countFile = new File(cntVectorizerPath);
 
-    try (final BufferedReader br = new BufferedReader(new FileReader(metaData));
-         final BufferedReader countFileReader = new BufferedReader(new FileReader(countFile))
-         ) {
-
-      String line;
-      while ((line = countFileReader.readLine()) != null) {
-        final String[] items = line.split("");
-        final String key = items[0];
-        final int value = Integer.parseInt(items[1]);
-        countVectorizer.set(value, key);
-      }
-
+    try (final BufferedReader br = new BufferedReader(new FileReader(metaData))) {
       final double[] meta = parseDoubles(br.readLine());
       final int classes = (int) meta[0];
       final int currentFeatures = (int) meta[1];
+      vectorizer = new CountVectorizer(currentFeatures);
       topics = new String[classes];
       for (int i = 0; i < classes; i++) {
         topics[i] = br.readLine();
       }
 
       final double[][] inputCoef = new double[classes][currentFeatures];
-
+      String line;
       for (int index = 0; index < classes; index++) {
         line = br.readLine();
         final double[] numbers = parseDoubles(line);
@@ -68,7 +56,12 @@ public class Predictor implements TopicsPredictor {
 
   @Override
   public Topic[] predict(Document document) {
-    final DoubleMatrix probs = predictProba(new DoubleMatrix(document.getTfidfRepresentation(countVectorizer)));
+    if (weights == null) {
+      loadMeta();
+    }
+
+    final double[] vectorized = vectorizer.vectorize(document);
+    final DoubleMatrix probs = predictProba(new DoubleMatrix(vectorized));
     final Topic[] result = new Topic[probs.length];
 
     for (int index = 0; index < probs.data.length; index++) {
@@ -103,10 +96,6 @@ public class Predictor implements TopicsPredictor {
   }
 
   private DoubleMatrix decisionFunction(DoubleMatrix documents) {
-    if (weights == null) {
-      loadMeta();
-    }
-
     final DoubleMatrix inter = new DoubleMatrix(1, intercept.length, intercept);
     final DoubleMatrix score = documents.transpose().mmul(weights);
     return score.add(inter);
