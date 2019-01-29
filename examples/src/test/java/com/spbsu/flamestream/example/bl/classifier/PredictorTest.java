@@ -39,7 +39,6 @@ public class PredictorTest {
         assertEquals(prediction.length, pyPrediction.length);
         for (int j = 0; j < prediction.length; j++) {
           double diff = abs(pyPrediction[j] - prediction[j].getProbability());
-          System.out.println(diff);
           assertTrue(diff < 0.035);
         }
       }
