@@ -9,16 +9,6 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
-import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
-import com.spbsu.flamestream.runtime.master.acker.api.commit.GimmeLastCommit;
-import com.spbsu.flamestream.runtime.master.acker.api.commit.LastCommit;
-import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
-import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
-import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepared;
-import com.spbsu.flamestream.runtime.master.acker.api.commit.Ready;
-import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
@@ -26,6 +16,17 @@ import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.graph.state.GroupingState;
+import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
+import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
+import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.GimmeLastCommit;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.LastCommit;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepared;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.Ready;
+import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -38,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class GraphManager extends LoggingActor {
@@ -177,6 +179,7 @@ public class GraphManager extends LoggingActor {
                     minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
             )
             .match(Prepare.class, this::onPrepare)
+            .match(Commit.class, commit -> sourceComponent.forward(commit, context()))
             .match(NewRear.class, newRear -> sinkComponent.forward(newRear, context()))
             .match(Heartbeat.class, gt -> sourceComponent.forward(gt, context()))
             .match(UnregisterFront.class, u -> sourceComponent.forward(u, context()))
@@ -184,7 +187,13 @@ public class GraphManager extends LoggingActor {
   }
 
   private void onPrepare(Prepare prepare) {
-    PatternsCS.ask(sinkComponent, prepare, FlameConfig.config.smallTimeout()).thenRun(() -> {
+    final CompletableFuture[] futures = new CompletableFuture[components.size()];
+    int index = 0;
+    for (ActorRef component : components) {
+      futures[index++] = PatternsCS.ask(component, prepare, FlameConfig.config.bigTimeout()).toCompletableFuture();
+    }
+    final CompletableFuture<Void> allOf = CompletableFuture.allOf(futures);
+    allOf.thenRun(() -> {
       unitStates.forEach((hashUnit, stateMap) -> storage.putState(
               hashUnit,
               prepare.globalTime(),

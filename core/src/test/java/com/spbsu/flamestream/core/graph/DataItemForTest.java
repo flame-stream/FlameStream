@@ -38,6 +38,11 @@ public class DataItemForTest implements DataItem {
   }
 
   @Override
+  public DataItem cloneWith(Meta meta) {
+    return new DataItemForTest(inner.cloneWith(meta), hash, equalz);
+  }
+
+  @Override
   public int hashCode() {
     return hash.applyAsInt(inner);
   }

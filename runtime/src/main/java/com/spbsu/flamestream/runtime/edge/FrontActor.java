@@ -4,6 +4,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
+import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
 import com.spbsu.flamestream.runtime.edge.api.Start;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -14,9 +15,9 @@ public class FrontActor extends LoggingActor {
   private final Front front;
 
   private FrontActor(EdgeContext edgeContext, FlameRuntime.FrontInstance<?> frontInstance) throws
-          IllegalAccessException,
-          InvocationTargetException,
-          InstantiationException {
+                                                                                           IllegalAccessException,
+                                                                                           InvocationTargetException,
+                                                                                           InstantiationException {
     final Object[] params;
     //handle AkkaFront in order to not create yet another actor system
     if (frontInstance.clazz().equals(AkkaFront.class)) {
@@ -41,6 +42,7 @@ public class FrontActor extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Start.class, start -> front.onStart(item -> start.hole().tell(item, self()), start.from()))
             .match(RequestNext.class, request -> front.onRequestNext())
+            .match(Checkpoint.class, checkpoint -> front.onCheckpoint(checkpoint.time()))
             .build();
   }
 }
