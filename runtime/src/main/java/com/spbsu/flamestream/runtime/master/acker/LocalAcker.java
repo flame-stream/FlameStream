@@ -13,6 +13,7 @@ import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -22,7 +23,7 @@ public class LocalAcker extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 1;
   private static final int FLUSH_COUNT = 100;
 
-  private final SortedMap<Joba.Id, Long> jobaTimesCache = new TreeMap<>();
+  private final HashMap<Joba.Id, Long> jobaTimesCache = new HashMap<>();
   private final SortedMap<GlobalTime, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
   private final List<AckerInputMessage> fifoCache = new ArrayList<>();
 

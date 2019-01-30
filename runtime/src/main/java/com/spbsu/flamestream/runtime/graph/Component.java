@@ -191,7 +191,7 @@ public class Component extends LoggingActor {
             .match(Commit.class, this::onCommit)
             .match(
                     JobaTimesTick.class,
-                    __ -> { wrappedJobas.values().forEach(jobaWrapper -> bumpJobaTime(jobaWrapper.joba));}
+                    __ -> wrappedJobas.values().forEach(jobaWrapper -> bumpJobaTime(jobaWrapper.joba))
             )
             .build();
   }

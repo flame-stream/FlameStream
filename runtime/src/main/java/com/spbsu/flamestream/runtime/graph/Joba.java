@@ -1,14 +1,15 @@
 package com.spbsu.flamestream.runtime.graph;
 
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public abstract class Joba {
-  public static class Id implements Comparable<Id> {
+  public static class Id {
     final String nodeId;
     final String vertexId;
     private static final Comparator<Id> comparator = Comparator
@@ -21,8 +22,21 @@ public abstract class Joba {
     }
 
     @Override
-    public int compareTo(Id that) {
-      return comparator.compare(this, that);
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final Id that = (Id) o;
+      return Objects.equals(nodeId, that.nodeId) &&
+              Objects.equals(vertexId, that.vertexId);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(nodeId, vertexId);
     }
   }
 

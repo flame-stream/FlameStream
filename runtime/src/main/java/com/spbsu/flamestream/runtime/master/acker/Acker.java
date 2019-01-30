@@ -47,6 +47,7 @@ public class Acker extends LoggingActor {
   private static final int WINDOW = 1;
   private static final int SIZE = 100000;
 
+  private final JobaTimes jobaTimes = new JobaTimes();
   private final Set<ActorRef> listeners = new HashSet<>();
   private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
 
@@ -71,7 +72,7 @@ public class Acker extends LoggingActor {
             .match(MinTimeUpdateListener.class, minTimeUpdateListener -> {
               listeners.add(minTimeUpdateListener.actorRef);
             })
-            .match(JobaTime.class, __ -> {})
+            .match(JobaTime.class, jobaTime -> jobaTimes.update(jobaTime.jobaId, jobaTime.time))
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
@@ -134,7 +135,7 @@ public class Acker extends LoggingActor {
     if (minAmongTables.compareTo(lastMinTime) > 0) {
       this.lastMinTime = minAmongTables;
       log().debug("New min time: {}", lastMinTime);
-      listeners.forEach(s -> s.tell(new MinTimeUpdate(lastMinTime), self()));
+      listeners.forEach(s -> s.tell(new MinTimeUpdate(lastMinTime, jobaTimes), self()));
     }
   }
 
