@@ -26,6 +26,7 @@ public class FlameNode extends LoggingActor {
                     Graph bootstrapGraph,
                     ClusterConfig config,
                     ActorRef acker,
+                    ActorRef registryHolder,
                     ActorRef committer,
                     int maxElementsInGraph,
                     StateStorage storage) {
@@ -35,13 +36,14 @@ public class FlameNode extends LoggingActor {
             id,
             bootstrapGraph,
             acker,
+            registryHolder,
             committer,
             new ComputationProps(config.hashGroups(), maxElementsInGraph),
             storage
     ), "graph");
     graph.tell(resolvedManagers(), self());
 
-    final ActorRef negotiator = context().actorOf(Negotiator.props(acker, graph), "negotiator");
+    final ActorRef negotiator = context().actorOf(Negotiator.props(acker, registryHolder, graph), "negotiator");
     this.edgeManager = context().actorOf(EdgeManager.props(config.paths().get(id), id, negotiator, graph), "edge");
   }
 
@@ -54,6 +56,7 @@ public class FlameNode extends LoggingActor {
                             Graph initialGraph,
                             ClusterConfig initialConfig,
                             ActorRef acker,
+                            ActorRef registryHolder,
                             ActorRef committer,
                             int maxElementsInGraph,
                             StateStorage stateStorage) {
@@ -63,6 +66,7 @@ public class FlameNode extends LoggingActor {
             initialGraph,
             initialConfig,
             acker,
+            registryHolder,
             committer,
             maxElementsInGraph,
             stateStorage

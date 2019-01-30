@@ -20,16 +20,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class Negotiator extends LoggingActor {
   private final ActorRef acker;
+  private final ActorRef registryHolder;
   private final ActorRef source;
   private final Map<EdgeId, ActorRef> localFronts = new HashMap<>();
 
-  public Negotiator(ActorRef acker, ActorRef source) {
+  public Negotiator(ActorRef acker, ActorRef registryHolder, ActorRef source) {
     this.acker = acker;
+    this.registryHolder = registryHolder;
     this.source = source;
   }
 
-  public static Props props(ActorRef acker, ActorRef source) {
-    return Props.create(Negotiator.class, acker, source);
+  public static Props props(ActorRef acker, ActorRef registryHolder, ActorRef source) {
+    return Props.create(Negotiator.class, acker, registryHolder, source);
   }
 
   @Override
@@ -44,7 +46,7 @@ public class Negotiator extends LoggingActor {
   }
 
   private void asyncAttach(EdgeId edgeId) {
-    PatternsCS.ask(acker, new RegisterFront(edgeId), Timeout.apply(10, SECONDS))
+    PatternsCS.ask(registryHolder, new RegisterFront(edgeId), Timeout.apply(10, SECONDS))
             .thenApply(ticket -> (FrontTicket) ticket)
             .thenAccept(ticket -> {
               log().info("Ticket for the frontClass received: {}", ticket);
