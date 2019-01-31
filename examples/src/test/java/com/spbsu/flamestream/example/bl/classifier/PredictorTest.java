@@ -2,12 +2,15 @@ package com.spbsu.flamestream.example.bl.classifier;
 
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 
 import static com.spbsu.flamestream.example.bl.classifier.SklearnSgdPredictor.parseDoubles;
 import static java.lang.Math.abs;
@@ -15,6 +18,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 public class PredictorTest {
+  private static final Logger LOGGER = LoggerFactory.getLogger(PredictorTest.class.getName());
   private static File testDataFile = new File("src/test/resources/sklearn_prediction");
 
   @Test
@@ -43,9 +47,13 @@ public class PredictorTest {
 
         assertEquals(prediction.length, pyPrediction.length);
         for (int j = 0; j < prediction.length; j++) {
-          final double diff = abs(pyPrediction[j] - prediction[j].getProbability());
+          final double diff = abs(pyPrediction[j] - prediction[j].probability());
           assertTrue(diff < 0.035);
         }
+
+        Arrays.sort(prediction);
+        LOGGER.info("Doc: {}", (Object) doc);
+        LOGGER.info("Predict: {}", (Object) prediction);
       }
     }
   }
