@@ -1,12 +1,15 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
+import gnu.trove.map.TObjectDoubleMap;
+import gnu.trove.map.hash.TObjectDoubleHashMap;
 import org.testng.annotations.Test;
 
-import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
-import static com.spbsu.flamestream.example.bl.classifier.Predictor.parseDoubles;
+import static com.spbsu.flamestream.example.bl.classifier.SklearnSgdPredictor.parseDoubles;
 import static java.lang.Math.abs;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -16,11 +19,13 @@ public class PredictorTest {
 
   @Test
   public void threeDocumentTest() throws IOException {
-    final Predictor predictor = new Predictor();
+    final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
+    final String weightsPath = "src/main/resources/classifier_weights";
+
+    final SklearnSgdPredictor predictor = new SklearnSgdPredictor(cntVectorizerPath, weightsPath);
     try (BufferedReader br = new BufferedReader(new FileReader(testDataFile))) {
       final double[] data = parseDoubles(br.readLine());
       final int testCount = (int) data[0];
-      final int features = (int) data[1];
 
       // five python predictions provided by script
       for (int i = 0; i < testCount; i++) {
@@ -28,7 +33,7 @@ public class PredictorTest {
         final String[] doc = br.readLine().split(" ");
         final double[] tfidfFeatures = parseDoubles(br.readLine());
 
-        final Map<String, Double> tfidf = new HashMap<>();
+        final TObjectDoubleMap<String> tfidf = new TObjectDoubleHashMap<>();
         for (int j = 0; j < doc.length; j++) {
           tfidf.put(doc[j], tfidfFeatures[j]);
         }

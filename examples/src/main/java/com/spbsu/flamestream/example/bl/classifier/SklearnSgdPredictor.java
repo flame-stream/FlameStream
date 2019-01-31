@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
-import gnu.trove.map.TObjectDoubleMap;
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
 
@@ -8,21 +7,22 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.jblas.MatrixFunctions.exp;
 
-public class Predictor implements TopicsPredictor {
-  private final String weightsPath = "src/main/resources/classifier_weights";
+public class SklearnSgdPredictor implements TopicsPredictor {
+  private final String weightsPath;
+  private final String cntVectorizerPath;
   private CountVectorizer vectorizer;
   private double[] intercept;
   private DoubleMatrix weights;
   private String[] topics;
 
-  public Predictor() {}
+  SklearnSgdPredictor(String cntVectorizerPath, String weightsPath) {
+    this.weightsPath = weightsPath;
+    this.cntVectorizerPath = cntVectorizerPath;
+  }
 
   private void loadMeta() {
     final File metaData = new File(weightsPath);
@@ -31,7 +31,7 @@ public class Predictor implements TopicsPredictor {
       final double[] meta = parseDoubles(br.readLine());
       final int classes = (int) meta[0];
       final int currentFeatures = (int) meta[1];
-      vectorizer = new CountVectorizer(currentFeatures);
+      vectorizer = new CountVectorizer(cntVectorizerPath, currentFeatures);
       topics = new String[classes];
       for (int i = 0; i < classes; i++) {
         topics[i] = br.readLine();
@@ -80,7 +80,7 @@ public class Predictor implements TopicsPredictor {
   }
 
   // see _predict_proba_lr in base.py sklearn
-  DoubleMatrix predictProba(DoubleMatrix documents) {
+  private DoubleMatrix predictProba(DoubleMatrix documents) {
     DoubleMatrix probabilities = decisionFunction(documents);
 
     probabilities = probabilities.mul(-1);

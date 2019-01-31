@@ -1,15 +1,15 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
-import java.util.Map;
+import gnu.trove.map.TObjectDoubleMap;
 
 class Document {
-    private final Map<String, Double> tfidf;
+  private final TObjectDoubleMap<String> tfidf;
 
-    public Document(Map<String, Double> tfidf) {
-      this.tfidf = tfidf;
-    }
+  public Document(TObjectDoubleMap<String> tfidf) {
+  this.tfidf = tfidf;
+  }
 
-  public Map<String, Double> getTfidf() {
+  TObjectDoubleMap<String> getTfidf() {
     return tfidf;
   }
 }
