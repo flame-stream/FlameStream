@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
+import gnu.trove.map.TObjectDoubleMap;
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
 

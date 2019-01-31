@@ -13,13 +13,6 @@
     <artifactId>flamestream-examples</artifactId>
 
     <dependencies>
-        <!-- matrix multiplication -->
-        <dependency>
-            <groupId>org.jblas</groupId>
-            <artifactId>jblas</artifactId>
-            <version>1.2.4</version>
-        </dependency>
-
         <!--FlameStream-->
         <dependency>
             <groupId>com.spbsu.flamestream</groupId>
@@ -47,6 +40,10 @@
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jblas</groupId>
+            <artifactId>jblas</artifactId>
         </dependency>
 
         <!--Tests-->
