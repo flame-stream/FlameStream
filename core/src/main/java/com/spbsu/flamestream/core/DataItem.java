@@ -8,4 +8,6 @@ public interface DataItem {
   <T> T payload(Class<T> expectedClass);
 
   long xor();
+
+  DataItem cloneWith(Meta meta);
 }
