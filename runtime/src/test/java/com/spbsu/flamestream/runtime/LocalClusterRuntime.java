@@ -28,6 +28,7 @@ public class LocalClusterRuntime implements FlameRuntime {
   private final RemoteRuntime remoteRuntime;
   private final Set<WorkerApplication> workers = new HashSet<>();
   private final String zkString;
+  private final CuratorFramework curator;
 
   private LocalClusterRuntime(int parallelism, int maxElementsInGraph, int millisBetweenCommits) {
     final List<Integer> ports;
@@ -56,7 +57,7 @@ public class LocalClusterRuntime implements FlameRuntime {
       worker.run();
     }
 
-    final CuratorFramework curator = CuratorFrameworkFactory.newClient(
+    this.curator = CuratorFrameworkFactory.newClient(
             zkString,
             new ExponentialBackoffRetry(1000, 3)
     );
@@ -75,6 +76,7 @@ public class LocalClusterRuntime implements FlameRuntime {
   public void close() {
     try {
       remoteRuntime.close();
+      curator.close();
     } catch (Exception e) {
       throw new RuntimeException(e);
     } finally {

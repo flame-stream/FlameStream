@@ -42,7 +42,6 @@ public class ZookeeperWorkersNode {
     this.pathChildrenCache = new PathChildrenCache(curator, path, true);
     try {
       pathChildrenCache.start();
-      pathChildrenCache.rebuild();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
