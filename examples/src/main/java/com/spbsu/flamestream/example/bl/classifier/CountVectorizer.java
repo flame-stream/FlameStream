@@ -28,8 +28,8 @@ class CountVectorizer implements Vectorizer {
       String line;
       while ((line = countFileReader.readLine()) != null) {
         final String[] items = line.split(" ");
-        final String key = items[1];
-        final int value = Integer.parseInt(items[0]);
+        final String key = items[0];
+        final int value = Integer.parseInt(items[1]);
         countVectorizer.put(key, value);
       }
 

@@ -10,7 +10,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,7 +18,6 @@ import static com.spbsu.flamestream.example.bl.classifier.SklearnSgdPredictor.pa
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 public class PredictorTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(PredictorTest.class.getName());
@@ -40,27 +38,13 @@ public class PredictorTest {
         final String doc = br.readLine().toLowerCase();
         final double[] tfidfFeatures = parseDoubles(br.readLine());
 
-        final ArrayList<Double> nonzeros = new ArrayList<>();
-        for (int k = 0; k < tfidfFeatures.length; k++) {
-          if (tfidfFeatures[k] != 0.0) {
-            nonzeros.add(tfidfFeatures[k]);
-          }
-        }
-
-        LOGGER.info(String.valueOf(nonzeros.size()));
-        LOGGER.info(String.valueOf(nonzeros.stream().mapToDouble(Double::doubleValue).sum()));
-        LOGGER.info(String.valueOf(nonzeros));
-
+        final Pattern pattern = Pattern.compile("\\b\\w\\w+\\b", Pattern.UNICODE_CHARACTER_CLASS);
+        final Matcher matcher = pattern.matcher(doc);
         final TObjectDoubleMap<String> tfidf = new TObjectDoubleHashMap<>();
-
-        Pattern r = Pattern.compile("\\b\\w\\w+\\b", Pattern.UNICODE_CHARACTER_CLASS);
-        Matcher m = r.matcher(doc);
-
-        while (m.find()) {
-          final String word = m.group(0);
+        while (matcher.find()) {
+          final String word = matcher.group(0);
           final int featureIndex = predictor.vectorizer().vectorize(word);
-          double before = tfidfFeatures[featureIndex];
-          tfidf.put(word, before + tfidfFeatures[featureIndex]);
+          tfidf.put(word, tfidfFeatures[featureIndex]);
         }
 
         final Document document = new Document(tfidf);
@@ -82,9 +66,8 @@ public class PredictorTest {
           maxDiff = max(diff, maxDiff);
         }
 
-
         Arrays.sort(prediction);
-        LOGGER.info("Doc: {}", (Object) doc);
+        LOGGER.info("Doc: {}", doc);
         LOGGER.info("Max diff {} in predictions", maxDiff);
         LOGGER.info("Predict: {}", (Object) prediction);
         LOGGER.info("\n");
