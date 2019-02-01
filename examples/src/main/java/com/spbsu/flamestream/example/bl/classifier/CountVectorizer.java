@@ -1,6 +1,10 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
 import gnu.trove.map.TObjectDoubleMap;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,26 +13,24 @@ import java.io.IOException;
 
 class CountVectorizer implements Vectorizer {
   private final String cntVectorizerPath;
-  private final int features;
-  private String[] countVectorizer;
+  private TObjectIntMap<String> countVectorizer;
 
-  CountVectorizer(String cntVectorizerPath, int features) {
+  CountVectorizer(String cntVectorizerPath) {
     this.cntVectorizerPath = cntVectorizerPath;
-    this.features = features;
   }
 
   private void loadVocabulary() {
     final File countFile = new File(cntVectorizerPath);
-    countVectorizer = new String[features];
+    countVectorizer = new TObjectIntHashMap<>();
 
     try (final BufferedReader countFileReader = new BufferedReader(new FileReader(countFile))) {
 
       String line;
       while ((line = countFileReader.readLine()) != null) {
         final String[] items = line.split(" ");
-        final String key = items[0];
-        final int value = Integer.parseInt(items[1]);
-        countVectorizer[value] = key;
+        final String key = items[1];
+        final int value = Integer.parseInt(items[0]);
+        countVectorizer.put(key, value);
       }
 
     } catch (IOException e) {
@@ -42,19 +44,21 @@ class CountVectorizer implements Vectorizer {
       loadVocabulary();
     }
 
-    final double[] res = new double[countVectorizer.length];
+    final double[] res = new double[countVectorizer.size()];
     final TObjectDoubleMap<String> tfidf = document.getTfidf();
-
-    for (int i = 0; i < countVectorizer.length; i++) {
-      final String word = countVectorizer[i];
-
-      if (tfidf.containsKey(word)) {
-        res[i] = tfidf.get(word);
-      } else {
-        res[i] = 0;
-      }
-    }
+    tfidf.forEachEntry((s, v) -> {
+      res[countVectorizer.get(s)] = v;
+      return true;
+    });
 
     return res;
+  }
+
+  public int vectorize(String word) {
+    if (countVectorizer == null) {
+      loadVocabulary();
+    }
+
+    return countVectorizer.get(word);
   }
 }
