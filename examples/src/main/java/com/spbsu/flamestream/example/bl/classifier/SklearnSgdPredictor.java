@@ -2,16 +2,20 @@ package com.spbsu.flamestream.example.bl.classifier;
 
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.jblas.MatrixFunctions.exp;
 
 public class SklearnSgdPredictor implements TopicsPredictor {
+  private static final Logger LOGGER = LoggerFactory.getLogger(SklearnSgdPredictor.class.getName());
   private final String weightsPath;
   private final String cntVectorizerPath;
   private CountVectorizer vectorizer;
@@ -31,7 +35,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
       final double[] meta = parseDoubles(br.readLine());
       final int classes = (int) meta[0];
       final int currentFeatures = (int) meta[1];
-      vectorizer = new CountVectorizer(cntVectorizerPath, currentFeatures);
+      vectorizer = new CountVectorizer(cntVectorizerPath);
       topics = new String[classes];
       for (int i = 0; i < classes; i++) {
         topics[i] = br.readLine();
@@ -62,6 +66,16 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     }
 
     final double[] vectorized = vectorizer.vectorize(document);
+    final ArrayList<Double> nonzeros = new ArrayList<>();
+    for (int i = 0; i < vectorized.length; i++) {
+      if (vectorized[i] != 0.0) {
+        nonzeros.add(vectorized[i]);
+      }
+    }
+
+    LOGGER.info(String.valueOf(nonzeros.size()));
+    LOGGER.info(String.valueOf(nonzeros.stream().mapToDouble(Double::doubleValue).sum()));
+    LOGGER.info(String.valueOf(nonzeros));
     final DoubleMatrix probs = predictProba(new DoubleMatrix(vectorized));
     final Topic[] result = new Topic[probs.length];
 
@@ -100,5 +114,13 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     final DoubleMatrix inter = new DoubleMatrix(1, intercept.length, intercept);
     final DoubleMatrix score = documents.transpose().mmul(weights);
     return score.add(inter);
+  }
+
+  public Vectorizer vectorizer() {
+    if (weights == null) {
+      loadMeta();
+    }
+
+    return vectorizer;
   }
 }
