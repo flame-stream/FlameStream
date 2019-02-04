@@ -172,21 +172,6 @@ public class ProcessingWatcher extends LoggingActor {
   }
 
   private void startEdgeCaches() throws Exception {
-    frontsCache = new PathChildrenCache(curator, "/graph/fronts", false);
-    frontsCache.getListenable().addListener((client, event) -> {
-      if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
-        final FlameRuntime.FrontInstance<?> front = serializer.deserialize(
-                curator.getData().forPath(event.getData().getPath()),
-                FlameRuntime.FrontInstance.class
-        );
-        self().tell(
-                new AttachFront<>(StringUtils.substringAfterLast(event.getData().getPath(), "/"), front),
-                self()
-        );
-      }
-    });
-    frontsCache.start();
-
     rearsCache = new PathChildrenCache(curator, "/graph/rears", false);
     rearsCache.getListenable().addListener((client, event) -> {
       if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
@@ -201,5 +186,20 @@ public class ProcessingWatcher extends LoggingActor {
       }
     });
     rearsCache.start();
+
+    frontsCache = new PathChildrenCache(curator, "/graph/fronts", false);
+    frontsCache.getListenable().addListener((client, event) -> {
+      if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
+        final FlameRuntime.FrontInstance<?> front = serializer.deserialize(
+                curator.getData().forPath(event.getData().getPath()),
+                FlameRuntime.FrontInstance.class
+        );
+        self().tell(
+                new AttachFront<>(StringUtils.substringAfterLast(event.getData().getPath(), "/"), front),
+                self()
+        );
+      }
+    });
+    frontsCache.start();
   }
 }
