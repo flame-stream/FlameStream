@@ -31,8 +31,6 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
  * </ol>
  */
 public class RegistryHolder extends LoggingActor {
-  private final Registry registry;
-
   private static class NewFrontRegisterer extends LoggingActor {
     public static Props props(ActorRef sender, ActorRef acker, EdgeId frontId) {
       return Props.create(NewFrontRegisterer.class, sender, acker, frontId);
@@ -85,6 +83,7 @@ public class RegistryHolder extends LoggingActor {
     }
   }
 
+  private final Registry registry;
   private final ActorRef acker;
 
   private RegistryHolder(Registry registry, ActorRef acker) {
@@ -119,15 +118,15 @@ public class RegistryHolder extends LoggingActor {
   }
 
   private void onNewFrontRegistered(RegisteredNewFront registeredNewFront) {
-    final GlobalTime startTime = registeredNewFront.frontTicket.allowedTimestamp();
+    final GlobalTime startTime = registeredNewFront.frontTicket().allowedTimestamp();
     log().info("Registering timestamp {} for {}", startTime.time(), startTime.frontId());
     registry.register(startTime.frontId(), startTime.time());
-    registeredNewFront.sender.tell(new FrontTicket(startTime), self());
+    registeredNewFront.sender().tell(new FrontTicket(startTime), self());
   }
 
   private void onAlreadyRegisteredFrontRegistered(RegisteredAlreadyRegisteredFront registered) {
-    final GlobalTime startTime = registered.frontTicket.allowedTimestamp();
+    final GlobalTime startTime = registered.frontTicket().allowedTimestamp();
     log().info("Front '{}' has been registered already, starting from '{}'", startTime.frontId(), startTime);
-    registered.sender.tell(new FrontTicket(startTime), self());
+    registered.sender().tell(new FrontTicket(startTime), self());
   }
 }

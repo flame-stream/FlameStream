@@ -3,12 +3,20 @@ package com.spbsu.flamestream.runtime.master.acker.api.registry;
 import akka.actor.ActorRef;
 
 public class RegisteredAlreadyRegisteredFront {
-  public FrontTicket frontTicket;
-  public ActorRef sender;
+  private final FrontTicket frontTicket;
+  private final ActorRef sender;
 
   public RegisteredAlreadyRegisteredFront(FrontTicket frontTicket, ActorRef sender) {
     this.frontTicket = frontTicket;
     this.sender = sender;
+  }
+
+  public FrontTicket frontTicket() {
+    return this.frontTicket;
+  }
+
+  public ActorRef sender() {
+    return this.sender;
   }
 }
 
