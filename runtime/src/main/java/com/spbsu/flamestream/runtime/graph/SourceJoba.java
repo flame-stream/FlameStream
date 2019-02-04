@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class SourceJoba implements Joba {
+public class SourceJoba extends Joba {
   private final Collection<GlobalTime> inFlight = new ArrayList<>();
   private final Map<EdgeId, ActorRef> fronts = new HashMap<>();
   private final int maxInFlightItems;
@@ -22,7 +22,8 @@ public class SourceJoba implements Joba {
 
   private int unutilizedRequests;
 
-  SourceJoba(int maxInFlightItems, ActorContext context) {
+  public SourceJoba(Joba.Id id, int maxInFlightItems, ActorContext context) {
+    super(id);
     this.maxInFlightItems = maxInFlightItems;
     this.context = context;
     this.unutilizedRequests = maxInFlightItems;

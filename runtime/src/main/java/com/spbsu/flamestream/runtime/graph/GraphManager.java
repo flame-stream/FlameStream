@@ -132,6 +132,7 @@ public class GraphManager extends LoggingActor {
               graph.components().forEach(c -> {
                 final Set<Graph.Vertex> vertexSet = c.collect(Collectors.toSet());
                 final ActorRef component = context().actorOf(Component.props(
+                        nodeId,
                         vertexSet,
                         graph,
                         routes,
