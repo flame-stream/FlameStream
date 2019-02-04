@@ -1,16 +1,58 @@
 package com.spbsu.flamestream.runtime.graph;
 
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 
+import java.util.Comparator;
+import java.util.Objects;
 import java.util.function.Consumer;
 
-public interface Joba {
-  void accept(DataItem item, Consumer<DataItem> sink);
+public abstract class Joba {
+  public static class Id {
+    final String nodeId;
+    final String vertexId;
+    private static final Comparator<Id> comparator = Comparator
+            .<Id, String>comparing(id -> id.nodeId)
+            .thenComparing(id -> id.vertexId);
 
-  default void onMinTime(GlobalTime time) {
+    Id(String nodeId, String vertexId) {
+      this.nodeId = nodeId;
+      this.vertexId = vertexId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final Id that = (Id) o;
+      return Objects.equals(nodeId, that.nodeId) &&
+              Objects.equals(vertexId, that.vertexId);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(nodeId, vertexId);
+    }
   }
 
-  default void onPrepareCommit(GlobalTime time) {
+  final Id id;
+
+  Joba(Id id) {
+    this.id = id;
+  }
+
+  public long time = Long.MIN_VALUE;
+
+  abstract void accept(DataItem item, Consumer<DataItem> sink);
+
+  void onMinTime(GlobalTime time) {
+  }
+
+  void onPrepareCommit(GlobalTime time) {
   }
 }

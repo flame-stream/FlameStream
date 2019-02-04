@@ -19,11 +19,13 @@ import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
+import com.spbsu.flamestream.runtime.master.acker.api.JobaTime;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.jetbrains.annotations.Nullable;
@@ -33,11 +35,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class Component extends LoggingActor {
+  private static final int FLUSH_DELAY_IN_MILLIS = 1;
   private final ActorRef acker;
+
+  private enum JobaTimesTick {
+    OBJECT
+  }
+  private final ActorRef pingActor;
 
   private class JobaWrapper<WrappedJoba extends Joba> {
     WrappedJoba joba;
@@ -62,7 +71,8 @@ public class Component extends LoggingActor {
   @Nullable
   private JobaWrapper<SinkJoba> wrappedSinkJoba;
 
-  private Component(Set<Graph.Vertex> componentVertices,
+  private Component(String nodeId,
+                    Set<Graph.Vertex> componentVertices,
                     Graph graph,
                     HashUnitMap<ActorRef> routes,
                     ActorRef localManager,
@@ -74,6 +84,26 @@ public class Component extends LoggingActor {
     this.wrappedJobas = componentVertices.stream().collect(Collectors.toMap(
             vertex -> GraphManager.Destination.fromVertexId(vertex.id()),
             vertex -> {
+              final Joba.Id jobaId = new Joba.Id(nodeId, vertex.id());
+              final Joba joba;
+              if (vertex instanceof Sink) {
+                joba = new SinkJoba(jobaId, context());
+              } else if (vertex instanceof FlameMap) {
+                joba = new MapJoba(jobaId, (FlameMap<?, ?>) vertex);
+              } else if (vertex instanceof Grouping) {
+                final Grouping grouping = (Grouping) vertex;
+                final Collection<HashUnit> values = props.hashGroups()
+                        .values()
+                        .stream()
+                        .flatMap(g -> g.units().stream())
+                        .collect(Collectors.toSet());
+                stateByVertex.putIfAbsent(vertex.id(), new GroupGroupingState(values));
+                joba = new GroupingJoba(jobaId, grouping, stateByVertex.get(vertex.id()));
+              } else if (vertex instanceof Source) {
+                joba = new SourceJoba(jobaId, props.maxElementsInGraph(), context());
+              } else {
+                throw new RuntimeException("Invalid vertex type");
+              }
               final List<Consumer<DataItem>> sinks = graph.adjacent(vertex)
                       .map(to -> {
                         final GraphManager.Destination toDest = GraphManager.Destination.fromVertexId(to.id());
@@ -84,12 +114,14 @@ public class Component extends LoggingActor {
                         } else if (to instanceof HashingVertexStub && ((HashingVertexStub) to).hash() != null) {
                           sink = item -> {
                             groupingSendTracer.log(item.xor());
+                            bumpJobaTime(joba);
                             acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
                             routes.get(Objects.requireNonNull(((HashingVertexStub) to).hash()).applyAsInt(item))
                                     .tell(new AddressedItem(item, toDest), self());
                           };
                         } else {
                           sink = item -> {
+                            bumpJobaTime(joba);
                             acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
                             localManager.tell(new AddressedItem(item, toDest), self());
                           };
@@ -113,41 +145,37 @@ public class Component extends LoggingActor {
                     }
                   };
               }
-              final Joba joba;
-              if (vertex instanceof Sink) {
-                return wrappedSinkJoba = new JobaWrapper<>(new SinkJoba(context()), downstream);
-              } else if (vertex instanceof FlameMap) {
-                joba = new MapJoba((FlameMap<?, ?>) vertex);
-              } else if (vertex instanceof Grouping) {
-                final Grouping grouping = (Grouping) vertex;
-                final Collection<HashUnit> values = props.hashGroups()
-                        .values()
-                        .stream()
-                        .flatMap(g -> g.units().stream())
-                        .collect(Collectors.toSet());
-                stateByVertex.putIfAbsent(vertex.id(), new GroupGroupingState(values));
-                joba = new GroupingJoba(grouping, stateByVertex.get(vertex.id()));
-              } else if (vertex instanceof Source) {
-                return wrappedSourceJoba =
-                        new JobaWrapper<>(new SourceJoba(props.maxElementsInGraph(), context()), downstream);
+              if (joba instanceof SinkJoba) {
+                return wrappedSinkJoba = new JobaWrapper<>((SinkJoba) joba, downstream);
+              } else if (joba instanceof SourceJoba) {
+                return wrappedSourceJoba = new JobaWrapper<>((SourceJoba) joba, downstream);
               } else {
-                throw new RuntimeException("Invalid vertex type");
+                return new JobaWrapper<>(joba, downstream);
               }
-
-              return new JobaWrapper<>(joba, downstream);
             }
     ));
+    pingActor = context().actorOf(PingActor.props(self(), JobaTimesTick.OBJECT));
   }
 
-  public static Props props(Set<Graph.Vertex> componentVertices,
+  public static Props props(String nodeId,
+                            Set<Graph.Vertex> componentVertices,
                             Graph graph,
                             HashUnitMap<ActorRef> localManager,
                             ActorRef routes,
                             ActorRef acker,
                             ComputationProps props,
                             Map<String, GroupGroupingState> stateByVertex) {
-    return Props.create(Component.class, componentVertices, graph, localManager, routes, acker, props, stateByVertex)
-            .withDispatcher("processing-dispatcher");
+    return Props.create(
+            Component.class,
+            nodeId,
+            componentVertices,
+            graph,
+            localManager,
+            routes,
+            acker,
+            props,
+            stateByVertex
+    ).withDispatcher("processing-dispatcher");
   }
 
   @Override
@@ -161,7 +189,17 @@ public class Component extends LoggingActor {
             .match(UnregisterFront.class, u -> acker.forward(u, context()))
             .match(Prepare.class, this::onPrepare)
             .match(Commit.class, this::onCommit)
+            .match(
+                    JobaTimesTick.class,
+                    __ -> wrappedJobas.values().forEach(jobaWrapper -> bumpJobaTime(jobaWrapper.joba))
+            )
             .build();
+  }
+
+  @Override
+  public void preStart() throws Exception {
+    super.preStart();
+    pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(FLUSH_DELAY_IN_MILLIS)), self());
   }
 
   private void onCommit(Commit commit) {
@@ -179,8 +217,14 @@ public class Component extends LoggingActor {
     final DataItem item = addressedItem.item();
     injectInTracer.log(item.xor());
     localCall(item, addressedItem.destination());
+    final Joba joba = wrappedJobas.get(addressedItem.destination()).joba;
+    bumpJobaTime(joba);
     acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
     injectOutTracer.log(item.xor());
+  }
+
+  private void bumpJobaTime(Joba joba) {
+    acker.tell(new JobaTime(joba.id, ++joba.time), self());
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {

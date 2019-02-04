@@ -7,6 +7,7 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
+import com.spbsu.flamestream.runtime.master.acker.api.JobaTime;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.FrontTicket;
@@ -46,6 +47,7 @@ public class Acker extends LoggingActor {
   private static final int WINDOW = 1;
   private static final int SIZE = 100000;
 
+  private final JobaTimes jobaTimes = new JobaTimes();
   private final Set<ActorRef> listeners = new HashSet<>();
   private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
 
@@ -70,6 +72,7 @@ public class Acker extends LoggingActor {
             .match(MinTimeUpdateListener.class, minTimeUpdateListener -> {
               listeners.add(minTimeUpdateListener.actorRef);
             })
+            .match(JobaTime.class, jobaTime -> jobaTimes.update(jobaTime.jobaId, jobaTime.time))
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
@@ -132,7 +135,7 @@ public class Acker extends LoggingActor {
     if (minAmongTables.compareTo(lastMinTime) > 0) {
       this.lastMinTime = minAmongTables;
       log().debug("New min time: {}", lastMinTime);
-      listeners.forEach(s -> s.tell(new MinTimeUpdate(lastMinTime), self()));
+      listeners.forEach(s -> s.tell(new MinTimeUpdate(lastMinTime, jobaTimes), self()));
     }
   }
 
