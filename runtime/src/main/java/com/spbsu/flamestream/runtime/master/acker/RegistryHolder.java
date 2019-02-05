@@ -9,8 +9,6 @@ import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.FrontTicket;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisterFront;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisterFrontFromTime;
-import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisteredAlreadyRegisteredFront;
-import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisteredNewFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 
@@ -32,6 +30,24 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
  */
 public class RegistryHolder extends LoggingActor {
   private static class NewFrontRegisterer extends LoggingActor {
+    static class Registered {
+      private final FrontTicket frontTicket;
+      private final ActorRef sender;
+
+      Registered(FrontTicket frontTicket, ActorRef sender) {
+        this.frontTicket = frontTicket;
+        this.sender = sender;
+      }
+
+      FrontTicket frontTicket() {
+        return this.frontTicket;
+      }
+
+      public ActorRef sender() {
+        return this.sender;
+      }
+    }
+
     public static Props props(ActorRef sender, ActorRef acker, EdgeId frontId) {
       return Props.create(NewFrontRegisterer.class, sender, acker, frontId);
     }
@@ -49,7 +65,7 @@ public class RegistryHolder extends LoggingActor {
               .match(
                       FrontTicket.class,
                       frontTicket -> {
-                        context().parent().tell(new RegisteredNewFront(frontTicket, sender), self());
+                        context().parent().tell(new Registered(frontTicket, sender), self());
                         context().stop(self());
                       }
               )
@@ -58,6 +74,24 @@ public class RegistryHolder extends LoggingActor {
   }
 
   private static class AlreadyRegisteredFrontRegisterer extends LoggingActor {
+    static class Registered {
+      private final FrontTicket frontTicket;
+      private final ActorRef sender;
+
+      Registered(FrontTicket frontTicket, ActorRef sender) {
+        this.frontTicket = frontTicket;
+        this.sender = sender;
+      }
+
+      FrontTicket frontTicket() {
+        return this.frontTicket;
+      }
+
+      public ActorRef sender() {
+        return this.sender;
+      }
+    }
+
     public static Props props(ActorRef sender, ActorRef acker, GlobalTime startTime) {
       return Props.create(AlreadyRegisteredFrontRegisterer.class, sender, acker, startTime);
     }
@@ -75,7 +109,7 @@ public class RegistryHolder extends LoggingActor {
               .match(
                       FrontTicket.class,
                       frontTicket -> {
-                        context().parent().tell(new RegisteredAlreadyRegisteredFront(frontTicket, sender), self());
+                        context().parent().tell(new Registered(frontTicket, sender), self());
                         context().stop(self());
                       }
               )
@@ -99,8 +133,8 @@ public class RegistryHolder extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
-            .match(RegisteredNewFront.class, this::onNewFrontRegistered)
-            .match(RegisteredAlreadyRegisteredFront.class, this::onAlreadyRegisteredFrontRegistered)
+            .match(NewFrontRegisterer.Registered.class, this::onNewFrontRegistered)
+            .match(AlreadyRegisteredFrontRegisterer.Registered.class, this::onAlreadyRegisteredFrontRegistered)
             .build();
   }
 
@@ -117,14 +151,14 @@ public class RegistryHolder extends LoggingActor {
     }
   }
 
-  private void onNewFrontRegistered(RegisteredNewFront registeredNewFront) {
-    final GlobalTime startTime = registeredNewFront.frontTicket().allowedTimestamp();
+  private void onNewFrontRegistered(NewFrontRegisterer.Registered registered) {
+    final GlobalTime startTime = registered.frontTicket().allowedTimestamp();
     log().info("Registering timestamp {} for {}", startTime.time(), startTime.frontId());
     registry.register(startTime.frontId(), startTime.time());
-    registeredNewFront.sender().tell(new FrontTicket(startTime), self());
+    registered.sender().tell(new FrontTicket(startTime), self());
   }
 
-  private void onAlreadyRegisteredFrontRegistered(RegisteredAlreadyRegisteredFront registered) {
+  private void onAlreadyRegisteredFrontRegistered(AlreadyRegisteredFrontRegisterer.Registered registered) {
     final GlobalTime startTime = registered.frontTicket().allowedTimestamp();
     log().info("Front '{}' has been registered already, starting from '{}'", startTime.frontId(), startTime);
     registered.sender().tell(new FrontTicket(startTime), self());
