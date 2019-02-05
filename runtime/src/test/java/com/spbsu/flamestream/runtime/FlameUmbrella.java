@@ -167,6 +167,11 @@ class FlameUmbrella extends LoggingActor {
     });
     toBeTold.stream().filter(e -> e instanceof AttachFront).forEach(a -> {
       flameNodes.forEach(c -> c.tell(a, self()));
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     });
   }
 
@@ -224,6 +229,11 @@ class FlameUmbrella extends LoggingActor {
 class InMemoryRegistry implements Registry {
   private final Map<EdgeId, Long> linearizableCollection = new HashMap<>();
   private long lastCommit = 0;
+
+  @Override
+  public Map<EdgeId, Long> all() {
+    return linearizableCollection;
+  }
 
   @Override
   public void register(EdgeId frontId, long attachTimestamp) {
