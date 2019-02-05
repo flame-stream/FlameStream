@@ -79,7 +79,7 @@ class Cluster extends LoggingActor {
               final ActorRef committer = context.actorOf(Committer.props(
                       clusterConfig.paths().size(),
                       committerConfig,
-                      registry,
+                      registryHolder,
                       acker
               ));
               return paths.keySet().stream().map(id -> context.actorOf(FlameNode.props(

@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime.master.acker;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.config.CommitterConfig;
@@ -28,7 +29,7 @@ public class Committer extends LoggingActor {
 
   private final int managersCount;
   private final int millisBetweenCommits;
-  private final Registry registry;
+  private final ActorRef registryHolder;
   private final ActorRef pingActor;
 
   private long minAmongTables;
@@ -40,12 +41,12 @@ public class Committer extends LoggingActor {
   private Committer(int managersCount,
                     long defaultMinimalTime,
                     int millisBetweenCommits,
-                    Registry registry,
+                    ActorRef registryHolder,
                     ActorRef acker) {
     this.managersCount = managersCount;
     this.minAmongTables = defaultMinimalTime;
     this.millisBetweenCommits = millisBetweenCommits;
-    this.registry = registry;
+    this.registryHolder = registryHolder;
 
     pingActor = context().actorOf(
             PingActor.props(self(), StartCommit.START),
@@ -54,13 +55,18 @@ public class Committer extends LoggingActor {
     acker.tell(new MinTimeUpdateListener(self()), self());
   }
 
-  public static Props props(int managersCount, CommitterConfig committerConfig, Registry registry, ActorRef acker) {
+  public static Props props(
+          int managersCount,
+          CommitterConfig committerConfig,
+          ActorRef registryHolder,
+          ActorRef acker
+  ) {
     return Props.create(
             Committer.class,
             managersCount,
             committerConfig.defaultMinimalTime(),
             committerConfig.millisBetweenCommits(),
-            registry,
+            registryHolder,
             acker
     ).withDispatcher("processing-dispatcher");
   }
@@ -69,7 +75,11 @@ public class Committer extends LoggingActor {
   public void preStart() throws Exception {
     super.preStart();
     pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(millisBetweenCommits)), self());
-    minAmongTables = Math.max(registry.lastCommit(), minAmongTables);
+    minAmongTables = Math.max(((LastCommit) PatternsCS.ask(
+            registryHolder,
+            new GimmeLastCommit(),
+            FlameConfig.config.smallTimeout()
+    ).toCompletableFuture().get()).globalTime().time(), minAmongTables);
   }
 
   @Override
@@ -81,10 +91,6 @@ public class Committer extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(GimmeLastCommit.class, gimmeLastCommit -> {
-              log().info("Got gimme '{}'", gimmeLastCommit);
-              sender().tell(new LastCommit(new GlobalTime(registry.lastCommit(), EdgeId.MIN)), self());
-            })
             .match(Ready.class, ready -> {
               managers.add(sender());
               if (managers.size() == managersCount) {
@@ -110,10 +116,11 @@ public class Committer extends LoggingActor {
               log().info("Manager '{}' has prepared", sender());
               if (committed == managersCount) {
                 log().info("All managers have prepared, committing");
-                registry.committed(lastPrepareTime.time());
+                final Commit commit = new Commit(lastPrepareTime);
+                PatternsCS.ask(registryHolder, commit, FlameConfig.config.smallTimeout()).toCompletableFuture().get();
                 committed = 0;
                 commitRuns = false;
-                managers.forEach(actorRef -> actorRef.tell(new Commit(lastPrepareTime), self()));
+                managers.forEach(actorRef -> actorRef.tell(commit, self()));
                 getContext().unbecome();
               }
             })

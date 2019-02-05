@@ -6,6 +6,9 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.GimmeLastCommit;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.LastCommit;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.FrontTicket;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisterFront;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisterFrontFromTime;
@@ -132,6 +135,14 @@ public class RegistryHolder extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
+            .match(GimmeLastCommit.class, gimmeLastCommit -> {
+              log().info("Got gimme '{}'", gimmeLastCommit);
+              sender().tell(new LastCommit(new GlobalTime(registry.lastCommit(), EdgeId.MIN)), self());
+            })
+            .match(Commit.class, commit -> {
+              registry.committed(commit.globalTime().time());
+              sender().tell(commit, sender());
+            })
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
             .match(NewFrontRegisterer.Registered.class, this::onNewFrontRegistered)
             .match(AlreadyRegisteredFrontRegisterer.Registered.class, this::onAlreadyRegisteredFrontRegistered)

@@ -101,7 +101,7 @@ public class GraphManager extends LoggingActor {
                               .forEach(unit -> routerMap.put(unit, (ActorRef) managers.get(key))));
               routes.putAll(routerMap);
 
-              committer.tell(new GimmeLastCommit(), self());
+              registryHolder.tell(new GimmeLastCommit(), self());
               getContext().become(deploying());
             })
             .matchAny(m -> stash())
