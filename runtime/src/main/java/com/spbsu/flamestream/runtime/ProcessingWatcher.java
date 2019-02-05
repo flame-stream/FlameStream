@@ -147,7 +147,7 @@ public class ProcessingWatcher extends LoggingActor {
       committer = context().actorOf(Committer.props(
               config.paths().size(),
               committerConfig,
-              zkRegistry,
+              registryHolder,
               acker
       ), "committer");
     } else {
