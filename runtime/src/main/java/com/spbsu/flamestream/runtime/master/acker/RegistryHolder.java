@@ -13,6 +13,8 @@ import com.spbsu.flamestream.runtime.master.acker.api.registry.FrontTicket;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisterFront;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisterFrontFromTime;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 
 /**
@@ -79,9 +81,10 @@ public class RegistryHolder extends LoggingActor {
   private static class AlreadyRegisteredFrontRegisterer extends LoggingActor {
     static class Registered {
       private final FrontTicket frontTicket;
-      private final ActorRef sender;
+      private final @NotNull
+      ActorRef sender;
 
-      Registered(FrontTicket frontTicket, ActorRef sender) {
+      Registered(FrontTicket frontTicket, @NotNull ActorRef sender) {
         this.frontTicket = frontTicket;
         this.sender = sender;
       }
@@ -90,18 +93,20 @@ public class RegistryHolder extends LoggingActor {
         return this.frontTicket;
       }
 
+      @NotNull
       public ActorRef sender() {
         return this.sender;
       }
     }
 
-    public static Props props(ActorRef sender, ActorRef acker, GlobalTime startTime) {
+    public static Props props(@Nullable ActorRef sender, ActorRef acker, GlobalTime startTime) {
       return Props.create(AlreadyRegisteredFrontRegisterer.class, sender, acker, startTime);
     }
 
-    final ActorRef sender;
+    final @Nullable
+    ActorRef sender;
 
-    public AlreadyRegisteredFrontRegisterer(ActorRef sender, ActorRef acker, GlobalTime startTime) {
+    public AlreadyRegisteredFrontRegisterer(@Nullable ActorRef sender, ActorRef acker, GlobalTime startTime) {
       this.sender = sender;
       acker.tell(new RegisterFrontFromTime(startTime), self());
     }
@@ -112,7 +117,9 @@ public class RegistryHolder extends LoggingActor {
               .match(
                       FrontTicket.class,
                       frontTicket -> {
-                        context().parent().tell(new Registered(frontTicket, sender), self());
+                        if (sender != null) {
+                          context().parent().tell(new Registered(frontTicket, sender), self());
+                        }
                         context().stop(self());
                       }
               )
@@ -147,6 +154,17 @@ public class RegistryHolder extends LoggingActor {
             .match(NewFrontRegisterer.Registered.class, this::onNewFrontRegistered)
             .match(AlreadyRegisteredFrontRegisterer.Registered.class, this::onAlreadyRegisteredFrontRegistered)
             .build();
+  }
+
+  @Override
+  public void preStart() throws Exception {
+    super.preStart();
+    registry.all()
+            .forEach((frontId, time) -> context().actorOf(AlreadyRegisteredFrontRegisterer.props(
+                    null,
+                    acker,
+                    new GlobalTime(time, frontId)
+            )));
   }
 
   private void registerFront(EdgeId frontId) {
