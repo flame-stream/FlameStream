@@ -33,7 +33,7 @@ public class ProcessingWatcher extends LoggingActor {
   private final CommitterConfig committerConfig;
   private final StateStorage stateStorage;
   private final FlameSerializer serializer;
-  private final ActorRef acker;
+  private final ActorRef acker, registryHolder;
 
   private NodeCache graphCache = null;
   private PathChildrenCache frontsCache = null;
@@ -48,7 +48,8 @@ public class ProcessingWatcher extends LoggingActor {
                            CommitterConfig committerConfig,
                            StateStorage stateStorage,
                            FlameSerializer serializer,
-                           ActorRef acker
+                           ActorRef acker,
+                           ActorRef registryHolder
   ) {
     this.id = id;
     this.curator = curator;
@@ -57,6 +58,7 @@ public class ProcessingWatcher extends LoggingActor {
     this.stateStorage = stateStorage;
     this.serializer = serializer;
     this.acker = acker;
+    this.registryHolder = registryHolder;
   }
 
   public static Props props(String id,
@@ -65,7 +67,8 @@ public class ProcessingWatcher extends LoggingActor {
                             CommitterConfig committerConfig,
                             StateStorage stateStorage,
                             FlameSerializer serializer,
-                            ActorRef acker
+                            ActorRef acker,
+                            ActorRef registryHolder
   ) {
     return Props.create(
             ProcessingWatcher.class,
@@ -75,7 +78,8 @@ public class ProcessingWatcher extends LoggingActor {
             committerConfig,
             stateStorage,
             serializer,
-            acker
+            acker,
+            registryHolder
     );
   }
 
@@ -143,7 +147,7 @@ public class ProcessingWatcher extends LoggingActor {
       committer = context().actorOf(Committer.props(
               config.paths().size(),
               committerConfig,
-              zkRegistry,
+              registryHolder,
               acker
       ), "committer");
     } else {
@@ -160,6 +164,7 @@ public class ProcessingWatcher extends LoggingActor {
                     graph,
                     config.withChildPath("processing-watcher").withChildPath("graph"),
                     acker,
+                    registryHolder,
                     committer,
                     committerConfig.maxElementsInGraph(),
                     stateStorage

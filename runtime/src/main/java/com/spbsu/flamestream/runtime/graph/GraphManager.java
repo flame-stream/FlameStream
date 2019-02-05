@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 public class GraphManager extends LoggingActor {
   private final Graph graph;
   private final ActorRef acker;
+  private final ActorRef registryHolder;
   private final ActorRef committer;
   private final ComputationProps computationProps;
   private final StateStorage storage;
@@ -63,6 +64,7 @@ public class GraphManager extends LoggingActor {
   private GraphManager(String nodeId,
                        Graph graph,
                        ActorRef acker,
+                       ActorRef registryHolder,
                        ActorRef committer,
                        ComputationProps computationProps,
                        StateStorage storage) {
@@ -71,6 +73,7 @@ public class GraphManager extends LoggingActor {
     this.computationProps = computationProps;
     this.graph = graph;
     this.acker = context().actorOf(LocalAcker.props(acker), "local-acker");
+    this.registryHolder = registryHolder;
     this.committer = committer;
     acker.tell(new MinTimeUpdateListener(self()), self());
   }
@@ -79,10 +82,11 @@ public class GraphManager extends LoggingActor {
           String nodeId,
           Graph graph,
           ActorRef acker,
+          ActorRef registryHolder,
           ActorRef committer,
           ComputationProps layout,
           StateStorage storage) {
-    return Props.create(GraphManager.class, nodeId, graph, acker, committer, layout, storage)
+    return Props.create(GraphManager.class, nodeId, graph, acker, registryHolder, committer, layout, storage)
             .withDispatcher("processing-dispatcher");
   }
 
@@ -97,7 +101,7 @@ public class GraphManager extends LoggingActor {
                               .forEach(unit -> routerMap.put(unit, (ActorRef) managers.get(key))));
               routes.putAll(routerMap);
 
-              committer.tell(new GimmeLastCommit(), self());
+              registryHolder.tell(new GimmeLastCommit(), self());
               getContext().become(deploying());
             })
             .matchAny(m -> stash())

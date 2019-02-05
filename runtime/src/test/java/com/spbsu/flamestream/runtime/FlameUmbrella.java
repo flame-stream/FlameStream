@@ -24,6 +24,8 @@ import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
+import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
 import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import scala.concurrent.duration.Duration;
@@ -72,11 +74,12 @@ class Cluster extends LoggingActor {
     final Registry registry = new InMemoryRegistry();
     inner = context().actorOf(FlameUmbrella.props(
             context -> {
-              final ActorRef acker = context.actorOf(Acker.props(0, registry), "acker");
+              final ActorRef acker = context.actorOf(Acker.props(0), "acker");
+              final ActorRef registryHolder = context.actorOf(RegistryHolder.props(registry, acker), "registry-holder");
               final ActorRef committer = context.actorOf(Committer.props(
                       clusterConfig.paths().size(),
                       committerConfig,
-                      registry,
+                      registryHolder,
                       acker
               ));
               return paths.keySet().stream().map(id -> context.actorOf(FlameNode.props(
@@ -84,6 +87,7 @@ class Cluster extends LoggingActor {
                       g,
                       clusterConfig,
                       acker,
+                      registryHolder,
                       committer,
                       maxElementsInGraph,
                       stateStorage
