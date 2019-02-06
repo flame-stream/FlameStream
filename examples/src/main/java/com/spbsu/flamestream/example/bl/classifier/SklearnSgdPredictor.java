@@ -1,26 +1,25 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
+import com.google.common.annotations.VisibleForTesting;
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.jblas.MatrixFunctions.exp;
 
 public class SklearnSgdPredictor implements TopicsPredictor {
-  private static final Logger LOGGER = LoggerFactory.getLogger(SklearnSgdPredictor.class.getName());
   private final String weightsPath;
   private final String cntVectorizerPath;
+
+  //lazy loading
   private TObjectIntMap<String> countVectorizer;
   private double[] intercept;
   private DoubleMatrix weights;
@@ -32,8 +31,11 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   }
 
   private void loadMeta() {
-    final File metaData = new File(weightsPath);
+    if (weights != null) {
+      return;
+    }
 
+    final File metaData = new File(weightsPath);
     try (final BufferedReader br = new BufferedReader(new FileReader(metaData))) {
       final double[] meta = parseDoubles(br.readLine());
       final int classes = (int) meta[0];
@@ -63,27 +65,16 @@ public class SklearnSgdPredictor implements TopicsPredictor {
 
   @Override
   public Topic[] predict(Document document) {
-    if (weights == null) {
-      loadMeta();
-      loadVocabulary();
-    }
+    loadMeta();
+    loadVocabulary();
 
     final double[] vectorized = vectorize(document);
     final DoubleMatrix probs = predictProba(new DoubleMatrix(vectorized));
     final Topic[] result = new Topic[probs.length];
-
     for (int index = 0; index < probs.data.length; index++) {
       result[index] = new Topic(topics[index], Integer.toString(index), probs.data[index]);
     }
-
     return result;
-  }
-
-  static double[] parseDoubles(String line) {
-    return Arrays
-            .stream(line.split(" "))
-            .mapToDouble(Double::parseDouble)
-            .toArray();
   }
 
   // see _predict_proba_lr in base.py sklearn
@@ -110,11 +101,13 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   }
 
   private void loadVocabulary() {
+    if (countVectorizer != null) {
+      return;
+    }
+
     final File countFile = new File(cntVectorizerPath);
     countVectorizer = new TObjectIntHashMap<>();
-
     try (final BufferedReader countFileReader = new BufferedReader(new FileReader(countFile))) {
-
       String line;
       while ((line = countFileReader.readLine()) != null) {
         final String[] items = line.split(" ");
@@ -122,32 +115,34 @@ public class SklearnSgdPredictor implements TopicsPredictor {
         final int value = Integer.parseInt(items[1]);
         countVectorizer.put(key, value);
       }
-
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
+  @VisibleForTesting
   double[] vectorize(Document document) {
-    if (countVectorizer == null) {
-      loadVocabulary();
-    }
-
+    loadVocabulary();
     final double[] res = new double[countVectorizer.size()];
     final TObjectDoubleMap<String> tfidf = document.getTfidf();
     tfidf.forEachEntry((s, v) -> {
       res[countVectorizer.get(s)] = v;
       return true;
     });
-
     return res;
   }
 
-  int vectorize(String word) {
-    if (countVectorizer == null) {
-      loadVocabulary();
-    }
-
+  @VisibleForTesting
+  int wordIndex(String word) {
+    loadVocabulary();
     return countVectorizer.get(word);
+  }
+
+  @VisibleForTesting
+  static double[] parseDoubles(String line) {
+    return Arrays
+            .stream(line.split(" "))
+            .mapToDouble(Double::parseDouble)
+            .toArray();
   }
 }
