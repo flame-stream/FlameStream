@@ -65,7 +65,7 @@ public class PredictorTest {
           final double diff = abs(pyPrediction[j] - prediction[j].probability());
           maxDiff = max(diff, maxDiff);
         }
-        assertTrue(maxDiff < 0.15); // FIXME: 06.02.19 WTF?!
+        assertTrue(maxDiff < MathTools.EPSILON);
 
         Arrays.sort(prediction);
         LOGGER.info("Doc: {}", doc);
