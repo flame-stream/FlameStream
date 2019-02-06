@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,13 +19,14 @@ import static com.spbsu.flamestream.example.bl.classifier.SklearnSgdPredictor.pa
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class PredictorTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(PredictorTest.class.getName());
   private static File testDataFile = new File("src/test/resources/sklearn_prediction");
 
   @Test
-  public void threeDocumentTest() throws IOException {
+  public void sklearnDocumentTest() throws IOException {
     final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
     final String weightsPath = "src/main/resources/classifier_weights";
 
@@ -43,20 +45,17 @@ public class PredictorTest {
         final TObjectDoubleMap<String> tfidf = new TObjectDoubleHashMap<>();
         while (matcher.find()) {
           final String word = matcher.group(0);
-          final int featureIndex = predictor.vectorizer().vectorize(word);
+          final int featureIndex = predictor.vectorize(word);
           tfidf.put(word, tfidfFeatures[featureIndex]);
         }
 
         final Document document = new Document(tfidf);
-        final double[] myVectorization = predictor.vectorizer().vectorize(document);
+        final double[] myVectorization = predictor.vectorize(document);
         double maxDiff = 0;
         for (int j = 0; j < myVectorization.length; j++) {
           final double diff = abs(tfidfFeatures[j] - myVectorization[j]);
           maxDiff = max(diff, maxDiff);
         }
-        LOGGER.info("Max diff {} in vectorizations", maxDiff);
-        LOGGER.info("py vectorization {}", tfidfFeatures);
-        LOGGER.info("my vectorization {}", myVectorization);
         final Topic[] prediction = predictor.predict(document);
 
         assertEquals(prediction.length, pyPrediction.length);
@@ -66,6 +65,7 @@ public class PredictorTest {
           maxDiff = max(diff, maxDiff);
         }
 
+        assertTrue(maxDiff < 0.15);
         Arrays.sort(prediction);
         LOGGER.info("Doc: {}", doc);
         LOGGER.info("Max diff {} in predictions", maxDiff);

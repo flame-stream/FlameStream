@@ -1,5 +1,8 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
+import gnu.trove.map.TObjectDoubleMap;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
 import org.slf4j.Logger;
@@ -18,7 +21,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   private static final Logger LOGGER = LoggerFactory.getLogger(SklearnSgdPredictor.class.getName());
   private final String weightsPath;
   private final String cntVectorizerPath;
-  private CountVectorizer vectorizer;
+  private TObjectIntMap<String> countVectorizer;
   private double[] intercept;
   private DoubleMatrix weights;
   private String[] topics;
@@ -35,7 +38,6 @@ public class SklearnSgdPredictor implements TopicsPredictor {
       final double[] meta = parseDoubles(br.readLine());
       final int classes = (int) meta[0];
       final int currentFeatures = (int) meta[1];
-      vectorizer = new CountVectorizer(cntVectorizerPath);
       topics = new String[classes];
       for (int i = 0; i < classes; i++) {
         topics[i] = br.readLine();
@@ -63,19 +65,10 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   public Topic[] predict(Document document) {
     if (weights == null) {
       loadMeta();
+      loadVocabulary();
     }
 
-    final double[] vectorized = vectorizer.vectorize(document);
-    final ArrayList<Double> nonzeros = new ArrayList<>();
-    for (int i = 0; i < vectorized.length; i++) {
-      if (vectorized[i] != 0.0) {
-        nonzeros.add(vectorized[i]);
-      }
-    }
-
-    LOGGER.info(String.valueOf(nonzeros.size()));
-    LOGGER.info(String.valueOf(nonzeros.stream().mapToDouble(Double::doubleValue).sum()));
-    LOGGER.info(String.valueOf(nonzeros));
+    final double[] vectorized = vectorize(document);
     final DoubleMatrix probs = predictProba(new DoubleMatrix(vectorized));
     final Topic[] result = new Topic[probs.length];
 
@@ -116,11 +109,45 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return score.add(inter);
   }
 
-  public Vectorizer vectorizer() {
-    if (weights == null) {
-      loadMeta();
+  private void loadVocabulary() {
+    final File countFile = new File(cntVectorizerPath);
+    countVectorizer = new TObjectIntHashMap<>();
+
+    try (final BufferedReader countFileReader = new BufferedReader(new FileReader(countFile))) {
+
+      String line;
+      while ((line = countFileReader.readLine()) != null) {
+        final String[] items = line.split(" ");
+        final String key = items[0];
+        final int value = Integer.parseInt(items[1]);
+        countVectorizer.put(key, value);
+      }
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  double[] vectorize(Document document) {
+    if (countVectorizer == null) {
+      loadVocabulary();
     }
 
-    return vectorizer;
+    final double[] res = new double[countVectorizer.size()];
+    final TObjectDoubleMap<String> tfidf = document.getTfidf();
+    tfidf.forEachEntry((s, v) -> {
+      res[countVectorizer.get(s)] = v;
+      return true;
+    });
+
+    return res;
+  }
+
+  int vectorize(String word) {
+    if (countVectorizer == null) {
+      loadVocabulary();
+    }
+
+    return countVectorizer.get(word);
   }
 }
