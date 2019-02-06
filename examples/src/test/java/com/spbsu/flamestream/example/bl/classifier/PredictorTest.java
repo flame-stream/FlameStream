@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
+import com.expleague.commons.math.MathTools;
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 import org.slf4j.Logger;
@@ -10,7 +11,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,7 +45,7 @@ public class PredictorTest {
         final TObjectDoubleMap<String> tfidf = new TObjectDoubleHashMap<>();
         while (matcher.find()) {
           final String word = matcher.group(0);
-          final int featureIndex = predictor.vectorize(word);
+          final int featureIndex = predictor.wordIndex(word);
           tfidf.put(word, tfidfFeatures[featureIndex]);
         }
 
@@ -56,16 +56,17 @@ public class PredictorTest {
           final double diff = abs(tfidfFeatures[j] - myVectorization[j]);
           maxDiff = max(diff, maxDiff);
         }
-        final Topic[] prediction = predictor.predict(document);
+        assertTrue(maxDiff < MathTools.EPSILON);
 
+        final Topic[] prediction = predictor.predict(document);
         assertEquals(prediction.length, pyPrediction.length);
         maxDiff = 0;
         for (int j = 0; j < prediction.length; j++) {
           final double diff = abs(pyPrediction[j] - prediction[j].probability());
           maxDiff = max(diff, maxDiff);
         }
+        assertTrue(maxDiff < 0.15); // FIXME: 06.02.19 WTF?!
 
-        assertTrue(maxDiff < 0.15);
         Arrays.sort(prediction);
         LOGGER.info("Doc: {}", doc);
         LOGGER.info("Max diff {} in predictions", maxDiff);
