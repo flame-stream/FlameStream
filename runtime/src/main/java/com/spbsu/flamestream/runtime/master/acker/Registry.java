@@ -5,7 +5,7 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import java.util.Map;
 
 public interface Registry {
-  Map<EdgeId, Long> all();
+  Map<EdgeId, Long> registeredFronts();
 
   void register(EdgeId frontId, long attachTimestamp);
 

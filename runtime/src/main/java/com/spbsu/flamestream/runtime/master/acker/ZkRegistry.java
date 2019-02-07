@@ -4,7 +4,6 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.data.Stat;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -17,7 +16,7 @@ public class ZkRegistry implements Registry {
   }
 
   @Override
-  public Map<EdgeId, Long> all() {
+  public Map<EdgeId, Long> registeredFronts() {
     try {
       return curator.getChildren().forPath("/graph/fronts").stream().flatMap(
               edgeName ->
