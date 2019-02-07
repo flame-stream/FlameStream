@@ -4,11 +4,40 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.data.Stat;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 public class ZkRegistry implements Registry {
   private final CuratorFramework curator;
 
   public ZkRegistry(CuratorFramework curator) {
     this.curator = curator;
+  }
+
+  @Override
+  public Map<EdgeId, Long> registeredFronts() {
+    try {
+      if (curator.checkExists().forPath("/graph/fronts") != null) {
+        return curator.getChildren().forPath("/graph/fronts").stream().flatMap(
+                edgeName ->
+                {
+                  try {
+                    return curator.getChildren()
+                            .forPath("/graph/fronts/" + edgeName)
+                            .stream()
+                            .map(nodeId -> new EdgeId(edgeName, nodeId));
+                  } catch (Exception e) {
+                    throw new RuntimeException(e);
+                  }
+                }
+        ).collect(Collectors.toMap(Function.identity(), this::registeredTime));
+      }
+      return Collections.emptyMap();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
