@@ -4,26 +4,19 @@ import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
-import com.expleague.commons.math.vectors.impl.mx.SparseMx;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.google.common.annotations.VisibleForTesting;
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
-import org.jblas.DoubleMatrix;
-import org.jblas.MatrixFunctions;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
-
-import static org.jblas.MatrixFunctions.expi;
 
 public class SklearnSgdPredictor implements TopicsPredictor {
   private final String weightsPath;
@@ -55,7 +48,6 @@ public class SklearnSgdPredictor implements TopicsPredictor {
         topics[i] = br.readLine();
       }
 
-      final double[][] inputCoef = new double[classes][currentFeatures];
       final Vec[] coef = new Vec[classes];
       String line;
       for (int index = 0; index < classes; index++) {
@@ -64,12 +56,11 @@ public class SklearnSgdPredictor implements TopicsPredictor {
         final ArrayVec vecNumbers = new ArrayVec(numbers, 0, numbers.length);
 
         assert numbers.length == currentFeatures;
-        //inputCoef[index] = numbers;
         coef[index] = vecNumbers;
       }
 
       weights = new RowsVecArrayMx(coef);
-      MxTools.transpose(weights);;
+      MxTools.transpose(weights);
 
       line = br.readLine();
       final double[] parsedIntercept = parseDoubles(line);
