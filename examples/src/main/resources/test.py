@@ -5,7 +5,7 @@ from sklearn.linear_model import SGDClassifier
 
 def main():
     # Read and clean data
-    df = pd.read_csv('/home/tyoma/Work/TVC/media_space/resources/news_lenta.csv', nrows=10000)
+    df = pd.read_csv('news_lenta.csv', nrows=500000)
     df = df.dropna()
     df = df[df['tags'] != 'Все']
 
@@ -39,7 +39,7 @@ def main():
     #     # print(np.sum(X[i].toarray()))
     #     # print('####')
 
-    classifier = SGDClassifier(loss="log", class_weight='balanced')
+    classifier = SGDClassifier(loss="log", class_weight='balanced', penalty='l1')
     classifier.fit(X, y)
 
     with open('classifier_weights', 'w') as f:
@@ -50,8 +50,10 @@ def main():
             f.write("%s \n" % line)
 
         for line in classifier.coef_:
-            for item in line:
-                f.write("%s " % item)
+            for index, item in enumerate(line):
+                if item != 0.0:
+                    f.write("%s %s " % (index, item))
+
             f.write("\n")
 
         for item in classifier.intercept_:
