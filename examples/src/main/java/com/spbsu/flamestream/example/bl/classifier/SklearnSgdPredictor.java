@@ -105,9 +105,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     loadMeta();
     loadVocabulary();
 
-    // TODO: 07.02.19 migrate to sparse matrices
     final SparseVec vectorized = vectorize(document);
-
     final Vec score = MxTools.multiply(weights, vectorized);
     final Vec sum = VecTools.sum(score, intercept);
     final Vec muli = VecTools.scale(sum, -1);
@@ -118,7 +116,6 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     final Vec vecOnes = new ArrayVec(ones, 0, ones.length);
     final Vec sum1 = VecTools.sum(muli, vecOnes);
 
-    // powi -1
     for (int i = 0; i < sum1.dim(); i++) {
       double changed = 1 / sum1.get(i);
       sum1.set(i, changed);
