@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
 import com.expleague.commons.math.MathTools;
+import com.expleague.commons.math.vectors.Vec;
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ public class PredictorTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(PredictorTest.class.getName());
   private static File testDataFile = new File("src/test/resources/sklearn_prediction");
 
-  @Test(enabled = false)
+  @Test
   public void sklearnDocumentTest() throws IOException {
     final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
     final String weightsPath = "src/main/resources/classifier_weights";
@@ -50,10 +51,10 @@ public class PredictorTest {
         }
 
         final Document document = new Document(tfidf);
-        final double[] myVectorization = predictor.vectorize(document);
+        final Vec myVectorization = predictor.vectorize(document);
         double maxDiff = 0;
-        for (int j = 0; j < myVectorization.length; j++) {
-          final double diff = abs(tfidfFeatures[j] - myVectorization[j]);
+        for (int j = 0; j < myVectorization.dim(); j++) {
+          final double diff = abs(tfidfFeatures[j] - myVectorization.get(j));
           maxDiff = max(diff, maxDiff);
         }
         assertTrue(maxDiff < MathTools.EPSILON);
@@ -66,7 +67,6 @@ public class PredictorTest {
           maxDiff = max(diff, maxDiff);
         }
         assertTrue(maxDiff < MathTools.EPSILON);
-
         Arrays.sort(prediction);
         LOGGER.info("Doc: {}", doc);
         LOGGER.info("Max diff {} in predictions", maxDiff);
