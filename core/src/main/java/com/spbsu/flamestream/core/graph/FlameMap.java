@@ -1,7 +1,6 @@
 package com.spbsu.flamestream.core.graph;
 
 import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
@@ -13,15 +12,31 @@ import java.util.stream.Stream;
 public class FlameMap<T, R> extends HashingVertexStub {
   private final Function<T, Stream<R>> function;
   private final Class<?> clazz;
-  private final @Nullable HashFunction hashFunction;
+  private final @Nullable
+  HashFunction hashFunction;
+  private final @Nullable
+  Runnable init;
 
-  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz, @Nullable HashFunction hashFunction) {
+  public FlameMap(Function<T, Stream<R>> function,
+                  Class<?> clazz,
+                  @Nullable HashFunction hashFunction,
+                  @Nullable Runnable init) {
     this.function = function;
     this.clazz = clazz;
     this.hashFunction = hashFunction;
+    this.init = init;
   }
+
+  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz, @Nullable Runnable init) {
+    this(function, clazz, null, init);
+  }
+
+  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz, @Nullable HashFunction hashFunction) {
+    this(function, clazz, hashFunction, null);
+  }
+
   public FlameMap(Function<T, Stream<R>> function, Class<?> clazz) {
-    this(function, clazz, null);
+    this(function, clazz, null, null);
   }
 
   public FlameMapOperation operation(long physicalId) {
@@ -39,8 +54,15 @@ public class FlameMap<T, R> extends HashingVertexStub {
     return function;
   }
 
+  public void init() {
+    if (init != null) {
+      init.run();
+    }
+  }
+
   @Override
-  public @Nullable HashFunction hash() {
+  public @Nullable
+  HashFunction hash() {
     return hashFunction;
   }
 
