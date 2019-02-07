@@ -26,7 +26,7 @@ public class PredictorTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(PredictorTest.class.getName());
   private static File testDataFile = new File("src/test/resources/sklearn_prediction");
 
-  @Test(enabled = false)
+  @Test
   public void sklearnDocumentTest() throws IOException {
     final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
     final String weightsPath = "src/main/resources/classifier_weights";
