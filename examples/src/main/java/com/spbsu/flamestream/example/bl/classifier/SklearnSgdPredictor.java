@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class SklearnSgdPredictor implements TopicsPredictor {
@@ -53,10 +54,22 @@ public class SklearnSgdPredictor implements TopicsPredictor {
       for (int index = 0; index < classes; index++) {
         line = br.readLine();
         final double[] numbers = parseDoubles(line);
-        final ArrayVec vecNumbers = new ArrayVec(numbers, 0, numbers.length);
+        final ArrayList<Integer> indeces = new ArrayList<>();
+        final ArrayList<Double> values = new ArrayList<>();
+
+        for (int i = 0; i < numbers.length; i++) {
+          if (numbers[i] != 0) {
+            indeces.add(i);
+            values.add(numbers[i]);
+          }
+        }
+
+        final SparseVec sparseVec = new SparseVec(currentFeatures,
+                indeces.stream().mapToInt(i -> i).toArray(),
+                values.stream().mapToDouble(i -> i).toArray());
 
         assert numbers.length == currentFeatures;
-        coef[index] = vecNumbers;
+        coef[index] = sparseVec;
       }
 
       weights = new RowsVecArrayMx(coef);
