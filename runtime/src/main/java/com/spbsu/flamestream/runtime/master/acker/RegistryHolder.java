@@ -163,7 +163,7 @@ public class RegistryHolder extends LoggingActor {
             .forEach((frontId, time) -> context().actorOf(AlreadyRegisteredFrontRegisterer.props(
                     null,
                     acker,
-                    new GlobalTime(time, frontId)
+                    new GlobalTime(Math.max(time, registry.lastCommit()), frontId)
             )));
   }
 
