@@ -4,7 +4,7 @@ import akka.actor.ActorSystem;
 import akka.serialization.Serialization;
 import akka.serialization.SerializationExtension;
 import com.spbsu.flamestream.core.Equalz;
-import com.spbsu.flamestream.runtime.acceptance.FlameAkkaSuite;
+import com.spbsu.flamestream.core.FlameStreamSuite;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
@@ -35,13 +35,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DoubleGroupingTest extends FlameAkkaSuite {
+public class DoubleGroupingTest extends FlameStreamSuite {
   private static final int WINDOW = 2;
   private static final HashFunction HASH_FUNCTION = HashFunction.uniformHash(HashFunction.bucketedHash(
           HashFunction.objectHash(Integer.class),
@@ -184,7 +183,15 @@ public class DoubleGroupingTest extends FlameAkkaSuite {
               "doubleGroupingFront",
               new AkkaFrontType<Integer>(runtime.system(), backpressure)
       ).collect(Collectors.toList());
-      applyDataToAllHandlesAsync(new ConcurrentLinkedQueue<>(source), handles);
+      final AkkaFront.FrontHandle<Integer> sink = handles.get(0);
+
+      for (int i = 1; i < handles.size(); i++) {
+        handles.get(i).unregister();
+      }
+
+      source.forEach(sink);
+      sink.unregister();
+
       consumer.await(10, TimeUnit.MINUTES);
       Assert.assertEquals(consumer.result().collect(Collectors.toSet()), new HashSet<>(expected));
     }
