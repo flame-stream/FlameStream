@@ -159,7 +159,7 @@ public class RegistryHolder extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    registry.all()
+    registry.registeredFronts()
             .forEach((frontId, time) -> context().actorOf(AlreadyRegisteredFrontRegisterer.props(
                     null,
                     acker,

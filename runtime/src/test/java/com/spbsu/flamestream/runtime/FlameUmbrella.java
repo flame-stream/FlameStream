@@ -232,8 +232,8 @@ class InMemoryRegistry implements Registry {
   private long lastCommit = 0;
 
   @Override
-  public Map<EdgeId, Long> all() {
-    return linearizableCollection;
+  public Map<EdgeId, Long> registeredFronts() {
+    return new HashMap<>(linearizableCollection);
   }
 
   @Override
