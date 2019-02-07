@@ -41,7 +41,7 @@ public class WordCountTest extends FlameAkkaSuite {
     }
   }
 
-  @Test(invocationCount = 10)
+  @Test
   public void localEnvironmentBlinkTest() throws InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
             .millisBetweenCommits(500)
