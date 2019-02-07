@@ -3,9 +3,11 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.config.CommitterConfig;
+import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
@@ -13,6 +15,7 @@ import com.spbsu.flamestream.runtime.master.acker.Committer;
 import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.state.StateStorage;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.apache.commons.lang.StringUtils;
@@ -134,6 +137,7 @@ public class ProcessingWatcher extends LoggingActor {
     if (this.graph != null) {
       throw new RuntimeException("Graph updating is not supported yet");
     }
+    PatternsCS.ask(context().actorOf(InitAgent.props()), graph, FlameConfig.config.bigTimeout());
 
     this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
@@ -201,5 +205,30 @@ public class ProcessingWatcher extends LoggingActor {
       }
     });
     rearsCache.start();
+  }
+
+  private static class InitAgent extends LoggingActor {
+    @Override
+    public Receive createReceive() {
+      return ReceiveBuilder.create()
+              .match(Graph.class, graph -> {
+                graph.components().forEach(vertexStream -> vertexStream.forEach(vertex -> {
+                  if (vertex instanceof FlameMap) {
+                    ((FlameMap) vertex).init();
+                  }
+                }));
+                sender().tell(InitDone.OBJECT, self());
+                context().stop(self());
+              })
+              .build();
+    }
+
+    public static Props props() {
+      return Props.create(InitAgent.class);
+    }
+  }
+
+  private enum InitDone {
+    OBJECT
   }
 }
