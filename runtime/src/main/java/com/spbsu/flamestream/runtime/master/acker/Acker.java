@@ -83,6 +83,9 @@ public class Acker extends LoggingActor {
   }
 
   private void registerFrontFromTime(GlobalTime startTime) {
+    if (startTime.compareTo(minAmongTables()) < 0) {
+      throw new RuntimeException("Registering front back in time");
+    }
     maxHeartbeats.put(startTime.frontId(), startTime);
     sender().tell(new FrontTicket(startTime), sender());
   }
