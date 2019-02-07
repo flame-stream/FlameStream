@@ -1,5 +1,15 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.MxTools;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.ColsVecArrayMx;
+import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
+import com.expleague.commons.math.vectors.impl.mx.SparseMx;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.google.common.annotations.VisibleForTesting;
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.TObjectIntMap;
@@ -21,8 +31,8 @@ public class SklearnSgdPredictor implements TopicsPredictor {
 
   //lazy loading
   private TObjectIntMap<String> countVectorizer;
-  private DoubleMatrix intercept;
-  private DoubleMatrix weights;
+  private Vec intercept;
+  private Mx weights;
   private String[] topics;
 
   SklearnSgdPredictor(String cntVectorizerPath, String weightsPath) {
@@ -46,19 +56,24 @@ public class SklearnSgdPredictor implements TopicsPredictor {
       }
 
       final double[][] inputCoef = new double[classes][currentFeatures];
+      final Vec[] coef = new Vec[classes];
       String line;
       for (int index = 0; index < classes; index++) {
         line = br.readLine();
         final double[] numbers = parseDoubles(line);
+        final ArrayVec vecNumbers = new ArrayVec(numbers, 0, numbers.length);
 
         assert numbers.length == currentFeatures;
-        inputCoef[index] = numbers;
+        //inputCoef[index] = numbers;
+        coef[index] = vecNumbers;
       }
+
+      weights = new RowsVecArrayMx(coef);
+      MxTools.transpose(weights);;
 
       line = br.readLine();
       final double[] parsedIntercept = parseDoubles(line);
-      intercept = new DoubleMatrix(1, parsedIntercept.length, parsedIntercept);
-      weights = new DoubleMatrix(inputCoef).transpose();
+      intercept = new ArrayVec(parsedIntercept, 0, parsedIntercept.length);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -90,32 +105,51 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     loadVocabulary();
 
     // TODO: 07.02.19 migrate to sparse matrices
-    final double[] vectorized = vectorize(document);
-    final DoubleMatrix score = new DoubleMatrix(vectorized).transpose().mmul(weights);
-    score.addi(intercept);
-    score.muli(-1);
-    expi(score);
-    score.addi(1);
-    MatrixFunctions.powi(score, -1);
-    score.divi(score.rowSums());
+    final SparseVec vectorized = vectorize(document);
 
-    final Topic[] result = new Topic[score.length];
-    for (int index = 0; index < score.data.length; index++) {
-      result[index] = new Topic(topics[index], Integer.toString(index), score.data[index]);
+    final Vec score = MxTools.multiply(weights, vectorized);
+    final Vec sum = VecTools.sum(score, intercept);
+    final Vec muli = VecTools.scale(sum, -1);
+    VecTools.exp(muli);
+
+    final double[] ones = new double[score.dim()];
+    Arrays.fill(ones, 1);
+    final Vec vecOnes = new ArrayVec(ones, 0, ones.length);
+    final Vec sum1 = VecTools.sum(muli, vecOnes);
+
+    // powi -1
+    for (int i = 0; i < sum1.dim(); i++) {
+      double changed = 1 / sum1.get(i);
+      sum1.set(i, changed);
+    }
+
+    double rowSum = VecTools.sum(sum1);
+    VecTools.scale(sum1, 1 / rowSum);
+
+    final Topic[] result = new Topic[sum1.dim()];
+    for (int index = 0; index < sum1.dim(); index++) {
+      result[index] = new Topic(topics[index], Integer.toString(index), sum1.get(index));
     }
     return result;
   }
 
   @VisibleForTesting
-  double[] vectorize(Document document) {
+  SparseVec vectorize(Document document) {
     loadVocabulary();
-    final double[] res = new double[countVectorizer.size()];
     final TObjectDoubleMap<String> tfidf = document.getTfidf();
-    tfidf.forEachEntry((s, v) -> {
-      res[countVectorizer.get(s)] = v;
-      return true;
-    });
-    return res;
+    final int[] indeces = new int[tfidf.size()];
+    final double[] values = new double[tfidf.size()];
+
+    int index = 0;
+    for (String key : tfidf.keySet()) {
+      final int valueIndex = countVectorizer.get(key);
+
+      indeces[index] = valueIndex;
+      values[index] = tfidf.get(key);
+      index++;
+    }
+
+    return new SparseVec(countVectorizer.size(), indeces, values);
   }
 
   @VisibleForTesting
