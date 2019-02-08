@@ -28,6 +28,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 public class ProcessingWatcher extends LoggingActor {
   private final String id;
@@ -137,7 +138,13 @@ public class ProcessingWatcher extends LoggingActor {
     if (this.graph != null) {
       throw new RuntimeException("Graph updating is not supported yet");
     }
-    PatternsCS.ask(context().actorOf(InitAgent.props()), graph, FlameConfig.config.bigTimeout());
+    try {
+      PatternsCS.ask(context().actorOf(InitAgent.props()), graph, FlameConfig.config.bigTimeout())
+              .toCompletableFuture()
+              .get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
 
     this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
