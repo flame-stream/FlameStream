@@ -11,7 +11,7 @@ import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-public class GroupingJoba implements Joba {
+public class GroupingJoba extends Joba {
   private final Tracing.Tracer tracer = Tracing.TRACING.forEvent("grouping-receive");
 
   private final Grouping<?> grouping;
@@ -20,7 +20,8 @@ public class GroupingJoba implements Joba {
 
   private GlobalTime currentMinTime = GlobalTime.MIN;
 
-  public GroupingJoba(Grouping<?> grouping, GroupGroupingState state) {
+  public GroupingJoba(Joba.Id id, Grouping<?> grouping, GroupGroupingState state) {
+    super(id);
     this.instance = grouping.operation(ThreadLocalRandom.current().nextLong());
     this.grouping = grouping;
     this.state = state;

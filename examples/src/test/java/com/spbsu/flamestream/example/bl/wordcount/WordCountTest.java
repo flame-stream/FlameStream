@@ -37,41 +37,54 @@ public class WordCountTest extends FlameAkkaSuite {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
             .millisBetweenCommits(500)
             .build()) {
-      final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
-      {
-        final int lineSize = 50;
-        final int streamSize = 2000;
-        final Queue<String> input = Stream.generate(() -> {
-          final String[] words = {"repka", "dedka", "babka", "zhuchka", "vnuchka"};
-          return new Random().ints(lineSize, 0, words.length).mapToObj(i -> words[i])
-                  .collect(joining(" "));
-        }).limit(streamSize).collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
-        final Pattern pattern = Pattern.compile("\\s");
-        final Map<String, Integer> expected = input.stream()
-                .map(pattern::split)
-                .flatMap(Arrays::stream)
-                .collect(toMap(Function.identity(), o -> 1, Integer::sum));
+      test(runtime, 2000);
+    }
+  }
 
-        final AwaitResultConsumer<WordCounter> awaitConsumer = new AwaitResultConsumer<>(
-                lineSize * streamSize
-        );
-        flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordCounter.class))
-                .forEach(r -> r.addListener(awaitConsumer));
-        final List<AkkaFront.FrontHandle<String>> handles = flame
-                .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system()))
-                .collect(Collectors.toList());
-        applyDataToAllHandlesAsync(input, handles);
-        awaitConsumer.await(5, TimeUnit.MINUTES);
+  @Test
+  public void localEnvironmentBlinkTest() throws InterruptedException {
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
+            .millisBetweenCommits(500)
+            .withBlink()
+            .build()) {
+      test(runtime, 10000);
+    }
+  }
 
-        final Map<String, Integer> actual = new HashMap<>();
-        awaitConsumer.result().forEach(o -> {
-          final WordCounter wordContainer = o;
-          actual.putIfAbsent(wordContainer.word(), 0);
-          actual.computeIfPresent(wordContainer.word(), (uid, old) -> Math.max(wordContainer.count(), old));
-        });
+  private void test(LocalRuntime runtime, int streamSize) throws InterruptedException {
+    final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
+    {
+      final int lineSize = 50;
+      final Queue<String> input = Stream.generate(() -> {
+        final String[] words = {"repka", "dedka", "babka", "zhuchka", "vnuchka"};
+        return new Random().ints(lineSize, 0, words.length).mapToObj(i -> words[i])
+                .collect(joining(" "));
+      }).limit(streamSize).collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+      final Pattern pattern = Pattern.compile("\\s");
+      final Map<String, Integer> expected = input.stream()
+              .map(pattern::split)
+              .flatMap(Arrays::stream)
+              .collect(toMap(Function.identity(), o -> 1, Integer::sum));
 
-        Assert.assertEquals(actual, expected);
-      }
+      final AwaitResultConsumer<WordCounter> awaitConsumer = new AwaitResultConsumer<>(
+              lineSize * streamSize
+      );
+      flame.attachRear("wordCountRear", new AkkaRearType<>(runtime.system(), WordCounter.class))
+              .forEach(r -> r.addListener(awaitConsumer));
+      final List<AkkaFront.FrontHandle<String>> handles = flame
+              .attachFront("wordCountFront", new AkkaFrontType<String>(runtime.system()))
+              .collect(Collectors.toList());
+      applyDataToAllHandlesAsync(input, handles);
+      awaitConsumer.await(5, TimeUnit.MINUTES);
+
+      final Map<String, Integer> actual = new HashMap<>();
+      awaitConsumer.result().forEach(o -> {
+        final WordCounter wordContainer = o;
+        actual.putIfAbsent(wordContainer.word(), 0);
+        actual.computeIfPresent(wordContainer.word(), (uid, old) -> Math.max(wordContainer.count(), old));
+      });
+
+      Assert.assertEquals(actual, expected);
     }
   }
 }

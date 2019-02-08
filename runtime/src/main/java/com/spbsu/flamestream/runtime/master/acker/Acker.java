@@ -7,10 +7,12 @@ import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
+import com.spbsu.flamestream.runtime.master.acker.api.JobaTime;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.FrontTicket;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisterFront;
+import com.spbsu.flamestream.runtime.master.acker.api.registry.RegisterFrontFromTime;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.master.acker.table.AckTable;
 import com.spbsu.flamestream.runtime.master.acker.table.ArrayAckTable;
@@ -46,55 +48,46 @@ public class Acker extends LoggingActor {
   private static final int WINDOW = 1;
   private static final int SIZE = 100000;
 
+  private final JobaTimes jobaTimes = new JobaTimes();
   private final Set<ActorRef> listeners = new HashSet<>();
   private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
 
   private final AckTable table;
-  private final Registry registry;
 
   private long defaultMinimalTime;
   private GlobalTime lastMinTime = GlobalTime.MIN;
 
-  private Acker(long defaultMinimalTime, Registry registry) {
-    this.registry = registry;
+  private Acker(long defaultMinimalTime) {
     table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW);
   }
 
-  public static Props props(long defaultMinimalTime, Registry registry) {
-    return Props.create(Acker.class, defaultMinimalTime, registry).withDispatcher("processing-dispatcher");
+  public static Props props(long defaultMinimalTime) {
+    return Props.create(Acker.class, defaultMinimalTime).withDispatcher("processing-dispatcher");
   }
 
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(MinTimeUpdateListener.class, minTimeUpdateListener -> {
-              listeners.add(minTimeUpdateListener.actorRef);
-            })
+            .match(MinTimeUpdateListener.class, minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef))
+            .match(JobaTime.class, jobaTime -> jobaTimes.update(jobaTime.jobaId, jobaTime.time))
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
+            .match(RegisterFrontFromTime.class, registerFront -> registerFrontFromTime(registerFront.startTime))
             .match(UnregisterFront.class, unregisterFront -> unregisterFront(unregisterFront.frontId()))
             .build();
   }
 
   private void registerFront(EdgeId frontId) {
-    final long registeredTime = registry.registeredTime(frontId);
-    if (registeredTime == -1) {
-      final GlobalTime min = minAmongTables();
+    registerFrontFromTime(new GlobalTime(minAmongTables().time(), frontId));
+  }
 
-      log().info("Registering timestamp {} for {}", min, frontId);
-      maxHeartbeats.put(frontId, min);
-      registry.register(frontId, min.time());
-      log().info("Front instance \"{}\" has been registered, sending ticket", frontId);
-
-      sender().tell(new FrontTicket(new GlobalTime(min.time(), frontId)), self());
-    } else {
-      final long startTime = Math.max(registeredTime, registry.lastCommit());
-      log().info("Front '{}' has been registered already, starting from '{}'", frontId, startTime);
-      final GlobalTime globalTime = new GlobalTime(startTime, frontId);
-      maxHeartbeats.put(frontId, globalTime);
-      sender().tell(new FrontTicket(globalTime), self());
+  private void registerFrontFromTime(GlobalTime startTime) {
+    if (startTime.compareTo(minAmongTables()) < 0) {
+      throw new RuntimeException("Registering front back in time");
     }
+    maxHeartbeats.put(startTime.frontId(), startTime);
+    sender().tell(new FrontTicket(startTime), sender());
   }
 
   private void unregisterFront(EdgeId frontId) {
@@ -132,7 +125,7 @@ public class Acker extends LoggingActor {
     if (minAmongTables.compareTo(lastMinTime) > 0) {
       this.lastMinTime = minAmongTables;
       log().debug("New min time: {}", lastMinTime);
-      listeners.forEach(s -> s.tell(new MinTimeUpdate(lastMinTime), self()));
+      listeners.forEach(s -> s.tell(new MinTimeUpdate(lastMinTime, jobaTimes), self()));
     }
   }
 

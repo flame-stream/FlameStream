@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class SinkJoba implements Joba {
+public class SinkJoba extends Joba {
   private final LoggingAdapter log;
   private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
   private final Map<ActorRef, GlobalTime> rears = new HashMap<>();
@@ -33,7 +33,8 @@ public class SinkJoba implements Joba {
 
   private GlobalTime minTime = GlobalTime.MIN;
 
-  SinkJoba(ActorContext context) {
+  SinkJoba(Joba.Id id, ActorContext context) {
+    super(id);
     log = Logging.getLogger(context.system(), context.self());
   }
 

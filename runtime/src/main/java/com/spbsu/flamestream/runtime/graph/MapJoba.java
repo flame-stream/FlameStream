@@ -6,10 +6,11 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-public class MapJoba implements Joba {
+public class MapJoba extends Joba {
   private final FlameMap<?, ?>.FlameMapOperation operation;
 
-  public MapJoba(FlameMap<?, ?> flameMap) {
+  public MapJoba(Joba.Id id, FlameMap<?, ?> flameMap) {
+    super(id);
     this.operation = flameMap.operation(ThreadLocalRandom.current().nextLong());
   }
 
