@@ -1,12 +1,9 @@
-from pandas import Series
+import numpy as np
+import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import train_test_split
 from stop_words import get_stop_words
-import operator
-
-import pandas as pd
-import numpy as np
 
 
 class ClassifierBuilder:
@@ -45,8 +42,7 @@ class ClassifierBuilder:
         token_pattern = r"(?u)\b\w\w+\b"
         vectorizer = CountVectorizer(
             token_pattern=token_pattern,
-            stop_words=get_stop_words('russian'),
-            max_features=50000
+            stop_words=get_stop_words('russian')
         )
         X = vectorizer.fit_transform(texts)
         transformer = TfidfTransformer()
@@ -144,15 +140,15 @@ def split_data(df, tests_amount):
 
 
 def main():
-    df = pd.read_csv('news_lenta.csv', nrows=10000)
+    df = pd.read_csv('news_lenta.csv', nrows=500000)
     df = df.dropna()
     df = df[df['tags'] != 'Все']
 
-    tests_amount = 100
+    tests_amount = 10
     X_train, X_test, y_train, y_test = split_data(df, tests_amount)
 
     ClassifierBuilder() \
-        .test_quality(5, X_test, y_test) \
+        .test_quality(1, X_test, y_test) \
         .save_vectorizer('cnt_vectorizer') \
         .save_weights('classifier_weights') \
         .save_tests('sklearn_prediction') \
