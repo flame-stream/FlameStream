@@ -35,16 +35,19 @@ import com.spbsu.flamestream.runtime.utils.collections.ListHashUnitMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GraphManager extends LoggingActor {
   private final Graph graph;
-  private final ActorRef acker;
+  private final Map<ActorRef, ActorRef> ackersToLocal;
   private final ActorRef registryHolder;
   private final ActorRef committer;
   private final ComputationProps computationProps;
@@ -63,7 +66,7 @@ public class GraphManager extends LoggingActor {
 
   private GraphManager(String nodeId,
                        Graph graph,
-                       ActorRef acker,
+                       List<ActorRef> ackers,
                        ActorRef registryHolder,
                        ActorRef committer,
                        ComputationProps computationProps,
@@ -72,21 +75,24 @@ public class GraphManager extends LoggingActor {
     this.storage = storage;
     this.computationProps = computationProps;
     this.graph = graph;
-    this.acker = context().actorOf(LocalAcker.props(acker), "local-acker");
+    this.ackersToLocal = ackers.stream().collect(Collectors.toMap(
+            Function.identity(),
+            acker -> context().actorOf(LocalAcker.props(acker))
+    ));
     this.registryHolder = registryHolder;
     this.committer = committer;
-    acker.tell(new MinTimeUpdateListener(self()), self());
+    ackers.forEach(acker -> acker.tell(new MinTimeUpdateListener(self()), self()));
   }
 
   public static Props props(
           String nodeId,
           Graph graph,
-          ActorRef acker,
+          List<ActorRef> ackers,
           ActorRef registryHolder,
           ActorRef committer,
           ComputationProps layout,
           StateStorage storage) {
-    return Props.create(GraphManager.class, nodeId, graph, acker, registryHolder, committer, layout, storage)
+    return Props.create(GraphManager.class, nodeId, graph, ackers, registryHolder, committer, layout, storage)
             .withDispatcher("processing-dispatcher");
   }
 
@@ -141,7 +147,7 @@ public class GraphManager extends LoggingActor {
                         graph,
                         routes,
                         self(),
-                        acker,
+                        new ArrayList<>(ackersToLocal.values()),
                         computationProps,
                         stateByVertex
                 ));
@@ -181,7 +187,7 @@ public class GraphManager extends LoggingActor {
             )
             .match(
                     MinTimeUpdate.class,
-                    minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
+                    minTimeUpdate -> components.forEach(c -> c.tell(minTimeUpdate, ackersToLocal.get(sender())))
             )
             .match(Prepare.class, this::onPrepare)
             .match(Commit.class, commit -> sourceComponent.forward(commit, context()))

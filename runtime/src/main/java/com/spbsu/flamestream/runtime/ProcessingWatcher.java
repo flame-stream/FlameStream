@@ -32,7 +32,10 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 public class ProcessingWatcher extends LoggingActor {
   private final String id;
@@ -41,7 +44,6 @@ public class ProcessingWatcher extends LoggingActor {
   private final CommitterConfig committerConfig;
   private final StateStorage stateStorage;
   private final FlameSerializer serializer;
-  private final ActorRef acker;
 
   private NodeCache graphCache = null;
   private PathChildrenCache frontsCache = null;
@@ -55,8 +57,7 @@ public class ProcessingWatcher extends LoggingActor {
                            ZookeeperWorkersNode zookeeperWorkersNode,
                            CommitterConfig committerConfig,
                            StateStorage stateStorage,
-                           FlameSerializer serializer,
-                           ActorRef acker
+                           FlameSerializer serializer
   ) {
     this.id = id;
     this.curator = curator;
@@ -64,7 +65,6 @@ public class ProcessingWatcher extends LoggingActor {
     this.committerConfig = committerConfig;
     this.stateStorage = stateStorage;
     this.serializer = serializer;
-    this.acker = acker;
   }
 
   public static Props props(String id,
@@ -72,8 +72,7 @@ public class ProcessingWatcher extends LoggingActor {
                             ZookeeperWorkersNode zookeeperWorkersNode,
                             CommitterConfig committerConfig,
                             StateStorage stateStorage,
-                            FlameSerializer serializer,
-                            ActorRef acker
+                            FlameSerializer serializer
   ) {
     return Props.create(
             ProcessingWatcher.class,
@@ -82,8 +81,7 @@ public class ProcessingWatcher extends LoggingActor {
             zookeeperWorkersNode,
             committerConfig,
             stateStorage,
-            serializer,
-            acker
+            serializer
     );
   }
 
@@ -152,14 +150,27 @@ public class ProcessingWatcher extends LoggingActor {
 
     this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
+    final List<CompletableFuture<ActorRef>> ackerFutures = config.paths()
+            .values()
+            .stream()
+            .map(actorPath -> AwaitResolver.resolve(actorPath.child("acker"), context()).toCompletableFuture())
+            .collect(Collectors.toList());
+    ackerFutures.forEach(CompletableFuture::join);
+    final List<ActorRef> ackers = ackerFutures.stream().map(future -> {
+      try {
+        return future.get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+    }).collect(Collectors.toList());
     final ActorRef committer, registryHolder;
     if (zookeeperWorkersNode.isLeader(id)) {
-      registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), acker), "registry-holder");
+      registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), ackers), "registry-holder");
       committer = context().actorOf(Committer.props(
               config.paths().size(),
               committerConfig,
               registryHolder,
-              acker
+              ackers
       ), "committer");
     } else {
       final ActorPath masterPath = config.paths().get(config.masterLocation()).child("processing-watcher");
@@ -173,7 +184,7 @@ public class ProcessingWatcher extends LoggingActor {
                     id,
                     graph,
                     config.withChildPath("processing-watcher").withChildPath("graph"),
-                    acker,
+                    ackers,
                     registryHolder,
                     committer,
                     committerConfig.maxElementsInGraph(),

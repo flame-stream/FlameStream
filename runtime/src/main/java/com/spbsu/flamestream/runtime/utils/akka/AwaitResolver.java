@@ -15,7 +15,6 @@ import scala.concurrent.duration.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class AwaitResolver extends AbstractActor {
   private ActorRef requester;

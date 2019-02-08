@@ -27,11 +27,13 @@ public class JobaTimes {
     return false;
   }
 
-  public void update(Joba.Id id, long time) {
+  public JobaTimes updated(Joba.Id id, long time) {
+    final HashMap<Joba.Id, Long> all = new HashMap<>(this.all);
     final long currentTime = all.getOrDefault(id, Long.MIN_VALUE);
     if (currentTime > time)
       throw new RuntimeException("joba time is decreasing from " + currentTime + " to " + time);
     all.put(id, time);
+    return new JobaTimes(all);
   }
 
   public JobaTimes min(JobaTimes other) {
