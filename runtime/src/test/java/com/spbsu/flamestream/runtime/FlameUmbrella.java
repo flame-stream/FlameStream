@@ -10,21 +10,23 @@ import akka.actor.RootActorPath;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
-import com.spbsu.flamestream.runtime.config.CommitterConfig;
-import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
-import com.spbsu.flamestream.runtime.master.acker.Acker;
-import com.spbsu.flamestream.runtime.master.acker.Committer;
-import com.spbsu.flamestream.runtime.master.acker.Registry;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
+import com.spbsu.flamestream.runtime.edge.Front;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.edge.SystemEdgeContext;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.master.acker.Acker;
+import com.spbsu.flamestream.runtime.master.acker.Committer;
+import com.spbsu.flamestream.runtime.master.acker.Registry;
+import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
 import com.spbsu.flamestream.runtime.state.StateStorage;
+import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
@@ -72,11 +74,12 @@ class Cluster extends LoggingActor {
     final Registry registry = new InMemoryRegistry();
     inner = context().actorOf(FlameUmbrella.props(
             context -> {
-              final ActorRef acker = context.actorOf(Acker.props(0, registry), "acker");
+              final ActorRef acker = context.actorOf(Acker.props(0), "acker");
+              final ActorRef registryHolder = context.actorOf(RegistryHolder.props(registry, acker), "registry-holder");
               final ActorRef committer = context.actorOf(Committer.props(
                       clusterConfig.paths().size(),
                       committerConfig,
-                      registry,
+                      registryHolder,
                       acker
               ));
               return paths.keySet().stream().map(id -> context.actorOf(FlameNode.props(
@@ -84,6 +87,7 @@ class Cluster extends LoggingActor {
                       g,
                       clusterConfig,
                       acker,
+                      registryHolder,
                       committer,
                       maxElementsInGraph,
                       stateStorage
@@ -158,12 +162,16 @@ class FlameUmbrella extends LoggingActor {
     flameNodes = actorsStarter.apply(context());
 
     // Reattach rears first
-    toBeTold.stream().filter(e -> e instanceof AttachRear).forEach(a -> {
-      flameNodes.forEach(c -> c.tell(a, self()));
-    });
-    toBeTold.stream().filter(e -> e instanceof AttachFront).forEach(a -> {
-      flameNodes.forEach(c -> c.tell(a, self()));
-    });
+    toBeTold.stream().filter(e -> e instanceof AttachRear).forEach(a -> flameNodes.forEach(c -> c.tell(a, self())));
+    toBeTold.stream().filter(e -> e instanceof AttachFront).forEach(a -> flameNodes.forEach(c -> {
+      c.tell(a, self());
+      // reproduce front delay
+      try {
+        Thread.sleep(FlameConfig.config.smallTimeout().duration().toMillis());
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }));
   }
 
   static Props props(Function<akka.actor.ActorContext, Iterable<ActorRef>> flameNodesStarter,
@@ -175,6 +183,7 @@ class FlameUmbrella extends LoggingActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
             .match(FrontTypeWithId.class, a -> {
+              //noinspection unchecked
               final AttachFront attach = new AttachFront<>(a.id, a.type.instance());
               toBeTold.add(attach);
               flameNodes.forEach(n -> n.tell(attach, self()));
@@ -184,6 +193,7 @@ class FlameUmbrella extends LoggingActor {
               sender().tell(collect, self());
             })
             .match(RearTypeWithId.class, a -> {
+              //noinspection unchecked
               final AttachRear attach = new AttachRear(a.id, a.type.instance());
               toBeTold.add(attach);
               flameNodes.forEach(n -> n.tell(attach, self()));
@@ -196,18 +206,18 @@ class FlameUmbrella extends LoggingActor {
   }
 
   static class FrontTypeWithId<F extends Front, H> {
-    public final String id;
-    public final FlameRuntime.FrontType<F, H> type;
+    final String id;
+    final FlameRuntime.FrontType<F, H> type;
 
-    public FrontTypeWithId(String id, FlameRuntime.FrontType<F, H> type) {
+    FrontTypeWithId(String id, FlameRuntime.FrontType<F, H> type) {
       this.id = id;
       this.type = type;
     }
   }
 
   static class RearTypeWithId<R extends Rear, H> {
-    public final String id;
-    public final FlameRuntime.RearType<R, H> type;
+    final String id;
+    final FlameRuntime.RearType<R, H> type;
 
     RearTypeWithId(String id, FlameRuntime.RearType<R, H> type) {
       this.id = id;
@@ -220,6 +230,11 @@ class FlameUmbrella extends LoggingActor {
 class InMemoryRegistry implements Registry {
   private final Map<EdgeId, Long> linearizableCollection = new HashMap<>();
   private long lastCommit = 0;
+
+  @Override
+  public Map<EdgeId, Long> registeredFronts() {
+    return new HashMap<>(linearizableCollection);
+  }
 
   @Override
   public void register(EdgeId frontId, long attachTimestamp) {
