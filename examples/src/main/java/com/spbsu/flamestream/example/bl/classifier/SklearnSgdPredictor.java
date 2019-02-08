@@ -16,8 +16,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class SklearnSgdPredictor implements TopicsPredictor {
   private static final Pattern PATTERN = Pattern.compile("\\b\\w\\w+\\b", Pattern.UNICODE_CHARACTER_CLASS);
@@ -41,28 +45,44 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     loadMeta();
     loadVocabulary();
 
-    final SparseVec vectorized = vectorize(document);
-    final Vec score = MxTools.multiply(weights, vectorized);
-    final Vec sum = VecTools.sum(score, intercept);
-    final Vec scaled = VecTools.scale(sum, -1);
-    VecTools.exp(scaled);
-
-    final double[] ones = new double[score.dim()];
-    Arrays.fill(ones, 1);
-    final Vec vecOnes = new ArrayVec(ones, 0, ones.length);
-    final Vec plusOne = VecTools.sum(scaled, vecOnes);
-
-    for (int i = 0; i < plusOne.dim(); i++) {
-      double changed = 1 / plusOne.get(i);
-      plusOne.set(i, changed);
+    final Map<String, Double> tfIdf = document.tfIdf();
+    final int[] indices = new int[tfIdf.size()];
+    final double[] values = new double[tfIdf.size()];
+    { //convert TF-IDF features to sparse vector
+      int ind = 0;
+      for (String key : tfIdf.keySet()) {
+        final int valueIndex = countVectorizer.get(key);
+        indices[ind] = valueIndex;
+        values[ind] = tfIdf.get(key);
+        ind++;
+      }
     }
 
-    double rowSum = VecTools.sum(plusOne);
-    VecTools.scale(plusOne, 1 / rowSum);
+    final Vec probabilities;
+    { // compute topic probabilities
+      final SparseVec vectorized = new SparseVec(countVectorizer.size(), indices, values);
+      final Vec score = MxTools.multiply(weights, vectorized);
+      final Vec sum = VecTools.sum(score, intercept);
+      final Vec scaled = VecTools.scale(sum, -1);
+      VecTools.exp(scaled);
 
-    final Topic[] result = new Topic[plusOne.dim()];
-    for (int index = 0; index < plusOne.dim(); index++) {
-      result[index] = new Topic(topics[index], Integer.toString(index), plusOne.get(index));
+      final double[] ones = new double[score.dim()];
+      Arrays.fill(ones, 1);
+      final Vec vecOnes = new ArrayVec(ones, 0, ones.length);
+      probabilities = VecTools.sum(scaled, vecOnes);
+      for (int i = 0; i < probabilities.dim(); i++) {
+        double changed = 1 / probabilities.get(i);
+        probabilities.set(i, changed);
+      }
+      final double rowSum = VecTools.sum(probabilities);
+      VecTools.scale(probabilities, 1 / rowSum);
+    }
+
+    final Topic[] result = new Topic[probabilities.dim()];
+    { //fill in topics
+      for (int index = 0; index < probabilities.dim(); index++) {
+        result[index] = new Topic(topics[index], Integer.toString(index), probabilities.get(index));
+      }
     }
     return result;
   }
@@ -104,7 +124,6 @@ public class SklearnSgdPredictor implements TopicsPredictor {
         }
 
         final SparseVec sparseVec = new SparseVec(currentFeatures, indeces, values);
-
         coef[index] = sparseVec;
       }
 
@@ -139,34 +158,29 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     }
   }
 
-  private SparseVec vectorize(Document document) {
-    loadVocabulary();
-    final Map<String, Double> tfidf = document.tfIdf();
-    final int[] indices = new int[tfidf.size()];
-    final double[] values = new double[tfidf.size()];
-
-    int index = 0;
-    for (String key : tfidf.keySet()) {
-      final int valueIndex = countVectorizer.get(key);
-      indices[index] = valueIndex;
-      values[index] = tfidf.get(key);
-      index++;
-    }
-    return new SparseVec(countVectorizer.size(), indices, values);
-  }
-
-  public static Pattern pattern() {
-    return PATTERN;
-  }
-
   @VisibleForTesting
   int wordIndex(String word) {
     loadVocabulary();
     return countVectorizer.get(word);
   }
 
-  @VisibleForTesting
-  static double[] parseDoubles(String line) {
+  public static Stream<String> text2words(String text) {
+    final Matcher matcher = PATTERN.matcher(text);
+    final Iterable<String> iterable = () -> new Iterator<String>() {
+      @Override
+      public boolean hasNext() {
+        return matcher.find();
+      }
+
+      @Override
+      public String next() {
+        return matcher.group(0);
+      }
+    };
+    return StreamSupport.stream(iterable.spliterator(), false);
+  }
+
+  private static double[] parseDoubles(String line) {
     return Arrays
             .stream(line.split(" "))
             .mapToDouble(Double::parseDouble)
