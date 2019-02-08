@@ -37,7 +37,7 @@ public class ProcessingWatcher extends LoggingActor {
   private final CommitterConfig committerConfig;
   private final StateStorage stateStorage;
   private final FlameSerializer serializer;
-  private final ActorRef acker;
+  private final ActorRef acker, registryHolder;
 
   private NodeCache graphCache = null;
   private PathChildrenCache frontsCache = null;
@@ -52,7 +52,8 @@ public class ProcessingWatcher extends LoggingActor {
                            CommitterConfig committerConfig,
                            StateStorage stateStorage,
                            FlameSerializer serializer,
-                           ActorRef acker
+                           ActorRef acker,
+                           ActorRef registryHolder
   ) {
     this.id = id;
     this.curator = curator;
@@ -61,6 +62,7 @@ public class ProcessingWatcher extends LoggingActor {
     this.stateStorage = stateStorage;
     this.serializer = serializer;
     this.acker = acker;
+    this.registryHolder = registryHolder;
   }
 
   public static Props props(String id,
@@ -69,7 +71,8 @@ public class ProcessingWatcher extends LoggingActor {
                             CommitterConfig committerConfig,
                             StateStorage stateStorage,
                             FlameSerializer serializer,
-                            ActorRef acker
+                            ActorRef acker,
+                            ActorRef registryHolder
   ) {
     return Props.create(
             ProcessingWatcher.class,
@@ -79,7 +82,8 @@ public class ProcessingWatcher extends LoggingActor {
             committerConfig,
             stateStorage,
             serializer,
-            acker
+            acker,
+            registryHolder
     );
   }
 
@@ -154,7 +158,7 @@ public class ProcessingWatcher extends LoggingActor {
       committer = context().actorOf(Committer.props(
               config.paths().size(),
               committerConfig,
-              zkRegistry,
+              registryHolder,
               acker
       ), "committer");
     } else {
@@ -171,6 +175,7 @@ public class ProcessingWatcher extends LoggingActor {
                     graph,
                     config.withChildPath("processing-watcher").withChildPath("graph"),
                     acker,
+                    registryHolder,
                     committer,
                     committerConfig.maxElementsInGraph(),
                     stateStorage
@@ -183,21 +188,6 @@ public class ProcessingWatcher extends LoggingActor {
   }
 
   private void startEdgeCaches() throws Exception {
-    frontsCache = new PathChildrenCache(curator, "/graph/fronts", false);
-    frontsCache.getListenable().addListener((client, event) -> {
-      if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
-        final FlameRuntime.FrontInstance<?> front = serializer.deserialize(
-                curator.getData().forPath(event.getData().getPath()),
-                FlameRuntime.FrontInstance.class
-        );
-        self().tell(
-                new AttachFront<>(StringUtils.substringAfterLast(event.getData().getPath(), "/"), front),
-                self()
-        );
-      }
-    });
-    frontsCache.start();
-
     rearsCache = new PathChildrenCache(curator, "/graph/rears", false);
     rearsCache.getListenable().addListener((client, event) -> {
       if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
@@ -212,6 +202,21 @@ public class ProcessingWatcher extends LoggingActor {
       }
     });
     rearsCache.start();
+
+    frontsCache = new PathChildrenCache(curator, "/graph/fronts", false);
+    frontsCache.getListenable().addListener((client, event) -> {
+      if (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) {
+        final FlameRuntime.FrontInstance<?> front = serializer.deserialize(
+                curator.getData().forPath(event.getData().getPath()),
+                FlameRuntime.FrontInstance.class
+        );
+        self().tell(
+                new AttachFront<>(StringUtils.substringAfterLast(event.getData().getPath(), "/"), front),
+                self()
+        );
+      }
+    });
+    frontsCache.start();
   }
 
   private static class InitAgent extends LoggingActor {
