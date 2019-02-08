@@ -32,11 +32,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.spbsu.flamestream.example.bl.classifier.SklearnSgdPredictor.parseDoubles;
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static org.testng.Assert.assertTrue;
@@ -45,16 +43,16 @@ public class PredictorStreamTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(PredictorStreamTest.class.getName());
   private static final String CNT_VECTORIZER_PATH = "src/main/resources/cnt_vectorizer";
   private static final String WEIGHTS_PATH = "src/main/resources/classifier_weights";
+  private static final String PATH_TO_TEST_DATA = "src/test/resources/sklearn_prediction";
 
   @Test
   public void testStreamPredict() throws InterruptedException, TimeoutException {
-    final SklearnSgdPredictor predictor = new SklearnSgdPredictor(CNT_VECTORIZER_PATH, WEIGHTS_PATH);
     final List<Document> documents = new ArrayList<>();
     final List<String> texts = new ArrayList<>();
     final List<double[]> pyPredictions = new ArrayList<>();
     { //read data for test
-      final String pathToTestData = "src/test/resources/sklearn_prediction";
-      try (BufferedReader br = new BufferedReader(new FileReader(new File(pathToTestData)))) {
+      final SklearnSgdPredictor predictor = new SklearnSgdPredictor(CNT_VECTORIZER_PATH, WEIGHTS_PATH);
+      try (BufferedReader br = new BufferedReader(new FileReader(new File(PATH_TO_TEST_DATA)))) {
         final double[] data = parseDoubles(br.readLine());
         final int testCount = (int) data[0];
 
@@ -63,17 +61,13 @@ public class PredictorStreamTest {
           pyPredictions.add(pyPrediction);
 
           final String docText = br.readLine().toLowerCase();
-          texts.add(docText);
-
-          final double[] tfidfFeatures = parseDoubles(br.readLine());
-          final Matcher matcher = SklearnSgdPredictor.pattern().matcher(docText);
           final Map<String, Double> tfIdf = new HashMap<>();
-          while (matcher.find()) {
-            final String word = matcher.group(0);
+          final double[] tfidfFeatures = parseDoubles(br.readLine());
+          texts.add(docText);
+          SklearnSgdPredictor.text2words(docText).forEach(word -> {
             final int featureIndex = predictor.wordIndex(word);
             tfIdf.put(word, tfidfFeatures[featureIndex]);
-          }
-
+          });
           final Document document = new Document(tfIdf);
           documents.add(document);
         }
@@ -156,5 +150,12 @@ public class PredictorStreamTest {
     public Stream<Topic[]> apply(Document document) {
       return Stream.of(new Topic[][]{predictor.predict(document)});
     }
+  }
+
+  private static double[] parseDoubles(String line) {
+    return Arrays
+            .stream(line.split(" "))
+            .mapToDouble(Double::parseDouble)
+            .toArray();
   }
 }
