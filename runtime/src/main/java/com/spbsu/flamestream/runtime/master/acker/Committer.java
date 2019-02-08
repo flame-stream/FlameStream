@@ -18,8 +18,11 @@ import com.spbsu.flamestream.runtime.master.acker.api.commit.Ready;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.akka.PingActor;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +34,7 @@ public class Committer extends LoggingActor {
   private final int millisBetweenCommits;
   private final ActorRef registryHolder;
   private final ActorRef pingActor;
+  private final MinTimeUpdater minTimeUpdater;
 
   private long minAmongTables;
   private GlobalTime lastPrepareTime = GlobalTime.MIN;
@@ -42,7 +46,7 @@ public class Committer extends LoggingActor {
                     long defaultMinimalTime,
                     int millisBetweenCommits,
                     ActorRef registryHolder,
-                    ActorRef acker) {
+                    List<ActorRef> ackers) {
     this.managersCount = managersCount;
     this.minAmongTables = defaultMinimalTime;
     this.millisBetweenCommits = millisBetweenCommits;
@@ -52,14 +56,15 @@ public class Committer extends LoggingActor {
             PingActor.props(self(), StartCommit.START),
             "acker-ping"
     );
-    acker.tell(new MinTimeUpdateListener(self()), self());
+    ackers.forEach(acker -> acker.tell(new MinTimeUpdateListener(self()), self()));
+    minTimeUpdater = new MinTimeUpdater(ackers);
   }
 
   public static Props props(
           int managersCount,
           CommitterConfig committerConfig,
           ActorRef registryHolder,
-          ActorRef acker
+          List<ActorRef> ackers
   ) {
     return Props.create(
             Committer.class,
@@ -67,7 +72,7 @@ public class Committer extends LoggingActor {
             committerConfig.defaultMinimalTime(),
             committerConfig.millisBetweenCommits(),
             registryHolder,
-            acker
+            ackers
     ).withDispatcher("processing-dispatcher");
   }
 
@@ -105,7 +110,12 @@ public class Committer extends LoggingActor {
   private Receive waiting() {
     return ReceiveBuilder.create()
             .match(StartCommit.class, __ -> commit(new GlobalTime(minAmongTables, EdgeId.MIN)))
-            .match(MinTimeUpdate.class, minTimeUpdate -> minAmongTables = minTimeUpdate.minTime().time())
+            .match(MinTimeUpdate.class, minTimeUpdate -> {
+              @Nullable GlobalTime minTime = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate);
+              if (minTime != null) {
+                minAmongTables = minTime.time();
+              }
+            })
             .build();
   }
 

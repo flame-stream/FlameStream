@@ -5,6 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
@@ -17,6 +18,7 @@ import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.ComponentPrepared;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
+import com.spbsu.flamestream.runtime.master.acker.MinTimeUpdater;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.JobaTime;
@@ -41,11 +43,13 @@ import java.util.stream.Collectors;
 
 public class Component extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 1;
-  private final ActorRef acker;
+  private final List<ActorRef> ackers;
+  private final MinTimeUpdater minTimeUpdater;
 
   private enum JobaTimesTick {
     OBJECT
   }
+
   private final ActorRef pingActor;
 
   private class JobaWrapper<WrappedJoba extends Joba> {
@@ -76,10 +80,11 @@ public class Component extends LoggingActor {
                     Graph graph,
                     HashUnitMap<ActorRef> routes,
                     ActorRef localManager,
-                    ActorRef acker,
+                    List<ActorRef> ackers,
                     ComputationProps props,
                     Map<String, GroupGroupingState> stateByVertex) {
-    this.acker = acker;
+    this.ackers = ackers;
+    minTimeUpdater = new MinTimeUpdater(ackers);
 
     this.wrappedJobas = componentVertices.stream().collect(Collectors.toMap(
             vertex -> GraphManager.Destination.fromVertexId(vertex.id()),
@@ -115,14 +120,14 @@ public class Component extends LoggingActor {
                           sink = item -> {
                             groupingSendTracer.log(item.xor());
                             bumpJobaTime(joba);
-                            acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
+                            ack(new Ack(item.meta().globalTime(), item.xor()));
                             routes.get(Objects.requireNonNull(((HashingVertexStub) to).hash()).applyAsInt(item))
                                     .tell(new AddressedItem(item, toDest), self());
                           };
                         } else {
                           sink = item -> {
                             bumpJobaTime(joba);
-                            acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
+                            ack(new Ack(item.meta().globalTime(), item.xor()));
                             localManager.tell(new AddressedItem(item, toDest), self());
                           };
                         }
@@ -162,7 +167,7 @@ public class Component extends LoggingActor {
                             Graph graph,
                             HashUnitMap<ActorRef> localManager,
                             ActorRef routes,
-                            ActorRef acker,
+                            List<ActorRef> ackers,
                             ComputationProps props,
                             Map<String, GroupGroupingState> stateByVertex) {
     return Props.create(
@@ -172,7 +177,7 @@ public class Component extends LoggingActor {
             graph,
             localManager,
             routes,
-            acker,
+            ackers,
             props,
             stateByVertex
     ).withDispatcher("processing-dispatcher");
@@ -185,8 +190,8 @@ public class Component extends LoggingActor {
             .match(DataItem.class, this::accept)
             .match(MinTimeUpdate.class, this::onMinTime)
             .match(NewRear.class, this::onNewRear)
-            .match(Heartbeat.class, h -> acker.forward(h, context()))
-            .match(UnregisterFront.class, u -> acker.forward(u, context()))
+            .match(Heartbeat.class, h -> ackers.forEach(acker -> acker.forward(h, context())))
+            .match(UnregisterFront.class, u -> ackers.forEach(acker -> acker.forward(u, context())))
             .match(Prepare.class, this::onPrepare)
             .match(Commit.class, this::onCommit)
             .match(
@@ -219,12 +224,16 @@ public class Component extends LoggingActor {
     localCall(item, addressedItem.destination());
     final Joba joba = wrappedJobas.get(addressedItem.destination()).joba;
     bumpJobaTime(joba);
-    acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
+    ack(new Ack(item.meta().globalTime(), item.xor()));
     injectOutTracer.log(item.xor());
   }
 
+  private void ack(Ack ack) {
+    ackers.get((int) ack.time().time() % ackers.size()).tell(ack, self());
+  }
+
   private void bumpJobaTime(Joba joba) {
-    acker.tell(new JobaTime(joba.id, ++joba.time), self());
+    ackers.forEach(acker -> acker.tell(new JobaTime(joba.id, ++joba.time), self()));
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {
@@ -232,7 +241,10 @@ public class Component extends LoggingActor {
   }
 
   private void onMinTime(MinTimeUpdate minTimeUpdate) {
-    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTimeUpdate.minTime()));
+    @Nullable GlobalTime minTime = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate);
+    if (minTime != null) {
+      wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTime));
+    }
   }
 
   private void accept(DataItem item) {

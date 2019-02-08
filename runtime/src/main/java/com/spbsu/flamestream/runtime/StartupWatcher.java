@@ -77,13 +77,9 @@ public class StartupWatcher extends LoggingActor {
             ActorPath$.MODULE$.fromString(self().path()
                     .toStringWithAddress(context().system().provider().getDefaultAddress()))
     );
-    ActorRef acker;
+    context().actorOf(Acker.props(committerConfig.defaultMinimalTime()), "acker");
     if (zookeeperWorkersNode.isLeader(id)) {
-      acker = context().actorOf(Acker.props(committerConfig.defaultMinimalTime()), "acker");
       context().actorOf(ClientWatcher.props(curator, kryoSerializer, zookeeperWorkersNode), "client-watcher");
-    } else {
-      final ActorPath masterPath = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers()).masterPath();
-      acker = AwaitResolver.syncResolve(masterPath.child("acker"), context());
     }
     context().actorOf(
             ProcessingWatcher.props(
@@ -92,8 +88,7 @@ public class StartupWatcher extends LoggingActor {
                     zookeeperWorkersNode,
                     committerConfig,
                     stateStorage,
-                    kryoSerializer,
-                    acker
+                    kryoSerializer
             ),
             "processing-watcher"
     );
