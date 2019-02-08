@@ -1,10 +1,11 @@
 from pandas import Series
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.linear_model import SGDClassifier
-import pandas as pd
 from sklearn.model_selection import train_test_split
-import numpy as np
+from stop_words import get_stop_words
 
+import pandas as pd
+import numpy as np
 
 class ClassifierBuilder:
     def __init__(self):
@@ -33,7 +34,11 @@ class ClassifierBuilder:
 
     def build(self, texts: Series, topics: Series):
         token_pattern = r"(?u)\b\w\w+\b"
-        vectorizer = CountVectorizer(token_pattern=token_pattern)
+        vectorizer = CountVectorizer(
+            token_pattern=token_pattern,
+            stop_words=get_stop_words('russian'),
+            max_features=50000
+        )
         X = vectorizer.fit_transform(texts)
         transformer = TfidfTransformer()
         X = transformer.fit_transform(X)
@@ -44,12 +49,15 @@ class ClassifierBuilder:
                     f.write("%s " % key)
                     f.write("%s \n" % value)
 
-        classifier = SGDClassifier(loss="log", class_weight='balanced', penalty='l1')
+        classifier = SGDClassifier(
+            loss="log", class_weight='balanced',
+            penalty='l1', alpha=0.0000009, n_jobs=-1
+        )
         if self._weights_path is not None or self._tests_path is not None:
             classifier.fit(X, topics)
 
             with open(self._weights_path, 'w') as f:
-                f.write("%s " % classifier.coef_.shape[0])  # amount of classes
+                f.write("%s " % classifier.coef_.shape[0])    # amount of classes
                 f.write("%s \n" % classifier.coef_.shape[1])  # amount of features
                 for line in classifier.classes_:
                     f.write("%s \n" % line)
@@ -100,10 +108,10 @@ def main():
     y = df['tags']
 
     ClassifierBuilder() \
+        .test_quality(3) \
         .save_vectorizer('cnt_vectorizer') \
         .save_weights('classifier_weights') \
-        .save_tests('sklearn_prediction', 100) \
-        .test_quality(10) \
+        .save_tests('sklearn_prediction', 10) \
         .build(X, y)
 
 
