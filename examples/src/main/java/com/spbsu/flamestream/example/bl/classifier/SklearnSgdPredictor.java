@@ -8,7 +8,6 @@ import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.google.common.annotations.VisibleForTesting;
-import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
@@ -17,8 +16,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 public class SklearnSgdPredictor implements TopicsPredictor {
+  private static final Pattern PATTERN = Pattern.compile("\\b\\w\\w+\\b", Pattern.UNICODE_CHARACTER_CLASS);
+
   private final String weightsPath;
   private final String cntVectorizerPath;
 
@@ -31,6 +34,42 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   SklearnSgdPredictor(String cntVectorizerPath, String weightsPath) {
     this.weightsPath = weightsPath;
     this.cntVectorizerPath = cntVectorizerPath;
+  }
+
+  @Override
+  public Topic[] predict(Document document) {
+    loadMeta();
+    loadVocabulary();
+
+    final SparseVec vectorized = vectorize(document);
+    final Vec score = MxTools.multiply(weights, vectorized);
+    final Vec sum = VecTools.sum(score, intercept);
+    final Vec scaled = VecTools.scale(sum, -1);
+    VecTools.exp(scaled);
+
+    final double[] ones = new double[score.dim()];
+    Arrays.fill(ones, 1);
+    final Vec vecOnes = new ArrayVec(ones, 0, ones.length);
+    final Vec plusOne = VecTools.sum(scaled, vecOnes);
+
+    for (int i = 0; i < plusOne.dim(); i++) {
+      double changed = 1 / plusOne.get(i);
+      plusOne.set(i, changed);
+    }
+
+    double rowSum = VecTools.sum(plusOne);
+    VecTools.scale(plusOne, 1 / rowSum);
+
+    final Topic[] result = new Topic[plusOne.dim()];
+    for (int index = 0; index < plusOne.dim(); index++) {
+      result[index] = new Topic(topics[index], Integer.toString(index), plusOne.get(index));
+    }
+    return result;
+  }
+
+  public void init() {
+    loadMeta();
+    loadVocabulary();
   }
 
   private void loadMeta() {
@@ -100,54 +139,24 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     }
   }
 
-  @Override
-  public Topic[] predict(Document document) {
-    loadMeta();
+  private SparseVec vectorize(Document document) {
     loadVocabulary();
-
-    final SparseVec vectorized = vectorize(document);
-    final Vec score = MxTools.multiply(weights, vectorized);
-    final Vec sum = VecTools.sum(score, intercept);
-    final Vec muli = VecTools.scale(sum, -1);
-    VecTools.exp(muli);
-
-    final double[] ones = new double[score.dim()];
-    Arrays.fill(ones, 1);
-    final Vec vecOnes = new ArrayVec(ones, 0, ones.length);
-    final Vec sum1 = VecTools.sum(muli, vecOnes);
-
-    for (int i = 0; i < sum1.dim(); i++) {
-      double changed = 1 / sum1.get(i);
-      sum1.set(i, changed);
-    }
-
-    double rowSum = VecTools.sum(sum1);
-    VecTools.scale(sum1, 1 / rowSum);
-
-    final Topic[] result = new Topic[sum1.dim()];
-    for (int index = 0; index < sum1.dim(); index++) {
-      result[index] = new Topic(topics[index], Integer.toString(index), sum1.get(index));
-    }
-    return result;
-  }
-
-  @VisibleForTesting
-  SparseVec vectorize(Document document) {
-    loadVocabulary();
-    final TObjectDoubleMap<String> tfidf = document.getTfidf();
-    final int[] indeces = new int[tfidf.size()];
+    final Map<String, Double> tfidf = document.tfIdf();
+    final int[] indices = new int[tfidf.size()];
     final double[] values = new double[tfidf.size()];
 
     int index = 0;
     for (String key : tfidf.keySet()) {
       final int valueIndex = countVectorizer.get(key);
-
-      indeces[index] = valueIndex;
+      indices[index] = valueIndex;
       values[index] = tfidf.get(key);
       index++;
     }
+    return new SparseVec(countVectorizer.size(), indices, values);
+  }
 
-    return new SparseVec(countVectorizer.size(), indeces, values);
+  public static Pattern pattern() {
+    return PATTERN;
   }
 
   @VisibleForTesting
