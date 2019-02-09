@@ -58,21 +58,6 @@ class ClassifierBuilder:
             loss="log", class_weight='balanced',
             penalty='l1', alpha=0.0000009, n_jobs=-1
         )
-        if self._weights_path is not None or self._tests_path is not None:
-            classifier.fit(X, topics)
-
-            with open(self._weights_path, 'w') as f:
-                f.write("%s " % classifier.coef_.shape[0])  # amount of classes
-                f.write("%s \n" % classifier.coef_.shape[1])  # amount of features
-                for line in classifier.classes_:
-                    f.write("%s \n" % line)
-                for line in classifier.coef_:
-                    for index, item in enumerate(line):
-                        if item != 0.0:
-                            f.write("%s %s " % (index, item))
-                    f.write("\n")
-                for item in classifier.intercept_:
-                    f.write("%s " % item)
 
         if self._test_quality_iters is not None:
             for i in range(self._test_quality_iters):
@@ -117,6 +102,20 @@ class ClassifierBuilder:
 
                         print(sorted(pred_topics.items(), key=lambda kv: kv[1], reverse=True))
                         print("______")
+
+        if self._weights_path is not None or self._tests_path is not None:
+            with open(self._weights_path, 'w') as f:
+                f.write("%s " % classifier.coef_.shape[0])  # amount of classes
+                f.write("%s \n" % classifier.coef_.shape[1])  # amount of features
+                for line in classifier.classes_:
+                    f.write("%s \n" % line)
+                for line in classifier.coef_:
+                    for index, item in enumerate(line):
+                        if item != 0.0:
+                            f.write("%s %s " % (index, item))
+                    f.write("\n")
+                for item in classifier.intercept_:
+                    f.write("%s " % item)
 
         return classifier
 
