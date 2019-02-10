@@ -11,8 +11,6 @@ import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.master.ClientWatcher;
 import com.spbsu.flamestream.runtime.master.acker.Acker;
-import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
-import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.state.DevNullStateStorage;
@@ -79,15 +77,13 @@ public class StartupWatcher extends LoggingActor {
             ActorPath$.MODULE$.fromString(self().path()
                     .toStringWithAddress(context().system().provider().getDefaultAddress()))
     );
-    ActorRef acker, registryHolder;
+    ActorRef acker;
     if (zookeeperWorkersNode.isLeader(id)) {
       acker = context().actorOf(Acker.props(committerConfig.defaultMinimalTime()), "acker");
-      registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), acker), "registry-holder");
       context().actorOf(ClientWatcher.props(curator, kryoSerializer, zookeeperWorkersNode), "client-watcher");
     } else {
       final ActorPath masterPath = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers()).masterPath();
       acker = AwaitResolver.syncResolve(masterPath.child("acker"), context());
-      registryHolder = AwaitResolver.syncResolve(masterPath.child("registry-holder"), context());
     }
     context().actorOf(
             ProcessingWatcher.props(
@@ -97,8 +93,7 @@ public class StartupWatcher extends LoggingActor {
                     committerConfig,
                     stateStorage,
                     kryoSerializer,
-                    acker,
-                    registryHolder
+                    acker
             ),
             "processing-watcher"
     );
