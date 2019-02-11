@@ -168,8 +168,7 @@ public class DoubleGroupingTest extends FlameStreamSuite {
 
   private void doubleGroupingTest(LocalRuntime runtime, long inputSize, boolean backpressure) throws
                                                                                               InterruptedException {
-    final FlameRuntime.Flame flame = runtime.run(graph());
-    {
+    try (final FlameRuntime.Flame flame = runtime.run(graph())) {
       final List<Integer> source = new Random()
               .ints(inputSize)
               .boxed().collect(Collectors.toList());

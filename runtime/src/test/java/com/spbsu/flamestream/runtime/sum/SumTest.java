@@ -74,8 +74,7 @@ public final class SumTest extends FlameAkkaSuite {
   public void sumTest() throws InterruptedException {
     final int parallelism = DEFAULT_PARALLELISM;
     try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(parallelism).build()) {
-      final FlameRuntime.Flame flame = runtime.run(sumGraph());
-      {
+      try (final FlameRuntime.Flame flame = runtime.run(sumGraph())) {
         final List<AkkaFront.FrontHandle<LongNumb>> handles = flame.attachFront(
                 "sumFront",
                 new AkkaFrontType<LongNumb>(runtime.system())
@@ -107,8 +106,7 @@ public final class SumTest extends FlameAkkaSuite {
   @Test(invocationCount = 10)
   public void totalOrderTest() throws InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().build()) {
-      final FlameRuntime.Flame flame = runtime.run(sumGraph());
-      {
+      try (final FlameRuntime.Flame flame = runtime.run(sumGraph())) {
         final List<LongNumb> source = new Random()
                 .ints(1000)
                 .mapToObj(LongNumb::new)

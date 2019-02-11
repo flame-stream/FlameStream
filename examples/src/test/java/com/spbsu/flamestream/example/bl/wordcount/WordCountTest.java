@@ -52,8 +52,7 @@ public class WordCountTest extends FlameAkkaSuite {
   }
 
   private void test(LocalRuntime runtime, int streamSize) throws InterruptedException {
-    final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get());
-    {
+    try (final FlameRuntime.Flame flame = runtime.run(new WordCountGraph().get())) {
       final int lineSize = 50;
       final Queue<String> input = Stream.generate(() -> {
         final String[] words = {"repka", "dedka", "babka", "zhuchka", "vnuchka"};
