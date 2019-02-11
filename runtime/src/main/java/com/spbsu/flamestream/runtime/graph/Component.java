@@ -18,11 +18,9 @@ import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.ComponentPrepared;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
-import com.spbsu.flamestream.runtime.master.acker.MinTimeUpdater;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.JobaTime;
-import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
@@ -44,7 +42,6 @@ import java.util.stream.Collectors;
 public class Component extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 1;
   private final List<ActorRef> ackers;
-  private final MinTimeUpdater minTimeUpdater;
 
   private enum JobaTimesTick {
     OBJECT
@@ -84,8 +81,6 @@ public class Component extends LoggingActor {
                     ComputationProps props,
                     Map<String, GroupGroupingState> stateByVertex) {
     this.ackers = ackers;
-    minTimeUpdater = new MinTimeUpdater(ackers);
-
     this.wrappedJobas = componentVertices.stream().collect(Collectors.toMap(
             vertex -> GraphManager.Destination.fromVertexId(vertex.id()),
             vertex -> {
@@ -140,6 +135,7 @@ public class Component extends LoggingActor {
                   downstream = item -> context().system().deadLetters().tell(item, self());
                   break;
                 case 1:
+                  //noinspection ConstantConditions
                   downstream = sinks.stream().findAny().get();
                   break;
                 default:
@@ -188,7 +184,7 @@ public class Component extends LoggingActor {
     return ReceiveBuilder.create()
             .match(AddressedItem.class, this::inject)
             .match(DataItem.class, this::accept)
-            .match(MinTimeUpdate.class, this::onMinTime)
+            .match(GlobalTime.class, this::onMinTime)
             .match(NewRear.class, this::onNewRear)
             .match(Heartbeat.class, h -> ackers.forEach(acker -> acker.forward(h, context())))
             .match(UnregisterFront.class, u -> ackers.forEach(acker -> acker.forward(u, context())))
@@ -240,11 +236,8 @@ public class Component extends LoggingActor {
     wrappedJobas.get(destination).joba.accept(item, wrappedJobas.get(destination).downstream);
   }
 
-  private void onMinTime(MinTimeUpdate minTimeUpdate) {
-    @Nullable GlobalTime minTime = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate);
-    if (minTime != null) {
-      wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTime));
-    }
+  private void onMinTime(GlobalTime minTime) {
+    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTime));
   }
 
   private void accept(DataItem item) {
