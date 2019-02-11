@@ -40,7 +40,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class Component extends LoggingActor {
-  private static final int FLUSH_DELAY_IN_MILLIS = 1;
+  private static final int FLUSH_DELAY_IN_MILLIS = 100;
   private final List<ActorRef> ackers;
 
   private enum JobaTimesTick {
