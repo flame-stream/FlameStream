@@ -114,15 +114,13 @@ public class Component extends LoggingActor {
                         } else if (to instanceof HashingVertexStub && ((HashingVertexStub) to).hash() != null) {
                           sink = item -> {
                             groupingSendTracer.log(item.xor());
-                            bumpJobaTime(joba);
-                            ack(new Ack(item.meta().globalTime(), item.xor()));
+                            ack(new Ack(item.meta().globalTime(), item.xor()), joba);
                             routes.get(Objects.requireNonNull(((HashingVertexStub) to).hash()).applyAsInt(item))
                                     .tell(new AddressedItem(item, toDest), self());
                           };
                         } else {
                           sink = item -> {
-                            bumpJobaTime(joba);
-                            ack(new Ack(item.meta().globalTime(), item.xor()));
+                            ack(new Ack(item.meta().globalTime(), item.xor()), joba);
                             localManager.tell(new AddressedItem(item, toDest), self());
                           };
                         }
@@ -192,7 +190,13 @@ public class Component extends LoggingActor {
             .match(Commit.class, this::onCommit)
             .match(
                     JobaTimesTick.class,
-                    __ -> wrappedJobas.values().forEach(jobaWrapper -> bumpJobaTime(jobaWrapper.joba))
+                    __ -> wrappedJobas.values().forEach(jobaWrapper -> {
+                      jobaWrapper.joba.time++;
+                      ackers.forEach(acker -> acker.tell(
+                              new JobaTime(jobaWrapper.joba.id, jobaWrapper.joba.time),
+                              self()
+                      ));
+                    })
             )
             .build();
   }
@@ -218,18 +222,15 @@ public class Component extends LoggingActor {
     final DataItem item = addressedItem.item();
     injectInTracer.log(item.xor());
     localCall(item, addressedItem.destination());
-    final Joba joba = wrappedJobas.get(addressedItem.destination()).joba;
-    bumpJobaTime(joba);
-    ack(new Ack(item.meta().globalTime(), item.xor()));
+    ack(new Ack(item.meta().globalTime(), item.xor()), wrappedJobas.get(addressedItem.destination()).joba);
     injectOutTracer.log(item.xor());
   }
 
-  private void ack(Ack ack) {
-    ackers.get((int) ack.time().time() % ackers.size()).tell(ack, self());
-  }
-
-  private void bumpJobaTime(Joba joba) {
-    ackers.forEach(acker -> acker.tell(new JobaTime(joba.id, ++joba.time), self()));
+  private void ack(Ack ack, Joba joba) {
+    final ActorRef acker = ackers.get((int) ack.time().time() % ackers.size());
+    joba.time++;
+    acker.tell(new JobaTime(joba.id, joba.time), self());
+    acker.tell(ack, self());
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {
