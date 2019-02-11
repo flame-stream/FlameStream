@@ -33,12 +33,11 @@ import static java.util.stream.Collectors.toMap;
  */
 public class TopWordCountGraphTest extends FlameAkkaSuite {
   @Test(invocationCount = 10)
-  public void localEnvironmentTest() throws InterruptedException {
+  public void topWordCountTest() throws InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
             .millisBetweenCommits(500)
             .build()) {
-      final FlameRuntime.Flame flame = runtime.run(new TopWordCountGraph().get());
-      {
+      try (final FlameRuntime.Flame flame = runtime.run(new TopWordCountGraph().get())) {
         final int lineSize = 20;
         final int streamSize = 10;
         final Queue<String> input = Stream.generate(() -> {
@@ -63,6 +62,7 @@ public class TopWordCountGraphTest extends FlameAkkaSuite {
         applyDataToAllHandlesAsync(input, handles);
         awaitConsumer.await(200, TimeUnit.SECONDS);
 
+        //noinspection ConstantConditions
         final WordsTop actualWordsTop = awaitConsumer.result().skip(lineSize * streamSize - 1).findFirst().get();
         final Stream<Map.Entry<String, Integer>> entryStream = wordCounts.entrySet()
                 .stream()
