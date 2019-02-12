@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.runtime;
 
-import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
@@ -12,10 +11,7 @@ import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
-import com.spbsu.flamestream.runtime.master.ClientWatcher;
-import com.spbsu.flamestream.runtime.master.acker.Acker;
 import com.spbsu.flamestream.runtime.master.acker.Committer;
-import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
 import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.state.StateStorage;
@@ -41,7 +37,7 @@ public class ProcessingWatcher extends LoggingActor {
   private final CommitterConfig committerConfig;
   private final StateStorage stateStorage;
   private final FlameSerializer serializer;
-  private final ActorRef acker;
+  private final ActorRef acker, registryHolder;
 
   private NodeCache graphCache = null;
   private PathChildrenCache frontsCache = null;
@@ -56,7 +52,8 @@ public class ProcessingWatcher extends LoggingActor {
                            CommitterConfig committerConfig,
                            StateStorage stateStorage,
                            FlameSerializer serializer,
-                           ActorRef acker
+                           ActorRef acker,
+                           ActorRef registryHolder
   ) {
     this.id = id;
     this.curator = curator;
@@ -65,6 +62,7 @@ public class ProcessingWatcher extends LoggingActor {
     this.stateStorage = stateStorage;
     this.serializer = serializer;
     this.acker = acker;
+    this.registryHolder = registryHolder;
   }
 
   public static Props props(String id,
@@ -73,7 +71,8 @@ public class ProcessingWatcher extends LoggingActor {
                             CommitterConfig committerConfig,
                             StateStorage stateStorage,
                             FlameSerializer serializer,
-                            ActorRef acker
+                            ActorRef acker,
+                            ActorRef registryHolder
   ) {
     return Props.create(
             ProcessingWatcher.class,
@@ -83,7 +82,8 @@ public class ProcessingWatcher extends LoggingActor {
             committerConfig,
             stateStorage,
             serializer,
-            acker
+            acker,
+            registryHolder
     );
   }
 
@@ -152,9 +152,9 @@ public class ProcessingWatcher extends LoggingActor {
 
     this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
-    final ActorRef committer, registryHolder;
+    final ActorRef committer;
     if (zookeeperWorkersNode.isLeader(id)) {
-      registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), acker), "registry-holder");
+      final ZkRegistry zkRegistry = new ZkRegistry(curator);
       committer = context().actorOf(Committer.props(
               config.paths().size(),
               committerConfig,
@@ -162,9 +162,10 @@ public class ProcessingWatcher extends LoggingActor {
               acker
       ), "committer");
     } else {
-      final ActorPath masterPath = config.paths().get(config.masterLocation()).child("processing-watcher");
-      registryHolder = AwaitResolver.syncResolve(masterPath.child("registry-holder"), context());
-      committer = AwaitResolver.syncResolve(masterPath.child("committer"), context());
+      committer = AwaitResolver.syncResolve(config.paths()
+              .get(config.masterLocation())
+              .child("processing-watcher")
+              .child("committer"), context());
     }
 
 

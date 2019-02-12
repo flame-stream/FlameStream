@@ -1,8 +1,8 @@
-package com.spbsu.flamestream.example.bl.classifier;
+package com.spbsu.flamestream.example.bl.tfidf.ops.filtering.classifier;
 
 import org.jetbrains.annotations.NotNull;
 
-class Topic implements Comparable<Topic> {
+public class Topic implements Comparable<Topic> {
   private final String name;
   private final String id;
   private final double probability;
@@ -18,8 +18,12 @@ class Topic implements Comparable<Topic> {
     return Double.compare(o.probability(), probability);
   }
 
-  double probability() {
+  public double probability() {
     return probability;
+  }
+
+  public String getName() {
+    return name;
   }
 
   @Override

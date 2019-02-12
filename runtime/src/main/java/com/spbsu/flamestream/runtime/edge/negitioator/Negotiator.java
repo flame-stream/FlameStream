@@ -19,17 +19,19 @@ import java.util.Map;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class Negotiator extends LoggingActor {
+  private final ActorRef acker;
   private final ActorRef registryHolder;
   private final ActorRef source;
   private final Map<EdgeId, ActorRef> localFronts = new HashMap<>();
 
-  public Negotiator(ActorRef registryHolder, ActorRef source) {
+  public Negotiator(ActorRef acker, ActorRef registryHolder, ActorRef source) {
+    this.acker = acker;
     this.registryHolder = registryHolder;
     this.source = source;
   }
 
-  public static Props props(ActorRef registryHolder, ActorRef source) {
-    return Props.create(Negotiator.class, registryHolder, source);
+  public static Props props(ActorRef acker, ActorRef registryHolder, ActorRef source) {
+    return Props.create(Negotiator.class, acker, registryHolder, source);
   }
 
   @Override
