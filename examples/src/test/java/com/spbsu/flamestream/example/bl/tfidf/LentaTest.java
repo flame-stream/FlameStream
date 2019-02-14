@@ -13,7 +13,6 @@ import com.spbsu.flamestream.runtime.acceptance.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.utils.QueuedConsumer;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -34,9 +33,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,7 +86,7 @@ public class LentaTest extends FlameAkkaSuite {
   public void lentaTest() throws InterruptedException, IOException, TimeoutException {
     Stream<TextDocument> toCheck = documents();
     int nExpected = documents().toArray().length;
-    final QueuedConsumer<Object> awaitConsumer = new QueuedConsumer<>(nExpected);
+    final ConcurrentLinkedDeque resultQueue = new ConcurrentLinkedDeque<Object>();
 
     ActorSystem system = ActorSystem.create("lentaTfIdf", ConfigFactory.load("remote"));
     try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().maxElementsInGraph(10)
@@ -98,7 +97,7 @@ public class LentaTest extends FlameAkkaSuite {
       final FlameRuntime.Flame flame = runtime.run(new TfIdfGraph().get());
 
       flame.attachRear("tfidfRear", new AkkaRearType<>(system, Object.class))
-              .forEach(r -> r.addListener(awaitConsumer));
+              .forEach(r -> r.addListener(object -> resultQueue.add(object)));
       final List<AkkaFront.FrontHandle<TextDocument>> handles = flame
               .attachFront("tfidfFront", new AkkaFrontType<TextDocument>(system))
               .collect(toList());
@@ -113,16 +112,15 @@ public class LentaTest extends FlameAkkaSuite {
       Thread t = new Thread(() -> {
         Iterator<TextDocument> toCheckIter = toCheck.iterator();
         IDFData idfExpected = new IDFData();
-        Queue q = awaitConsumer.queue();
         for (int i = 0; i < nExpected; i++) {
-          Object o = q.poll();
+          Object o = resultQueue.poll();
 
 
           while (o == null) {
             try {
                  Thread.sleep(10);
             } catch (InterruptedException e) {}
-            o = q.poll();
+            o = resultQueue.poll();
           }
 
           final int got = counter.incrementAndGet();
