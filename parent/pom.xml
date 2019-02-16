@@ -51,6 +51,7 @@
         <curator.version>4.0.1</curator.version>
         <maven-surefire-plugin.version>2.20.1</maven-surefire-plugin.version>
         <jblas.version>1.2.4</jblas.version>
+        <common-csv.version>1.4</common-csv.version>
     </properties>
 
     <dependencyManagement>
@@ -236,6 +237,12 @@
                 <groupId>org.jblas</groupId>
                 <artifactId>jblas</artifactId>
                 <version>${jblas.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>${common-csv.version}</version>
             </dependency>
 
             <!--Commons-->
