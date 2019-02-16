@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.bl.classifier;
+package com.spbsu.flamestream.example.bl.tfidf.ops.filtering.classifier;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
@@ -35,7 +35,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   private Mx weights;
   private String[] topics;
 
-  SklearnSgdPredictor(String cntVectorizerPath, String weightsPath) {
+  public SklearnSgdPredictor(String cntVectorizerPath, String weightsPath) {
     this.weightsPath = weightsPath;
     this.cntVectorizerPath = cntVectorizerPath;
   }
@@ -159,7 +159,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   }
 
   @VisibleForTesting
-  int wordIndex(String word) {
+  public int wordIndex(String word) {
     loadVocabulary();
     return countVectorizer.get(word);
   }
