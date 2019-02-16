@@ -149,7 +149,7 @@ public class ProcessingWatcher extends LoggingActor {
     } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     }
-
+    
     this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
     final ActorRef committer, registryHolder;
