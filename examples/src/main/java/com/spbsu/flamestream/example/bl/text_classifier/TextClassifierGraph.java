@@ -175,13 +175,20 @@ public class TextClassifierGraph implements Supplier<Graph> {
             .link(idfObjectCompleteFilter, gropingTfIdf)
             .link(gropingTfIdf, filterTfIdf)
             .link(filterTfIdf, filterClassifier)
-
-            .colocate(groupingDoc, filterDoc, idfAggregator, idfObjectCompleteFilter, gropingTfIdf,
-                    filterTfIdf, filterClassifier, sink
-            )
-            .colocate(groupingWord, filterWord, counterWord)
-
             .link(filterClassifier, sink)
+
+            .colocate(source, splitterTf, splitterWord)
+            .colocate(groupingWord, filterWord, counterWord)
+            .colocate(
+                    groupingDoc,
+                    filterDoc,
+                    idfAggregator,
+                    idfObjectCompleteFilter,
+                    gropingTfIdf,
+                    filterTfIdf,
+                    filterClassifier,
+                    sink
+            )
 
             .build(source, sink);
   }
