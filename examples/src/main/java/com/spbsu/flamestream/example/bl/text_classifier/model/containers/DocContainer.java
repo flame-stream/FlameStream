@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.bl.tfidf.model.containers;
+package com.spbsu.flamestream.example.bl.text_classifier.model.containers;
 
 public interface DocContainer {
   String document();

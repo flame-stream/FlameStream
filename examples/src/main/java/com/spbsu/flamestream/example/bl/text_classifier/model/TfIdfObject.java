@@ -1,15 +1,13 @@
-  package com.spbsu.flamestream.example.bl.tfidf.model;
+package com.spbsu.flamestream.example.bl.text_classifier.model;
 
 
-import com.spbsu.flamestream.example.bl.tfidf.TextUtils;
-import com.spbsu.flamestream.example.bl.tfidf.model.containers.DocContainer;
-import com.spbsu.flamestream.example.bl.tfidf.ops.filtering.classifier.Topic;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class TfIdfObject implements DocContainer {
   private final int number;
@@ -31,27 +29,34 @@ public class TfIdfObject implements DocContainer {
     return idfCounts.get(key);
   }
 
-  private TfIdfObject(String docName, List<String> words, String partitioning, int number) {
+  private TfIdfObject(String docName, Stream<String> words, String partitioning, int number) {
     this.docName = docName;
     this.number = number;
     this.partitioning = partitioning;
-    counts = new HashMap();
-    idfCounts = new HashMap();
-    for (String s: words) {
-      counts.put(s, counts.getOrDefault(s, 0) + 1);
-    }
+    counts = new HashMap<>();
+    idfCounts = new HashMap<>();
     idfCardinality = 0;
+    words.forEach(s -> counts.merge(s, 1, Integer::sum));
   }
 
   public static TfIdfObject ofText(TextDocument textDocument) {
-    return new TfIdfObject(textDocument.name(), TextUtils.words(textDocument.content()), textDocument.partitioning(), textDocument.number());
+    return new TfIdfObject(
+            textDocument.name(),
+            SklearnSgdPredictor.text2words(textDocument.content()),
+            textDocument.partitioning(),
+            textDocument.number()
+    );
   }
 
   public TfIdfObject(TfIdfObject tfIdfObject, Map<String, Integer> idf) {
     this(tfIdfObject.docName, tfIdfObject.counts, idf, tfIdfObject.partitioning, tfIdfObject.number);
   }
 
-  private TfIdfObject(String docName, Map counts, Map idfCounts, String partitioning, int number) {
+  private TfIdfObject(String docName,
+                      Map<String, Integer> counts,
+                      Map<String, Integer> idfCounts,
+                      String partitioning,
+                      int number) {
     this.docName = docName;
     this.counts = counts;
     this.idfCounts = idfCounts;
@@ -81,23 +86,12 @@ public class TfIdfObject implements DocContainer {
 
   @Override
   public String toString() {
-    return String.format("<TFO> doc hash: %d, doc: %s, idf: %s, words: %s", docName.hashCode(), docName, idfCounts, counts);
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final TfIdfObject otherTfIdfObject = (TfIdfObject) o;
-    return Objects.equals(counts, otherTfIdfObject.counts);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(counts.hashCode());
+    return String.format(
+            "<TFO> doc hash: %d, doc: %s, idf: %s, words: %s",
+            docName.hashCode(),
+            docName,
+            idfCounts,
+            counts
+    );
   }
 }

@@ -1,11 +1,9 @@
-package com.spbsu.flamestream.example.bl.tfidf.model;
+package com.spbsu.flamestream.example.bl.text_classifier.model;
 
-import com.spbsu.flamestream.example.bl.tfidf.model.containers.DocContainer;
-import com.spbsu.flamestream.example.bl.tfidf.model.counters.WordCounter;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class IDFObject implements DocContainer {
   private final Map<String, Integer> counts = new HashMap<>();
@@ -32,12 +30,8 @@ public class IDFObject implements DocContainer {
 
   public IDFObject(IDFObject some, IDFObject other) {
     this(some.docName, some.idfCardinality, some.partitioning);
-    for (Map.Entry<String, Integer> entry: other.counts.entrySet()) {
-      counts.put(entry.getKey(), entry.getValue());
-    }
-    for (Map.Entry<String, Integer> entry: some.counts.entrySet()) {
-      counts.put(entry.getKey(), entry.getValue());
-    }
+    counts.putAll(other.counts);
+    counts.putAll(some.counts);
   }
 
 
@@ -64,22 +58,4 @@ public class IDFObject implements DocContainer {
   public Map<String, Integer> counts() {
     return counts;
   }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final IDFObject otherIDFObject = (IDFObject) o;
-    return Objects.equals(counts, otherIDFObject.counts);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(counts.hashCode());
-  }
-
 }
