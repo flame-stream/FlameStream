@@ -1,8 +1,8 @@
-package com.spbsu.flamestream.example.bl.tfidf.ops.filtering;
+package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering;
 
-import com.spbsu.flamestream.example.bl.tfidf.model.IDFObject;
-import com.spbsu.flamestream.example.bl.tfidf.model.TfIdfObject;
-import com.spbsu.flamestream.example.bl.tfidf.model.containers.DocContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.model.IDFObject;
+import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
 
 import java.util.Arrays;
 import java.util.List;

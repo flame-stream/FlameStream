@@ -1,8 +1,7 @@
-package com.spbsu.flamestream.example.bl.tfidf.model.counters;
+package com.spbsu.flamestream.example.bl.text_classifier.model;
 
-import com.spbsu.flamestream.example.bl.tfidf.model.containers.DocContainer;
-import com.spbsu.flamestream.example.bl.tfidf.model.containers.WordContainer;
-import com.spbsu.flamestream.example.bl.tfidf.model.entries.WordEntry;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
 
 public class WordCounter implements WordContainer, DocContainer {
   private final WordEntry wordEntry;
@@ -33,30 +32,8 @@ public class WordCounter implements WordContainer, DocContainer {
     return wordEntry.idfCardinality();
   }
 
-  public WordEntry wordEntry() {
-    return wordEntry;
-  }
-
   public int count() {
     return count;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    final WordCounter that = (WordCounter) o;
-    return count == that.count && wordEntry.equals(that.wordEntry);
-  }
-
-  @Override
-  public int hashCode() {
-    return wordEntry.hashCode();
   }
 
   @Override

@@ -1,10 +1,8 @@
 
-package com.spbsu.flamestream.example.bl.tfidf.model.entries;
+package com.spbsu.flamestream.example.bl.text_classifier.model;
 
-import com.spbsu.flamestream.example.bl.tfidf.model.containers.DocContainer;
-import com.spbsu.flamestream.example.bl.tfidf.model.containers.WordContainer;
-
-import java.util.Objects;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
 
 public class WordEntry implements WordContainer, DocContainer {
   private final String word;
@@ -42,23 +40,7 @@ public class WordEntry implements WordContainer, DocContainer {
   @Override
   public String toString() {
     return String.format("<WE> doc hash: %d,  word: >%s<, doc: >%s< idf cardinality %d",
-            document().hashCode(), word, docId, idfCardinality);
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final WordEntry wordEntry = (WordEntry) o;
-    return Objects.equals(word, wordEntry.word);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(word);
+            document().hashCode(), word, docId, idfCardinality
+    );
   }
 }

@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.bl.tfidf.ops.filtering.classifier;
+package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -22,7 +22,7 @@ public class Topic implements Comparable<Topic> {
     return probability;
   }
 
-  public String getName() {
+  public String name() {
     return name;
   }
 

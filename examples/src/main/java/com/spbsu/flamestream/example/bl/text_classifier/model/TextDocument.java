@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.bl.tfidf.model;
+package com.spbsu.flamestream.example.bl.text_classifier.model;
 
 public class TextDocument {
   private final String name;

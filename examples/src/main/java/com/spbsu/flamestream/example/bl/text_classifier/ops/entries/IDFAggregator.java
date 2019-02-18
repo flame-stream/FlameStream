@@ -1,8 +1,8 @@
-package com.spbsu.flamestream.example.bl.tfidf.ops.entries;
+package com.spbsu.flamestream.example.bl.text_classifier.ops.entries;
 
-import com.spbsu.flamestream.example.bl.tfidf.model.IDFObject;
-import com.spbsu.flamestream.example.bl.tfidf.model.containers.DocContainer;
-import com.spbsu.flamestream.example.bl.tfidf.model.counters.WordCounter;
+import com.spbsu.flamestream.example.bl.text_classifier.model.IDFObject;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
 
 import java.util.List;
 import java.util.function.Function;
