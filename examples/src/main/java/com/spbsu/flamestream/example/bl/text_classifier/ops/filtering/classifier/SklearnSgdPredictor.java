@@ -5,6 +5,7 @@ import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.google.common.annotations.VisibleForTesting;
@@ -17,6 +18,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +35,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   private TObjectIntMap<String> countVectorizer;
   private Vec intercept;
   private Mx weights;
+  private Mx prevWeights;
   private String[] topics;
 
   public SklearnSgdPredictor(String cntVectorizerPath, String weightsPath) {
@@ -87,6 +90,96 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return result;
   }
 
+  private double softmaxValue(Vec xi, int correctTopicIndex) {
+    final double numer = Math.exp(VecTools.multiply(weights.row(correctTopicIndex), xi));
+    double denom = 0.0;
+    for (int k = 0; k < weights.rows(); k++) {
+      denom += Math.exp(VecTools.multiply(weights.row(k), xi));
+    }
+
+    return numer / denom;
+  }
+
+  // https://stats.stackexchange.com/questions/265905/derivative-of-softmax-with-respect-to-weights
+  private Mx softmaxGradient(Mx trainingSet, String[] correctTopics) {
+    List<String> topicList = Arrays.asList(topics);
+
+    Vec[] gradients = new Vec[weights.rows()];
+    for (int i = 0; i < weights.rows(); i++) {
+      final Vec wi = new ArrayVec(weights.row(i).toArray(), 0, weights.columns());
+
+      for (int j = 0; j < trainingSet.rows(); j++) {
+        final Vec x = trainingSet.row(j);
+        final int index = topicList.indexOf(correctTopics[j]);
+        final double value1 = softmaxValue(x, index);
+
+        double croneker = 1.0;
+        if (i != j) {
+          croneker = 0.0;
+        }
+
+        final double value2 = softmaxValue(x, i);
+        VecTools.scale(x, value1 * (croneker - value2));
+
+        VecTools.subtract(wi, x); // gradient subsctract
+      }
+
+      gradients[i] = wi;
+    }
+
+    return new RowsVecArrayMx(gradients);
+  }
+
+  // https://jamesmccaffrey.wordpress.com/2017/06/27/implementing-neural-network-l1-regularization/
+  // https://visualstudiomagazine.com/articles/2017/12/05/neural-network-regularization.aspx
+  private Mx l1Gradient(double lambda) {
+    Mx gradient = new VecBasedMx(weights.rows(), weights.columns());
+
+    for (int i = 0; i < weights.rows(); i++) {
+      for (int j = 0; j < weights.columns(); j++) {
+        gradient.set(i, j, lambda * Math.signum(weights.get(i, j)));
+      }
+    }
+
+    return gradient;
+  }
+
+  // https://jamesmccaffrey.wordpress.com/2017/02/19/l2-regularization-and-back-propagation/
+  // https://visualstudiomagazine.com/articles/2017/09/01/neural-network-l2.aspx
+  private Mx l2Gradient(double lambda) {
+    Mx gradient = new VecBasedMx(weights.rows(), weights.columns());
+
+    for (int i = 0; i < weights.rows(); i++) {
+      for (int j = 0; j < weights.columns(); j++) {
+        gradient.set(i, j, lambda * 2 * (weights.get(i, j) - prevWeights.get(i, j)));
+      }
+    }
+
+    return gradient;
+  }
+
+  @Override
+  public void updateWeights(Mx trainingSet, String[] correctTopics) {
+    final double lambda1 = 0.001;
+    final double lambda2 = 0.001;
+
+    final Mx softmax = softmaxGradient(trainingSet, correctTopics);
+    final Mx l1 = l1Gradient(lambda1);
+    final Mx l2 = l2Gradient(lambda2);
+
+    prevWeights = weights;
+
+    Mx updated = new VecBasedMx(weights.rows(), weights.columns());
+    for (int i = 0; i < weights.rows(); i++) {
+      for (int j = 0; j < weights.columns(); j++) {
+        final double value = weights.get(i, j) - softmax.get(i, j) - l1.get(i, j) - l2.get(i, j);
+        updated.set(i, j, value);
+      }
+    }
+
+    weights = updated;
+  }
+
   public void init() {
     loadMeta();
     loadVocabulary();
@@ -128,6 +221,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
       }
 
       weights = new RowsVecArrayMx(coef);
+      prevWeights = new RowsVecArrayMx(coef);
       MxTools.transpose(weights);
 
       line = br.readLine();
