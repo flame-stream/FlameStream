@@ -1,6 +1,6 @@
-package com.spbsu.flamestream.example.bl.tfidf.model;
+package com.spbsu.flamestream.example.bl.text_classifier.model;
 
-import com.spbsu.flamestream.example.bl.tfidf.ops.filtering.classifier.Topic;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Topic;
 
 public class Prediction {
   private final TfIdfObject tfIdf;

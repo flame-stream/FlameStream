@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.bl.tfidf.ops.filtering.classifier;
+package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier;
 
 import java.util.Map;
 
