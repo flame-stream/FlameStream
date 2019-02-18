@@ -8,14 +8,15 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.example.bl.text_classifier.model.IDFObject;
+import com.spbsu.flamestream.example.bl.text_classifier.model.IdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.model.TfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.entries.CountWordEntries;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.entries.IDFAggregator;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.Classifier;
@@ -23,12 +24,9 @@ import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.DocContain
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.IDFObjectCompleteFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.TfIdfFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.WordContainerOrderingFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -90,23 +88,26 @@ public class TextClassifierGraph implements Supplier<Graph> {
 
 
     //noinspection Convert2Lambda
-    final FlameMap<TextDocument, WordEntry> splitterWord = new FlameMap<>(new Function<TextDocument, Stream<WordEntry>>() {
+    final FlameMap<TfObject, WordEntry> splitterWord = new FlameMap<>(new Function<TfObject, Stream<WordEntry>>() {
       @Override
-      public Stream<WordEntry> apply(TextDocument s) {
-        final Map<String, Integer> counter = new HashMap<>();
-        SklearnSgdPredictor.text2words(s.content()).forEach(w -> counter.merge(w, 1, Integer::sum));
-        return counter.entrySet().stream()
-                .map(word -> new WordEntry(word.getKey(), s.name(), counter.size(), s.partitioning()));
+      public Stream<WordEntry> apply(TfObject tfObject) {
+        return tfObject.counts().entrySet().stream()
+                .map(word -> new WordEntry(
+                        word.getKey(),
+                        tfObject.document(),
+                        tfObject.counts().size(),
+                        tfObject.partitioning()
+                ));
       }
-    }, TextDocument.class);
+    }, TfObject.class);
 
 
     //noinspection Convert2Lambda
-    final FlameMap<TextDocument, TfIdfObject> splitterTF = new FlameMap<>(new Function<TextDocument, Stream<TfIdfObject>>() {
+    final FlameMap<TextDocument, TfObject> splitterTf = new FlameMap<>(new Function<TextDocument, Stream<TfObject>>() {
       @Override
-      public Stream<TfIdfObject> apply(TextDocument text) {
-        TfIdfObject tfIdfObject = TfIdfObject.ofText(text);
-        return Stream.of(tfIdfObject);
+      public Stream<TfObject> apply(TextDocument text) {
+        TfObject tfObject = TfObject.ofText(text);
+        return Stream.of(tfObject);
       }
     }, TextDocument.class);
 
@@ -148,15 +149,16 @@ public class TextClassifierGraph implements Supplier<Graph> {
             }
     );
 
-    final FlameMap<IDFObject, IDFObject> idfObjectCompleteFilter = new FlameMap<>(
+    final FlameMap<IdfObject, IdfObject> idfObjectCompleteFilter = new FlameMap<>(
             new IDFObjectCompleteFilter(),
-            IDFObject.class
+            IdfObject.class
     );
 
     final Sink sink = new Sink();
     return new Graph.Builder()
-            .link(source, splitterTF)
-            .link(source, splitterWord)
+            .link(source, splitterTf)
+            .link(splitterTf, gropingTfIdf)
+            .link(splitterTf, splitterWord)
 
             .link(splitterWord, groupingWord)
             .link(groupingWord, filterWord)
@@ -171,7 +173,6 @@ public class TextClassifierGraph implements Supplier<Graph> {
             .link(idfAggregator, idfObjectCompleteFilter)
 
             .link(idfObjectCompleteFilter, gropingTfIdf)
-            .link(splitterTF, gropingTfIdf)
             .link(gropingTfIdf, filterTfIdf)
             .link(filterTfIdf, filterClassifier)
 

@@ -32,7 +32,6 @@ public class WordEntry implements WordContainer, DocContainer {
     return partitioning;
   }
 
-  @Override
   public int idfCardinality() {
     return idfCardinality;
   }

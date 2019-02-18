@@ -19,31 +19,26 @@ public class Classifier implements Function<TfIdfObject, Stream<Prediction>> {
 
   @Override
   public Stream<Prediction> apply(TfIdfObject tfIdfObject) {
-    final Document document = new Document(computeTfIdf(tfIdfObject));
+    final Map<String, Double> tfIdf = new HashMap<>();
+    { //normalized tf-idf
+      double squareSum = 0.0;
+      for (String word : tfIdfObject.words()) {
+        double tfIdfValue =
+                tfIdfObject.tf(word) * Math.log((double) tfIdfObject.number() / (double) tfIdfObject.idf(word))
+                        + 1;
+        squareSum += (tfIdfValue * tfIdfValue);
+        tfIdf.put(word, tfIdfValue);
+      }
+      final double norm = Math.sqrt(squareSum);
+      tfIdf.forEach((s, v) -> tfIdf.put(s, v / norm));
+    }
 
+    final Document document = new Document(tfIdf);
     final Prediction result = new Prediction(tfIdfObject, predictor.predict(document));
-
     return Stream.of(result);
   }
 
   public void init() {
     predictor.init();
   }
-
-  private Map<String, Double> computeTfIdf(TfIdfObject tfIdfObject) {
-    final Map<String, Double> tfIdf = new HashMap<>();
-    double squareSum = 0.0;
-    for (String word : tfIdfObject.tfKeys()) {
-      double tfIdfValue =
-              tfIdfObject.tfCount(word) * Math.log((double) tfIdfObject.number() / (double) tfIdfObject.idfCount(word))
-                      + 1;
-      squareSum += (tfIdfValue * tfIdfValue);
-      tfIdf.put(word, tfIdfValue);
-    }
-
-    final double norm = Math.sqrt(squareSum);
-    tfIdf.forEach((s, v) -> tfIdf.put(s, v / norm));
-    return tfIdf;
-  }
-
 }
