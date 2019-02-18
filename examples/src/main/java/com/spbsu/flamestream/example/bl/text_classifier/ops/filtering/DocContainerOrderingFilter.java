@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import com.spbsu.flamestream.example.bl.text_classifier.model.IDFObject;
+import com.spbsu.flamestream.example.bl.text_classifier.model.IdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
 
@@ -22,7 +22,7 @@ public class DocContainerOrderingFilter implements Function<List<DocContainer>, 
               docContainers.get(0), docContainers.get(0).getClass()));
     }
 
-    if (docContainers.size() == 1 || (docContainers.get(0) instanceof IDFObject
+    if (docContainers.size() == 1 || (docContainers.get(0) instanceof IdfObject
             && docContainers.get(1) instanceof WordCounter)) {
       if (docContainers.size() == 2 && !docContainers.get(0).document().equals(docContainers.get(1).document())) {
         return Stream.of(Collections.singletonList(docContainers.get(1)));

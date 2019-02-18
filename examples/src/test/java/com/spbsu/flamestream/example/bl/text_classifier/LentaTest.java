@@ -163,22 +163,22 @@ public class LentaTest extends FlameAkkaSuite {
             ));
             Assert.assertEquals(
                     result.keySet(),
-                    tfIdf.tfKeys(),
-                    String.format("unexpected keys: '%s' instead of '%s'%n", result.keySet(), tfIdf.tfKeys())
+                    tfIdf.words(),
+                    String.format("unexpected keys: '%s' instead of '%s'%n", result.keySet(), tfIdf.words())
             );
             for (String key : result.keySet()) {
               Assert.assertEquals(
                       result.get(key).intValue(),
-                      tfIdf.tfCount(key),
+                      tfIdf.tf(key),
                       String.format("incorrect TF value for key %s: %d. Expected: %d%n",
-                              key, tfIdf.tfCount(key), result.get(key)
+                              key, tfIdf.tf(key), result.get(key)
                       )
               );
               Assert.assertEquals(
                       idfExpected2.get(key).intValue(),
-                      tfIdf.idfCount(key),
+                      tfIdf.idf(key),
                       String.format("incorrect IDF value for key %s: %d. Expected: %d%n",
-                              key, tfIdf.idfCount(key), idfExpected2.get(key)
+                              key, tfIdf.idf(key), idfExpected2.get(key)
                       )
               );
             }

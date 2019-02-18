@@ -5,7 +5,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocCont
 import java.util.HashMap;
 import java.util.Map;
 
-public class IDFObject implements DocContainer {
+public class IdfObject implements DocContainer {
   private final Map<String, Integer> counts = new HashMap<>();
   private final String docName;
   private final String partitioning;
@@ -15,25 +15,20 @@ public class IDFObject implements DocContainer {
     return counts.size() == idfCardinality;
   }
 
-  public IDFObject(WordCounter wordCounter) {
+  public IdfObject(WordCounter wordCounter) {
     this.docName = wordCounter.document();
     this.partitioning = wordCounter.partitioning();
     counts.put(wordCounter.word(), wordCounter.count());
     this.idfCardinality = wordCounter.idfCardinality();
   }
 
-  private IDFObject(String docName, int idfCardinality, String partitioning) {
-    this.docName = docName;
-    this.partitioning = partitioning;
-    this.idfCardinality = idfCardinality;
-  }
-
-  public IDFObject(IDFObject some, IDFObject other) {
-    this(some.docName, some.idfCardinality, some.partitioning);
-    counts.putAll(other.counts);
+  public IdfObject(IdfObject some, WordCounter wordCounter) {
+    this.docName = some.docName;
+    this.partitioning = some.partitioning;
+    this.idfCardinality = some.idfCardinality;
     counts.putAll(some.counts);
+    counts.put(wordCounter.word(), wordCounter.count());
   }
-
 
   @Override
   public String document() {
@@ -43,11 +38,6 @@ public class IDFObject implements DocContainer {
   @Override
   public String partitioning() {
     return partitioning;
-  }
-
-  @Override
-  public int idfCardinality() {
-    return idfCardinality;
   }
 
   @Override
