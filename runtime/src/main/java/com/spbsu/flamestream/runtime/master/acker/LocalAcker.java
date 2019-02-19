@@ -27,18 +27,18 @@ public class LocalAcker extends LoggingActor {
   private final SortedMap<GlobalTime, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
   private final List<AckerInputMessage> fifoCache = new ArrayList<>();
 
-  private final ActorRef globalAcker;
+  private final List<ActorRef> ackers;
   private final ActorRef pingActor;
 
   private int flushCounter = 0;
 
-  public LocalAcker(ActorRef globalAcker) {
-    this.globalAcker = globalAcker;
+  public LocalAcker(List<ActorRef> ackers) {
+    this.ackers = ackers;
     pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH));
   }
 
-  public static Props props(ActorRef globalAcker) {
-    return Props.create(LocalAcker.class, globalAcker).withDispatcher("processing-dispatcher");
+  public static Props props(List<ActorRef> ackers) {
+    return Props.create(LocalAcker.class, ackers).withDispatcher("processing-dispatcher");
   }
 
   @Override
@@ -60,7 +60,7 @@ public class LocalAcker extends LoggingActor {
             .match(Ack.class, this::handleAck)
             .match(Flush.class, flush -> flush())
             .match(AckerInputMessage.class, fifoCache::add)
-            .matchAny(e -> globalAcker.forward(e, context()))
+            .matchAny(e -> ackers.forEach(acker -> acker.forward(e, context())))
             .build();
   }
 
@@ -97,13 +97,17 @@ public class LocalAcker extends LoggingActor {
   }
 
   private void flush() {
-    jobaTimesCache.forEach((jobaId, value) -> globalAcker.tell(new JobaTime(jobaId, value), context().parent()));
+    jobaTimesCache.forEach((jobaId, value) -> ackers.forEach(acker -> acker.tell(
+            new JobaTime(jobaId, value),
+            context().parent()
+    )));
     jobaTimesCache.clear();
 
-    ackCache.forEach((globalTime, xor) -> globalAcker.tell(new Ack(globalTime, xor), context().parent()));
+    ackCache.forEach((globalTime, xor) -> ackers.get((int) globalTime.time() % ackers.size())
+            .tell(new Ack(globalTime, xor), context().parent()));
     ackCache.clear();
 
-    fifoCache.forEach(heartbeat -> globalAcker.tell(heartbeat, self()));
+    fifoCache.forEach(heartbeat -> ackers.forEach(acker -> acker.tell(heartbeat, self())));
     fifoCache.clear();
 
     flushCounter = 0;
