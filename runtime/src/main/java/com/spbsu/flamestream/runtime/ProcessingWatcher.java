@@ -12,8 +12,6 @@ import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
-import com.spbsu.flamestream.runtime.master.ClientWatcher;
-import com.spbsu.flamestream.runtime.master.acker.Acker;
 import com.spbsu.flamestream.runtime.master.acker.Committer;
 import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
 import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;

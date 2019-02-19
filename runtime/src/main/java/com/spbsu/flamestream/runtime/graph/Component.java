@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 
 public class Component extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 100;
-  private final List<ActorRef> ackers;
+  private final ActorRef localAcker;
 
   private enum JobaTimesTick {
     OBJECT
@@ -77,10 +77,10 @@ public class Component extends LoggingActor {
                     Graph graph,
                     HashUnitMap<ActorRef> routes,
                     ActorRef localManager,
-                    List<ActorRef> ackers,
+                    ActorRef localAcker,
                     ComputationProps props,
                     Map<String, GroupGroupingState> stateByVertex) {
-    this.ackers = ackers;
+    this.localAcker = localAcker;
     this.wrappedJobas = componentVertices.stream().collect(Collectors.toMap(
             vertex -> GraphManager.Destination.fromVertexId(vertex.id()),
             vertex -> {
@@ -161,7 +161,7 @@ public class Component extends LoggingActor {
                             Graph graph,
                             HashUnitMap<ActorRef> localManager,
                             ActorRef routes,
-                            List<ActorRef> ackers,
+                            ActorRef localAcker,
                             ComputationProps props,
                             Map<String, GroupGroupingState> stateByVertex) {
     return Props.create(
@@ -171,7 +171,7 @@ public class Component extends LoggingActor {
             graph,
             localManager,
             routes,
-            ackers,
+            localAcker,
             props,
             stateByVertex
     ).withDispatcher("processing-dispatcher");
@@ -184,18 +184,18 @@ public class Component extends LoggingActor {
             .match(DataItem.class, this::accept)
             .match(GlobalTime.class, this::onMinTime)
             .match(NewRear.class, this::onNewRear)
-            .match(Heartbeat.class, h -> ackers.forEach(acker -> acker.forward(h, context())))
-            .match(UnregisterFront.class, u -> ackers.forEach(acker -> acker.forward(u, context())))
+            .match(Heartbeat.class, h -> localAcker.forward(h, context()))
+            .match(UnregisterFront.class, u -> localAcker.forward(u, context()))
             .match(Prepare.class, this::onPrepare)
             .match(Commit.class, this::onCommit)
             .match(
                     JobaTimesTick.class,
                     __ -> wrappedJobas.values().forEach(jobaWrapper -> {
                       jobaWrapper.joba.time++;
-                      ackers.forEach(acker -> acker.tell(
+                      localAcker.tell(
                               new JobaTime(jobaWrapper.joba.id, jobaWrapper.joba.time),
                               self()
-                      ));
+                      );
                     })
             )
             .build();
@@ -227,10 +227,9 @@ public class Component extends LoggingActor {
   }
 
   private void ack(Ack ack, Joba joba) {
-    final ActorRef acker = ackers.get((int) ack.time().time() % ackers.size());
     joba.time++;
-    acker.tell(new JobaTime(joba.id, joba.time), self());
-    acker.tell(ack, self());
+    localAcker.tell(new JobaTime(joba.id, joba.time), self());
+    localAcker.tell(ack, self());
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {

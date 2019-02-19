@@ -54,7 +54,7 @@ public class GraphManager extends LoggingActor {
   private final StateStorage storage;
   private final String nodeId;
   private final MinTimeUpdater minTimeUpdater;
-  private final List<ActorRef> ackers;
+  private final ActorRef localAcker;
 
   private ActorRef sourceComponent;
   private ActorRef sinkComponent;
@@ -77,7 +77,7 @@ public class GraphManager extends LoggingActor {
     this.storage = storage;
     this.computationProps = computationProps;
     this.graph = graph;
-    this.ackers = ackers.stream().map(acker -> context().actorOf(LocalAcker.props(acker))).collect(Collectors.toList());
+    this.localAcker = context().actorOf(LocalAcker.props(ackers));
     this.registryHolder = registryHolder;
     this.committer = committer;
     minTimeUpdater = new MinTimeUpdater(ackers);
@@ -86,7 +86,7 @@ public class GraphManager extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    ackers.forEach(acker -> acker.tell(new MinTimeUpdateListener(self()), self()));
+    localAcker.tell(new MinTimeUpdateListener(self()), self());
   }
 
   public static Props props(
@@ -152,7 +152,7 @@ public class GraphManager extends LoggingActor {
                         graph,
                         routes,
                         self(),
-                        ackers,
+                        localAcker,
                         computationProps,
                         stateByVertex
                 ));
