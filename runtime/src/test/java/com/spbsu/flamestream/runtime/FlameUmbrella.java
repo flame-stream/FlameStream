@@ -23,6 +23,7 @@ import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.master.acker.Acker;
 import com.spbsu.flamestream.runtime.master.acker.Committer;
+import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.master.acker.Registry;
 import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
 import com.spbsu.flamestream.runtime.state.StateStorage;
@@ -78,18 +79,19 @@ class Cluster extends LoggingActor {
                       .stream()
                       .map(id -> context.actorOf(Acker.props(0), "acker-" + id))
                       .collect(Collectors.toList());
+              final ActorRef localAcker = context.actorOf(LocalAcker.props(ackers));
               final ActorRef registryHolder = context.actorOf(RegistryHolder.props(registry, ackers), "registry-holder");
               final ActorRef committer = context.actorOf(Committer.props(
                       clusterConfig.paths().size(),
                       committerConfig,
                       registryHolder,
-                      ackers
+                      localAcker
               ));
               return paths.keySet().stream().map(id -> context.actorOf(FlameNode.props(
                       id,
                       g,
                       clusterConfig,
-                      ackers,
+                      localAcker,
                       registryHolder,
                       committer,
                       maxElementsInGraph,

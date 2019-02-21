@@ -34,7 +34,6 @@ public class Committer extends LoggingActor {
   private final int millisBetweenCommits;
   private final ActorRef registryHolder;
   private final ActorRef pingActor;
-  private final MinTimeUpdater minTimeUpdater;
 
   private long minAmongTables;
   private GlobalTime lastPrepareTime = GlobalTime.MIN;
@@ -46,7 +45,7 @@ public class Committer extends LoggingActor {
                     long defaultMinimalTime,
                     int millisBetweenCommits,
                     ActorRef registryHolder,
-                    List<ActorRef> ackers) {
+                    ActorRef acker) {
     this.managersCount = managersCount;
     this.minAmongTables = defaultMinimalTime;
     this.millisBetweenCommits = millisBetweenCommits;
@@ -56,15 +55,14 @@ public class Committer extends LoggingActor {
             PingActor.props(self(), StartCommit.START),
             "acker-ping"
     );
-    ackers.forEach(acker -> acker.tell(new MinTimeUpdateListener(self()), self()));
-    minTimeUpdater = new MinTimeUpdater(ackers);
+    acker.tell(new MinTimeUpdateListener(self()), self());
   }
 
   public static Props props(
           int managersCount,
           CommitterConfig committerConfig,
           ActorRef registryHolder,
-          List<ActorRef> ackers
+          ActorRef acker
   ) {
     return Props.create(
             Committer.class,
@@ -72,7 +70,7 @@ public class Committer extends LoggingActor {
             committerConfig.defaultMinimalTime(),
             committerConfig.millisBetweenCommits(),
             registryHolder,
-            ackers
+            acker
     ).withDispatcher("processing-dispatcher");
   }
 
@@ -110,12 +108,7 @@ public class Committer extends LoggingActor {
   private Receive waiting() {
     return ReceiveBuilder.create()
             .match(StartCommit.class, __ -> commit(new GlobalTime(minAmongTables, EdgeId.MIN)))
-            .match(MinTimeUpdate.class, minTimeUpdate -> {
-              @Nullable GlobalTime minTime = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate);
-              if (minTime != null) {
-                minAmongTables = minTime.time();
-              }
-            })
+            .match(MinTimeUpdate.class, minTimeUpdate -> minAmongTables = minTimeUpdate.minTime().time())
             .build();
   }
 
