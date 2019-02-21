@@ -68,7 +68,12 @@ public class Acker extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(MinTimeUpdateListener.class, minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef))
+            .match(
+                    MinTimeUpdateListener.class,
+                    minTimeUpdateListener -> {
+                      listeners.add(minTimeUpdateListener.actorRef);
+                    }
+            )
             .match(JobaTime.class, jobaTime -> jobaTimes = jobaTimes.updated(jobaTime.jobaId, jobaTime.time))
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)

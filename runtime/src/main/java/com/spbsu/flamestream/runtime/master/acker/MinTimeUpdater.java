@@ -15,56 +15,60 @@ import java.util.stream.Collectors;
 
 public class MinTimeUpdater {
   private class ShardState {
-    GlobalTime minTime = lastMinTime;
+    GlobalTime minTime = lastMinTime.minTime();
     JobaTimes operationsTime = new JobaTimes();
     TreeMap<GlobalTime, JobaTimes> minTimeUpdates = new TreeMap<>();
   }
 
   private Map<ActorRef, ShardState> shardStates;
 
-  private GlobalTime lastMinTime = GlobalTime.MIN;
+  private MinTimeUpdate lastMinTime = new MinTimeUpdate(GlobalTime.MIN, new JobaTimes());
 
   public MinTimeUpdater(List<ActorRef> shards) {
     this.shardStates = shards.stream().collect(Collectors.toMap(Function.identity(), __ -> new ShardState()));
   }
 
   @Nullable
-  public GlobalTime onShardMinTimeUpdate(ActorRef shard, MinTimeUpdate shardMinTimeUpdate) {
+  public MinTimeUpdate onShardMinTimeUpdate(ActorRef shard, MinTimeUpdate shardMinTimeUpdate) {
     ShardState shardState = shardStates.get(shard);
     shardState.operationsTime = shardMinTimeUpdate.getJobaTimes();
     if (shardState.minTimeUpdates.containsKey(shardMinTimeUpdate.minTime())) {
       throw new RuntimeException("should not be there");
     }
     shardState.minTimeUpdates.put(shardMinTimeUpdate.minTime(), shardMinTimeUpdate.getJobaTimes());
-    final GlobalTime minAmongTables = minAmongTables();
-    if (minAmongTables.compareTo(lastMinTime) > 0) {
+    final MinTimeUpdate minAmongTables = minAmongTables();
+    if (minAmongTables.minTime().compareTo(lastMinTime.minTime()) > 0) {
       this.lastMinTime = minAmongTables;
       return minAmongTables;
     }
     return null;
   }
 
-  private GlobalTime minAmongTables() {
+  private MinTimeUpdate minAmongTables() {
+    if (shardStates.isEmpty()) {
+      return lastMinTime;
+    }
     JobaTimes min =
             shardStates.values()
                     .stream()
                     .map(shardState -> shardState.operationsTime)
                     .reduce(new JobaTimes(), JobaTimes::min);
     for (ShardState shardState : shardStates.values()) {
-      shardState.minTimeUpdates.entrySet()
+      final Map.Entry<GlobalTime, JobaTimes> minTimeUpdate = shardState.minTimeUpdates.entrySet()
               .stream()
               .filter(entry -> entry.getValue().greaterThanOrNotComparableTo(min))
-              .findFirst().ifPresent(entry -> {
-        shardState.minTime = entry.getKey();
-        shardState.minTimeUpdates.tailMap(entry.getKey()).clear();
-      });
+              .findFirst()
+              .map(entry -> shardState.minTimeUpdates.lowerEntry(entry.getKey()))
+              .orElse(shardState.minTimeUpdates.lastEntry());
+      if (minTimeUpdate == null) {
+        continue;
+      }
+      shardState.minTime = minTimeUpdate.getKey();
+      shardState.minTimeUpdates.tailMap(shardState.minTime).clear();
     }
-    if (shardStates.isEmpty()) {
-      return lastMinTime;
-    }
-    return Collections.min(shardStates.values()
+    return new MinTimeUpdate(Collections.min(shardStates.values()
             .stream()
             .map(shardState -> shardState.minTime)
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList())), min);
   }
 }

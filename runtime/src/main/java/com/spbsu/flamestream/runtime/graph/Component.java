@@ -21,6 +21,7 @@ import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.JobaTime;
+import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
@@ -182,7 +183,7 @@ public class Component extends LoggingActor {
     return ReceiveBuilder.create()
             .match(AddressedItem.class, this::inject)
             .match(DataItem.class, this::accept)
-            .match(GlobalTime.class, this::onMinTime)
+            .match(MinTimeUpdate.class, this::onMinTime)
             .match(NewRear.class, this::onNewRear)
             .match(Heartbeat.class, h -> localAcker.forward(h, context()))
             .match(UnregisterFront.class, u -> localAcker.forward(u, context()))
@@ -236,8 +237,8 @@ public class Component extends LoggingActor {
     wrappedJobas.get(destination).joba.accept(item, wrappedJobas.get(destination).downstream);
   }
 
-  private void onMinTime(GlobalTime minTime) {
-    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTime));
+  private void onMinTime(MinTimeUpdate minTime) {
+    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTime.minTime()));
   }
 
   private void accept(DataItem item) {

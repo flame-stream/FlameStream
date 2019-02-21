@@ -8,8 +8,11 @@ import com.spbsu.flamestream.runtime.graph.Joba;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.AckerInputMessage;
 import com.spbsu.flamestream.runtime.master.acker.api.JobaTime;
+import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.akka.PingActor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,12 +31,15 @@ public class LocalAcker extends LoggingActor {
   private final List<AckerInputMessage> fifoCache = new ArrayList<>();
 
   private final List<ActorRef> ackers;
+  private final List<ActorRef> listeners = new ArrayList<>();
+  private final MinTimeUpdater minTimeUpdater;
   private final ActorRef pingActor;
 
   private int flushCounter = 0;
 
   public LocalAcker(List<ActorRef> ackers) {
     this.ackers = ackers;
+    minTimeUpdater = new MinTimeUpdater(ackers);
     pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH));
   }
 
@@ -44,6 +50,7 @@ public class LocalAcker extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
+    ackers.forEach(acker -> acker.tell(new MinTimeUpdateListener(self()), self()));
     pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(FLUSH_DELAY_IN_MILLIS)), self());
   }
 
@@ -60,6 +67,13 @@ public class LocalAcker extends LoggingActor {
             .match(Ack.class, this::handleAck)
             .match(Flush.class, flush -> flush())
             .match(AckerInputMessage.class, fifoCache::add)
+            .match(MinTimeUpdateListener.class, minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef))
+            .match(MinTimeUpdate.class, minTimeUpdate -> {
+              @Nullable MinTimeUpdate minTime = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate);
+              if (minTime != null) {
+                listeners.forEach(listener -> listener.tell(minTime, self()));
+              }
+            })
             .matchAny(e -> ackers.forEach(acker -> acker.forward(e, context())))
             .build();
   }
@@ -103,7 +117,7 @@ public class LocalAcker extends LoggingActor {
     )));
     jobaTimesCache.clear();
 
-    ackCache.forEach((globalTime, xor) -> ackers.get((int) globalTime.time() % ackers.size())
+    ackCache.forEach((globalTime, xor) -> ackers.get((int) (globalTime.time() % ackers.size()))
             .tell(new Ack(globalTime, xor), context().parent()));
     ackCache.clear();
 

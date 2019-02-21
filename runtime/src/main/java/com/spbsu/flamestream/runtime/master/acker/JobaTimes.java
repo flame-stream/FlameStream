@@ -19,7 +19,7 @@ public class JobaTimes {
   }
 
   public boolean greaterThanOrNotComparableTo(@NotNull JobaTimes other) {
-    for (Joba.Id id : other.all.keySet()) {
+    for (Joba.Id id : all.keySet()) {
       if (all.getOrDefault(id, Long.MIN_VALUE) > other.all.getOrDefault(id, Long.MIN_VALUE)) {
         return true;
       }
