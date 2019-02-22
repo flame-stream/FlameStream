@@ -156,7 +156,7 @@ public class PredictorStreamTest {
     }
   }
 
-  private static double[] parseDoubles(String line) {
+  public static double[] parseDoubles(String line) {
     return Arrays
             .stream(line.split(" "))
             .mapToDouble(Double::parseDouble)

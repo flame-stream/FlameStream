@@ -11,6 +11,8 @@ import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.google.common.annotations.VisibleForTesting;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,6 +28,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class SklearnSgdPredictor implements TopicsPredictor {
+  private static final Logger LOGGER = LoggerFactory.getLogger(SklearnSgdPredictor.class.getName());
   private static final Pattern PATTERN = Pattern.compile("\\b\\w\\w+\\b", Pattern.UNICODE_CHARACTER_CLASS);
 
   private final String weightsPath;
@@ -43,27 +46,29 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     this.cntVectorizerPath = cntVectorizerPath;
   }
 
+  public SparseVec vectorize(Map<String, Double> tfIdf) {
+    final int[] indices = new int[tfIdf.size()];
+    final double[] values = new double[tfIdf.size()];
+
+    int ind = 0;
+    for (String key : tfIdf.keySet()) {
+      final int valueIndex = countVectorizer.get(key);
+      indices[ind] = valueIndex;
+      values[ind] = tfIdf.get(key);
+      ind++;
+    }
+
+    return new SparseVec(countVectorizer.size(), indices, values);
+  }
+
   @Override
   public Topic[] predict(Document document) {
     loadMeta();
     loadVocabulary();
 
-    final Map<String, Double> tfIdf = document.tfIdf();
-    final int[] indices = new int[tfIdf.size()];
-    final double[] values = new double[tfIdf.size()];
-    { //convert TF-IDF features to sparse vector
-      int ind = 0;
-      for (String key : tfIdf.keySet()) {
-        final int valueIndex = countVectorizer.get(key);
-        indices[ind] = valueIndex;
-        values[ind] = tfIdf.get(key);
-        ind++;
-      }
-    }
-
     final Vec probabilities;
     { // compute topic probabilities
-      final SparseVec vectorized = new SparseVec(countVectorizer.size(), indices, values);
+      final SparseVec vectorized = vectorize(document.tfIdf());
       final Vec score = MxTools.multiply(weights, vectorized);
       final Vec sum = VecTools.sum(score, intercept);
       final Vec scaled = VecTools.scale(sum, -1);
@@ -90,37 +95,35 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return result;
   }
 
-  private double softmaxValue(Vec xi, int correctTopicIndex) {
-    final double numer = Math.exp(VecTools.multiply(weights.row(correctTopicIndex), xi));
-    double denom = 0.0;
-    for (int k = 0; k < weights.rows(); k++) {
-      denom += Math.exp(VecTools.multiply(weights.row(k), xi));
-    }
-
-    return numer / denom;
-  }
-
-  // https://stats.stackexchange.com/questions/265905/derivative-of-softmax-with-respect-to-weights
   private Mx softmaxGradient(Mx trainingSet, String[] correctTopics) {
     List<String> topicList = Arrays.asList(topics);
 
     Vec[] gradients = new Vec[weights.rows()];
     for (int i = 0; i < weights.rows(); i++) {
-      final Vec wi = new ArrayVec(weights.row(i).toArray(), 0, weights.columns());
+      LOGGER.info("weights {} component", i);
+      Vec wi = weights.row(i);
+      //final Vec wi = new ArrayVec(.toArray(), 0, weights.columns());
 
       for (int j = 0; j < trainingSet.rows(); j++) {
         final Vec x = trainingSet.row(j);
         final int index = topicList.indexOf(correctTopics[j]);
-        final double value1 = softmaxValue(x, index);
+
+        double denom = 0.0;
+        for (int k = 0; k < weights.rows(); k++) {
+          denom += Math.exp(VecTools.multiply(weights.row(k), x));
+        }
+
+        final double numer1 = Math.exp(VecTools.multiply(weights.row(index), x));
+        final double value1 = numer1 / denom;
 
         double croneker = 1.0;
         if (i != j) {
           croneker = 0.0;
         }
 
-        final double value2 = softmaxValue(x, i);
+        final double numer2 = Math.exp(VecTools.multiply(weights.row(i), x));
+        final double value2 = numer2 / denom;
         VecTools.scale(x, value1 * (croneker - value2));
-
         VecTools.subtract(wi, x); // gradient subsctract
       }
 
@@ -130,8 +133,6 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return new RowsVecArrayMx(gradients);
   }
 
-  // https://jamesmccaffrey.wordpress.com/2017/06/27/implementing-neural-network-l1-regularization/
-  // https://visualstudiomagazine.com/articles/2017/12/05/neural-network-regularization.aspx
   private Mx l1Gradient(double lambda) {
     Mx gradient = new VecBasedMx(weights.rows(), weights.columns());
 
@@ -144,8 +145,6 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return gradient;
   }
 
-  // https://jamesmccaffrey.wordpress.com/2017/02/19/l2-regularization-and-back-propagation/
-  // https://visualstudiomagazine.com/articles/2017/09/01/neural-network-l2.aspx
   private Mx l2Gradient(double lambda) {
     Mx gradient = new VecBasedMx(weights.rows(), weights.columns());
 
@@ -158,17 +157,27 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return gradient;
   }
 
+  private void printValue(Mx W, Mx prev) {
+    double value = 0;
+
+    LOGGER.info("Argmax is {}", value);
+  }
+
   @Override
   public void updateWeights(Mx trainingSet, String[] correctTopics) {
     final double lambda1 = 0.001;
     final double lambda2 = 0.001;
 
+    printValue(weights, weights);
+
     final Mx softmax = softmaxGradient(trainingSet, correctTopics);
+    LOGGER.info("Softmax computed");
     final Mx l1 = l1Gradient(lambda1);
+    LOGGER.info("l1 computed");
     final Mx l2 = l2Gradient(lambda2);
+    LOGGER.info("l2 computed");
 
     prevWeights = weights;
-
     Mx updated = new VecBasedMx(weights.rows(), weights.columns());
     for (int i = 0; i < weights.rows(); i++) {
       for (int j = 0; j < weights.columns(); j++) {
@@ -176,6 +185,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
         updated.set(i, j, value);
       }
     }
+    printValue(updated, prevWeights);
 
     weights = updated;
   }
