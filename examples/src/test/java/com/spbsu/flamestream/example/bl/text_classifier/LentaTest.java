@@ -1,9 +1,16 @@
 package com.spbsu.flamestream.example.bl.text_classifier;
 
 import akka.actor.ActorSystem;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
+import com.expleague.commons.math.vectors.impl.mx.SparseMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Document;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Topic;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
@@ -25,17 +32,8 @@ import org.testng.annotations.Test;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
@@ -46,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.spbsu.flamestream.example.bl.classifier.PredictorStreamTest.parseDoubles;
 import static java.util.stream.Collectors.toList;
 
 public class LentaTest extends FlameAkkaSuite {
@@ -81,6 +80,86 @@ public class LentaTest extends FlameAkkaSuite {
               counter.incrementAndGet()
       );
     });
+
+  }
+
+  @Test
+  public void partialFitTest() {
+    final String CNT_VECTORIZER_PATH = "src/main/resources/cnt_vectorizer";
+    final String WEIGHTS_PATH = "src/main/resources/classifier_weights";
+    final String PATH_TO_TEST_DATA = "src/test/resources/sklearn_prediction";
+
+    final List<String> topics = new ArrayList<>();
+    final List<String> texts = new ArrayList<>();
+    final List<SparseVec> mx = new ArrayList<>();
+    List<Document> documents = new ArrayList<>();
+    final SklearnSgdPredictor predictor = new SklearnSgdPredictor(CNT_VECTORIZER_PATH, WEIGHTS_PATH);
+    predictor.init();
+    try (BufferedReader br = new BufferedReader(new FileReader(new File(PATH_TO_TEST_DATA)))) {
+      final double[] data = parseDoubles(br.readLine());
+      final int testCount = (int) data[0];
+      final int features = (int) data[1];
+
+      for (int i = 0; i < testCount; i++) {
+        //final double[] pyPrediction = parseDoubles(br.readLine());
+
+        final String docText = br.readLine().toLowerCase();
+        texts.add(docText);
+
+        String topic = br.readLine();
+        topics.add(topic);
+        final double[] info = parseDoubles(br.readLine());
+        final int[] indeces = new int[info.length / 2];
+        final double[] values = new double[info.length / 2];
+        for (int k = 0; k < info.length; k += 2) {
+          final int index = (int) info[k];
+          final double value = info[k + 1];
+
+          indeces[k / 2] = index;
+          values[k / 2] = value;
+        }
+
+        final Map<String, Double> tfIdf = new HashMap<>();
+        texts.add(docText);
+        SparseVec vec = new SparseVec(features, indeces, values);
+
+        SklearnSgdPredictor.text2words(docText).forEach(word -> {
+          final int featureIndex = predictor.wordIndex(word);
+          tfIdf.put(word, vec.get(featureIndex));
+        });
+        final Document document = new Document(tfIdf);
+        documents.add(document);
+
+        mx.add(vec);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    int len = topics.size();
+    int testsize = 20;
+
+    List<String> testTopics = topics.stream().skip(len - testsize).collect(Collectors.toList());
+    List<String> testTexts = texts.stream().skip(len - testsize).collect(Collectors.toList());
+    documents = documents.stream().skip(len - testsize).collect(Collectors.toList());
+
+    Mx matrix = new SparseMx(mx.stream().limit(len - testsize).toArray(SparseVec[]::new));
+    LOGGER.info("Updating weights");
+    predictor.updateWeights(matrix, topics.stream().limit(len - testsize).toArray(String[]::new));
+
+    for (int i = 0; i < testsize; i++) {
+      String text = testTexts.get(i);
+      String ans = testTopics.get(i);
+      Document doc = documents.get(i);
+
+      Topic[] prediction = predictor.predict(doc);
+
+      Arrays.sort(prediction);
+      LOGGER.info("Doc: {}", text);
+      LOGGER.info("Real answers: {}", ans);
+      LOGGER.info("Predict: {}", (Object) prediction);
+      LOGGER.info("\n");
+    }
 
   }
 
