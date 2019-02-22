@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -95,39 +96,32 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return result;
   }
 
-  private Mx softmaxGradient(Mx trainingSet, String[] correctTopics) {
-    List<String> topicList = Arrays.asList(topics);
-
+  private Mx softmaxGradient(Mx trainingSet, int[] correctTopics) {
     Vec[] gradients = new Vec[weights.rows()];
-    for (int i = 0; i < weights.rows(); i++) {
-      LOGGER.info("weights {} component", i);
-      Vec wi = weights.row(i);
-      //final Vec wi = new ArrayVec(.toArray(), 0, weights.columns());
+    for (int j = 0; j < weights.rows(); j++) {
+      LOGGER.info("weights {} component", j);
 
-      for (int j = 0; j < trainingSet.rows(); j++) {
-        final Vec x = trainingSet.row(j);
-        final int index = topicList.indexOf(correctTopics[j]);
+      Vec grad = new SparseVec(weights.columns());
+      for (int i = 0; i < trainingSet.rows(); i++) {
+        final Vec x = trainingSet.row(i);
+        int index = correctTopics[i];
+        int indicator = 0;
+        if (index == j) {
+          indicator = 1;
+        }
 
+        final double numer = Math.exp(VecTools.multiply(weights.row(index), x));
         double denom = 0.0;
         for (int k = 0; k < weights.rows(); k++) {
           denom += Math.exp(VecTools.multiply(weights.row(k), x));
         }
 
-        final double numer1 = Math.exp(VecTools.multiply(weights.row(index), x));
-        final double value1 = numer1 / denom;
+        final double softmaxValue = numer / denom;
 
-        double croneker = 1.0;
-        if (i != j) {
-          croneker = 0.0;
-        }
-
-        final double numer2 = Math.exp(VecTools.multiply(weights.row(i), x));
-        final double value2 = numer2 / denom;
-        VecTools.scale(x, value1 * (croneker - value2));
-        VecTools.subtract(wi, x); // gradient subsctract
+        grad = VecTools.sum(grad, VecTools.scale(x, indicator - softmaxValue));
       }
 
-      gradients[i] = wi;
+      gradients[j] = VecTools.scale(grad, -1.0 / trainingSet.rows());
     }
 
     return new RowsVecArrayMx(gradients);
@@ -167,10 +161,12 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   public void updateWeights(Mx trainingSet, String[] correctTopics) {
     final double lambda1 = 0.001;
     final double lambda2 = 0.001;
+    List<String> topicList = Arrays.asList(topics);
+    int[] indeces = Stream.of(correctTopics).mapToInt(topicList::indexOf).toArray();
 
     printValue(weights, weights);
 
-    final Mx softmax = softmaxGradient(trainingSet, correctTopics);
+    final Mx softmax = softmaxGradient(trainingSet, indeces);
     LOGGER.info("Softmax computed");
     final Mx l1 = l1Gradient(lambda1);
     LOGGER.info("l1 computed");
