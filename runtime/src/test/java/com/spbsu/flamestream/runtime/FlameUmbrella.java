@@ -70,7 +70,8 @@ class Cluster extends LoggingActor {
       ranges.put(id, new HashGroup(Collections.singleton(range)));
     }
     final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
-    final CommitterConfig committerConfig = new CommitterConfig(maxElementsInGraph, millisBetweenCommits, 0);
+    final CommitterConfig committerConfig =
+            new CommitterConfig(maxElementsInGraph, millisBetweenCommits, 0, false);
 
     final Registry registry = new InMemoryRegistry();
     inner = context().actorOf(FlameUmbrella.props(

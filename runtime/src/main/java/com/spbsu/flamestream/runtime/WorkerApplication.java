@@ -48,6 +48,7 @@ public class WorkerApplication implements Runnable {
             .defaultMinimalTime(Integer.parseInt(System.getenv("DEFAULT_MINIMAL_TIME")))
             .millisBetweenCommits(Integer.parseInt(System.getenv("MILLIS_BETWEEN_COMMITS")))
             .maxElementsInGraph(Integer.parseInt(System.getenv("MAX_ELEMENTS_IN_GRAPH")))
+            .distributedAcker(Boolean.parseBoolean(System.getenv("DISTRIBUTED_ACKER")))
             .build(
                     System.getenv("ID"),
                     new DumbInetSocketAddress(System.getenv("LOCAL_ADDRESS")),
@@ -81,7 +82,8 @@ public class WorkerApplication implements Runnable {
     final CommitterConfig committerConfig = new CommitterConfig(
             workerConfig.maxElementsInGraph,
             workerConfig.millisBetweenCommits,
-            workerConfig.defaultMinimalTime
+            workerConfig.defaultMinimalTime,
+            workerConfig.distributedAcker
     );
     //noinspection ConstantConditions
     system.actorOf(
@@ -119,13 +121,18 @@ public class WorkerApplication implements Runnable {
     private final int maxElementsInGraph;
     private final int millisBetweenCommits;
     private final int defaultMinimalTime;
+    private final boolean distributedAcker;
 
     private WorkerConfig(String id,
                          DumbInetSocketAddress localAddress,
                          String zkString,
                          String snapshotPath,
                          Guarantees guarantees,
-                         int maxElementsInGraph, int millisBetweenCommits, int defaultMinimalTime) {
+                         int maxElementsInGraph,
+                         int millisBetweenCommits,
+                         int defaultMinimalTime,
+                         boolean distributedAcker
+    ) {
       this.guarantees = guarantees;
       this.id = id;
       this.localAddress = localAddress;
@@ -134,6 +141,7 @@ public class WorkerApplication implements Runnable {
       this.maxElementsInGraph = maxElementsInGraph;
       this.millisBetweenCommits = millisBetweenCommits;
       this.defaultMinimalTime = defaultMinimalTime;
+      this.distributedAcker = distributedAcker;
     }
 
     @Override
@@ -147,6 +155,7 @@ public class WorkerApplication implements Runnable {
               ", maxElementsInGraph=" + maxElementsInGraph +
               ", millisBetweenCommits=" + millisBetweenCommits +
               ", defaultMinimalTime=" + defaultMinimalTime +
+              ", distributedAcker=" + distributedAcker +
               '}';
     }
 
@@ -157,6 +166,7 @@ public class WorkerApplication implements Runnable {
       private int maxElementsInGraph = 500;
       private int millisBetweenCommits = 100;
       private int defaultMinimalTime = 0;
+      private boolean distributedAcker = false;
 
       public Builder snapshotPath(String snapshotPath) {
         this.snapshotPath = snapshotPath;
@@ -183,6 +193,11 @@ public class WorkerApplication implements Runnable {
         return this;
       }
 
+      public Builder distributedAcker(boolean distributedAcker) {
+        this.distributedAcker = distributedAcker;
+        return this;
+      }
+
       public WorkerConfig build(String id, DumbInetSocketAddress localAddress, String zkString) {
         return new WorkerConfig(
                 id,
@@ -192,7 +207,8 @@ public class WorkerApplication implements Runnable {
                 guarantees,
                 maxElementsInGraph,
                 millisBetweenCommits,
-                defaultMinimalTime
+                defaultMinimalTime,
+                distributedAcker
         );
       }
     }
