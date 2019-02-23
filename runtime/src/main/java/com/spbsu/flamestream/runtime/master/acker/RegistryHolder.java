@@ -16,10 +16,6 @@ import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-
 
 /**
  * <h3>Actor Contract</h3>
@@ -57,19 +53,15 @@ public class RegistryHolder extends LoggingActor {
       }
     }
 
-    public static Props props(ActorRef sender, List<ActorRef> ackers, EdgeId frontId) {
-      return Props.create(NewFrontRegisterer.class, sender, ackers, frontId);
+    public static Props props(ActorRef sender, ActorRef acker, EdgeId frontId) {
+      return Props.create(NewFrontRegisterer.class, sender, acker, frontId);
     }
 
     final ActorRef sender;
-    final Set<ActorRef> ackersWaitedFor;
-    @Nullable
-    FrontTicket maxFrontTicket;
 
-    public NewFrontRegisterer(ActorRef sender, List<ActorRef> ackers, EdgeId frontId) {
+    public NewFrontRegisterer(ActorRef sender, ActorRef acker, EdgeId frontId) {
       this.sender = sender;
-      ackersWaitedFor = new LinkedHashSet<>(ackers);
-      ackers.forEach(acker -> acker.tell(new RegisterFront(frontId), self()));
+      acker.tell(new RegisterFront(frontId), self());
     }
 
     @Override
@@ -78,15 +70,7 @@ public class RegistryHolder extends LoggingActor {
               .match(
                       FrontTicket.class,
                       frontTicket -> {
-                        if (maxFrontTicket == null
-                                || maxFrontTicket.allowedTimestamp().compareTo(frontTicket.allowedTimestamp()) < 0) {
-                          maxFrontTicket = frontTicket;
-                        }
-                        ackersWaitedFor.remove(sender());
-                        if (!ackersWaitedFor.isEmpty()) {
-                          return;
-                        }
-                        context().parent().tell(new Registered(maxFrontTicket, sender), self());
+                        context().parent().tell(new Registered(frontTicket, sender), self());
                         context().stop(self());
                       }
               )
@@ -115,18 +99,16 @@ public class RegistryHolder extends LoggingActor {
       }
     }
 
-    public static Props props(@Nullable ActorRef sender, List<ActorRef> ackers, GlobalTime startTime) {
-      return Props.create(AlreadyRegisteredFrontRegisterer.class, sender, ackers, startTime);
+    public static Props props(@Nullable ActorRef sender, ActorRef acker, GlobalTime startTime) {
+      return Props.create(AlreadyRegisteredFrontRegisterer.class, sender, acker, startTime);
     }
 
     final @Nullable
     ActorRef sender;
-    final Set<ActorRef> ackersWaitedFor;
 
-    public AlreadyRegisteredFrontRegisterer(@Nullable ActorRef sender, List<ActorRef> ackers, GlobalTime startTime) {
+    public AlreadyRegisteredFrontRegisterer(@Nullable ActorRef sender, ActorRef acker, GlobalTime startTime) {
       this.sender = sender;
-      ackersWaitedFor = new LinkedHashSet<>(ackers);
-      ackers.forEach(acker -> acker.tell(new RegisterFrontFromTime(startTime), self()));
+      acker.tell(new RegisterFrontFromTime(startTime), self());
     }
 
     @Override
@@ -135,10 +117,6 @@ public class RegistryHolder extends LoggingActor {
               .match(
                       FrontTicket.class,
                       frontTicket -> {
-                        ackersWaitedFor.remove(sender());
-                        if (!ackersWaitedFor.isEmpty()) {
-                          return;
-                        }
                         if (sender != null) {
                           context().parent().tell(new Registered(frontTicket, sender), self());
                         }
@@ -150,15 +128,15 @@ public class RegistryHolder extends LoggingActor {
   }
 
   private final Registry registry;
-  private final List<ActorRef> ackers;
+  private final ActorRef acker;
 
-  private RegistryHolder(Registry registry, List<ActorRef> ackers) {
+  private RegistryHolder(Registry registry, ActorRef acker) {
     this.registry = registry;
-    this.ackers = ackers;
+    this.acker = acker;
   }
 
-  public static Props props(Registry registry, List<ActorRef> ackers) {
-    return Props.create(RegistryHolder.class, registry, ackers).withDispatcher("processing-dispatcher");
+  public static Props props(Registry registry, ActorRef acker) {
+    return Props.create(RegistryHolder.class, registry, acker).withDispatcher("processing-dispatcher");
   }
 
   @Override
@@ -184,7 +162,7 @@ public class RegistryHolder extends LoggingActor {
     registry.registeredFronts()
             .forEach((frontId, time) -> context().actorOf(AlreadyRegisteredFrontRegisterer.props(
                     null,
-                    ackers,
+                    acker,
                     new GlobalTime(Math.max(time, registry.lastCommit()), frontId)
             )));
   }
@@ -192,11 +170,11 @@ public class RegistryHolder extends LoggingActor {
   private void registerFront(EdgeId frontId) {
     final long registeredTime = registry.registeredTime(frontId);
     if (registeredTime == -1) {
-      context().actorOf(NewFrontRegisterer.props(sender(), ackers, frontId));
+      context().actorOf(NewFrontRegisterer.props(sender(), acker, frontId));
     } else {
       context().actorOf(AlreadyRegisteredFrontRegisterer.props(
               sender(),
-              ackers,
+              acker,
               new GlobalTime(Math.max(registeredTime, registry.lastCommit()), frontId)
       ));
     }

@@ -80,7 +80,10 @@ class Cluster extends LoggingActor {
                       .map(id -> context.actorOf(Acker.props(0), "acker-" + id))
                       .collect(Collectors.toList());
               final ActorRef localAcker = context.actorOf(LocalAcker.props(ackers));
-              final ActorRef registryHolder = context.actorOf(RegistryHolder.props(registry, ackers), "registry-holder");
+              final ActorRef registryHolder = context.actorOf(
+                      RegistryHolder.props(registry, localAcker),
+                      "registry-holder"
+              );
               final ActorRef committer = context.actorOf(Committer.props(
                       clusterConfig.paths().size(),
                       committerConfig,
