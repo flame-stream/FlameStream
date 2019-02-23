@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ProcessingWatcher extends LoggingActor {
   private final String id;
@@ -149,9 +150,10 @@ public class ProcessingWatcher extends LoggingActor {
 
     this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
-    final List<CompletableFuture<ActorRef>> ackerFutures = config.paths()
+    final Stream<ActorPath> ackerPaths = committerConfig.distributedAcker() ? config.paths()
             .values()
-            .stream()
+            .stream() : Stream.of(config.masterPath());
+    final List<CompletableFuture<ActorRef>> ackerFutures = ackerPaths
             .map(actorPath -> AwaitResolver.resolve(actorPath.child("acker"), context()).toCompletableFuture())
             .collect(Collectors.toList());
     ackerFutures.forEach(CompletableFuture::join);
