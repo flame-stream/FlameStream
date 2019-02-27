@@ -9,6 +9,7 @@ import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
@@ -32,13 +33,22 @@ import static java.util.stream.Collectors.toMap;
  * Date: 19.12.2017
  */
 public class TopWordCountGraphTest extends FlameAkkaSuite {
-  @Test(invocationCount = 10)
-  public void localEnvironmentTest() throws InterruptedException {
+
+  @DataProvider
+  public static Object[][] dataProvider() {
+    return new Object[][]{
+            {false},
+            {true}
+    };
+  }
+
+  @Test(dataProvider = "dataProvider", invocationCount = 10)
+  public void topWordCountTest(boolean distributedAcker) throws InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
             .millisBetweenCommits(500)
+            .distributedAcker(distributedAcker)
             .build()) {
-      final FlameRuntime.Flame flame = runtime.run(new TopWordCountGraph().get());
-      {
+      try (final FlameRuntime.Flame flame = runtime.run(new TopWordCountGraph().get())) {
         final int lineSize = 20;
         final int streamSize = 10;
         final Queue<String> input = Stream.generate(() -> {
@@ -63,6 +73,7 @@ public class TopWordCountGraphTest extends FlameAkkaSuite {
         applyDataToAllHandlesAsync(input, handles);
         awaitConsumer.await(200, TimeUnit.SECONDS);
 
+        //noinspection ConstantConditions
         final WordsTop actualWordsTop = awaitConsumer.result().skip(lineSize * streamSize - 1).findFirst().get();
         final Stream<Map.Entry<String, Integer>> entryStream = wordCounts.entrySet()
                 .stream()

@@ -23,7 +23,7 @@ env:
 install: true
 
 script:
-  - travis_wait 30 mvn --errors --batch-mode clean package
+  - mvn --errors --batch-mode clean package
 
 after_failure:
   - ls -al

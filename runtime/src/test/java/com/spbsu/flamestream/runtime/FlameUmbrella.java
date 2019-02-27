@@ -23,6 +23,7 @@ import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.master.acker.Acker;
 import com.spbsu.flamestream.runtime.master.acker.Committer;
+import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.master.acker.Registry;
 import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
 import com.spbsu.flamestream.runtime.state.StateStorage;
@@ -44,12 +45,15 @@ class Cluster extends LoggingActor {
   private final ActorRef inner;
   private final boolean blinking;
 
-  private Cluster(Graph g,
-                  StateStorage stateStorage,
-                  int parallelism,
-                  int maxElementsInGraph,
-                  int millisBetweenCommits,
-                  boolean blinking) {
+  private Cluster
+          (Graph g,
+           StateStorage stateStorage,
+           int parallelism,
+           int maxElementsInGraph,
+           int millisBetweenCommits,
+           boolean distributedAcker,
+           boolean blinking
+          ) {
     this.blinking = blinking;
 
     final Map<String, HashGroup> ranges = new HashMap<>();
@@ -69,24 +73,32 @@ class Cluster extends LoggingActor {
       ranges.put(id, new HashGroup(Collections.singleton(range)));
     }
     final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
-    final CommitterConfig committerConfig = new CommitterConfig(maxElementsInGraph, millisBetweenCommits, 0);
+    final CommitterConfig committerConfig =
+            new CommitterConfig(maxElementsInGraph, millisBetweenCommits, 0, distributedAcker);
 
     final Registry registry = new InMemoryRegistry();
     inner = context().actorOf(FlameUmbrella.props(
             context -> {
-              final ActorRef acker = context.actorOf(Acker.props(0), "acker");
-              final ActorRef registryHolder = context.actorOf(RegistryHolder.props(registry, acker), "registry-holder");
+              final List<ActorRef> ackers = paths.keySet()
+                      .stream()
+                      .map(id -> context.actorOf(Acker.props(0), "acker-" + id))
+                      .collect(Collectors.toList());
+              final ActorRef localAcker = context.actorOf(LocalAcker.props(ackers));
+              final ActorRef registryHolder = context.actorOf(
+                      RegistryHolder.props(registry, localAcker),
+                      "registry-holder"
+              );
               final ActorRef committer = context.actorOf(Committer.props(
                       clusterConfig.paths().size(),
                       committerConfig,
                       registryHolder,
-                      acker
+                      localAcker
               ));
               return paths.keySet().stream().map(id -> context.actorOf(FlameNode.props(
                       id,
                       g,
                       clusterConfig,
-                      acker,
+                      localAcker,
                       registryHolder,
                       committer,
                       maxElementsInGraph,
@@ -102,7 +114,9 @@ class Cluster extends LoggingActor {
                      int parallelism,
                      int maxElementsInGraph,
                      int millisBetweenCommits,
-                     boolean blinking) {
+                     boolean distributedAcker,
+                     boolean blinking
+  ) {
     return Props.create(
             Cluster.class,
             g,
@@ -110,6 +124,7 @@ class Cluster extends LoggingActor {
             parallelism,
             maxElementsInGraph,
             millisBetweenCommits,
+            distributedAcker,
             blinking
     );
   }

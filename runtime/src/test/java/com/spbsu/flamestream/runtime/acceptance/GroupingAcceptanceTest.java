@@ -48,8 +48,7 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
               }
       );
 
-      final FlameRuntime.Flame flame = runtime.run(graph);
-      {
+      try (final FlameRuntime.Flame flame = runtime.run(graph)) {
         final int streamSize = 10000;
         final Random rd = new Random(3);
 
