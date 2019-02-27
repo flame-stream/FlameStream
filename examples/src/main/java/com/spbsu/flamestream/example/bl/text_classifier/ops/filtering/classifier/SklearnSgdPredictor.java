@@ -116,11 +116,9 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return softmaxValues;
   }
 
-  private Mx softmaxGradient(Mx trainingSet, int[] correctTopics) {
+  private double softmaxGradient(Mx result, Mx trainingSet, int[] correctTopics) {
     final SparseVec[] gradients = new SparseVec[weights.rows()];
     final Vec softmaxValues = computeSoftmaxValues(trainingSet, correctTopics);
-
-    LOGGER.info("Softmax value: {}", VecTools.sum(softmaxValues));
 
     for (int j = 0; j < weights.rows(); j++) {
       //LOGGER.info("weights {} component", j);
@@ -141,7 +139,8 @@ public class SklearnSgdPredictor implements TopicsPredictor {
       gradients[j] = VecTools.scale(grad, -1.0 / trainingSet.rows());
     }
 
-    return new SparseMx(gradients);
+    result = new SparseMx(gradients);
+    return VecTools.sum(softmaxValues);
   }
 
   private Mx l1Gradient() {
@@ -178,9 +177,17 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     final List<String> topicList = Arrays.asList(topics);
     final int[] indeces = Stream.of(correctTopics).mapToInt(topicList::indexOf).toArray();
 
+    double previousValue = 0;
     for (int iteration = 1; iteration <= maxIter; iteration++) {
       LOGGER.info("Iteration {}", iteration);
-      Mx softmax = softmaxGradient(trainingSet, indeces);
+      Mx softmax = new SparseMx(weights.rows(), weights.columns());
+      double softmaxValue = softmaxGradient(softmax, trainingSet, indeces);
+      LOGGER.info("Softmax value : {}", softmaxValue);
+      if (Math.abs(softmaxValue - previousValue) < 1e-3) {
+        break;
+      }
+
+      previousValue = softmaxValue;
       Mx l1 = l1Gradient();
       Mx l2 = l2Gradient();
 
