@@ -209,7 +209,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
         topics[i] = br.readLine();
       }
 
-      final Vec[] coef = new Vec[classes];
+      final SparseVec[] coef = new SparseVec[classes];
       String line;
       for (int index = 0; index < classes; index++) {
         line = br.readLine();
@@ -225,12 +225,11 @@ public class SklearnSgdPredictor implements TopicsPredictor {
           values[i / 2] = value;
         }
 
-        final SparseVec sparseVec = new SparseVec(currentFeatures, indeces, values);
-        coef[index] = sparseVec;
+        coef[index] = new SparseVec(currentFeatures, indeces, values);
       }
 
-      weights = new RowsVecArrayMx(coef);
-      prevWeights = new RowsVecArrayMx(coef);
+      weights = new SparseMx(coef);
+      prevWeights = new SparseMx(coef);
       MxTools.transpose(weights);
 
       line = br.readLine();
