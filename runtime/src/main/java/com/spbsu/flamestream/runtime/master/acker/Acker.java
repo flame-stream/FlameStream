@@ -48,7 +48,7 @@ public class Acker extends LoggingActor {
   private static final int WINDOW = 1;
   private static final int SIZE = 100000;
 
-  private final JobaTimes jobaTimes = new JobaTimes();
+  private JobaTimes jobaTimes = new JobaTimes();
   private final Set<ActorRef> listeners = new HashSet<>();
   private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
 
@@ -68,8 +68,13 @@ public class Acker extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(MinTimeUpdateListener.class, minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef))
-            .match(JobaTime.class, jobaTime -> jobaTimes.update(jobaTime.jobaId, jobaTime.time))
+            .match(
+                    MinTimeUpdateListener.class,
+                    minTimeUpdateListener -> {
+                      listeners.add(minTimeUpdateListener.actorRef);
+                    }
+            )
+            .match(JobaTime.class, jobaTime -> jobaTimes = jobaTimes.updated(jobaTime.jobaId, jobaTime.time))
             .match(Ack.class, this::handleAck)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
@@ -87,7 +92,7 @@ public class Acker extends LoggingActor {
       throw new RuntimeException("Registering front back in time");
     }
     maxHeartbeats.put(startTime.frontId(), startTime);
-    sender().tell(new FrontTicket(startTime), sender());
+    sender().tell(new FrontTicket(startTime), self());
   }
 
   private void unregisterFront(EdgeId frontId) {

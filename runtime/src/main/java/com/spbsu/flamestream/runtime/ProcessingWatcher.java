@@ -12,9 +12,8 @@ import com.spbsu.flamestream.runtime.config.CommitterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
-import com.spbsu.flamestream.runtime.master.ClientWatcher;
-import com.spbsu.flamestream.runtime.master.acker.Acker;
 import com.spbsu.flamestream.runtime.master.acker.Committer;
+import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
 import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
@@ -32,7 +31,11 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ProcessingWatcher extends LoggingActor {
   private final String id;
@@ -41,7 +44,6 @@ public class ProcessingWatcher extends LoggingActor {
   private final CommitterConfig committerConfig;
   private final StateStorage stateStorage;
   private final FlameSerializer serializer;
-  private final ActorRef acker;
 
   private NodeCache graphCache = null;
   private PathChildrenCache frontsCache = null;
@@ -55,8 +57,7 @@ public class ProcessingWatcher extends LoggingActor {
                            ZookeeperWorkersNode zookeeperWorkersNode,
                            CommitterConfig committerConfig,
                            StateStorage stateStorage,
-                           FlameSerializer serializer,
-                           ActorRef acker
+                           FlameSerializer serializer
   ) {
     this.id = id;
     this.curator = curator;
@@ -64,7 +65,6 @@ public class ProcessingWatcher extends LoggingActor {
     this.committerConfig = committerConfig;
     this.stateStorage = stateStorage;
     this.serializer = serializer;
-    this.acker = acker;
   }
 
   public static Props props(String id,
@@ -72,8 +72,7 @@ public class ProcessingWatcher extends LoggingActor {
                             ZookeeperWorkersNode zookeeperWorkersNode,
                             CommitterConfig committerConfig,
                             StateStorage stateStorage,
-                            FlameSerializer serializer,
-                            ActorRef acker
+                            FlameSerializer serializer
   ) {
     return Props.create(
             ProcessingWatcher.class,
@@ -82,8 +81,7 @@ public class ProcessingWatcher extends LoggingActor {
             zookeeperWorkersNode,
             committerConfig,
             stateStorage,
-            serializer,
-            acker
+            serializer
     );
   }
 
@@ -152,14 +150,29 @@ public class ProcessingWatcher extends LoggingActor {
     
     this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
+    final Stream<ActorPath> ackerPaths = committerConfig.distributedAcker() ? config.paths()
+            .values()
+            .stream() : Stream.of(config.masterPath());
+    final List<CompletableFuture<ActorRef>> ackerFutures = ackerPaths
+            .map(actorPath -> AwaitResolver.resolve(actorPath.child("acker"), context()).toCompletableFuture())
+            .collect(Collectors.toList());
+    ackerFutures.forEach(CompletableFuture::join);
+    final List<ActorRef> ackers = ackerFutures.stream().map(future -> {
+      try {
+        return future.get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+    }).collect(Collectors.toList());
+    final ActorRef localAcker = context().actorOf(LocalAcker.props(ackers));
     final ActorRef committer, registryHolder;
     if (zookeeperWorkersNode.isLeader(id)) {
-      registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), acker), "registry-holder");
+      registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), localAcker), "registry-holder");
       committer = context().actorOf(Committer.props(
               config.paths().size(),
               committerConfig,
               registryHolder,
-              acker
+              localAcker
       ), "committer");
     } else {
       final ActorPath masterPath = config.paths().get(config.masterLocation()).child("processing-watcher");
@@ -173,7 +186,7 @@ public class ProcessingWatcher extends LoggingActor {
                     id,
                     graph,
                     config.withChildPath("processing-watcher").withChildPath("graph"),
-                    acker,
+                    localAcker,
                     registryHolder,
                     committer,
                     committerConfig.maxElementsInGraph(),

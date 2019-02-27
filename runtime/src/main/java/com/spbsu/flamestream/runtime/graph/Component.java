@@ -5,6 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
@@ -40,12 +41,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class Component extends LoggingActor {
-  private static final int FLUSH_DELAY_IN_MILLIS = 1;
-  private final ActorRef acker;
+  private static final int FLUSH_DELAY_IN_MILLIS = 100;
+  private final ActorRef localAcker;
 
   private enum JobaTimesTick {
     OBJECT
   }
+
   private final ActorRef pingActor;
 
   private class JobaWrapper<WrappedJoba extends Joba> {
@@ -76,11 +78,10 @@ public class Component extends LoggingActor {
                     Graph graph,
                     HashUnitMap<ActorRef> routes,
                     ActorRef localManager,
-                    ActorRef acker,
+                    ActorRef localAcker,
                     ComputationProps props,
                     Map<String, GroupGroupingState> stateByVertex) {
-    this.acker = acker;
-
+    this.localAcker = localAcker;
     this.wrappedJobas = componentVertices.stream().collect(Collectors.toMap(
             vertex -> GraphManager.Destination.fromVertexId(vertex.id()),
             vertex -> {
@@ -114,15 +115,13 @@ public class Component extends LoggingActor {
                         } else if (to instanceof HashingVertexStub && ((HashingVertexStub) to).hash() != null) {
                           sink = item -> {
                             groupingSendTracer.log(item.xor());
-                            bumpJobaTime(joba);
-                            acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
+                            ack(new Ack(item.meta().globalTime(), item.xor()), joba);
                             routes.get(Objects.requireNonNull(((HashingVertexStub) to).hash()).applyAsInt(item))
                                     .tell(new AddressedItem(item, toDest), self());
                           };
                         } else {
                           sink = item -> {
-                            bumpJobaTime(joba);
-                            acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
+                            ack(new Ack(item.meta().globalTime(), item.xor()), joba);
                             localManager.tell(new AddressedItem(item, toDest), self());
                           };
                         }
@@ -135,6 +134,7 @@ public class Component extends LoggingActor {
                   downstream = item -> context().system().deadLetters().tell(item, self());
                   break;
                 case 1:
+                  //noinspection ConstantConditions
                   downstream = sinks.stream().findAny().get();
                   break;
                 default:
@@ -162,7 +162,7 @@ public class Component extends LoggingActor {
                             Graph graph,
                             HashUnitMap<ActorRef> localManager,
                             ActorRef routes,
-                            ActorRef acker,
+                            ActorRef localAcker,
                             ComputationProps props,
                             Map<String, GroupGroupingState> stateByVertex) {
     return Props.create(
@@ -172,7 +172,7 @@ public class Component extends LoggingActor {
             graph,
             localManager,
             routes,
-            acker,
+            localAcker,
             props,
             stateByVertex
     ).withDispatcher("processing-dispatcher");
@@ -185,13 +185,19 @@ public class Component extends LoggingActor {
             .match(DataItem.class, this::accept)
             .match(MinTimeUpdate.class, this::onMinTime)
             .match(NewRear.class, this::onNewRear)
-            .match(Heartbeat.class, h -> acker.forward(h, context()))
-            .match(UnregisterFront.class, u -> acker.forward(u, context()))
+            .match(Heartbeat.class, h -> localAcker.forward(h, context()))
+            .match(UnregisterFront.class, u -> localAcker.forward(u, context()))
             .match(Prepare.class, this::onPrepare)
             .match(Commit.class, this::onCommit)
             .match(
                     JobaTimesTick.class,
-                    __ -> wrappedJobas.values().forEach(jobaWrapper -> bumpJobaTime(jobaWrapper.joba))
+                    __ -> wrappedJobas.values().forEach(jobaWrapper -> {
+                      jobaWrapper.joba.time++;
+                      localAcker.tell(
+                              new JobaTime(jobaWrapper.joba.id, jobaWrapper.joba.time),
+                              self()
+                      );
+                    })
             )
             .build();
   }
@@ -217,22 +223,22 @@ public class Component extends LoggingActor {
     final DataItem item = addressedItem.item();
     injectInTracer.log(item.xor());
     localCall(item, addressedItem.destination());
-    final Joba joba = wrappedJobas.get(addressedItem.destination()).joba;
-    bumpJobaTime(joba);
-    acker.tell(new Ack(item.meta().globalTime(), item.xor()), self());
+    ack(new Ack(item.meta().globalTime(), item.xor()), wrappedJobas.get(addressedItem.destination()).joba);
     injectOutTracer.log(item.xor());
   }
 
-  private void bumpJobaTime(Joba joba) {
-    acker.tell(new JobaTime(joba.id, ++joba.time), self());
+  private void ack(Ack ack, Joba joba) {
+    joba.time++;
+    localAcker.tell(new JobaTime(joba.id, joba.time), self());
+    localAcker.tell(ack, self());
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {
     wrappedJobas.get(destination).joba.accept(item, wrappedJobas.get(destination).downstream);
   }
 
-  private void onMinTime(MinTimeUpdate minTimeUpdate) {
-    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTimeUpdate.minTime()));
+  private void onMinTime(MinTimeUpdate minTime) {
+    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTime.minTime()));
   }
 
   private void accept(DataItem item) {

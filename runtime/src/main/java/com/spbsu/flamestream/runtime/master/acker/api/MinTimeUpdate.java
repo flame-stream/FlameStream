@@ -20,4 +20,8 @@ public class MinTimeUpdate {
   public String toString() {
     return "MinTimeUpdate{" + "minTime=" + minTime + '}';
   }
+
+  public JobaTimes getJobaTimes() {
+    return jobaTimes;
+  }
 }

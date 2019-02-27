@@ -16,7 +16,6 @@ import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.graph.state.GroupingState;
-import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
@@ -44,12 +43,12 @@ import java.util.stream.Collectors;
 
 public class GraphManager extends LoggingActor {
   private final Graph graph;
-  private final ActorRef acker;
   private final ActorRef registryHolder;
   private final ActorRef committer;
   private final ComputationProps computationProps;
   private final StateStorage storage;
   private final String nodeId;
+  private final ActorRef localAcker;
 
   private ActorRef sourceComponent;
   private ActorRef sinkComponent;
@@ -63,7 +62,7 @@ public class GraphManager extends LoggingActor {
 
   private GraphManager(String nodeId,
                        Graph graph,
-                       ActorRef acker,
+                       ActorRef localAcker,
                        ActorRef registryHolder,
                        ActorRef committer,
                        ComputationProps computationProps,
@@ -72,21 +71,26 @@ public class GraphManager extends LoggingActor {
     this.storage = storage;
     this.computationProps = computationProps;
     this.graph = graph;
-    this.acker = context().actorOf(LocalAcker.props(acker), "local-acker");
+    this.localAcker = localAcker;
     this.registryHolder = registryHolder;
     this.committer = committer;
-    acker.tell(new MinTimeUpdateListener(self()), self());
+  }
+
+  @Override
+  public void preStart() throws Exception {
+    super.preStart();
+    localAcker.tell(new MinTimeUpdateListener(self()), self());
   }
 
   public static Props props(
           String nodeId,
           Graph graph,
-          ActorRef acker,
+          ActorRef localAcker,
           ActorRef registryHolder,
           ActorRef committer,
           ComputationProps layout,
           StateStorage storage) {
-    return Props.create(GraphManager.class, nodeId, graph, acker, registryHolder, committer, layout, storage)
+    return Props.create(GraphManager.class, nodeId, graph, localAcker, registryHolder, committer, layout, storage)
             .withDispatcher("processing-dispatcher");
   }
 
@@ -141,7 +145,7 @@ public class GraphManager extends LoggingActor {
                         graph,
                         routes,
                         self(),
-                        acker,
+                        localAcker,
                         computationProps,
                         stateByVertex
                 ));
@@ -181,7 +185,7 @@ public class GraphManager extends LoggingActor {
             )
             .match(
                     MinTimeUpdate.class,
-                    minTimeUpdate -> components.forEach(c -> c.forward(minTimeUpdate, context()))
+                    this::onMinTime
             )
             .match(Prepare.class, this::onPrepare)
             .match(Commit.class, commit -> sourceComponent.forward(commit, context()))
@@ -212,6 +216,10 @@ public class GraphManager extends LoggingActor {
       ));
       committer.tell(new Prepared(), self());
     });
+  }
+
+  private void onMinTime(MinTimeUpdate minTimeUpdate) {
+    components.forEach(c -> c.tell(minTimeUpdate, sender()));
   }
 
   public static class Destination {

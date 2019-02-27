@@ -30,7 +30,12 @@ public class LocalClusterRuntime implements FlameRuntime {
   private final String zkString;
   private final CuratorFramework curator;
 
-  private LocalClusterRuntime(int parallelism, int maxElementsInGraph, int millisBetweenCommits) {
+  private LocalClusterRuntime(
+          int parallelism,
+          int maxElementsInGraph,
+          int millisBetweenCommits,
+          boolean distributedAcker
+  ) {
     final List<Integer> ports;
     try {
       ports = new ArrayList<>(freePorts(parallelism + 1));
@@ -51,6 +56,7 @@ public class LocalClusterRuntime implements FlameRuntime {
       final WorkerApplication.WorkerConfig workerConfig = new WorkerApplication.WorkerConfig.Builder()
               .maxElementsInGraph(maxElementsInGraph)
               .millisBetweenCommits(millisBetweenCommits)
+              .distributedAcker(distributedAcker)
               .build(name, address, zkString);
       final WorkerApplication worker = new WorkerApplication(workerConfig);
       workers.add(worker);
@@ -116,6 +122,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     private int parallelism = DEFAULT_PARALLELISM;
     private int maxElementsInGraph = DEFAULT_MAX_ELEMENTS_IN_GRAPH;
     private int millisBetweenCommits = DEFAULT_MILLIS_BETWEEN_COMMITS;
+    private boolean distributedAcker = true;
 
     public Builder parallelism(int parallelism) {
       this.parallelism = parallelism;
@@ -132,8 +139,13 @@ public class LocalClusterRuntime implements FlameRuntime {
       return this;
     }
 
+    public Builder distributedAcker(boolean distributedAcker) {
+      this.distributedAcker = distributedAcker;
+      return this;
+    }
+
     public LocalClusterRuntime build() {
-      return new LocalClusterRuntime(parallelism, maxElementsInGraph, millisBetweenCommits);
+      return new LocalClusterRuntime(parallelism, maxElementsInGraph, millisBetweenCommits, distributedAcker);
     }
   }
 }

@@ -16,6 +16,7 @@ import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FlameNode extends LoggingActor {
@@ -25,7 +26,7 @@ public class FlameNode extends LoggingActor {
   private FlameNode(String id,
                     Graph bootstrapGraph,
                     ClusterConfig config,
-                    ActorRef acker,
+                    ActorRef localAcker,
                     ActorRef registryHolder,
                     ActorRef committer,
                     int maxElementsInGraph,
@@ -35,7 +36,7 @@ public class FlameNode extends LoggingActor {
     final ActorRef graph = context().actorOf(GraphManager.props(
             id,
             bootstrapGraph,
-            acker,
+            localAcker,
             registryHolder,
             committer,
             new ComputationProps(config.hashGroups(), maxElementsInGraph),
@@ -55,7 +56,7 @@ public class FlameNode extends LoggingActor {
   public static Props props(String id,
                             Graph initialGraph,
                             ClusterConfig initialConfig,
-                            ActorRef acker,
+                            ActorRef localAcker,
                             ActorRef registryHolder,
                             ActorRef committer,
                             int maxElementsInGraph,
@@ -65,7 +66,7 @@ public class FlameNode extends LoggingActor {
             id,
             initialGraph,
             initialConfig,
-            acker,
+            localAcker,
             registryHolder,
             committer,
             maxElementsInGraph,
