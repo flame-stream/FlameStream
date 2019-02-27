@@ -45,12 +45,15 @@ class Cluster extends LoggingActor {
   private final ActorRef inner;
   private final boolean blinking;
 
-  private Cluster(Graph g,
-                  StateStorage stateStorage,
-                  int parallelism,
-                  int maxElementsInGraph,
-                  int millisBetweenCommits,
-                  boolean blinking) {
+  private Cluster
+          (Graph g,
+           StateStorage stateStorage,
+           int parallelism,
+           int maxElementsInGraph,
+           int millisBetweenCommits,
+           boolean distributedAcker,
+           boolean blinking
+          ) {
     this.blinking = blinking;
 
     final Map<String, HashGroup> ranges = new HashMap<>();
@@ -71,7 +74,7 @@ class Cluster extends LoggingActor {
     }
     final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
     final CommitterConfig committerConfig =
-            new CommitterConfig(maxElementsInGraph, millisBetweenCommits, 0, false);
+            new CommitterConfig(maxElementsInGraph, millisBetweenCommits, 0, distributedAcker);
 
     final Registry registry = new InMemoryRegistry();
     inner = context().actorOf(FlameUmbrella.props(
@@ -111,7 +114,9 @@ class Cluster extends LoggingActor {
                      int parallelism,
                      int maxElementsInGraph,
                      int millisBetweenCommits,
-                     boolean blinking) {
+                     boolean distributedAcker,
+                     boolean blinking
+  ) {
     return Props.create(
             Cluster.class,
             g,
@@ -119,6 +124,7 @@ class Cluster extends LoggingActor {
             parallelism,
             maxElementsInGraph,
             millisBetweenCommits,
+            distributedAcker,
             blinking
     );
   }

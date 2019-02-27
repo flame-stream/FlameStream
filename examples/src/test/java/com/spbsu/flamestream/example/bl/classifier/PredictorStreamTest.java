@@ -20,6 +20,7 @@ import com.typesafe.config.ConfigFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
@@ -49,8 +50,16 @@ public class PredictorStreamTest {
   private static final String WEIGHTS_PATH = "src/main/resources/classifier_weights";
   private static final String PATH_TO_TEST_DATA = "src/test/resources/sklearn_prediction";
 
-  @Test
-  public void testStreamPredict() throws InterruptedException, TimeoutException {
+  @DataProvider
+  public static Object[][] dataProvider() {
+    return new Object[][]{
+            {false},
+            {true}
+    };
+  }
+
+  @Test(dataProvider = "dataProvider")
+  public void testStreamPredict(boolean distributedAcker) throws InterruptedException, TimeoutException {
     final List<Document> documents = new ArrayList<>();
     final List<String> texts = new ArrayList<>();
     final List<double[]> pyPredictions = new ArrayList<>();
@@ -81,7 +90,9 @@ public class PredictorStreamTest {
     }
 
     final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
-    try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(2).build()) {
+    try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(2)
+            .distributedAcker(distributedAcker)
+            .build()) {
       try (final FlameRuntime.Flame flame = runtime.run(predictorGraph())) {
         final List<AkkaFront.FrontHandle<Document>> handles = flame.attachFront(
                 "totalOrderFront",

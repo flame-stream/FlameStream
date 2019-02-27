@@ -26,18 +26,24 @@ public class LocalRuntime implements FlameRuntime {
   private final int parallelism;
   private final int maxElementsInGraph;
   private final int millisBetweenCommits;
+  private final boolean distributedAcker;
   private final boolean blinking;
 
-  private LocalRuntime(ActorSystem system,
-                       int parallelism,
-                       int maxElementsInGraph,
-                       int millisBetweenCommits,
-                       boolean blinking, StateStorage stateStorage) {
+  private LocalRuntime(
+          ActorSystem system,
+          int parallelism,
+          int maxElementsInGraph,
+          int millisBetweenCommits,
+          boolean blinking,
+          boolean distributedAcker,
+          StateStorage stateStorage
+  ) {
     this.parallelism = parallelism;
     this.blinking = blinking;
     this.maxElementsInGraph = maxElementsInGraph;
     this.millisBetweenCommits = millisBetweenCommits;
     this.system = system;
+    this.distributedAcker = distributedAcker;
     this.stateStorage = stateStorage;
   }
 
@@ -48,7 +54,15 @@ public class LocalRuntime implements FlameRuntime {
   @Override
   public Flame run(Graph g) {
     final ActorRef cluster = system.actorOf(
-            Cluster.props(g, stateStorage, parallelism, maxElementsInGraph, millisBetweenCommits, blinking),
+            Cluster.props(
+                    g,
+                    stateStorage,
+                    parallelism,
+                    maxElementsInGraph,
+                    millisBetweenCommits,
+                    distributedAcker,
+                    blinking
+            ),
             "restarter"
     );
 
@@ -96,6 +110,7 @@ public class LocalRuntime implements FlameRuntime {
     private int maxElementsInGraph = DEFAULT_MAX_ELEMENTS_IN_GRAPH;
     private int millisBetweenCommits = DEFAULT_MILLIS_BETWEEN_COMMITS;
     private boolean blinking = false;
+    private boolean distributedAcker = false;
     private StateStorage stateStorage = new InMemStateStorage();
 
     @Nullable
@@ -131,6 +146,11 @@ public class LocalRuntime implements FlameRuntime {
       return this;
     }
 
+    public Builder distributedAcker(boolean distributedAcker) {
+      this.distributedAcker = distributedAcker;
+      return this;
+    }
+
     public LocalRuntime build() {
       if (system == null) {
         system = ActorSystem.create("local-runtime", ConfigFactory.load("local"));
@@ -141,6 +161,7 @@ public class LocalRuntime implements FlameRuntime {
               maxElementsInGraph,
               millisBetweenCommits,
               blinking,
+              distributedAcker,
               stateStorage
       );
     }
