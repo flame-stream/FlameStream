@@ -2,16 +2,15 @@ package com.spbsu.flamestream.example.bl.text_classifier;
 
 import akka.actor.ActorSystem;
 import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.mx.SparseMx;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Document;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Optimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SoftmaxRegressionOptimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Topic;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
 import com.spbsu.flamestream.runtime.FlameRuntime;
@@ -32,8 +31,21 @@ import org.testng.annotations.Test;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
@@ -120,7 +132,6 @@ public class LentaTest extends FlameAkkaSuite {
         }
 
         final Map<String, Double> tfIdf = new HashMap<>();
-        texts.add(docText);
         SparseVec vec = new SparseVec(features, indeces, values);
 
         SklearnSgdPredictor.text2words(docText).forEach(word -> {
@@ -136,17 +147,21 @@ public class LentaTest extends FlameAkkaSuite {
       throw new RuntimeException(e);
     }
 
-    int len = topics.size();
-    int testsize = 20;
+    final int len = topics.size();
+    final int testsize = 1000;
 
     List<String> testTopics = topics.stream().skip(len - testsize).collect(Collectors.toList());
     List<String> testTexts = texts.stream().skip(len - testsize).collect(Collectors.toList());
     documents = documents.stream().skip(len - testsize).collect(Collectors.toList());
 
-    Mx matrix = new SparseMx(mx.stream().limit(len - testsize).toArray(SparseVec[]::new));
+    Mx trainingSet = new SparseMx(mx.stream().limit(len - testsize).toArray(SparseVec[]::new));
     LOGGER.info("Updating weights");
-    predictor.updateWeights(matrix, topics.stream().limit(len - testsize).toArray(String[]::new));
+    Optimizer optimizer = new SoftmaxRegressionOptimizer(predictor.getTopics());
+    String[] correctTopics = topics.stream().limit(len - testsize).toArray(String[]::new);
+    SparseMx newWeights = optimizer.optimizeWeights(trainingSet, correctTopics, predictor.getWeights());
+    predictor.updateWeights(newWeights);
 
+    double truePositives = 0;
     for (int i = 0; i < testsize; i++) {
       String text = testTexts.get(i);
       String ans = testTopics.get(i);
@@ -155,12 +170,16 @@ public class LentaTest extends FlameAkkaSuite {
       Topic[] prediction = predictor.predict(doc);
 
       Arrays.sort(prediction);
-      LOGGER.info("Doc: {}", text);
-      LOGGER.info("Real answers: {}", ans);
-      LOGGER.info("Predict: {}", (Object) prediction);
-      LOGGER.info("\n");
+      if (ans.equals(prediction[0].name())) {
+        truePositives++;
+      }
+      //LOGGER.info("Doc: {}", text);
+      //LOGGER.info("Real answers: {}", ans);
+      //LOGGER.info("Predict: {}", (Object) prediction);
+      //LOGGER.info("\n");
     }
 
+    LOGGER.info("Accuracy: {}", truePositives / testsize);
   }
 
   @Test
