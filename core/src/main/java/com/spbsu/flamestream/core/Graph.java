@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.core;
 
-import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,8 +43,8 @@ public interface Graph {
   }
 
   class Builder {
-    private final Multimap<Vertex, Vertex> adjLists = HashMultimap.create();
-    private final Multimap<Vertex, Vertex> invertedAdjLists = HashMultimap.create();
+    private final Multimap<Vertex, Vertex> adjLists = LinkedListMultimap.create();
+    private final Multimap<Vertex, Vertex> invertedAdjLists = LinkedListMultimap.create();
     private final Set<Set<Vertex>> components = new HashSet<>();
 
     private final List<Tuple2<Vertex, Vertex>> shuffles = new ArrayList<>();
@@ -96,7 +97,7 @@ public interface Graph {
                 Map.Entry::getKey,
                 Collectors.mapping(
                         Map.Entry::getValue,
-                        Collectors.toCollection(HashSet::new)
+                        Collectors.toCollection(LinkedHashSet::new)
                 )
         ));
 
