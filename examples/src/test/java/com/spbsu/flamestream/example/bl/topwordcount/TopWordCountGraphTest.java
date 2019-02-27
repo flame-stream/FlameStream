@@ -9,6 +9,7 @@ import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.utils.AwaitResultConsumer;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
@@ -32,10 +33,20 @@ import static java.util.stream.Collectors.toMap;
  * Date: 19.12.2017
  */
 public class TopWordCountGraphTest extends FlameAkkaSuite {
-  @Test(invocationCount = 10)
-  public void topWordCountTest() throws InterruptedException {
+
+  @DataProvider
+  public static Object[][] dataProvider() {
+    return new Object[][]{
+            {false},
+            {true}
+    };
+  }
+
+  @Test(dataProvider = "dataProvider", invocationCount = 10)
+  public void topWordCountTest(boolean distributedAcker) throws InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(2)
             .millisBetweenCommits(500)
+            .distributedAcker(distributedAcker)
             .build()) {
       try (final FlameRuntime.Flame flame = runtime.run(new TopWordCountGraph().get())) {
         final int lineSize = 20;
