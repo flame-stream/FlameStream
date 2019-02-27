@@ -5,6 +5,7 @@ import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
+import com.expleague.commons.math.vectors.impl.mx.SparseMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
@@ -97,34 +98,36 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   }
 
   private Mx softmaxGradient(Mx trainingSet, int[] correctTopics) {
-    Vec[] gradients = new Vec[weights.rows()];
+    SparseVec[] gradients = new SparseVec[weights.rows()];
+    double[] softmaxValues = new double[trainingSet.rows()];
+
+    for (int i = 0; i < trainingSet.rows(); i++) {
+      final Vec x = trainingSet.row(i);
+      final int index = correctTopics[i];
+
+      final double numer = Math.exp(VecTools.multiply(weights.row(index), x));
+      double denom = 0.0;
+      for (int k = 0; k < weights.rows(); k++) {
+        denom += Math.exp(VecTools.multiply(weights.row(k), x));
+      }
+
+      softmaxValues[i] = numer / denom;
+    }
+
     for (int j = 0; j < weights.rows(); j++) {
       LOGGER.info("weights {} component", j);
-
-      Vec grad = new SparseVec(weights.columns());
+      SparseVec grad = new SparseVec(weights.columns());
       for (int i = 0; i < trainingSet.rows(); i++) {
         final Vec x = trainingSet.row(i);
-        int index = correctTopics[i];
-        int indicator = 0;
-        if (index == j) {
-          indicator = 1;
-        }
-
-        final double numer = Math.exp(VecTools.multiply(weights.row(index), x));
-        double denom = 0.0;
-        for (int k = 0; k < weights.rows(); k++) {
-          denom += Math.exp(VecTools.multiply(weights.row(k), x));
-        }
-
-        final double softmaxValue = numer / denom;
-
-        grad = VecTools.sum(grad, VecTools.scale(x, indicator - softmaxValue));
+        final int index = correctTopics[i];
+        final int indicator = index == j ? 1 : 0;
+        grad = VecTools.sum(grad, VecTools.scale(x, indicator - softmaxValues[i]));
       }
 
       gradients[j] = VecTools.scale(grad, -1.0 / trainingSet.rows());
     }
 
-    return new RowsVecArrayMx(gradients);
+    return new SparseMx(gradients);
   }
 
   private Mx l1Gradient(double lambda) {
