@@ -4,7 +4,6 @@ import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.mx.SparseMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -76,9 +74,9 @@ public class SklearnSgdPredictor implements TopicsPredictor {
       final Vec scaled = VecTools.scale(sum, -1);
       VecTools.exp(scaled);
 
-      final double[] ones = new double[score.dim()];
-      Arrays.fill(ones, 1);
-      final Vec vecOnes = new ArrayVec(ones, 0, ones.length);
+      final Vec vecOnes = new ArrayVec(score.dim());
+      VecTools.fill(vecOnes, 1);
+
       probabilities = VecTools.sum(scaled, vecOnes);
       for (int i = 0; i < probabilities.dim(); i++) {
         double changed = 1 / probabilities.get(i);
@@ -97,31 +95,47 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return result;
   }
 
-  private Mx softmaxGradient(Mx trainingSet, int[] correctTopics) {
-    SparseVec[] gradients = new SparseVec[weights.rows()];
-    double[] softmaxValues = new double[trainingSet.rows()];
+  private Vec computeSoftmaxValues(Mx trainingSet, int[] correctTopics) {
+    Vec softmaxValues = new SparseVec(trainingSet.rows());
 
     for (int i = 0; i < trainingSet.rows(); i++) {
       final Vec x = trainingSet.row(i);
       final int index = correctTopics[i];
+      final Vec mul = MxTools.multiply(weights, x);
+      VecTools.exp(mul);
 
-      final double numer = Math.exp(VecTools.multiply(weights.row(index), x));
+      final double numer = mul.get(index);
       double denom = 0.0;
       for (int k = 0; k < weights.rows(); k++) {
-        denom += Math.exp(VecTools.multiply(weights.row(k), x));
+        denom += mul.get(k);
       }
 
-      softmaxValues[i] = numer / denom;
+      softmaxValues.set(i, numer / denom);
     }
 
+    return softmaxValues;
+  }
+
+  private Mx softmaxGradient(Mx trainingSet, int[] correctTopics) {
+    final SparseVec[] gradients = new SparseVec[weights.rows()];
+    final Vec softmaxValues = computeSoftmaxValues(trainingSet, correctTopics);
+
+    LOGGER.info("Softmax value: {}", VecTools.sum(softmaxValues));
+
     for (int j = 0; j < weights.rows(); j++) {
-      LOGGER.info("weights {} component", j);
+      //LOGGER.info("weights {} component", j);
       SparseVec grad = new SparseVec(weights.columns());
+      final SparseVec scales = new SparseVec(trainingSet.rows());
       for (int i = 0; i < trainingSet.rows(); i++) {
-        final Vec x = trainingSet.row(i);
         final int index = correctTopics[i];
         final int indicator = index == j ? 1 : 0;
-        grad = VecTools.sum(grad, VecTools.scale(x, indicator - softmaxValues[i]));
+        scales.set(i, indicator - softmaxValues.get(i));
+      }
+
+      for (int i = 0; i < trainingSet.rows(); i++) {
+        final Vec x = trainingSet.row(i);
+        VecTools.scale(x, scales);
+        grad = VecTools.sum(grad, x);
       }
 
       gradients[j] = VecTools.scale(grad, -1.0 / trainingSet.rows());
@@ -130,63 +144,63 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return new SparseMx(gradients);
   }
 
-  private Mx l1Gradient(double lambda) {
-    Mx gradient = new VecBasedMx(weights.rows(), weights.columns());
+  private Mx l1Gradient() {
+    final Mx gradient = new SparseMx(weights.rows(), weights.columns());
 
     for (int i = 0; i < weights.rows(); i++) {
       for (int j = 0; j < weights.columns(); j++) {
-        gradient.set(i, j, lambda * Math.signum(weights.get(i, j)));
+        gradient.set(i, j, Math.signum(weights.get(i, j)));
       }
     }
 
     return gradient;
   }
 
-  private Mx l2Gradient(double lambda) {
-    Mx gradient = new VecBasedMx(weights.rows(), weights.columns());
+  private Mx l2Gradient() {
+    //return VecTools.subtract(VecTools.scale(weights, 2), prevWeights); ???
+    Mx gradient = new SparseMx(weights.rows(), weights.columns());
 
     for (int i = 0; i < weights.rows(); i++) {
       for (int j = 0; j < weights.columns(); j++) {
-        gradient.set(i, j, lambda * 2 * (weights.get(i, j) - prevWeights.get(i, j)));
+        gradient.set(i, j, 2 * (weights.get(i, j) - prevWeights.get(i, j)));
       }
     }
 
     return gradient;
-  }
-
-  private void printValue(Mx W, Mx prev) {
-    double value = 0;
-
-    LOGGER.info("Argmax is {}", value);
   }
 
   @Override
   public void updateWeights(Mx trainingSet, String[] correctTopics) {
-    final double lambda1 = 0.001;
-    final double lambda2 = 0.001;
-    List<String> topicList = Arrays.asList(topics);
-    int[] indeces = Stream.of(correctTopics).mapToInt(topicList::indexOf).toArray();
+    final double alpha = 1e-3;
+    final double lambda1 = 1e-3;
+    final double lambda2 = 1e-3;
+    final double maxIter = 100;
+    final List<String> topicList = Arrays.asList(topics);
+    final int[] indeces = Stream.of(correctTopics).mapToInt(topicList::indexOf).toArray();
 
-    printValue(weights, weights);
+    for (int iteration = 1; iteration <= maxIter; iteration++) {
+      LOGGER.info("Iteration {}", iteration);
+      Mx softmax = softmaxGradient(trainingSet, indeces);
+      Mx l1 = l1Gradient();
+      Mx l2 = l2Gradient();
 
-    final Mx softmax = softmaxGradient(trainingSet, indeces);
-    LOGGER.info("Softmax computed");
-    final Mx l1 = l1Gradient(lambda1);
-    LOGGER.info("l1 computed");
-    final Mx l2 = l2Gradient(lambda2);
-    LOGGER.info("l2 computed");
+      prevWeights = weights;
+      //softmax = VecTools.scale(softmax, alpha);
+      // l1 = VecTools.scale(l1, lambda1);
+      //l2 = VecTools.scale(l2, lambda2);
+      // weights = VecTools.subtract(weights, VecTools.sum(softmax, VecTools.sum(l1, l2)));
 
-    prevWeights = weights;
-    Mx updated = new VecBasedMx(weights.rows(), weights.columns());
-    for (int i = 0; i < weights.rows(); i++) {
-      for (int j = 0; j < weights.columns(); j++) {
-        final double value = weights.get(i, j) - softmax.get(i, j) - l1.get(i, j) - l2.get(i, j);
-        updated.set(i, j, value);
+      Mx updated = new SparseMx(weights.rows(), weights.columns());
+      for (int i = 0; i < weights.rows(); i++) {
+        for (int j = 0; j < weights.columns(); j++) {
+          final double value = weights.get(i, j) - alpha * softmax.get(i, j) -
+                  lambda1 * l1.get(i, j) - lambda2 * l2.get(i, j);
+          updated.set(i, j, value);
+        }
       }
-    }
-    printValue(updated, prevWeights);
 
-    weights = updated;
+      weights = updated;
+    }
   }
 
   public void init() {
