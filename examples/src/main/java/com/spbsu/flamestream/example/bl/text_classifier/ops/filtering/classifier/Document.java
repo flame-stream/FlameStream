@@ -1,8 +1,8 @@
-package com.spbsu.flamestream.example.bl.classifier;
+package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier;
 
 import java.util.Map;
 
-class Document {
+public class Document {
   private final Map<String, Double> tfIdf;
 
   public Document(Map<String, Double> tfIdf) {
