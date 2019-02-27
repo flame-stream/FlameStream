@@ -58,6 +58,7 @@ import java.util.stream.StreamSupport;
 
 import static com.spbsu.flamestream.example.bl.classifier.PredictorStreamTest.parseDoubles;
 import static java.util.stream.Collectors.toList;
+import static org.testng.Assert.assertTrue;
 
 public class LentaTest extends FlameAkkaSuite {
   private static final Logger LOGGER = LoggerFactory.getLogger(LentaTest.class);
@@ -179,7 +180,9 @@ public class LentaTest extends FlameAkkaSuite {
       //LOGGER.info("\n");
     }
 
-    LOGGER.info("Accuracy: {}", truePositives / testsize);
+    double accuracy = truePositives / testsize;
+    LOGGER.info("Accuracy: {}", accuracy);
+    assertTrue(accuracy >= 0.62);
   }
 
   @Test
