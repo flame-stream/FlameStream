@@ -21,54 +21,6 @@ public class SoftmaxRegressionOptimizer implements Optimizer {
     topicList = Arrays.asList(topics);
   }
 
-  private Vec computeSoftmaxValues(SparseMx weights, Mx trainingSet, int[] correctTopics) {
-    Vec softmaxValues = new SparseVec(trainingSet.rows());
-
-    for (int i = 0; i < trainingSet.rows(); i++) {
-      final Vec x = trainingSet.row(i);
-      final int index = correctTopics[i];
-      final Vec mul = MxTools.multiply(weights, x);
-      VecTools.exp(mul);
-
-      final double numer = mul.get(index);
-      double denom = 0.0;
-      for (int k = 0; k < weights.rows(); k++) {
-        denom += mul.get(k);
-      }
-
-      softmaxValues.set(i, numer / denom);
-    }
-
-    return softmaxValues;
-  }
-
-  private double softmaxGradient(SparseMx weights, Mx result, Mx trainingSet, int[] correctTopics) {
-    final SparseVec[] gradients = new SparseVec[weights.rows()];
-    final Vec softmaxValues = computeSoftmaxValues(weights, trainingSet, correctTopics);
-
-    for (int j = 0; j < weights.rows(); j++) {
-      //LOGGER.info("weights {} component", j);
-      SparseVec grad = new SparseVec(weights.columns());
-      final SparseVec scales = new SparseVec(trainingSet.rows());
-      for (int i = 0; i < trainingSet.rows(); i++) {
-        final int index = correctTopics[i];
-        final int indicator = index == j ? 1 : 0;
-        scales.set(i, indicator - softmaxValues.get(i));
-      }
-
-      for (int i = 0; i < trainingSet.rows(); i++) {
-        final Vec x = trainingSet.row(i);
-        VecTools.scale(x, scales);
-        grad = VecTools.sum(grad, x);
-      }
-
-      gradients[j] = VecTools.scale(grad, -1.0 / trainingSet.rows());
-    }
-
-    result = new SparseMx(gradients);
-    return VecTools.sum(softmaxValues);
-  }
-
   private Mx l1Gradient(SparseMx weights) {
     final Mx gradient = new SparseMx(weights.rows(), weights.columns());
 
@@ -94,46 +46,99 @@ public class SoftmaxRegressionOptimizer implements Optimizer {
     return gradient;
   }
 
-  public SparseMx optimizeWeights(Mx trainingSet, String[] correctTopics, SparseMx weights) {
-    final double alpha = 1e-3;
-    final double lambda1 = 0.0000009; // same as in python script
+  private Vec computeSoftmaxValues(SparseMx weights, Mx trainingSet, int[] correctTopics) {
+    Vec softmaxValues = new SparseVec(trainingSet.rows());
+
+    for (int i = 0; i < trainingSet.rows(); i++) {
+      final Vec x = VecTools.copySparse(trainingSet.row(i));
+      final int index = correctTopics[i];
+      final Vec mul = MxTools.multiply(weights, x);
+      VecTools.exp(mul);
+
+      final double numer = mul.get(index);
+      double denom = 0.0;
+      for (int k = 0; k < weights.rows(); k++) {
+        denom += mul.get(k);
+      }
+
+      softmaxValues.set(i, numer / denom);
+    }
+
+    return softmaxValues;
+  }
+
+  private SoftmaxData softmaxGradient(SparseMx weights, Mx trainingSet, int[] correctTopics) {
+    final SparseVec[] gradients = new SparseVec[weights.rows()];
+    final Vec softmaxValues = computeSoftmaxValues(weights, trainingSet, correctTopics);
+
+    for (int j = 0; j < weights.rows(); j++) {
+      //LOGGER.info("weights {} component", j);
+      SparseVec grad = new SparseVec(weights.columns());
+      final SparseVec scales = new SparseVec(trainingSet.rows());
+      for (int i = 0; i < trainingSet.rows(); i++) {
+        final int index = correctTopics[i];
+        final int indicator = index == j ? 1 : 0;
+        scales.set(i, indicator - softmaxValues.get(i));
+      }
+
+      for (int i = 0; i < trainingSet.rows(); i++) {
+        final Vec x = VecTools.copySparse(trainingSet.row(i));
+        VecTools.scale(x, scales);
+        grad = VecTools.sum(grad, x);
+      }
+
+      gradients[j] = grad;//VecTools.scale(grad, -1.0 / trainingSet.rows());
+    }
+
+    return new SoftmaxData(VecTools.sum(softmaxValues), new SparseMx(gradients));
+  }
+
+  public SparseMx optimizeWeights(Mx trainingSet, String[] correctTopics, SparseMx prevWeights) {
+    final double alpha = 1e-1;
+    final double lambda1 = 1e-3;
     //final double lambda2 = 1e-3;
     final double maxIter = 100;
     final int[] indeces = Stream.of(correctTopics).mapToInt(topicList::indexOf).toArray();
 
     double previousValue = 0;
-    SparseMx prevWeights = weights;
+    SparseMx weights = new SparseMx(prevWeights.rows(), prevWeights.columns());
     for (int iteration = 1; iteration <= maxIter; iteration++) {
       LOGGER.info("Iteration {}", iteration);
-      Mx softmax = new SparseMx(weights.rows(), weights.columns());
-      double softmaxValue = softmaxGradient(weights, softmax, trainingSet, indeces);
-      LOGGER.info("Softmax value : {}", softmaxValue);
-      if (Math.abs(softmaxValue - previousValue) < 1e-3) {
+      final SoftmaxData data = softmaxGradient(weights, trainingSet, indeces);
+      LOGGER.info("Softmax value : {}", data.value);
+      if (Math.abs(data.value - previousValue) < 1e-3) {
         break;
       }
 
-      previousValue = softmaxValue;
-      Mx l1 = l1Gradient(weights);
+      previousValue = data.value;
+      //Mx l1 = l1Gradient(weights);
       //Mx l2 = l2Gradient();
 
-      prevWeights = weights;
-      //softmax = VecTools.scale(softmax, alpha);
+      //SoftmaxData = VecTools.scale(SoftmaxData, alpha);
       //l1 = VecTools.scale(l1, lambda1);
       //l2 = VecTools.scale(l2, lambda2);
-      // weights = VecTools.subtract(weights, VecTools.sum(softmax, VecTools.sum(l1, l2)));
+      // weights = VecTools.subtract(weights, VecTools.sum(SoftmaxData, VecTools.sum(l1, l2)));
 
-      SparseMx updated = new SparseMx(weights.rows(), weights.columns());
       for (int i = 0; i < weights.rows(); i++) {
         for (int j = 0; j < weights.columns(); j++) {
-          final double value = weights.get(i, j) - alpha * softmax.get(i, j) - lambda1 * l1.get(i, j);
-          updated.set(i, j, value);
+          final double value = weights.get(i, j) - alpha * (data.gradients.get(i, j));// - lambda1 * l1.get(i, j));
+          weights.set(i, j, value);
         }
       }
 
-      weights = updated;
     }
 
-    return weights;
+    return prevWeights;
+  }
+  
+  private class SoftmaxData {
+    private final double value;
+    private final SparseMx gradients;
+
+    SoftmaxData(double value, SparseMx gradients) {
+      this.value = value;
+      this.gradients = gradients;
+    }
   }
 
 }
