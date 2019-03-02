@@ -149,7 +149,7 @@ public class LentaTest extends FlameAkkaSuite {
     }
 
     final int len = topics.size();
-    final int testsize = 1000;
+    final int testsize = 30;
 
     List<String> testTopics = topics.stream().skip(len - testsize).collect(Collectors.toList());
     List<String> testTexts = texts.stream().skip(len - testsize).collect(Collectors.toList());
@@ -174,10 +174,10 @@ public class LentaTest extends FlameAkkaSuite {
       if (ans.equals(prediction[0].name())) {
         truePositives++;
       }
-      //LOGGER.info("Doc: {}", text);
-      //LOGGER.info("Real answers: {}", ans);
-      //LOGGER.info("Predict: {}", (Object) prediction);
-      //LOGGER.info("\n");
+      LOGGER.info("Doc: {}", text);
+      LOGGER.info("Real answers: {}", ans);
+      LOGGER.info("Predict: {}", (Object) prediction);
+      LOGGER.info("\n");
     }
 
     double accuracy = truePositives / testsize;
