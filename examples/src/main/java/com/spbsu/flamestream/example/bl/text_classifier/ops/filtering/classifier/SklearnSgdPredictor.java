@@ -1,15 +1,16 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier;
 
-import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
+import com.expleague.commons.math.vectors.impl.mx.SparseMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.google.common.annotations.VisibleForTesting;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,6 +27,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class SklearnSgdPredictor implements TopicsPredictor {
+  private static final Logger LOGGER = LoggerFactory.getLogger(SklearnSgdPredictor.class.getName());
   private static final Pattern PATTERN = Pattern.compile("\\b\\w\\w+\\b", Pattern.UNICODE_CHARACTER_CLASS);
 
   private final String weightsPath;
@@ -34,7 +36,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   //lazy loading
   private TObjectIntMap<String> countVectorizer;
   private Vec intercept;
-  private Mx weights;
+  private SparseMx weights;
   private String[] topics;
 
   public SklearnSgdPredictor(String cntVectorizerPath, String weightsPath) {
@@ -42,35 +44,37 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     this.cntVectorizerPath = cntVectorizerPath;
   }
 
+  private SparseVec vectorize(Map<String, Double> tfIdf) {
+    final int[] indices = new int[tfIdf.size()];
+    final double[] values = new double[tfIdf.size()];
+
+    int ind = 0;
+    for (String key : tfIdf.keySet()) {
+      final int valueIndex = countVectorizer.get(key);
+      indices[ind] = valueIndex;
+      values[ind] = tfIdf.get(key);
+      ind++;
+    }
+
+    return new SparseVec(countVectorizer.size(), indices, values);
+  }
+
   @Override
   public Topic[] predict(Document document) {
     loadMeta();
     loadVocabulary();
 
-    final Map<String, Double> tfIdf = document.tfIdf();
-    final int[] indices = new int[tfIdf.size()];
-    final double[] values = new double[tfIdf.size()];
-    { //convert TF-IDF features to sparse vector
-      int ind = 0;
-      for (String key : tfIdf.keySet()) {
-        final int valueIndex = countVectorizer.get(key);
-        indices[ind] = valueIndex;
-        values[ind] = tfIdf.get(key);
-        ind++;
-      }
-    }
-
     final Vec probabilities;
     { // compute topic probabilities
-      final SparseVec vectorized = new SparseVec(countVectorizer.size(), indices, values);
+      final SparseVec vectorized = vectorize(document.tfIdf());
       final Vec score = MxTools.multiply(weights, vectorized);
       final Vec sum = VecTools.sum(score, intercept);
       final Vec scaled = VecTools.scale(sum, -1);
       VecTools.exp(scaled);
 
-      final double[] ones = new double[score.dim()];
-      Arrays.fill(ones, 1);
-      final Vec vecOnes = new ArrayVec(ones, 0, ones.length);
+      final Vec vecOnes = new ArrayVec(score.dim());
+      VecTools.fill(vecOnes, 1);
+
       probabilities = VecTools.sum(scaled, vecOnes);
       for (int i = 0; i < probabilities.dim(); i++) {
         double changed = 1 / probabilities.get(i);
@@ -87,6 +91,19 @@ public class SklearnSgdPredictor implements TopicsPredictor {
       }
     }
     return result;
+  }
+
+  @Override
+  public void updateWeights(SparseMx weights) {
+    this.weights = weights;
+  }
+
+  public SparseMx getWeights() {
+    return weights;
+  }
+
+  public String[] getTopics() {
+    return topics;
   }
 
   public void init() {
@@ -112,7 +129,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
         topics[i] = br.readLine();
       }
 
-      final Vec[] coef = new Vec[classes];
+      final SparseVec[] coef = new SparseVec[classes];
       String line;
       for (int index = 0; index < classes; index++) {
         line = br.readLine();
@@ -128,11 +145,10 @@ public class SklearnSgdPredictor implements TopicsPredictor {
           values[i / 2] = value;
         }
 
-        final SparseVec sparseVec = new SparseVec(currentFeatures, indeces, values);
-        coef[index] = sparseVec;
+        coef[index] = new SparseVec(currentFeatures, indeces, values);
       }
 
-      weights = new RowsVecArrayMx(coef);
+      weights = new SparseMx(coef);
       MxTools.transpose(weights);
 
       line = br.readLine();
