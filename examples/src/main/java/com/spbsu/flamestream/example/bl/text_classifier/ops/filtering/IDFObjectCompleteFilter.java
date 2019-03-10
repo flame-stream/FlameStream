@@ -3,10 +3,10 @@ package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering;
 import com.spbsu.flamestream.example.bl.text_classifier.model.IdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -18,7 +18,7 @@ import java.util.stream.Stream;
  * */
 public class IDFObjectCompleteFilter implements Function<WordCounter, Stream<IdfObject>> {
   //Do not put state in class fields in a general case
-  private final Map<String, List<WordCounter>> buffer = new HashMap<>();
+  private final Map<String, Set<WordCounter>> buffer = new HashMap<>();
 
   public void init() {
     buffer.clear();
@@ -27,9 +27,9 @@ public class IDFObjectCompleteFilter implements Function<WordCounter, Stream<Idf
   @Override
   public Stream<IdfObject> apply(WordCounter wordCounter) {
     //noinspection unchecked
-    final List<WordCounter> result = buffer.compute(wordCounter.document(), (s, counters) -> {
+    final Set<WordCounter> result = buffer.compute(wordCounter.document(), (s, counters) -> {
       if (counters == null) {
-        final ArrayList<WordCounter> wordCounters = new ArrayList<>();
+        final Set<WordCounter> wordCounters = new HashSet<>();
         wordCounters.add(wordCounter);
         return wordCounters;
       }

@@ -1,6 +1,8 @@
 package com.spbsu.flamestream.example.bl.text_classifier.model;
 
-public class TextDocument {
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
+
+public class TextDocument implements DocContainer {
   private final String name;
   private final String content;
   private final String partitioning;
@@ -19,6 +21,11 @@ public class TextDocument {
 
   public String content() {
     return content;
+  }
+
+  @Override
+  public String document() {
+    return name;
   }
 
   public String partitioning() {

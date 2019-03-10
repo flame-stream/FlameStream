@@ -142,8 +142,8 @@ public class LocalAcker extends LoggingActor {
     }
   }
 
-  private static final int FLUSH_DELAY_IN_MILLIS = 1;
-  private static final int FLUSH_COUNT = 100;
+  private static final int FLUSH_DELAY_IN_MILLIS = 5;
+  private static final int FLUSH_COUNT = 1000;
 
   private final HashMap<Joba.Id, Long> jobaTimesCache = new HashMap<>();
   private final SortedMap<GlobalTime, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
