@@ -103,7 +103,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
         TfObject tfObject = TfObject.ofText(text);
         return Stream.of(tfObject);
       }
-    }, TextDocument.class);
+    }, TextDocument.class, docHash);
 
     final FlameMap<List<WordContainer>, List<WordContainer>> filterWord = new FlameMap<>(
             new WordContainerOrderingFilter(),
@@ -164,7 +164,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
             .link(filterTfIdf, filterClassifier)
             .link(filterClassifier, sink)
 
-            .colocate(source, splitterTf, splitterWord)
+            .colocate(splitterTf, splitterWord)
             .colocate(groupingWord, filterWord, counterWord)
             .colocate(
                     idfObjectCompleteFilter,
