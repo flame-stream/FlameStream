@@ -133,10 +133,18 @@ public class TextClassifierGraph implements Supplier<Graph> {
             }
     );
 
+    final IDFObjectCompleteFilter completeFilter = new IDFObjectCompleteFilter();
+    //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<WordCounter, IdfObject> idfObjectCompleteFilter = new FlameMap<>(
-            new IDFObjectCompleteFilter(),
+            completeFilter,
             WordCounter.class,
-            docHash
+            docHash,
+            new Runnable() {
+              @Override
+              public void run() {
+                completeFilter.init();
+              }
+            }
     );
 
     final Sink sink = new Sink();
