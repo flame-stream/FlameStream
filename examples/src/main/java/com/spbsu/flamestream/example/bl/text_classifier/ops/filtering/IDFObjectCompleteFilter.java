@@ -20,6 +20,10 @@ public class IDFObjectCompleteFilter implements Function<WordCounter, Stream<Idf
   //Do not put state in class fields in a general case
   private final Map<String, List<WordCounter>> buffer = new HashMap<>();
 
+  public void init() {
+    buffer.clear();
+  }
+
   @Override
   public Stream<IdfObject> apply(WordCounter wordCounter) {
     //noinspection unchecked
@@ -34,7 +38,9 @@ public class IDFObjectCompleteFilter implements Function<WordCounter, Stream<Idf
     });
 
     if (result.size() == wordCounter.idfCardinality()) {
-      return Stream.of(new IdfObject(result));
+      final IdfObject idfObject = new IdfObject(result);
+      buffer.remove(wordCounter.document());
+      return Stream.of(idfObject);
     }
     return Stream.empty();
   }
