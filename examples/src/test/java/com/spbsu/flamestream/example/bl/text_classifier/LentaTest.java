@@ -100,10 +100,10 @@ public class LentaTest extends FlameAkkaSuite {
   @Test
   public void lentaBlinkTest() throws IOException, InterruptedException {
     try (final LocalRuntime runtime = new LocalRuntime.Builder().maxElementsInGraph(100)
-            .parallelism(4)
+            .parallelism(2)
             .withBlink()
-            .blinkPeriodSec(3)
-            .millisBetweenCommits(500)
+            .blinkPeriodSec(7)
+            .millisBetweenCommits(2000)
             .build()) {
       test(runtime, runtime.system());
     }
