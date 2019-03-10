@@ -18,9 +18,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.entries.CountWordEntries;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.entries.IDFAggregator;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.Classifier;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.DocContainerOrderingFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.IDFObjectCompleteFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.TfIdfFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.WordContainerOrderingFilter;
@@ -79,10 +77,6 @@ public class TextClassifierGraph implements Supplier<Graph> {
     final Source source = new Source();
     final Grouping<WordContainer> groupingWord =
             new Grouping<>(wordHash, equalzWord, 2, WordContainer.class);
-
-    final Grouping<DocContainer> groupingDoc =
-            new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
-
     final Grouping<DocContainer> gropingTfIdf =
             new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
 
@@ -109,7 +103,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
         TfObject tfObject = TfObject.ofText(text);
         return Stream.of(tfObject);
       }
-    }, TextDocument.class);
+    }, TextDocument.class, docHash);
 
     final FlameMap<List<WordContainer>, List<WordContainer>> filterWord = new FlameMap<>(
             new WordContainerOrderingFilter(),
@@ -118,16 +112,6 @@ public class TextClassifierGraph implements Supplier<Graph> {
 
     final FlameMap<List<WordContainer>, WordCounter> counterWord = new FlameMap<>(
             new CountWordEntries(),
-            List.class
-    );
-
-    final FlameMap<List<DocContainer>, DocContainer> idfAggregator = new FlameMap<>(
-            new IDFAggregator(),
-            List.class
-    );
-
-    final FlameMap<List<DocContainer>, List<DocContainer>> filterDoc = new FlameMap<>(
-            new DocContainerOrderingFilter(),
             List.class
     );
 
@@ -149,9 +133,18 @@ public class TextClassifierGraph implements Supplier<Graph> {
             }
     );
 
-    final FlameMap<IdfObject, IdfObject> idfObjectCompleteFilter = new FlameMap<>(
-            new IDFObjectCompleteFilter(),
-            IdfObject.class
+    final IDFObjectCompleteFilter completeFilter = new IDFObjectCompleteFilter();
+    //noinspection Convert2Lambda,Anonymous2MethodRef
+    final FlameMap<WordCounter, IdfObject> idfObjectCompleteFilter = new FlameMap<>(
+            completeFilter,
+            WordCounter.class,
+            docHash,
+            new Runnable() {
+              @Override
+              public void run() {
+                completeFilter.init();
+              }
+            }
     );
 
     final Sink sink = new Sink();
@@ -165,24 +158,15 @@ public class TextClassifierGraph implements Supplier<Graph> {
             .link(filterWord, counterWord)
             .link(counterWord, groupingWord)
 
-            .link(counterWord, groupingDoc)
-            .link(groupingDoc, filterDoc)
-            .link(filterDoc, idfAggregator)
-            .link(idfAggregator, groupingDoc)
-
-            .link(idfAggregator, idfObjectCompleteFilter)
-
+            .link(counterWord, idfObjectCompleteFilter)
             .link(idfObjectCompleteFilter, gropingTfIdf)
             .link(gropingTfIdf, filterTfIdf)
             .link(filterTfIdf, filterClassifier)
             .link(filterClassifier, sink)
 
-            .colocate(source, splitterTf, splitterWord)
+            .colocate(splitterTf, splitterWord)
             .colocate(groupingWord, filterWord, counterWord)
             .colocate(
-                    groupingDoc,
-                    filterDoc,
-                    idfAggregator,
                     idfObjectCompleteFilter,
                     gropingTfIdf,
                     filterTfIdf,

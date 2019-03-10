@@ -3,6 +3,8 @@ package com.spbsu.flamestream.example.bl.text_classifier.model;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
 
+import java.util.Objects;
+
 public class WordCounter implements WordContainer, DocContainer {
   private final WordEntry wordEntry;
   private final int count;
@@ -26,7 +28,7 @@ public class WordCounter implements WordContainer, DocContainer {
   public String partitioning() {
     return wordEntry.partitioning();
   }
-  
+
   public int idfCardinality() {
     return wordEntry.idfCardinality();
   }
@@ -38,5 +40,22 @@ public class WordCounter implements WordContainer, DocContainer {
   @Override
   public String toString() {
     return String.format("<WC> %s: %d", wordEntry, count);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final WordCounter that = (WordCounter) o;
+    return Objects.equals(wordEntry.word(), that.wordEntry.word());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(wordEntry.word());
   }
 }
