@@ -54,4 +54,9 @@ public class JobaTimes {
     }
     return new JobaTimes(max);
   }
+
+  @Override
+  public String toString() {
+    return "JobaTimes{all = " + all + "}";
+  }
 }
