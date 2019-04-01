@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.runtime.master.acker;
 
-import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import org.jetbrains.annotations.Nullable;
@@ -13,23 +12,23 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
-public class MinTimeUpdater {
+public class MinTimeUpdater<Shard> {
   private class ShardState {
     GlobalTime minTime = lastMinTime.minTime();
     JobaTimes operationsTime = new JobaTimes();
     TreeMap<GlobalTime, JobaTimes> minTimeUpdates = new TreeMap<>();
   }
 
-  private Map<ActorRef, ShardState> shardStates;
+  private Map<Shard, ShardState> shardStates;
 
   private MinTimeUpdate lastMinTime = new MinTimeUpdate(GlobalTime.MIN, new JobaTimes());
 
-  public MinTimeUpdater(List<ActorRef> shards) {
+  public MinTimeUpdater(List<Shard> shards) {
     this.shardStates = shards.stream().collect(Collectors.toMap(Function.identity(), __ -> new ShardState()));
   }
 
   @Nullable
-  public MinTimeUpdate onShardMinTimeUpdate(ActorRef shard, MinTimeUpdate shardMinTimeUpdate) {
+  public MinTimeUpdate onShardMinTimeUpdate(Shard shard, MinTimeUpdate shardMinTimeUpdate) {
     ShardState shardState = shardStates.get(shard);
     shardState.operationsTime = shardMinTimeUpdate.getJobaTimes();
     if (shardState.minTimeUpdates.containsKey(shardMinTimeUpdate.minTime())) {
