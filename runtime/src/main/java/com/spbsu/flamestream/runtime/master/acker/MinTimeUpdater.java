@@ -31,9 +31,6 @@ public class MinTimeUpdater<Shard> {
   public MinTimeUpdate onShardMinTimeUpdate(Shard shard, MinTimeUpdate shardMinTimeUpdate) {
     ShardState shardState = shardStates.get(shard);
     shardState.operationsTime = shardMinTimeUpdate.getJobaTimes();
-    if (shardState.minTimeUpdates.containsKey(shardMinTimeUpdate.minTime())) {
-      throw new RuntimeException("should not be there");
-    }
     shardState.minTimeUpdates.put(shardMinTimeUpdate.minTime(), shardMinTimeUpdate.getJobaTimes());
     final MinTimeUpdate minAmongTables = minAmongTables();
     if (minAmongTables.minTime().compareTo(lastMinTime.minTime()) > 0) {
