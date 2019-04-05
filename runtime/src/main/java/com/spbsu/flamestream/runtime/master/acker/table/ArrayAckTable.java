@@ -16,10 +16,17 @@ public final class ArrayAckTable implements AckTable {
 
   @Override
   public boolean ack(long timestamp, long xor) {
-    final int headOffset = Math.floorDiv(Math.toIntExact(timestamp - headValue), window);
-    if (headOffset < 0) {
-      throw new IllegalArgumentException("Acking back in time");
-    } else if (headOffset > xors.length) {
+    int headOffset = Math.floorDiv(Math.toIntExact(timestamp - headValue), window);
+    while (headOffset < 0) {
+      final int newHeadPosition = (headPosition - 1 + xors.length) % xors.length;
+      if (xors[newHeadPosition] != 0) {
+        throw new IllegalArgumentException("Ring buffer overflow");
+      }
+      headPosition = newHeadPosition;
+      headValue -= window;
+      headOffset++;
+    }
+    if (headOffset > xors.length) {
       throw new IllegalArgumentException("Ring buffer overflow");
     } else {
       xors[(headPosition + headOffset) % xors.length] ^= xor;
