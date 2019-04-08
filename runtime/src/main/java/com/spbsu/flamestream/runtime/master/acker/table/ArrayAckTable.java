@@ -6,17 +6,21 @@ public final class ArrayAckTable implements AckTable {
 
   private int headPosition;
   private long headValue;
+  private final boolean assertAckingBackInTime;
 
-  public ArrayAckTable(long headValue, int capacity, int window) {
+  public ArrayAckTable(long headValue, int capacity, int window, boolean assertAckingBackInTime) {
     this.window = window;
     this.xors = new long[capacity];
     this.headValue = headValue;
     this.headPosition = 0;
+    this.assertAckingBackInTime = assertAckingBackInTime;
   }
 
   @Override
   public boolean ack(long timestamp, long xor) {
     int headOffset = Math.floorDiv(Math.toIntExact(timestamp - headValue), window);
+    if (headOffset < 0 && assertAckingBackInTime)
+      throw new RuntimeException("acking back in time");
     while (headOffset < 0) {
       final int newHeadPosition = (headPosition - 1 + xors.length) % xors.length;
       if (xors[newHeadPosition] != 0) {
