@@ -87,10 +87,10 @@ class Cluster extends LoggingActor {
               if (distributedAcker) {
                 ackers = paths.keySet()
                         .stream()
-                        .map(id -> context.actorOf(Acker.props(0), "acker-" + id))
+                        .map(id -> context.actorOf(Acker.props(0, false), "acker-" + id))
                         .collect(Collectors.toList());
               } else {
-                ackers = Collections.singletonList(context.actorOf(Acker.props(0), "acker"));
+                ackers = Collections.singletonList(context.actorOf(Acker.props(0, true), "acker"));
               }
               final ActorRef localAcker = context.actorOf(LocalAcker.props(ackers), "localAcker");
               final ActorRef registryHolder = context.actorOf(
