@@ -37,6 +37,18 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   private Mx weights;
   private String[] topics;
 
+  public Mx getWeights() {
+    return weights;
+  }
+
+  public String[] getTopics() {
+    return topics;
+  }
+
+  public void updateWeights(Mx weights) {
+    this.weights = weights;
+  }
+
   public SklearnSgdPredictor(String cntVectorizerPath, String weightsPath) {
     this.weightsPath = weightsPath;
     this.cntVectorizerPath = cntVectorizerPath;

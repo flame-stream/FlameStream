@@ -5,12 +5,14 @@ import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocCont
 public class TextDocument implements DocContainer {
   private final String name;
   private final String content;
+  private final String topic;
   private final String partitioning;
   private final int number;
 
-  public TextDocument(String name, String content, String partitioning, int number) {
+  public TextDocument(String name, String content, String topic, String partitioning, int number) {
     this.name = name;
     this.content = content;
+    this.topic = topic;
     this.partitioning = partitioning;
     this.number = number;
   }
@@ -21,6 +23,10 @@ public class TextDocument implements DocContainer {
 
   public String content() {
     return content;
+  }
+
+  public String topic() {
+    return topic;
   }
 
   @Override
