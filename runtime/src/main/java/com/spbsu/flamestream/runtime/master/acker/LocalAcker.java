@@ -152,14 +152,14 @@ public class LocalAcker extends LoggingActor {
 
   private final List<ActorRef> ackers;
   private final List<ActorRef> listeners = new ArrayList<>();
-  private final MinTimeUpdater minTimeUpdater;
+  private final MinTimeUpdater<ActorRef> minTimeUpdater;
   private final ActorRef pingActor;
 
   private int flushCounter = 0;
 
   public LocalAcker(List<ActorRef> ackers) {
     this.ackers = ackers;
-    minTimeUpdater = new MinTimeUpdater(ackers);
+    minTimeUpdater = new MinTimeUpdater<>(ackers);
     pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH));
   }
 

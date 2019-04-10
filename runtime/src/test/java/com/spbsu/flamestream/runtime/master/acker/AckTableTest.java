@@ -22,28 +22,28 @@ public class AckTableTest extends FlameStreamSuite {
 
   @Test
   public void emptyTableTest() {
-    final AckTable table = new ArrayAckTable(0, 10, 10);
+    final AckTable table = new ArrayAckTable(0, 10, 10, true);
     Assert.assertEquals(table.tryPromote(0), 0);
   }
 
   @Test
   public void singleHeartbeatTest() {
     final long heartbeat = (long) 1e7;
-    final AckTable table = new ArrayAckTable(0, 10, 10);
+    final AckTable table = new ArrayAckTable(0, 10, 10, true);
     Assert.assertEquals(table.tryPromote(heartbeat), heartbeat);
   }
 
   @Test
   public void singleAckTest() {
     final long ack = 70;
-    final AckTable table = new ArrayAckTable(0, 14, 10);
+    final AckTable table = new ArrayAckTable(0, 14, 10, true);
     table.ack(ack, 1);
     Assert.assertEquals(table.tryPromote(Long.MAX_VALUE), ack);
   }
 
   @Test(expectedExceptions = IllegalArgumentException.class)
   public void overflowTest() {
-    final AckTable table = new ArrayAckTable(0, 10, 10);
+    final AckTable table = new ArrayAckTable(0, 10, 10, true);
     table.ack((long) 1e9, 1);
   }
 
@@ -55,7 +55,7 @@ public class AckTableTest extends FlameStreamSuite {
     final int window = 10;
     final long width = capacity * window;
 
-    final AckTable table = new ArrayAckTable(head, capacity, window);
+    final AckTable table = new ArrayAckTable(head, capacity, window, true);
     for (long epoch = 0; epoch < 10000; ++epoch) {
       final long epochFloor = head + epoch * width / 2;
       final long epochCeil = epochFloor + width / 2;
