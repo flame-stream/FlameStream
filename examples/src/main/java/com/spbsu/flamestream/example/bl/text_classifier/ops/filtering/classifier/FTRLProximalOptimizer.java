@@ -13,6 +13,7 @@ import org.apache.commons.lang.math.IntRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -46,8 +47,8 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
       return this;
     }
 
-    public FTRLProximalOptimizer build(String[] topics) {
-      return new FTRLProximalOptimizer(alpha, beta, lambda1, lambda2, topics);
+    public FTRLProximalOptimizer build() {
+      return new FTRLProximalOptimizer(alpha, beta, lambda1, lambda2);
     }
   }
 
@@ -61,14 +62,12 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
   private final double beta;
   private final double lambda1;
   private final double lambda2;
-  private final List<String> topicList;
 
-  private FTRLProximalOptimizer(double alpha, double beta, double lambda1, double lambda2, String[] topicList) {
+  private FTRLProximalOptimizer(double alpha, double beta, double lambda1, double lambda2) {
     this.alpha = alpha;
     this.beta = beta;
     this.lambda1 = lambda1;
     this.lambda2 = lambda2;
-    this.topicList = Arrays.asList(topicList);
   }
 
   @Override
@@ -77,7 +76,8 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
     SparseVec norm = new SparseVec(prevWeights.dim());
     Vec x;
     SparseVec w = new SparseVec(prevWeights.dim());
-    for (int j = 0; j < 30; j++) {
+    for (int j = 0; j < 1; j++) {
+      double score = 0;
       for (int t = 0; t < trainingSet.rows(); t++) {
         x = trainingSet.row(t);
         VecIterator iterator = x.nonZeroes();
@@ -90,6 +90,9 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
           }
         }
         double p = MathTools.sigmoid(VecTools.multiply(x, w));
+        score += isCorrect[t] == 1 ? p : 1 - p;
+        /*if (t % 100 == 0)
+          LOGGER.info("Iteration: {} {}", j, t);*/
         iterator = x.nonZeroes();
         while (iterator.advance()) {
           double g = (p - isCorrect[t]) * iterator.value();
@@ -98,18 +101,21 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
           norm.set(iterator.index(), norm.get(iterator.index()) + g * g);
         }
       }
+      score /= trainingSet.rows();
+      LOGGER.info("Iteration {}, average score {}", j, score);
     }
     return w;
   }
 
   @Override
-  public Mx optimizeWeights(Mx trainingSet, String[] correctTopics, Mx prevWeights) {
+  public Mx optimizeWeights(Mx trainingSet, String[] correctTopics, Mx prevWeights, String[] topics) {
+    List<String> topicList = Arrays.asList(topics);
     LOGGER.info("Topic list: {}", topicList);
     final int[] indices = Stream.of(correctTopics).mapToInt(topicList::indexOf).toArray();
     Mx weights = new SparseMx(prevWeights.rows(), prevWeights.columns());
     Mx zed = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
     Mx norm = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
-    for (int it = 0; it < 5; it++) {
+    for (int it = 0; it < 3; it++) {
       double score = 0;
       for (int i = 0; i < trainingSet.rows(); i++) {
         final int finalI = i;
