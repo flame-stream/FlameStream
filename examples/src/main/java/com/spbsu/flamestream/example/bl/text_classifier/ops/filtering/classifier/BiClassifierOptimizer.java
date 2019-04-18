@@ -19,10 +19,14 @@ public interface BiClassifierOptimizer {
   default Mx optimizeOneVsRest(Mx trainingSet, String[] correctTopics, Mx prevWeights, String[] topicList) {
     Logger LOGGER = LoggerFactory.getLogger(BiClassifierOptimizer.class.getName());
     Vec[] weights = new Vec[prevWeights.rows()];
+    int[][] corrects = new int[prevWeights.rows()][];
+    for (int i = 0; i < prevWeights.rows(); i++) {
+      final int finalI = i;
+      corrects[i] = Arrays.stream(correctTopics).mapToInt(s -> s.equals(topicList[finalI]) ? 1 : 0).toArray();
+    }
     IntStream.range(0, prevWeights.rows()).parallel().forEach(i -> {
-      int[] corrects = Arrays.stream(correctTopics).mapToInt(s -> s.equals(topicList[i]) ? 1 : 0).toArray();
       LOGGER.info("Topic number {}, {}", i, topicList[i]);
-      weights[i] = optimizeWeights(trainingSet, corrects, new SparseVec(trainingSet.columns()));
+      weights[i] = optimizeWeights(trainingSet, corrects[i], new SparseVec(trainingSet.columns()));
     });
     return new RowsVecArrayMx(weights);
   }
