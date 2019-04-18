@@ -8,6 +8,7 @@ import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.SparseMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import org.apache.commons.lang.math.IntRange;
 import org.slf4j.Logger;
@@ -72,8 +73,9 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
 
   @Override
   public Vec optimizeWeights(Mx trainingSet, int[] isCorrect, Vec prevWeights) {
-    SparseVec zed = new SparseVec(prevWeights.dim());
-    SparseVec norm = new SparseVec(prevWeights.dim());
+    LOGGER.info("Dimentionality: {}", trainingSet.columns());
+    Vec zed = new ArrayVec(trainingSet.columns());
+    Vec norm = new ArrayVec(trainingSet.columns());
     Vec x;
     SparseVec w = new SparseVec(prevWeights.dim());
     for (int j = 0; j < 1; j++) {
@@ -82,6 +84,12 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
         x = trainingSet.row(t);
         VecIterator iterator = x.nonZeroes();
         while (iterator.advance()) {
+          int index = iterator.index();
+          int dim = x.dim();
+          if (index > dim) {
+            //LOGGER.info("iterator index {} dim {}", index, dim);
+            break;
+          }
           double z = zed.get(iterator.index());
           if (Math.abs(z) > lambda1) {
             double val = -(z - Math.signum(z) * lambda1) /
@@ -91,10 +99,11 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
         }
         double p = MathTools.sigmoid(VecTools.multiply(x, w));
         score += isCorrect[t] == 1 ? p : 1 - p;
-        /*if (t % 100 == 0)
-          LOGGER.info("Iteration: {} {}", j, t);*/
         iterator = x.nonZeroes();
         while (iterator.advance()) {
+          int index = iterator.index();
+          int dim = x.dim();
+          if (index > dim) break;
           double g = (p - isCorrect[t]) * iterator.value();
           double sigma = (Math.sqrt(norm.get(iterator.index()) + g * g) - Math.sqrt(norm.get(iterator.index()))) / alpha;
           zed.set(iterator.index(), zed.get(iterator.index()) + g - sigma * w.get(iterator.index()));

@@ -515,9 +515,9 @@ public class FTRLProximalTest {
     final SparseMx trainingSet = new SparseMx(trainingSetList.toArray(new SparseVec[0]));
     int[] corrects = Arrays.stream(correctTopics).mapToInt(s -> s.equals(topic) ? 1 : 0).toArray();
 
-    double kek = System.nanoTime();
+    long kek = System.currentTimeMillis();
     Vec newWeights = optimizer.optimizeWeights(trainingSet, corrects, new SparseVec(trainingSet.columns()));
-    kek = System.nanoTime() - kek;
+    kek = System.currentTimeMillis() - kek;
     LOGGER.info("Time in nanosec: {}", kek);
 
     biClassifierAccuracy(newWeights, topic);
