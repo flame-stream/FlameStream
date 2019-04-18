@@ -89,7 +89,7 @@ public class Component extends LoggingActor {
               final Joba.Id jobaId = new Joba.Id(nodeId, vertex.id());
               final Joba joba;
               if (vertex instanceof Sink) {
-                joba = new SinkJoba(jobaId, context());
+                joba = new SinkJoba(jobaId, context(), props.barrierIsDisabled());
               } else if (vertex instanceof FlameMap) {
                 joba = new MapJoba(jobaId, (FlameMap<?, ?>) vertex);
               } else if (vertex instanceof Grouping) {
