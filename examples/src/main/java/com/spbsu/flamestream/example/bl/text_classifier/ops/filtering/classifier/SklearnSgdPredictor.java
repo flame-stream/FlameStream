@@ -37,10 +37,6 @@ public class SklearnSgdPredictor implements TopicsPredictor {
   private Mx weights;
   private String[] topics;
 
-  public Mx getWeights() {
-    return weights;
-  }
-
   public String[] getTopics() {
     return topics;
   }

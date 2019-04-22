@@ -10,11 +10,9 @@ import com.expleague.commons.math.vectors.impl.mx.SparseMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
-import org.apache.commons.lang.math.IntRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -73,58 +71,56 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
 
   @Override
   public Vec optimizeWeights(Mx trainingSet, int[] isCorrect, Vec prevWeights) {
-    LOGGER.info("Dimentionality: {}", trainingSet.columns());
-    Vec zed = new ArrayVec(trainingSet.columns());
-    Vec norm = new ArrayVec(trainingSet.columns());
-    Vec x;
-    SparseVec w = new SparseVec(prevWeights.dim());
-    for (int j = 0; j < 1; j++) {
-      double score = 0;
-      for (int t = 0; t < trainingSet.rows(); t++) {
-        x = trainingSet.row(t);
-        VecIterator iterator = x.nonZeroes();
-        while (iterator.advance()) {
-          int index = iterator.index();
-          int dim = x.dim();
-          if (index > dim) {
-            //LOGGER.info("iterator index {} dim {}", index, dim);
-            break;
-          }
-          double z = zed.get(iterator.index());
-          if (Math.abs(z) > lambda1) {
-            double val = -(z - Math.signum(z) * lambda1) /
-                    ((beta + Math.sqrt(norm.get(iterator.index()))) / alpha + lambda2);
-            w.set(iterator.index(), val);
-          }
+    //LOGGER.info("Dimentionality: {}", trainingSet.columns());
+    final Vec zed = new ArrayVec(trainingSet.columns());
+    final Vec norm = new ArrayVec(trainingSet.columns());
+    final SparseVec w = new SparseVec(prevWeights.dim());
+    double score = 0;
+    for (int t = 0; t < trainingSet.rows(); t++) {
+      final Vec x = trainingSet.row(t);
+      final VecIterator iterator = x.nonZeroes();
+      while (iterator.advance()) {
+        final int index = iterator.index();
+        final int dim = x.dim();
+        if (index >= dim) {
+          break;
         }
-        double p = MathTools.sigmoid(VecTools.multiply(x, w));
-        score += isCorrect[t] == 1 ? p : 1 - p;
-        iterator = x.nonZeroes();
-        while (iterator.advance()) {
-          int index = iterator.index();
-          int dim = x.dim();
-          if (index > dim) break;
-          double g = (p - isCorrect[t]) * iterator.value();
-          double sigma = (Math.sqrt(norm.get(iterator.index()) + g * g) - Math.sqrt(norm.get(iterator.index()))) / alpha;
-          zed.set(iterator.index(), zed.get(iterator.index()) + g - sigma * w.get(iterator.index()));
-          norm.set(iterator.index(), norm.get(iterator.index()) + g * g);
+        final double z = zed.get(index);
+        if (Math.abs(z) > lambda1) {
+          double val = -(z - Math.signum(z) * lambda1) /
+                  ((beta + Math.sqrt(norm.get(index))) / alpha + lambda2);
+          w.set(index, val);
         }
       }
-      score /= trainingSet.rows();
-      LOGGER.info("Iteration {}, average score {}", j, score);
+      final double p = MathTools.sigmoid(VecTools.multiply(x, w));
+      score += isCorrect[t] == 1 ? p : 1 - p;
+      iterator.seek(0);
+      while (iterator.advance()) {
+        final int index = iterator.index();
+        final int dim = x.dim();
+        if (index > dim) {
+          break;
+        }
+        final double g = (p - isCorrect[t]) * iterator.value();
+        final double sigma = (Math.sqrt(norm.get(index) + g * g) - Math.sqrt(norm.get(index))) / alpha;
+        zed.set(index, zed.get(index) + g - sigma * w.get(index));
+        norm.set(index, norm.get(index) + g * g);
+      }
     }
+    score /= trainingSet.rows();
+    //LOGGER.info("Average score {}", score);
     return w;
   }
 
   @Override
   public Mx optimizeWeights(Mx trainingSet, String[] correctTopics, Mx prevWeights, String[] topics) {
     List<String> topicList = Arrays.asList(topics);
-    LOGGER.info("Topic list: {}", topicList);
+    //LOGGER.info("Topic list: {}", topicList);
     final int[] indices = Stream.of(correctTopics).mapToInt(topicList::indexOf).toArray();
-    Mx weights = new SparseMx(prevWeights.rows(), prevWeights.columns());
-    Mx zed = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
-    Mx norm = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
-    for (int it = 0; it < 3; it++) {
+    final Mx weights = new SparseMx(prevWeights.rows(), prevWeights.columns());
+    final Mx zed = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
+    final Mx norm = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
+    for (int it = 0; it < 1; it++) {
       double score = 0;
       for (int i = 0; i < trainingSet.rows(); i++) {
         final int finalI = i;
@@ -148,8 +144,8 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
         VecTools.scale(p, 1 / denom);
         score += p.get(indices[i]);
         //LOGGER.info("Score: {}", score);
-        if (i % 100 == 0)
-          LOGGER.info("Iteration: {} {}", it, i);
+        /*if (i % 100 == 0)
+          LOGGER.info("Iteration: {} {}", it, i);*/
         IntStream.range(0, weights.rows()).parallel().forEach(j -> {
           VecIterator iterator = x.nonZeroes();
           while (iterator.advance()) {
@@ -162,7 +158,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
         });
       }
       score /= trainingSet.rows();
-      LOGGER.info("Iteration {}, average score {}", it, score);
+      //LOGGER.info("Iteration {}, average score {}", it, score);
     }
     Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
     for (int i = 0; i < weights.rows(); i++) {

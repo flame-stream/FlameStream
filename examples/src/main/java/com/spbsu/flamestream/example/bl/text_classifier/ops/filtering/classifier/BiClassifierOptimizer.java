@@ -25,7 +25,7 @@ public interface BiClassifierOptimizer {
       corrects[i] = Arrays.stream(correctTopics).mapToInt(s -> s.equals(topicList[finalI]) ? 1 : 0).toArray();
     }
     IntStream.range(0, prevWeights.rows()).parallel().forEach(i -> {
-      LOGGER.info("Topic number {}, {}", i, topicList[i]);
+      //LOGGER.info("Topic number {}, {}", i, topicList[i]);
       weights[i] = optimizeWeights(trainingSet, corrects[i], new SparseVec(trainingSet.columns()));
     });
     return new RowsVecArrayMx(weights);
