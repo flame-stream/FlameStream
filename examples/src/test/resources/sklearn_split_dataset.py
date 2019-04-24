@@ -1,14 +1,10 @@
 # coding=utf-8
-import numpy as np
 import pandas as pd
+import sys
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.linear_model import SGDClassifier
-from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from datatable.models import Ftrl
-import datatable as dt
-import sys
+
 
 def put(X, y, file):
     ouf = open(file, "w+")

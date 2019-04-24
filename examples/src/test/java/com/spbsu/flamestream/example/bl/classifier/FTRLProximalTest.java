@@ -27,6 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 public class FTRLProximalTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(FTRLProximalTest.class.getName());
@@ -47,7 +49,7 @@ public class FTRLProximalTest {
 
   @BeforeClass
   public void beforeClass() {
-    testSize = 3000;
+    testSize = 5000;
     trainSize = 10000;
     predictor.init();
     allTopics = Arrays.stream(predictor.getTopics()).map(String::trim).map(String::toLowerCase).toArray(String[]::new);
@@ -155,14 +157,14 @@ public class FTRLProximalTest {
 
   private double accuracy(Mx newWeights) {
     Mx probs = MxTools.multiply(new SparseMx(testSetList.toArray(new SparseVec[0])), MxTools.transpose(newWeights));
-    int truePositives = 0;
-    for (int i = 0; i < testSize; i++) {
+    AtomicInteger truePositives = new AtomicInteger(0);
+    IntStream.range(0, testSetList.size()).parallel().forEach(i -> {
       final int argmax = VecTools.argmax(probs.row(i));
       if (allTopics[argmax].equals(testTopics.get(i))) {
-        truePositives++;
+        truePositives.incrementAndGet();
       }
-    }
-    final double accuracy = truePositives / (double) testSize;
+    });
+    final double accuracy = truePositives.get() / (double) testSize;
     LOGGER.info("Accuracy {}", accuracy);
     return accuracy;
   }
@@ -265,7 +267,7 @@ public class FTRLProximalTest {
   }
 
   @Test
-  public void testFTRLProximalOneVsRestAverageDifferentSeeds() {
+  public void testCompareOneVsRestAverageAndSKLearn() {
     Random random = new Random(42);
     BiClassifierOptimizer optimizer = FTRLProximalOptimizer.builder()
             .alpha(100)
@@ -296,7 +298,55 @@ public class FTRLProximalTest {
   }
 
   @Test
-  public void testFTRLProximal() {
+  public void testCompareMultinomialAndOneVsRest() {
+    Random random = new Random(42);
+
+    double oneVsRestAcc = 0;
+    double multinomialAcc = 0;
+
+    Optimizer optimizer = FTRLProximalOptimizer.builder()
+            .alpha(250)
+            .beta(0.8)
+            .lambda1(0.04)
+            .lambda2(0.135)
+            .build();
+
+    BiClassifierOptimizer biOptimizer = FTRLProximalOptimizer.builder()
+            .alpha(100)
+            .beta(0.1)
+            .lambda1(0.03)
+            .lambda2(0.12)
+            .build();
+
+    for (int i = 0; i < 10; i++) {
+      splitDatset(random.nextInt(Integer.MAX_VALUE));
+      readTestTrain();
+
+      final SparseMx trainingSet = new SparseMx(trainingSetList.toArray(new SparseVec[0]));
+
+      long time = System.currentTimeMillis();
+      Mx newWeights = optimizer.optimizeWeights(trainingSet, correctTopics, startMx(), allTopics);
+      time = System.currentTimeMillis() - time;
+
+      LOGGER.info("Time in milliseconds: {}", time);
+
+      multinomialAcc += accuracy(newWeights);
+
+      time = System.currentTimeMillis();
+      newWeights = biOptimizer.optimizeOneVsRest(trainingSet, correctTopics, startMx(), allTopics);
+      time = System.currentTimeMillis() - time;
+
+      LOGGER.info("Time in milliseconds: {}", time);
+
+      oneVsRestAcc += accuracy(newWeights);
+    }
+
+    LOGGER.info("Average multinomial accuracy: {}", multinomialAcc / 10.0);
+    LOGGER.info("Average one vs rest accuracy: {}", oneVsRestAcc / 10.0);
+  }
+
+  @Test
+  public void testCompareMultinomialAndSKLearn() {
     Random random = new Random(42);
 
     double ourAcc = 0;
@@ -308,22 +358,44 @@ public class FTRLProximalTest {
 
       LOGGER.info("Updating weights");
       Optimizer optimizer = FTRLProximalOptimizer.builder()
-              .alpha(100)
-              .beta(0.1)
-              .lambda1(0.07)
-              .lambda2(0.12)
+              .alpha(250)
+              .beta(0.8)
+              .lambda1(0.04)
+              .lambda2(0.135)
               .build();
 
       final SparseMx trainingSet = new SparseMx(trainingSetList.toArray(new SparseVec[0]));
-      double kek = System.nanoTime();
+      long time = System.currentTimeMillis();
       Mx newWeights = optimizer.optimizeWeights(trainingSet, correctTopics, startMx(), allTopics);
-      kek = System.nanoTime() - kek;
-      LOGGER.info("Time in nanosec: {}", kek);
+      time = System.currentTimeMillis() - time;
+      LOGGER.info("Time in milliseconds: {}", time);
 
       ourAcc += accuracy(newWeights);
       skAcc += accuracySKLearn();
     }
     LOGGER.info("Average accuracy {}", ourAcc / 10);
     LOGGER.info("Average SKLearn accuracy {}", skAcc / 10);
+  }
+
+  @Test
+  public void testFTRLProximalMultinomial() {
+    splitDatset(42);
+    readTestTrain();
+
+    LOGGER.info("Updating weights");
+    Optimizer optimizer = FTRLProximalOptimizer.builder()
+            .alpha(250)
+            .beta(0.8)
+            .lambda1(0.04)
+            .lambda2(0.135)
+            .build();
+
+    final SparseMx trainingSet = new SparseMx(trainingSetList.toArray(new SparseVec[0]));
+    long time = System.currentTimeMillis();
+    Mx newWeights = optimizer.optimizeWeights(trainingSet, correctTopics, startMx(), allTopics);
+    time = System.currentTimeMillis() - time;
+    LOGGER.info("Time in millisec: {}", time);
+
+    accuracy(newWeights);
   }
 }

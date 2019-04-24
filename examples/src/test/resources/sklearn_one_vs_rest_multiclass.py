@@ -1,13 +1,7 @@
 import numpy as np
-import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.linear_model import SGDClassifier
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from datatable.models import Ftrl
 from scipy.sparse import csc_matrix
-import datatable as dt
+
 
 def parseDoubles(ls):
     ans = []
@@ -40,7 +34,11 @@ def main():
     X_train, y_train = readFrom('tmp_train')
     X_test, y_test = readFrom('tmp_test')
 
-    classifier = SGDClassifier(loss='log', class_weight='balanced', n_jobs=-1, tol=1e-6, max_iter=2000, random_state=42)
+    #classifier = SGDClassifier(loss='log', class_weight='balanced', n_jobs=-1, tol=1e-6, max_iter=2000, random_state=42)
+    classifier = SGDClassifier(
+        loss="log", class_weight='balanced', tol=1e-6, max_iter=2000,
+        penalty='l1', alpha=0.0000009, n_jobs=-1
+    )
     classifier.fit(X_train, y_train)
     predicted = classifier.predict(X_test)
     print(np.mean(predicted == y_test))
