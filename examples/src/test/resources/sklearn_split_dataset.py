@@ -19,6 +19,9 @@ def put(X, y, file):
     ouf.close()
 
 def main(argv):
+    if len(argv) < 4:
+        print("Usage {} trainSize testSize seed".format(argv[0]))
+        exit(0)
     trainSize = int(argv[1])
     testSize = int(argv[2])
     seed = int(argv[3])
@@ -33,13 +36,20 @@ def main(argv):
 
     processing = Pipeline([
         ('vect', CountVectorizer()),
-        ('tfidf', TfidfTransformer())])
+        ('tfidf', TfidfTransformer(sublinear_tf=True))])
     X = processing.fit_transform(X)
     X = list(X)
     y = list(y)
+    X = list(zip(range(len(X)), X))
+    y = list(zip(range(len(y)), y))
 
     (X_train, X_test, y_train, y_test) = train_test_split(X, y, test_size=testSize, random_state=seed)
 
+    X_train = [t[1] for t in sorted(X_train, key = lambda t: t[0])]
+    y_train = [t[1] for t in sorted(y_train, key = lambda t: t[0])]
+
+    X_test = [t[1] for t in sorted(X_test, key = lambda t: t[0])]
+    y_test = [t[1] for t in sorted(y_test, key = lambda t: t[0])]
 
     put(X_train, y_train, "tmp_train")
     put(X_test, y_test, "tmp_test")

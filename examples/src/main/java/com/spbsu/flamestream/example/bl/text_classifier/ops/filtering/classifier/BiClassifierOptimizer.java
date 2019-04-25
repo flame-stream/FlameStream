@@ -14,19 +14,17 @@ import java.util.stream.IntStream;
 
 public interface BiClassifierOptimizer {
 
-  Vec optimizeWeights(Mx trainingSet, int[] isCorrect, Vec prevWeights);
+  Vec optimizeWeights(List<DataPoint> trainingSet, int[] isCorrect, Vec prevWeights);
 
-  default Mx optimizeOneVsRest(Mx trainingSet, String[] correctTopics, Mx prevWeights, String[] topicList) {
-    Logger LOGGER = LoggerFactory.getLogger(BiClassifierOptimizer.class.getName());
+  default Mx optimizeOneVsRest(List<DataPoint> trainingSet, Mx prevWeights, String[] topicList) {
     Vec[] weights = new Vec[prevWeights.rows()];
     int[][] corrects = new int[prevWeights.rows()][];
     for (int i = 0; i < prevWeights.rows(); i++) {
       final int finalI = i;
-      corrects[i] = Arrays.stream(correctTopics).mapToInt(s -> s.equals(topicList[finalI]) ? 1 : 0).toArray();
+      corrects[i] = trainingSet.stream().mapToInt(s -> s.getLabel().equals(topicList[finalI]) ? 1 : 0).toArray();
     }
     IntStream.range(0, prevWeights.rows()).parallel().forEach(i -> {
-      //LOGGER.info("Topic number {}, {}", i, topicList[i]);
-      weights[i] = optimizeWeights(trainingSet, corrects[i], new SparseVec(trainingSet.columns()));
+      weights[i] = optimizeWeights(trainingSet, corrects[i], new SparseVec(trainingSet.get(0).getFeatures().dim()));
     });
     return new RowsVecArrayMx(weights);
   }
