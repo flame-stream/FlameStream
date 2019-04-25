@@ -36,8 +36,8 @@ def main():
 
     #classifier = SGDClassifier(loss='log', class_weight='balanced', n_jobs=-1, tol=1e-6, max_iter=2000, random_state=42)
     classifier = SGDClassifier(
-        loss="log", class_weight='balanced', tol=1e-6, max_iter=2000,
-        penalty='l1', alpha=0.0000009, n_jobs=-1
+        loss="log", class_weight='balanced', tol=1e-6,
+        penalty='l1', alpha=0.00000495, n_jobs=-1, random_state=42, max_iter=5000
     )
     classifier.fit(X_train, y_train)
     predicted = classifier.predict(X_test)
