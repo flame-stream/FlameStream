@@ -76,7 +76,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
     final Vec zed = new ArrayVec(dim);
     final Vec norm = new ArrayVec(dim);
     final SparseVec w = new SparseVec(prevWeights.dim());
-    double score = 0;
+    //double score = 0;
     for (int t = 0; t < trainingSet.size(); t++) {
       final Vec x = trainingSet.get(t).getFeatures();
       final VecIterator iterator = x.nonZeroes();
@@ -90,7 +90,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
         }
       }
       final double p = MathTools.sigmoid(VecTools.multiply(x, w));
-      score += isCorrect[t] == 1 ? p : 1 - p;
+      //score += isCorrect[t] == 1 ? p : 1 - p;
       iterator.seek(0);
       while (iterator.advance()) {
         final int index = iterator.index();
@@ -100,7 +100,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
         norm.set(index, norm.get(index) + g * g);
       }
     }
-    score /= trainingSet.size();
+    //score /= trainingSet.size();
     //LOGGER.info("Average score {}", score);
     return w;
   }
@@ -114,7 +114,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
     final Mx zed = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
     final Mx norm = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
     for (int it = 0; it < 1; it++) {
-      double score = 0;
+      //double score = 0;
       for (int i = 0; i < trainingSet.size(); i++) {
         final int finalI = i;
         Vec x = trainingSet.get(i).getFeatures();
@@ -135,7 +135,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
         VecTools.exp(p);
         double denom = VecTools.sum(p);
         VecTools.scale(p, 1 / denom);
-        score += p.get(indices[i]);
+        //score += p.get(indices[i]);
         //LOGGER.info("Score: {}", score);
         /*if (i % 100 == 0)
           LOGGER.info("Iteration: {} {}", it, i);*/
@@ -150,7 +150,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
           }
         });
       }
-      score /= trainingSet.size();
+      //score /= trainingSet.size();
       //LOGGER.info("Iteration {}, average score {}", it, score);
     }
     Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
