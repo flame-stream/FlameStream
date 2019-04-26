@@ -46,12 +46,34 @@ public class FTRLProximalTest {
   private final List<DataPoint> testSetList = new ArrayList<>();
   private String[] allTopics;
 
-  private final Optimizer optimizer = FTRLProximalOptimizer.builder()
+  private final Optimizer nonStreamingOptimizer = FTRLProximalOptimizer.builder()
           .alpha(250)
           .beta(0.82)
           .lambda1(0.03)
           .lambda2(0.134)
           .build();
+
+  private final BiClassifierOptimizer nonStreamingBiOptimizer = FTRLProximalOptimizer.builder()
+          .alpha(100)
+          .beta(0.23)
+          .lambda1(0.0301)
+          .lambda2(0.105)
+          .build();
+
+  private final Optimizer optimizer = FTRLProximalOptimizer.builder()
+          .alpha(300)
+          .beta(0.81)
+          .lambda1(0.04)
+          .lambda2(0.27)
+          .build();
+
+  /*
+          .alpha(300)
+          .beta(0.81)
+          .lambda1(0.04)
+          .lambda2(0.27)
+          .build();
+   */
 
   private final BiClassifierOptimizer biOptimizer = FTRLProximalOptimizer.builder()
           .alpha(100)
@@ -324,7 +346,11 @@ public class FTRLProximalTest {
 
   @Test
   public void testFTRLProximalMultinomial() {
+
+    long splitTime = System.currentTimeMillis();
     splitDatset(42);
+    splitTime = System.currentTimeMillis() - splitTime;
+    LOGGER.info("Split time: {}",  splitTime);
     readTestTrain();
 
     LOGGER.info("Updating weights");
@@ -332,7 +358,7 @@ public class FTRLProximalTest {
     long time = System.currentTimeMillis();
     Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
     time = System.currentTimeMillis() - time;
-    LOGGER.info("Time in millisec: {}", time);
+    LOGGER.info("Execution time {}", time);
 
     accuracy(newWeights);
   }
