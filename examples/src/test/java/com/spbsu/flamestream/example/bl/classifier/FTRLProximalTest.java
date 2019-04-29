@@ -13,6 +13,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.FTRLProximalOptimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Optimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
+import org.apache.commons.lang.math.IntRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class FTRLProximalTest {
@@ -61,11 +63,11 @@ public class FTRLProximalTest {
           .build();
 
   private final Optimizer optimizer = FTRLProximalOptimizer.builder()
-          .alpha(300)
-          .beta(0.81)
-          .lambda1(0.04)
-          .lambda2(0.27)
-          .build();
+          .alpha(300) // 300
+          .beta(0.1) // 0.1
+          .lambda1(0.013) // 0.013
+          .lambda2(0.18) // 0.18
+          .build(); // 0.6852
 
   /*
           .alpha(300)
@@ -124,7 +126,11 @@ public class FTRLProximalTest {
   }
 
   private void splitDatset(int seed) {
-    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d", trainSize, testSize, seed);
+    splitDatset(seed, 3, "0.09");
+  }
+
+  private void splitDatset(int seed, int windowSize, String lam) {
+    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %s", trainSize, testSize, seed, windowSize, lam);
     LOGGER.info(callPython(pythonCommand));
   }
 
@@ -361,5 +367,32 @@ public class FTRLProximalTest {
     LOGGER.info("Execution time {}", time);
 
     accuracy(newWeights);
+    //accuracySKLearn();
+  }
+
+  @Test
+  public void testSelectWindowSizeAndLambda() {
+    List<Integer> windowSizes = IntStream.range(1, 51).filter(x -> x % 2 == 0).boxed().collect(Collectors.toList());
+    //List<String> lams = Arrays.asList("0.5", "0.7", "0.9", "0.93", "0.99", "0.999", "0.9993", "0.9999", "0.99997", "0.999997");
+    List<String> lams = Arrays.asList("0.5", "0.999997");
+    double bestAcc = 0;
+    int bestSz = 0;
+    String bestLam = "";
+    for (Integer sz: windowSizes) {
+      for (String lam: lams) {
+        LOGGER.info("Started split");
+        splitDatset(42, sz, lam);
+        readTestTrain();
+        LOGGER.info("Test train read");
+        Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
+        double acc = accuracy(newWeights);
+        if (acc > bestAcc) {
+          bestSz = sz;
+          bestLam = lam;
+          bestAcc = acc;
+        }
+        LOGGER.info("Best size: {}, best damping factor: {}, best accuracy: {}", bestSz, bestLam, bestAcc);
+      }
+    }
   }
 }
