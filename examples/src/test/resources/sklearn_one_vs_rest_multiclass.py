@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 from scipy.sparse import csc_matrix
+import sys
 
 
 def parseDoubles(ls):
@@ -30,18 +31,22 @@ def readFrom(file):
     return (X, y)
 
 
-def main():
+def main(argv):
+    if len(argv) < 2:
+        print("Usage {} alpha".format(argv[0]))
+        exit(0)
+    alpha = float(argv[1])
     X_train, y_train = readFrom('tmp_train')
     X_test, y_test = readFrom('tmp_test')
 
     #classifier = SGDClassifier(loss='log', class_weight='balanced', n_jobs=-1, tol=1e-6, max_iter=2000, random_state=42)
     classifier = SGDClassifier(
         loss="log", class_weight='balanced', tol=1e-6,
-        penalty='l1', alpha=0.00000495, n_jobs=-1, random_state=42, max_iter=5000
+        penalty='l1', alpha=alpha, n_jobs=-1, random_state=42, max_iter=5000
     )
     classifier.fit(X_train, y_train)
     predicted = classifier.predict(X_test)
     print(np.mean(predicted == y_test))
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)
