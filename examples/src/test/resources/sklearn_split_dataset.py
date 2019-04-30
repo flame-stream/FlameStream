@@ -52,14 +52,15 @@ def calcWindowIdf(X, windowSizeDays, lam):
     return ans
 
 def main(argv):
-    if len(argv) < 6:
-        print("Usage {} trainSize testSize seed windowSizeDays dampingFactor".format(argv[0]))
+    if len(argv) < 7:
+        print("Usage {} trainSize testSize seed windowSizeDays dampingFactor splitStrategy".format(argv[0]))
         exit(0)
     trainSize = int(argv[1])
     testSize = int(argv[2])
     seed = int(argv[3])
     windowSize = int(argv[4])
     lam = float(argv[5])
+    splitStrategy = argv[6]
 
     df = pd.read_csv('news_lenta.csv', nrows=(trainSize + testSize)*2)
     df = df.dropna()
@@ -70,29 +71,37 @@ def main(argv):
     X = df['text']
     y = df['tags']
 
-    # processing = Pipeline([
-    #     ('vect', CountVectorizer()),
-    #     ('tfidf', TfidfTransformer(sublinear_tf=True))])
-    vectorizer = CountVectorizer()
-    X = vectorizer.fit_transform(X)
+    if (splitStrategy == 'random_complete' or splitStrategy == 'ordered_complete'):
+        processing = Pipeline([
+            ('vect', CountVectorizer()),
+            ('tfidf', TfidfTransformer(sublinear_tf=True))])
 
-    print("Step inside calcWindowIdf")
-    tm = time.monotonic()
-    X = calcWindowIdf(X, windowSize, lam)
-    print("Execution time is: ", time.monotonic() - tm)
+        X = processing.fit_transform(X)
+
+    elif (splitStrategy == 'window'):
+        vectorizer = CountVectorizer()
+        X = vectorizer.fit_transform(X)
+
+        print("Step inside calcWindowIdf")
+        tm = time.monotonic()
+        X = calcWindowIdf(X, windowSize, lam)
+        print("Execution time is: ", time.monotonic() - tm)
 
     X = list(X)
     y = list(y)
-    X = list(zip(range(len(X)), X))
-    y = list(zip(range(len(y)), y))
+
+    if (splitStrategy == 'ordered_complete' or splitStrategy == 'window'):
+        X = list(zip(range(len(X)), X))
+        y = list(zip(range(len(y)), y))
 
     (X_train, X_test, y_train, y_test) = train_test_split(X, y, test_size=testSize, random_state=seed)
 
-    X_train = [t[1] for t in sorted(X_train, key = lambda t: t[0])]
-    y_train = [t[1] for t in sorted(y_train, key = lambda t: t[0])]
+    if (splitStrategy == 'ordered_complete' or splitStrategy == 'window'):
+        X_train = [t[1] for t in sorted(X_train, key = lambda t: t[0])]
+        y_train = [t[1] for t in sorted(y_train, key = lambda t: t[0])]
 
-    X_test = [t[1] for t in sorted(X_test, key = lambda t: t[0])]
-    y_test = [t[1] for t in sorted(y_test, key = lambda t: t[0])]
+        X_test = [t[1] for t in sorted(X_test, key = lambda t: t[0])]
+        y_test = [t[1] for t in sorted(y_test, key = lambda t: t[0])]
 
     put(X_train, y_train, "tmp_train")
     put(X_test, y_test, "tmp_test")

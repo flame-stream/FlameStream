@@ -13,7 +13,6 @@ import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.FTRLProximalOptimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Optimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
-import org.apache.commons.lang.math.IntRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;
@@ -78,11 +77,11 @@ public class FTRLProximalTest {
    */
 
   private final BiClassifierOptimizer biOptimizer = FTRLProximalOptimizer.builder()
-          .alpha(100)
-          .beta(0.23)
-          .lambda1(0.0301)
-          .lambda2(0.105)
-          .build();
+          .alpha(80.1) // 80.1
+          .beta(0.4) // 0.4
+          .lambda1(0.013) // 0.013
+          .lambda2(0.17) // 0.17
+          .build(); // 0.6806
 
   @BeforeClass
   public void beforeClass() {
@@ -125,12 +124,22 @@ public class FTRLProximalTest {
     }
   }
 
-  private void splitDatset(int seed) {
-    splitDatset(seed, 3, "0.09");
+  private void splitDatsetWindow(int seed) {
+    splitDatsetWindow(seed, 3, "0.09");
   }
 
-  private void splitDatset(int seed, int windowSize, String lam) {
-    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %s", trainSize, testSize, seed, windowSize, lam);
+  private void splitDatsetWindow(int seed, int windowSize, String lam) {
+    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %s %s", trainSize, testSize, seed, windowSize, lam, "window");
+    LOGGER.info(callPython(pythonCommand));
+  }
+
+  private void splitDatsetRandomComplete(int seed) {
+    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %s %s", trainSize, testSize, seed, 3, "0.09", "random_complete");
+    LOGGER.info(callPython(pythonCommand));
+  }
+
+  private void splitDatsetOrderedComplete(int seed) {
+    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %s %s", trainSize, testSize, seed, 3, "0.09", "ordered_complete");
     LOGGER.info(callPython(pythonCommand));
   }
 
@@ -194,12 +203,16 @@ public class FTRLProximalTest {
     LOGGER.info("Accuracy {}", accuracy);
     return accuracy;
   }
-  
-  private double accuracySKLearn() {
-    final String pythonCommand = "sklearn_one_vs_rest_multiclass.py";
+
+  private double accuracySKLearn(String alpha) {
+    final String pythonCommand = "sklearn_one_vs_rest_multiclass.py " + alpha;
     final double accuracy = Double.parseDouble(callPython(pythonCommand));
     LOGGER.info("SKLearn accuracy: {}", accuracy);
     return accuracy;
+  }
+
+  private double accuracySKLearn() {
+    return accuracySKLearn("0.0000009");
   }
 
   private void biClassifierAccuracy(Vec localWeights, String topic) {
@@ -228,7 +241,7 @@ public class FTRLProximalTest {
 
   @Test
   public void testFTRLProximalBinomial() {
-    splitDatset(42);
+    splitDatsetWindow(42);
     readTestTrain();
 
     LOGGER.info("Updating weights");
@@ -248,17 +261,17 @@ public class FTRLProximalTest {
 
   @Test
   public void testSKLearnParams() {
-    splitDatset(42);
+    splitDatsetRandomComplete(42);
     readTestTrain();
 
     LOGGER.info("Updating weights");
 
-    accuracySKLearn();
+    accuracySKLearn("0.0000045"); // 0.0000045, 0.6766
   }
 
   @Test
   public void testFTRLProximalOneVsRest() {
-    splitDatset(42);
+    splitDatsetWindow(42);
     readTestTrain();
 
     LOGGER.info("Updating weights");
@@ -278,7 +291,7 @@ public class FTRLProximalTest {
     double skAcc = 0;
 
     for (int i = 0; i < 10; i++) {
-      splitDatset(random.nextInt(Integer.MAX_VALUE));
+      splitDatsetWindow(random.nextInt(Integer.MAX_VALUE));
       readTestTrain();
       LOGGER.info("Updating weights");
 
@@ -301,7 +314,7 @@ public class FTRLProximalTest {
     double multinomialAcc = 0;
 
     for (int i = 0; i < 10; i++) {
-      splitDatset(random.nextInt(Integer.MAX_VALUE));
+      splitDatsetWindow(random.nextInt(Integer.MAX_VALUE));
       readTestTrain();
 
       long time = System.currentTimeMillis();
@@ -326,14 +339,14 @@ public class FTRLProximalTest {
   }
 
   @Test
-  public void testCompareMultinomialAndSKLearn() {
+  public void testCompareMultinomialAndSKLearnWindow() {
     Random random = new Random(42);
 
     double ourAcc = 0;
     double skAcc = 0;
 
     for (int i = 0; i < 10; i++) {
-      splitDatset(random.nextInt(Integer.MAX_VALUE));
+      splitDatsetWindow(random.nextInt(Integer.MAX_VALUE));
       readTestTrain();
 
       LOGGER.info("Updating weights");
@@ -351,10 +364,60 @@ public class FTRLProximalTest {
   }
 
   @Test
+  public void testCompareMultinomialAndSKLearnRandomComplete() {
+    Random random = new Random(42);
+
+    double ourAcc = 0;
+    double skAcc = 0;
+
+    for (int i = 0; i < 10; i++) {
+      splitDatsetRandomComplete(random.nextInt(Integer.MAX_VALUE));
+      readTestTrain();
+
+      LOGGER.info("Updating weights");
+
+      long time = System.currentTimeMillis();
+      Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
+      time = System.currentTimeMillis() - time;
+      LOGGER.info("Execution time {}", time);
+
+      ourAcc += accuracy(newWeights);
+      skAcc += accuracySKLearn("0.0000045");
+    }
+    LOGGER.info("Average accuracy {}", ourAcc / 10);
+    LOGGER.info("Average SKLearn accuracy {}", skAcc / 10);
+  }
+
+  @Test
+  public void testCompareMultinomialAndSKLearnOrderedComplete() {
+    Random random = new Random(42);
+
+    double ourAcc = 0;
+    double skAcc = 0;
+
+    for (int i = 0; i < 10; i++) {
+      splitDatsetOrderedComplete(random.nextInt(Integer.MAX_VALUE));
+      readTestTrain();
+
+      LOGGER.info("Updating weights");
+
+      long time = System.currentTimeMillis();
+      Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
+      time = System.currentTimeMillis() - time;
+      LOGGER.info("Execution time {}", time);
+
+      ourAcc += accuracy(newWeights);
+      skAcc += accuracySKLearn("0.0000045");
+    }
+    LOGGER.info("Average accuracy {}", ourAcc / 10);
+    LOGGER.info("Average SKLearn accuracy {}", skAcc / 10);
+  }
+
+  @Test
   public void testFTRLProximalMultinomial() {
 
     long splitTime = System.currentTimeMillis();
-    splitDatset(42);
+    splitDatsetWindow(42);
     splitTime = System.currentTimeMillis() - splitTime;
     LOGGER.info("Split time: {}",  splitTime);
     readTestTrain();
@@ -381,7 +444,7 @@ public class FTRLProximalTest {
     for (Integer sz: windowSizes) {
       for (String lam: lams) {
         LOGGER.info("Started split");
-        splitDatset(42, sz, lam);
+        splitDatsetWindow(42, sz, lam);
         readTestTrain();
         LOGGER.info("Test train read");
         Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
@@ -393,6 +456,23 @@ public class FTRLProximalTest {
         }
         LOGGER.info("Best size: {}, best damping factor: {}, best accuracy: {}", bestSz, bestLam, bestAcc);
       }
+    }
+  }
+
+  @Test
+  public void testSelectSKLearnAlpha() {
+    List<String> alphas = Arrays.asList("0.0000008", "0.00000085", "0.00000095", "0.0000007", "0.00000075", "0.0000009");
+    String optAlpha = "";
+    double maxAcc = 0;
+    splitDatsetWindow(42);
+    readTestTrain();
+    for (String alpha: alphas) {
+      double acc = accuracySKLearn(alpha);
+      if (acc > maxAcc) {
+        optAlpha = alpha;
+        maxAcc = acc;
+      }
+      LOGGER.info("Best alpha: {}", optAlpha);
     }
   }
 }
