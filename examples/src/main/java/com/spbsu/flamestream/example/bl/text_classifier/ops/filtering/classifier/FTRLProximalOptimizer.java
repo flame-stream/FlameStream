@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
 
@@ -71,12 +70,11 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
 
   @Override
   public Vec optimizeWeights(List<DataPoint> trainingSet, int[] isCorrect, Vec prevWeights) {
-    //LOGGER.info("Dimentionality: {}", trainingSet.columns());
     final int dim = trainingSet.get(0).getFeatures().dim();
     final Vec zed = new ArrayVec(dim);
     final Vec norm = new ArrayVec(dim);
     final SparseVec w = new SparseVec(prevWeights.dim());
-    //double score = 0;
+
     for (int t = 0; t < trainingSet.size(); t++) {
       final Vec x = trainingSet.get(t).getFeatures();
       final VecIterator iterator = x.nonZeroes();
@@ -90,7 +88,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
         }
       }
       final double p = MathTools.sigmoid(VecTools.multiply(x, w));
-      //score += isCorrect[t] == 1 ? p : 1 - p;
+
       iterator.seek(0);
       while (iterator.advance()) {
         final int index = iterator.index();
@@ -100,59 +98,52 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
         norm.set(index, norm.get(index) + g * g);
       }
     }
-    //score /= trainingSet.size();
-    //LOGGER.info("Average score {}", score);
+
     return w;
   }
 
-  @Override
+  /*@Override
   public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights, String[] topics) {
     List<String> topicList = Arrays.asList(topics);
-    //LOGGER.info("Topic list: {}", topicList);
+
     final int[] indices = trainingSet.stream().mapToInt(s -> topicList.indexOf(s.getLabel())).toArray();
     final Mx weights = new SparseMx(prevWeights.rows(), prevWeights.columns());
     final Mx zed = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
     final Mx norm = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
-    for (int it = 0; it < 1; it++) {
-      //double score = 0;
-      for (int i = 0; i < trainingSet.size(); i++) {
-        final int finalI = i;
-        Vec x = trainingSet.get(i).getFeatures();
-        IntStream.range(0, weights.rows()).parallel().forEach(j -> {
-          VecIterator iterator = x.nonZeroes();
-          while (iterator.advance()) {
-            double z = zed.get(j, iterator.index());
-            if (Math.abs(z) > lambda1) {
-              double val = -(z - Math.signum(z) * lambda1) /
-                      ((beta + Math.sqrt(norm.get(j, iterator.index()))) / alpha + lambda2);
-              weights.set(j, iterator.index(), val);
-            } else {
-              weights.set(j, iterator.index(), 0);
-            }
+
+    for (int i = 0; i < trainingSet.size(); i++) {
+      final int finalI = i;
+      Vec x = trainingSet.get(i).getFeatures();
+      IntStream.range(0, weights.rows()).parallel().forEach(j -> {
+        VecIterator iterator = x.nonZeroes();
+        while (iterator.advance()) {
+          double z = zed.get(j, iterator.index());
+          if (Math.abs(z) > lambda1) {
+            double val = -(z - Math.signum(z) * lambda1) /
+                    ((beta + Math.sqrt(norm.get(j, iterator.index()))) / alpha + lambda2);
+            weights.set(j, iterator.index(), val);
+          } else {
+            weights.set(j, iterator.index(), 0);
           }
-        });
-        Vec p = MxTools.multiply(weights, x);
-        VecTools.exp(p);
-        double denom = VecTools.sum(p);
-        VecTools.scale(p, 1 / denom);
-        //score += p.get(indices[i]);
-        //LOGGER.info("Score: {}", score);
-        /*if (i % 100 == 0)
-          LOGGER.info("Iteration: {} {}", it, i);*/
-        IntStream.range(0, weights.rows()).parallel().forEach(j -> {
-          VecIterator iterator = x.nonZeroes();
-          while (iterator.advance()) {
-            double g = (indices[finalI] == j ? p.get(j) - 1 : p.get(j)) * iterator.value();
-            double sigma =
-                    (Math.sqrt(norm.get(j, iterator.index()) + g * g) - Math.sqrt(norm.get(j, iterator.index()))) / alpha;
-            zed.set(j, iterator.index(), zed.get(j, iterator.index()) + g - sigma * weights.get(j, iterator.index()));
-            norm.set(j, iterator.index(), norm.get(j, iterator.index()) + g * g);
-          }
-        });
-      }
-      //score /= trainingSet.size();
-      //LOGGER.info("Iteration {}, average score {}", it, score);
+        }
+      });
+      Vec p = MxTools.multiply(weights, x);
+      VecTools.exp(p);
+      double denom = VecTools.sum(p);
+      VecTools.scale(p, 1 / denom);
+
+      IntStream.range(0, weights.rows()).parallel().forEach(j -> {
+        VecIterator iterator = x.nonZeroes();
+        while (iterator.advance()) {
+          double g = (indices[finalI] == j ? p.get(j) - 1 : p.get(j)) * iterator.value();
+          double sigma =
+                  (Math.sqrt(norm.get(j, iterator.index()) + g * g) - Math.sqrt(norm.get(j, iterator.index()))) / alpha;
+          zed.set(j, iterator.index(), zed.get(j, iterator.index()) + g - sigma * weights.get(j, iterator.index()));
+          norm.set(j, iterator.index(), norm.get(j, iterator.index()) + g * g);
+        }
+      });
     }
+
     Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
     for (int i = 0; i < weights.rows(); i++) {
       VecIterator nz = weights.row(i).nonZeroes();
@@ -161,5 +152,58 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
       }
     }
     return ans;
+  }*/
+
+  public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights, String[] topics) {
+    State state = new State(prevWeights);
+
+    for (DataPoint aTrainingSet : trainingSet) {
+      state = optimizeState(aTrainingSet, state, topics);
+    }
+
+    Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
+    for (int i = 0; i < prevWeights.rows(); i++) {
+      VecIterator nz = state.weights.row(i).nonZeroes();
+      while (nz.advance()) {
+        ans.set(i, nz.index(), nz.value());
+      }
+    }
+    return ans;
+  }
+
+  @Override
+  public State optimizeState(DataPoint trainingPoint, State prevState, String[] topics) {
+    List<String> topicList = Arrays.asList(topics);
+    final int index = topicList.indexOf(trainingPoint.getLabel());
+    final Vec x = trainingPoint.getFeatures();
+    IntStream.range(0, prevState.weights.rows()).parallel().forEach(j -> {
+      VecIterator iterator = x.nonZeroes();
+      while (iterator.advance()) {
+        double z = prevState.zed.get(j, iterator.index());
+        if (Math.abs(z) > lambda1) {
+          double val = -(z - Math.signum(z) * lambda1) /
+                  ((beta + Math.sqrt(prevState.norm.get(j, iterator.index()))) / alpha + lambda2);
+          prevState.weights.set(j, iterator.index(), val);
+        } else {
+          prevState.weights.set(j, iterator.index(), 0);
+        }
+      }
+    });
+    Vec p = MxTools.multiply(prevState.weights, x);
+    VecTools.exp(p);
+    double denom = VecTools.sum(p);
+    VecTools.scale(p, 1 / denom);
+
+    IntStream.range(0, prevState.weights.rows()).parallel().forEach(j -> {
+      VecIterator iterator = x.nonZeroes();
+      while (iterator.advance()) {
+        double g = (index == j ? p.get(j) - 1 : p.get(j)) * iterator.value();
+        double sigma =
+                (Math.sqrt(prevState.norm.get(j, iterator.index()) + g * g) - Math.sqrt(prevState.norm.get(j, iterator.index()))) / alpha;
+        prevState.zed.set(j, iterator.index(), prevState.zed.get(j, iterator.index()) + g - sigma * prevState.weights.get(j, iterator.index()));
+        prevState.norm.set(j, iterator.index(), prevState.norm.get(j, iterator.index()) + g * g);
+      }
+    });
+    return prevState;
   }
 }

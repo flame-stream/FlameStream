@@ -129,17 +129,17 @@ public class FTRLProximalTest {
   }
 
   private void splitDatsetWindow(int seed, int windowSize, String lam) {
-    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %s %s", trainSize, testSize, seed, windowSize, lam, "window");
+    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %d %s %s", trainSize, testSize, 1000, seed, windowSize, lam, "window");
     LOGGER.info(callPython(pythonCommand));
   }
 
   private void splitDatsetRandomComplete(int seed) {
-    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %s %s", trainSize, testSize, seed, 3, "0.09", "random_complete");
+    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %d %s %s", trainSize, testSize, 1000, seed, 3, "0.09", "random_complete");
     LOGGER.info(callPython(pythonCommand));
   }
 
   private void splitDatsetOrderedComplete(int seed) {
-    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %s %s", trainSize, testSize, seed, 3, "0.09", "ordered_complete");
+    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %d %s %s", trainSize, testSize, 1000, seed, 3, "0.09", "ordered_complete");
     LOGGER.info(callPython(pythonCommand));
   }
 
@@ -261,12 +261,12 @@ public class FTRLProximalTest {
 
   @Test
   public void testSKLearnParams() {
-    splitDatsetRandomComplete(42);
+    splitDatsetWindow(42);
     readTestTrain();
 
     LOGGER.info("Updating weights");
 
-    accuracySKLearn("0.0000045"); // 0.0000045, 0.6766
+    accuracySKLearn("0.000004"); // 0.000003, 0.6756
   }
 
   @Test
