@@ -52,21 +52,22 @@ def calcWindowIdf(X, windowSizeDays, lam):
     return ans
 
 def main(argv):
-    if len(argv) < 7:
-        print("Usage {} trainSize testSize seed windowSizeDays dampingFactor splitStrategy".format(argv[0]))
+    if len(argv) < 8:
+        print("Usage {} trainSize testSize offset seed windowSizeDays dampingFactor splitStrategy".format(argv[0]))
         exit(0)
     trainSize = int(argv[1])
     testSize = int(argv[2])
-    seed = int(argv[3])
-    windowSize = int(argv[4])
-    lam = float(argv[5])
-    splitStrategy = argv[6]
+    offset = int(argv[3])
+    seed = int(argv[4])
+    windowSize = int(argv[5])
+    lam = float(argv[6])
+    splitStrategy = argv[7]
 
-    df = pd.read_csv('news_lenta.csv', nrows=(trainSize + testSize)*2)
+    df = pd.read_csv('news_lenta.csv', nrows=(trainSize + testSize + offset)*2)
     df = df.dropna()
     df = df[df['tags'] != 'Все']
     df = df[df['tags'] != '']
-    df = df[:trainSize + testSize]
+    df = df[:offset + trainSize + testSize]
 
     X = df['text']
     y = df['tags']
@@ -87,8 +88,8 @@ def main(argv):
         X = calcWindowIdf(X, windowSize, lam)
         print("Execution time is: ", time.monotonic() - tm)
 
-    X = list(X)
-    y = list(y)
+    X = list(X)[offset:]
+    y = list(y)[offset:]
 
     if (splitStrategy == 'ordered_complete' or splitStrategy == 'window'):
         X = list(zip(range(len(X)), X))
