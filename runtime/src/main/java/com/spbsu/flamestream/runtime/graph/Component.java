@@ -32,6 +32,7 @@ import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,7 +40,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Component extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 100;
@@ -118,20 +118,17 @@ public class Component extends LoggingActor {
                             groupingSendTracer.log(item.xor());
                             final HashFunction hash = ((HashingVertexStub) to).hash();
                             if (hash instanceof HashFunction.Broadcast) {
-                              final DataItem[] broadcasted = IntStream.range(0, routes.entrySet().size())
-                                      .mapToObj(value -> item.cloneWith(new Meta(
-                                              item.meta(),
-                                              0,
-                                              value
-                                      )))
-                                      .peek(dataItem -> ack(
-                                              new Ack(dataItem.meta().globalTime(), dataItem.xor()),
-                                              joba
-                                      ))
-                                      .toArray(DataItem[]::new);
-                              final int[] index = {0};
-                              routes.entrySet().forEach(entry -> entry.getValue()
-                                      .tell(new AddressedItem(broadcasted[index[0]++], toDest), self()));
+                              final Iterator<Map.Entry<HashUnit, ActorRef>> iterator = routes.entrySet().iterator();
+                              int childId = 0;
+                              while (iterator.hasNext()) {
+                                final DataItem cloned = item.cloneWith(new Meta(
+                                        item.meta(),
+                                        0,
+                                        childId++
+                                ));
+                                ack(new Ack(cloned.meta().globalTime(), cloned.xor()), joba);
+                                iterator.next().getValue().tell(new AddressedItem(cloned, toDest), self());
+                              }
                             } else {
                               ack(new Ack(item.meta().globalTime(), item.xor()), joba);
                               routes.get(Objects.requireNonNull(hash).applyAsInt(item))
