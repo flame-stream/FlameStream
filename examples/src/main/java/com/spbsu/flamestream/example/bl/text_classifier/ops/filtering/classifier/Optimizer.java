@@ -5,7 +5,5 @@ import com.expleague.commons.math.vectors.Mx;
 import java.util.List;
 
 public interface Optimizer {
-  Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights, String[] topics);
-
-  State optimizeState(DataPoint trainingPoint, State prevState, String[] topics);
+  Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights);
 }
