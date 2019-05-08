@@ -20,6 +20,19 @@ def put(X, y, file):
         ouf.write('\n')
     ouf.close()
 
+def putWindow(X, y, isTrain, file):
+    ouf = open(file, "w+")
+    ouf.write(str(len(X)) + ' ' + str(X[0].shape[1]) + '\n')
+    for (x, y1) in zip(X, y):
+        nz = x.nonzero()[1]
+        row = x.toarray()[0]
+        ouf.write(y1)
+        for j in nz:
+            ouf.write(',' + str(j) + ',' + str(row[j]))
+        ouf.write('\n')
+    ouf.write(','.join(isTrain) + '\n')
+    ouf.close()
+
 def calcWindowIdf(X, windowSizeDays, lam):
     X = X.astype(float)
     size, features = X.shape
@@ -72,14 +85,8 @@ def main(argv):
     X = df['text']
     y = df['tags']
 
-    if (splitStrategy == 'random_complete' or splitStrategy == 'ordered_complete'):
-        processing = Pipeline([
-            ('vect', CountVectorizer()),
-            ('tfidf', TfidfTransformer(sublinear_tf=True))])
 
-        X = processing.fit_transform(X)
-
-    elif (splitStrategy == 'window'):
+    if (splitStrategy == 'window'):
         vectorizer = CountVectorizer()
         X = vectorizer.fit_transform(X)
 
@@ -88,16 +95,32 @@ def main(argv):
         X = calcWindowIdf(X, windowSize, lam)
         print("Execution time is: ", time.monotonic() - tm)
 
+        size = trainSize + testSize + offset
+        _, test = train_test_split(range(offset, size), test_size=testSize, random_state=seed)
+        isTrain = list(map(str, map(int, [i not in test for i in range(size)])))
+
+        putWindow(X, y, isTrain, 'tmp_train')
+
+        exit(0)
+
+
+    if (splitStrategy == 'random_complete' or splitStrategy == 'ordered_complete'):
+        processing = Pipeline([
+            ('vect', CountVectorizer()),
+            ('tfidf', TfidfTransformer(sublinear_tf=True))])
+
+        X = processing.fit_transform(X)
+
     X = list(X)[offset:]
     y = list(y)[offset:]
 
-    if (splitStrategy == 'ordered_complete' or splitStrategy == 'window'):
+    if (splitStrategy == 'ordered_complete'):
         X = list(zip(range(len(X)), X))
         y = list(zip(range(len(y)), y))
 
     (X_train, X_test, y_train, y_test) = train_test_split(X, y, test_size=testSize, random_state=seed)
 
-    if (splitStrategy == 'ordered_complete' or splitStrategy == 'window'):
+    if (splitStrategy == 'ordered_complete'):
         X_train = [t[1] for t in sorted(X_train, key = lambda t: t[0])]
         y_train = [t[1] for t in sorted(y_train, key = lambda t: t[0])]
 

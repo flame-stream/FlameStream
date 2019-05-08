@@ -2,11 +2,9 @@ package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifie
 
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.mx.SparseMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
@@ -17,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
+public class FTRLProximalOptimizer implements Optimizer, OnlineModel {
 
   public static class Builder {
     private double alpha = 0.2;
@@ -45,8 +43,8 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
       return this;
     }
 
-    public FTRLProximalOptimizer build() {
-      return new FTRLProximalOptimizer(alpha, beta, lambda1, lambda2);
+    public FTRLProximalOptimizer build(String[] allTopics) {
+      return new FTRLProximalOptimizer(alpha, beta, lambda1, lambda2, allTopics);
     }
   }
 
@@ -60,148 +58,83 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
   private final double beta;
   private final double lambda1;
   private final double lambda2;
+  private final String[] topics;
 
-  private FTRLProximalOptimizer(double alpha, double beta, double lambda1, double lambda2) {
+  private FTRLProximalOptimizer(double alpha, double beta, double lambda1, double lambda2, final String[] topics) {
     this.alpha = alpha;
     this.beta = beta;
     this.lambda1 = lambda1;
     this.lambda2 = lambda2;
+    this.topics = topics;
   }
 
   @Override
-  public Vec optimizeWeights(List<DataPoint> trainingSet, int[] isCorrect, Vec prevWeights) {
-    final int dim = trainingSet.get(0).getFeatures().dim();
-    final Vec zed = new ArrayVec(dim);
-    final Vec norm = new ArrayVec(dim);
-    final SparseVec w = new SparseVec(prevWeights.dim());
-
-    for (int t = 0; t < trainingSet.size(); t++) {
-      final Vec x = trainingSet.get(t).getFeatures();
-      final VecIterator iterator = x.nonZeroes();
-      while (iterator.advance()) {
-        final int index = iterator.index();
-        final double z = zed.get(index);
-        if (Math.abs(z) > lambda1) {
-          double val = -(z - Math.signum(z) * lambda1) /
-                  ((beta + Math.sqrt(norm.get(index))) / alpha + lambda2);
-          w.set(index, val);
-        }
-      }
-      final double p = MathTools.sigmoid(VecTools.multiply(x, w));
-
-      iterator.seek(0);
-      while (iterator.advance()) {
-        final int index = iterator.index();
-        final double g = (p - isCorrect[t]) * iterator.value();
-        final double sigma = (Math.sqrt(norm.get(index) + g * g) - Math.sqrt(norm.get(index))) / alpha;
-        zed.set(index, zed.get(index) + g - sigma * w.get(index));
-        norm.set(index, norm.get(index) + g * g);
-      }
-    }
-
-    return w;
-  }
-
-  @Override
-  public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights, String[] topics) {
-    List<String> topicList = Arrays.asList(topics);
-
-    final int[] indices = trainingSet.stream().mapToInt(s -> topicList.indexOf(s.getLabel())).toArray();
-    final Mx weights = new SparseMx(prevWeights.rows(), prevWeights.columns());
-    final Mx zed = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
-    final Mx norm = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
-
-    for (int i = 0; i < trainingSet.size(); i++) {
-      final int finalI = i;
-      Vec x = trainingSet.get(i).getFeatures();
-      IntStream.range(0, weights.rows()).parallel().forEach(j -> {
-        VecIterator iterator = x.nonZeroes();
-        while (iterator.advance()) {
-          double z = zed.get(j, iterator.index());
-          if (Math.abs(z) > lambda1) {
-            double val = -(z - Math.signum(z) * lambda1) /
-                    ((beta + Math.sqrt(norm.get(j, iterator.index()))) / alpha + lambda2);
-            weights.set(j, iterator.index(), val);
-          } else {
-            weights.set(j, iterator.index(), 0);
-          }
-        }
-      });
-      Vec p = MxTools.multiply(weights, x);
-      VecTools.exp(p);
-      double denom = VecTools.sum(p);
-      VecTools.scale(p, 1 / denom);
-
-      IntStream.range(0, weights.rows()).parallel().forEach(j -> {
-        VecIterator iterator = x.nonZeroes();
-        while (iterator.advance()) {
-          double g = (indices[finalI] == j ? p.get(j) - 1 : p.get(j)) * iterator.value();
-          double sigma =
-                  (Math.sqrt(norm.get(j, iterator.index()) + g * g) - Math.sqrt(norm.get(j, iterator.index()))) / alpha;
-          zed.set(j, iterator.index(), zed.get(j, iterator.index()) + g - sigma * weights.get(j, iterator.index()));
-          norm.set(j, iterator.index(), norm.get(j, iterator.index()) + g * g);
-        }
-      });
-    }
-
-    Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
-    for (int i = 0; i < weights.rows(); i++) {
-      VecIterator nz = weights.row(i).nonZeroes();
-      while (nz.advance()) {
-        ans.set(i, nz.index(), nz.value());
-      }
-    }
-    return ans;
-  }
-
-  /*public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights, String[] topics) {
-    State state = new State(prevWeights);
+  public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights) {
+    ModelState state = new ModelState(prevWeights);
 
     for (DataPoint aTrainingSet : trainingSet) {
-      state = optimizeState(aTrainingSet, state, topics);
+      state = step(aTrainingSet, state);
     }
 
     Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
     for (int i = 0; i < prevWeights.rows(); i++) {
-      VecIterator nz = state.weights.row(i).nonZeroes();
+      VecIterator nz = state.weights().row(i).nonZeroes();
       while (nz.advance()) {
         ans.set(i, nz.index(), nz.value());
       }
     }
     return ans;
-  }*/
+  }
 
   @Override
-  public State optimizeState(DataPoint trainingPoint, State prevState, String[] topics) {
+  public ModelState step(DataPoint trainingPoint, ModelState prevState) {
     List<String> topicList = Arrays.asList(topics);
     final int index = topicList.indexOf(trainingPoint.getLabel());
     final Vec x = trainingPoint.getFeatures();
-    IntStream.range(0, prevState.weights.rows()).parallel().forEach(j -> {
-      VecIterator iterator = x.nonZeroes();
+    Mx weights = prevState.weights();
+    Mx zed = prevState.zed();
+    Mx norm = prevState.norm();
+    IntStream.range(0, weights.rows()).parallel().forEach(j -> {
+      final VecIterator iterator = x.nonZeroes();
       while (iterator.advance()) {
-        double z = prevState.zed.get(j, iterator.index());
+        final int xindex = iterator.index();
+        final double z = zed.get(j, xindex);
         if (Math.abs(z) > lambda1) {
           double val = -(z - Math.signum(z) * lambda1) /
-                  ((beta + Math.sqrt(prevState.norm.get(j, iterator.index()))) / alpha + lambda2);
-          prevState.weights.set(j, iterator.index(), val);
+                  ((beta + Math.sqrt(norm.get(j, xindex))) / alpha + lambda2);
+          weights.set(j, xindex, val);
         } else {
-          prevState.weights.set(j, iterator.index(), 0);
+          weights.set(j, xindex, 0);
         }
       }
     });
-    Vec p = MxTools.multiply(prevState.weights, x);
-    VecTools.exp(p);
-    double denom = VecTools.sum(p);
-    VecTools.scale(p, 1 / denom);
 
-    IntStream.range(0, prevState.weights.rows()).parallel().forEach(j -> {
+    double[] p = new double[weights.rows()];
+    double denom = 0;
+    for (int j = 0; j < weights.rows(); j++) {
+      VecIterator xNz = x.nonZeroes();
+      p[j] = 0;
+      while (xNz.advance()) {
+        p[j] += xNz.value() * weights.get(j, xNz.index());
+      }
+      p[j] = Math.exp(p[j]);
+      denom += p[j];
+    }
+
+    for (int j = 0; j < weights.rows(); j++) {
+      p[j] /= denom;
+    }
+
+    IntStream.range(0, weights.rows()).parallel().forEach(j -> {
       VecIterator iterator = x.nonZeroes();
       while (iterator.advance()) {
-        double g = (index == j ? p.get(j) - 1 : p.get(j)) * iterator.value();
+        final int xindex = iterator.index();
+        final double w = weights.get(j, xindex);
+        double g = (index == j ? p[j] - 1 : p[j]) * iterator.value();
         double sigma =
-                (Math.sqrt(prevState.norm.get(j, iterator.index()) + g * g) - Math.sqrt(prevState.norm.get(j, iterator.index()))) / alpha;
-        prevState.zed.set(j, iterator.index(), prevState.zed.get(j, iterator.index()) + g - sigma * prevState.weights.get(j, iterator.index()));
-        prevState.norm.set(j, iterator.index(), prevState.norm.get(j, iterator.index()) + g * g);
+                (Math.sqrt(norm.get(j, xindex) + g * g) - Math.sqrt(norm.get(j, xindex))) / alpha;
+        zed.set(j, xindex, zed.get(j, xindex) + g - sigma * w);
+        norm.set(j, xindex, norm.get(j, xindex) + g * g);
       }
     });
     return prevState;

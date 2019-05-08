@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.example.bl.classifier;
 
-import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
@@ -8,11 +7,12 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.SparseMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.BiClassifierOptimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.DataPoint;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.FTRLProximalOptimizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ModelState;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Optimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;
@@ -45,43 +45,11 @@ public class FTRLProximalTest {
   private final SklearnSgdPredictor predictor = new SklearnSgdPredictor(CNT_VECTORIZER_PATH, WEIGHTS_PATH);
   private final List<DataPoint> trainingSetList = new ArrayList<>();
   private final List<DataPoint> testSetList = new ArrayList<>();
+  private Boolean[] isTrain;
   private String[] allTopics;
 
-  private final Optimizer nonStreamingOptimizer = FTRLProximalOptimizer.builder()
-          .alpha(250)
-          .beta(0.82)
-          .lambda1(0.03)
-          .lambda2(0.134)
-          .build();
-
-  private final BiClassifierOptimizer nonStreamingBiOptimizer = FTRLProximalOptimizer.builder()
-          .alpha(100)
-          .beta(0.23)
-          .lambda1(0.0301)
-          .lambda2(0.105)
-          .build();
-
-  private final Optimizer optimizer = FTRLProximalOptimizer.builder()
-          .alpha(300) // 300
-          .beta(0.1) // 0.1
-          .lambda1(0.013) // 0.013
-          .lambda2(0.18) // 0.18
-          .build(); // 0.6852
-
-  /*
-          .alpha(300)
-          .beta(0.81)
-          .lambda1(0.04)
-          .lambda2(0.27)
-          .build();
-   */
-
-  private final BiClassifierOptimizer biOptimizer = FTRLProximalOptimizer.builder()
-          .alpha(80.1) // 80.1
-          .beta(0.4) // 0.4
-          .lambda1(0.013) // 0.013
-          .lambda2(0.17) // 0.17
-          .build(); // 0.6806
+  private Optimizer nonStreamingOptimizer;
+  private FTRLProximalOptimizer optimizer;
 
   @BeforeClass
   public void beforeClass() {
@@ -89,6 +57,19 @@ public class FTRLProximalTest {
     trainSize = 10000;
     predictor.init();
     allTopics = Arrays.stream(predictor.getTopics()).map(String::trim).map(String::toLowerCase).toArray(String[]::new);
+    nonStreamingOptimizer = FTRLProximalOptimizer.builder()
+            .alpha(250)
+            .beta(0.82)
+            .lambda1(0.03)
+            .lambda2(0.134)
+            .build(allTopics);
+
+    optimizer = FTRLProximalOptimizer.builder()
+            .alpha(300)
+            .beta(0.1)
+            .lambda1(0.0089)
+            .lambda2(0.154)
+            .build(allTopics);
   }
 
   @AfterClass
@@ -124,8 +105,13 @@ public class FTRLProximalTest {
     }
   }
 
+  @Test
+  public void split() {
+    splitDatsetWindow(42);
+  }
+
   private void splitDatsetWindow(int seed) {
-    splitDatsetWindow(seed, 3, "0.09");
+    splitDatsetWindow(seed, 5, "0.761");
   }
 
   private void splitDatsetWindow(int seed, int windowSize, String lam) {
@@ -144,8 +130,12 @@ public class FTRLProximalTest {
   }
 
   private void readDatasetFromFileToList(String filename, List<DataPoint> dataset) throws IOException {
+    final String[] trainInfo = Files.lines(new File(filename).toPath())
+            .limit(1).toArray(String[]::new)[0].split(" ");
+    int size = Integer.parseInt(trainInfo[0]);
     Files.lines(new File(filename).toPath())
             .skip(1)
+            .limit(size)
             .forEach(line -> {
               final String[] tokens = line.split(",");
               String topic = tokens[0].trim().toLowerCase();
@@ -186,6 +176,23 @@ public class FTRLProximalTest {
     }
   }
 
+  private void readStreaming() {
+    trainingSetList.clear();
+    testSetList.clear();
+    try {
+      final String[] trainInfo = Files.lines(new File(TMP_TRAIN_PATH).toPath())
+              .limit(1).toArray(String[]::new)[0].split(" ");
+      trainSize = Integer.parseInt(trainInfo[0]);
+      features = Integer.parseInt(trainInfo[1]);
+      readDatasetFromFileToList(TMP_TRAIN_PATH, trainingSetList);
+
+      String[] kek = Files.lines(new File(TMP_TRAIN_PATH).toPath()).skip(trainSize + 1).limit(1).toArray(String[]::new);
+      isTrain = Arrays.stream(kek[0].split(",")).map(Integer::parseInt).map(x -> x == 1).toArray(Boolean[]::new);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
   private Mx startMx() {
     return new VecBasedMx(allTopics.length, features);
   }
@@ -204,6 +211,20 @@ public class FTRLProximalTest {
     return accuracy;
   }
 
+  private double trainAccuracy(Mx newWeights) {
+    Mx probs = MxTools.multiply(new SparseMx(trainingSetList.stream().map(s -> (SparseVec) s.getFeatures()).toArray(SparseVec[]::new)), MxTools.transpose(newWeights));
+    AtomicInteger truePositives = new AtomicInteger(0);
+    IntStream.range(0, trainingSetList.size()).parallel().forEach(i -> {
+      final int argmax = VecTools.argmax(probs.row(i));
+      if (allTopics[argmax].equals(trainingSetList.get(i).getLabel())) {
+        truePositives.incrementAndGet();
+      }
+    });
+    final double accuracy = truePositives.get() / (double) trainSize;
+    LOGGER.info("Accuracy {}", accuracy);
+    return accuracy;
+  }
+
   private double accuracySKLearn(String alpha) {
     final String pythonCommand = "sklearn_one_vs_rest_multiclass.py " + alpha;
     final double accuracy = Double.parseDouble(callPython(pythonCommand));
@@ -215,50 +236,6 @@ public class FTRLProximalTest {
     return accuracySKLearn("0.0000009");
   }
 
-  private void biClassifierAccuracy(Vec localWeights, String topic) {
-    int trues = 0;
-    int truePositives = 0;
-    int positives = 0;
-    int ones = 0;
-    for (int i = 0; i < testSize; i++) {
-      double x = MathTools.sigmoid(VecTools.multiply(testSetList.get(i).getFeatures(), localWeights));
-      LOGGER.info("p = {}, y = {}", x, testSetList.get(i).getLabel().equals(topic) ? 1 : 0);
-      if ((2 * x > 1) == (testSetList.get(i).getLabel().equals(topic))) {
-        trues++;
-      }
-      if (2 * x > 1) {
-        positives++;
-        if (testSetList.get(i).getLabel().equals(topic))
-          truePositives++;
-      }
-      if (testSetList.get(i).getLabel().equals(topic))
-        ones++;
-    }
-    LOGGER.info("accuracy = {}", trues / (double) testSize);
-    LOGGER.info("precision = {}", truePositives / (double) positives);
-    LOGGER.info("recall = {}", truePositives / (double) ones);
-  }
-
-  @Test
-  public void testFTRLProximalBinomial() {
-    splitDatsetWindow(42);
-    readTestTrain();
-
-    LOGGER.info("Updating weights");
-
-    String topic = "политика";
-
-    int[] corrects = trainingSetList.stream().mapToInt(s -> s.getLabel().equals(topic) ? 1 : 0).toArray();
-
-    long kek = System.currentTimeMillis();
-    Vec newWeights = biOptimizer.optimizeWeights(trainingSetList, corrects,
-            new SparseVec(trainingSetList.get(0).getFeatures().dim()));
-    kek = System.currentTimeMillis() - kek;
-    LOGGER.info("Time in nanosec: {}", kek);
-
-    biClassifierAccuracy(newWeights, topic);
-  }
-
   @Test
   public void testSKLearnParams() {
     splitDatsetWindow(42);
@@ -267,75 +244,6 @@ public class FTRLProximalTest {
     LOGGER.info("Updating weights");
 
     accuracySKLearn("0.000004"); // 0.000003, 0.6756
-  }
-
-  @Test
-  public void testFTRLProximalOneVsRest() {
-    splitDatsetWindow(42);
-    readTestTrain();
-
-    LOGGER.info("Updating weights");
-
-    long timeStart = System.currentTimeMillis();
-    Mx newWeights = biOptimizer.optimizeOneVsRest(trainingSetList, startMx(), allTopics);
-    LOGGER.info("Execution time {}", System.currentTimeMillis() - timeStart);
-
-    accuracy(newWeights);
-  }
-
-  @Test
-  public void testCompareOneVsRestAverageAndSKLearn() {
-    Random random = new Random(42);
-
-    double ourAcc = 0;
-    double skAcc = 0;
-
-    for (int i = 0; i < 10; i++) {
-      splitDatsetWindow(random.nextInt(Integer.MAX_VALUE));
-      readTestTrain();
-      LOGGER.info("Updating weights");
-
-      long timeStart = System.currentTimeMillis();
-      Mx newWeights = biOptimizer.optimizeOneVsRest(trainingSetList, startMx(), allTopics);
-      LOGGER.info("Execution time {}", System.currentTimeMillis() - timeStart);
-
-      ourAcc += accuracy(newWeights);
-      skAcc += accuracySKLearn();
-    }
-    LOGGER.info("Average accuracy {}", ourAcc / 10);
-    LOGGER.info("Average SKLearn accuracy {}", skAcc / 10);
-  }
-
-  @Test
-  public void testCompareMultinomialAndOneVsRest() {
-    Random random = new Random(42);
-
-    double oneVsRestAcc = 0;
-    double multinomialAcc = 0;
-
-    for (int i = 0; i < 10; i++) {
-      splitDatsetWindow(random.nextInt(Integer.MAX_VALUE));
-      readTestTrain();
-
-      long time = System.currentTimeMillis();
-      Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
-      time = System.currentTimeMillis() - time;
-
-      LOGGER.info("Execution time {}", time);
-
-      multinomialAcc += accuracy(newWeights);
-
-      time = System.currentTimeMillis();
-      newWeights = biOptimizer.optimizeOneVsRest(trainingSetList, startMx(), allTopics);
-      time = System.currentTimeMillis() - time;
-
-      LOGGER.info("Execution time {}", time);
-
-      oneVsRestAcc += accuracy(newWeights);
-    }
-
-    LOGGER.info("Average multinomial accuracy: {}", multinomialAcc / 10.0);
-    LOGGER.info("Average one vs rest accuracy: {}", oneVsRestAcc / 10.0);
   }
 
   @Test
@@ -352,7 +260,7 @@ public class FTRLProximalTest {
       LOGGER.info("Updating weights");
 
       long time = System.currentTimeMillis();
-      Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
+      Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx());
       time = System.currentTimeMillis() - time;
       LOGGER.info("Execution time {}", time);
 
@@ -377,7 +285,7 @@ public class FTRLProximalTest {
       LOGGER.info("Updating weights");
 
       long time = System.currentTimeMillis();
-      Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
+      Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx());
       time = System.currentTimeMillis() - time;
       LOGGER.info("Execution time {}", time);
 
@@ -402,7 +310,7 @@ public class FTRLProximalTest {
       LOGGER.info("Updating weights");
 
       long time = System.currentTimeMillis();
-      Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
+      Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx());
       time = System.currentTimeMillis() - time;
       LOGGER.info("Execution time {}", time);
 
@@ -417,7 +325,7 @@ public class FTRLProximalTest {
   public void testFTRLProximalMultinomial() {
 
     long splitTime = System.currentTimeMillis();
-    splitDatsetWindow(42);
+    splitDatsetWindow(42, 5, "0.761"); // 5 0.761 0.6936
     splitTime = System.currentTimeMillis() - splitTime;
     LOGGER.info("Split time: {}",  splitTime);
     readTestTrain();
@@ -425,7 +333,7 @@ public class FTRLProximalTest {
     LOGGER.info("Updating weights");
 
     long time = System.currentTimeMillis();
-    Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
+    Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx());
     time = System.currentTimeMillis() - time;
     LOGGER.info("Execution time {}", time);
 
@@ -447,7 +355,7 @@ public class FTRLProximalTest {
         splitDatsetWindow(42, sz, lam);
         readTestTrain();
         LOGGER.info("Test train read");
-        Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx(), allTopics);
+        Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx());
         double acc = accuracy(newWeights);
         if (acc > bestAcc) {
           bestSz = sz;
@@ -474,5 +382,61 @@ public class FTRLProximalTest {
       }
       LOGGER.info("Best alpha: {}", optAlpha);
     }
+  }
+
+  @Test
+  public void testCompleteOrdered() {
+    splitDatsetOrderedComplete(42);
+    readTestTrain();
+
+    Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx());
+    accuracy(newWeights);
+  }
+
+  @Test
+  public void testChooseRegularisationParams() {
+    splitDatsetWindow(42);
+    readTestTrain();
+    for (int i = 1; i <= 50; i++) {
+      double lambda1 = 0.008 + 0.0001 * i;
+      final Optimizer optimizer = FTRLProximalOptimizer.builder()
+              .alpha(300)
+              .beta(0.1)
+              .lambda1(lambda1)
+              .lambda2(0.156)
+              .build(allTopics);
+      Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx());
+      accuracy(newWeights);
+    }
+  }
+
+  private double streamingAccuracy() {
+    ModelState state = new ModelState(startMx());
+    int truePositives = 0;
+    int count = 0;
+    for (int i = 0; i < trainSize; i++) {
+      if (isTrain[i]) {
+        state = optimizer.step(trainingSetList.get(i), state);
+      } else {
+        LOGGER.info("test");
+        Vec probs = MxTools.multiply(state.weights(), trainingSetList.get(i).getFeatures());
+        int argmax = VecTools.argmax(probs);
+        if (allTopics[argmax].equals(trainingSetList.get(i).getLabel())) {
+          truePositives++;
+        }
+        count++;
+      }
+    }
+    double accuracy = truePositives / (double) count;
+    LOGGER.info("Accuracy: {}", accuracy);
+    return accuracy;
+  }
+
+  @Test
+  public void testStreaming() {
+    splitDatsetWindow(42);
+    readStreaming();
+
+    streamingAccuracy();
   }
 }
