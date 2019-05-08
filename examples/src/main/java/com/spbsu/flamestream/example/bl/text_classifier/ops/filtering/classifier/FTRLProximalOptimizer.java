@@ -102,7 +102,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
     return w;
   }
 
-  /*@Override
+  @Override
   public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights, String[] topics) {
     List<String> topicList = Arrays.asList(topics);
 
@@ -152,9 +152,9 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
       }
     }
     return ans;
-  }*/
+  }
 
-  public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights, String[] topics) {
+  /*public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights, String[] topics) {
     State state = new State(prevWeights);
 
     for (DataPoint aTrainingSet : trainingSet) {
@@ -169,7 +169,7 @@ public class FTRLProximalOptimizer implements Optimizer, BiClassifierOptimizer {
       }
     }
     return ans;
-  }
+  }*/
 
   @Override
   public State optimizeState(DataPoint trainingPoint, State prevState, String[] topics) {
