@@ -5,7 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
@@ -32,6 +32,7 @@ import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -115,9 +116,24 @@ public class Component extends LoggingActor {
                         } else if (to instanceof HashingVertexStub && ((HashingVertexStub) to).hash() != null) {
                           sink = item -> {
                             groupingSendTracer.log(item.xor());
-                            ack(new Ack(item.meta().globalTime(), item.xor()), joba);
-                            routes.get(Objects.requireNonNull(((HashingVertexStub) to).hash()).applyAsInt(item))
-                                    .tell(new AddressedItem(item, toDest), self());
+                            final HashFunction hash = ((HashingVertexStub) to).hash();
+                            if (hash instanceof HashFunction.Broadcast) {
+                              final Iterator<Map.Entry<HashUnit, ActorRef>> iterator = routes.entrySet().iterator();
+                              int childId = 0;
+                              while (iterator.hasNext()) {
+                                final DataItem cloned = item.cloneWith(new Meta(
+                                        item.meta(),
+                                        0,
+                                        childId++
+                                ));
+                                ack(new Ack(cloned.meta().globalTime(), cloned.xor()), joba);
+                                iterator.next().getValue().tell(new AddressedItem(cloned, toDest), self());
+                              }
+                            } else {
+                              ack(new Ack(item.meta().globalTime(), item.xor()), joba);
+                              routes.get(Objects.requireNonNull(hash).applyAsInt(item))
+                                      .tell(new AddressedItem(item, toDest), self());
+                            }
                           };
                         } else {
                           sink = item -> {
