@@ -241,7 +241,7 @@ public class FTRLProximalTest {
 
   @Test
   public void testSKLearnParams() {
-    splitDatsetWindow(42);
+    splitDatsetOrderedComplete(42);
     readTestTrain();
 
     LOGGER.info("Updating weights");
@@ -257,17 +257,19 @@ public class FTRLProximalTest {
     double skAcc = 0;
 
     for (int i = 0; i < 10; i++) {
-      splitDatsetWindow(random.nextInt(Integer.MAX_VALUE));
-      readTestTrain();
+      final int seed = random.nextInt(Integer.MAX_VALUE);
+      splitDatsetWindow(seed);
+      readStreaming();
 
       LOGGER.info("Updating weights");
 
       long time = System.currentTimeMillis();
-      Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx());
+      ourAcc += streamingAccuracy(optimizer);
       time = System.currentTimeMillis() - time;
       LOGGER.info("Execution time {}", time);
 
-      ourAcc += accuracy(newWeights);
+      splitDatsetOrderedComplete(seed);
+      readTestTrain();
       skAcc += accuracySKLearn();
     }
     LOGGER.info("Average accuracy {}", ourAcc / 10);
@@ -373,7 +375,7 @@ public class FTRLProximalTest {
     List<String> alphas = Arrays.asList("0.0000008", "0.00000085", "0.00000095", "0.0000007", "0.00000075", "0.0000009");
     String optAlpha = "";
     double maxAcc = 0;
-    splitDatsetWindow(42);
+    splitDatsetOrderedComplete(42);
     readTestTrain();
     for (String alpha: alphas) {
       double acc = accuracySKLearn(alpha);
