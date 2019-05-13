@@ -472,7 +472,6 @@ public class FTRLProximalTest {
     return accuracy;
   }
 
-  @Test
   public void testStreaming() {
     splitDatsetWindow(42, 7, "0.46"); // 7 0.46 0.657
     readStreaming();
