@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@Test(enabled = false)
+//@Test(enabled = false)
 public class FTRLProximalTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(FTRLProximalTest.class.getName());
   private static final String CNT_VECTORIZER_PATH = "src/main/resources/cnt_vectorizer";
@@ -351,7 +351,7 @@ public class FTRLProximalTest {
   public void testFTRLProximalMultinomial() {
 
     long splitTime = System.currentTimeMillis();
-    splitDatsetWindow(42, 5, "0.761"); // 5 0.761 0.6936
+    splitDatsetOrderedComplete(42); // 5 0.761 0.6936
     splitTime = System.currentTimeMillis() - splitTime;
     LOGGER.info("Split time: {}", splitTime);
     readTestTrain();
@@ -369,7 +369,7 @@ public class FTRLProximalTest {
 
   @Test
   public void testSelectWindowSizeAndLambda() {
-    List<Integer> windowSizes = IntStream.range(1, 21).filter(x -> x % 2 == 0).boxed().collect(Collectors.toList());
+    List<Integer> windowSizes = IntStream.range(4, 21).filter(x -> x % 2 == 0).boxed().collect(Collectors.toList());
     List<String> lams = Arrays.asList(
             "0.05",
             "0.5",
