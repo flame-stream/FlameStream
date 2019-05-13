@@ -1,15 +1,13 @@
-package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier;
+package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ftrl;
 
-import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
-import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.DataPoint;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ModelState;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.OnlineModel;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Optimizer;
 
 import java.util.Arrays;
 import java.util.List;
@@ -52,8 +50,6 @@ public class FTRLProximalOptimizer implements Optimizer, OnlineModel {
     return new Builder();
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(FTRLProximalOptimizer.class.getName());
-
   private final double alpha;
   private final double beta;
   private final double lambda1;
@@ -70,13 +66,12 @@ public class FTRLProximalOptimizer implements Optimizer, OnlineModel {
 
   @Override
   public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights) {
-    ModelState state = new ModelState(prevWeights);
-
+    ModelState state = new FTRLState(prevWeights);
     for (DataPoint aTrainingSet : trainingSet) {
       state = step(aTrainingSet, state);
     }
 
-    Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
+    final Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
     for (int i = 0; i < prevWeights.rows(); i++) {
       VecIterator nz = state.weights().row(i).nonZeroes();
       while (nz.advance()) {
@@ -91,9 +86,9 @@ public class FTRLProximalOptimizer implements Optimizer, OnlineModel {
     List<String> topicList = Arrays.asList(topics);
     final int index = topicList.indexOf(trainingPoint.getLabel());
     final Vec x = trainingPoint.getFeatures();
-    Mx weights = prevState.weights();
-    Mx zed = prevState.zed();
-    Mx norm = prevState.norm();
+    final Mx weights = prevState.weights();
+    final Mx zed = ((FTRLState) prevState).zed();
+    final Mx norm = ((FTRLState) prevState).norm();
     IntStream.range(0, weights.rows()).parallel().forEach(j -> {
       final VecIterator iterator = x.nonZeroes();
       while (iterator.advance()) {
@@ -109,7 +104,7 @@ public class FTRLProximalOptimizer implements Optimizer, OnlineModel {
       }
     });
 
-    double[] p = new double[weights.rows()];
+    final double[] p = new double[weights.rows()];
     double denom = 0;
     for (int j = 0; j < weights.rows(); j++) {
       VecIterator xNz = x.nonZeroes();
@@ -120,13 +115,12 @@ public class FTRLProximalOptimizer implements Optimizer, OnlineModel {
       p[j] = Math.exp(p[j]);
       denom += p[j];
     }
-
     for (int j = 0; j < weights.rows(); j++) {
       p[j] /= denom;
     }
 
     IntStream.range(0, weights.rows()).parallel().forEach(j -> {
-      VecIterator iterator = x.nonZeroes();
+      final VecIterator iterator = x.nonZeroes();
       while (iterator.advance()) {
         final int xindex = iterator.index();
         final double w = weights.get(j, xindex);
