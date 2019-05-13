@@ -57,12 +57,12 @@ public class Acker extends LoggingActor {
   private long defaultMinimalTime;
   private GlobalTime lastMinTime = GlobalTime.MIN;
 
-  private Acker(long defaultMinimalTime) {
-    table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW);
+  private Acker(long defaultMinimalTime, boolean assertAckingBackInTime) {
+    table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW, assertAckingBackInTime);
   }
 
-  public static Props props(long defaultMinimalTime) {
-    return Props.create(Acker.class, defaultMinimalTime).withDispatcher("processing-dispatcher");
+  public static Props props(long defaultMinimalTime, boolean assertAckingBackInTime) {
+    return Props.create(Acker.class, defaultMinimalTime, assertAckingBackInTime).withDispatcher("processing-dispatcher");
   }
 
   @Override

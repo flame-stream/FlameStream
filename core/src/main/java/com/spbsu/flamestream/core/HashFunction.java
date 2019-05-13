@@ -7,9 +7,12 @@ import java.util.function.ToIntFunction;
 @FunctionalInterface
 @SuppressWarnings("Convert2Lambda")
 public interface HashFunction extends ToIntFunction<DataItem> {
+  Broadcast BROADCAST = new Broadcast();
+
   static <T> HashFunction objectHash(Class<T> clazz) {
     return new HashFunction() {
       private final Class<T> c = clazz;
+
       @Override
       public int hash(DataItem item) {
         return item.payload(c).hashCode();
@@ -31,6 +34,7 @@ public interface HashFunction extends ToIntFunction<DataItem> {
   static HashFunction constantHash(int hash) {
     return new HashFunction() {
       private final int h = hash;
+
       @Override
       public int hash(DataItem item) {
         return h;
@@ -42,6 +46,7 @@ public interface HashFunction extends ToIntFunction<DataItem> {
     return new HashFunction() {
       private final HashFunction h = hash;
       private final int b = buckets;
+
       @Override
       public int hash(DataItem item) {
         return h.applyAsInt(item) % b;
@@ -49,10 +54,26 @@ public interface HashFunction extends ToIntFunction<DataItem> {
     };
   }
 
+  static HashFunction broadcastHash() {
+    return BROADCAST;
+  }
+
   int hash(DataItem dataItem);
 
   @Override
   default int applyAsInt(DataItem dataItem) {
     return hash(dataItem);
+  }
+
+  class Broadcast implements HashFunction {
+
+    private Broadcast() {
+
+    }
+
+    @Override
+    public int hash(DataItem dataItem) {
+      return 0; //this value is not used
+    }
   }
 }
