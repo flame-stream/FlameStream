@@ -11,12 +11,14 @@ public class TfObject implements DocContainer {
   private final Map<String, Integer> counts;
   private final String docName;
   private final String partitioning;
+  private final String label;
   private final int number;
 
-  private TfObject(String docName, Stream<String> words, String partitioning, int number) {
+  private TfObject(String docName, Stream<String> words, String partitioning, String label, int number) {
     this.docName = docName;
     this.number = number;
     this.partitioning = partitioning;
+    this.label = label;
     counts = new HashMap<>();
     words.forEach(s -> counts.merge(s, 1, Integer::sum));
   }
@@ -26,8 +28,13 @@ public class TfObject implements DocContainer {
             textDocument.name(),
             SklearnSgdPredictor.text2words(textDocument.content()),
             textDocument.partitioning(),
+            textDocument.label(),
             textDocument.number()
     );
+  }
+
+  public String label() {
+    return label;
   }
 
   public Map<String, Integer> counts() {
