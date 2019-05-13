@@ -12,6 +12,7 @@ public class TfIdfObject implements DocContainer {
   private final Map<String, Integer> idf;
   private final String docName;
   private final String partitioning;
+  private final String label;
 
   public Set<String> words() {
     return tf.keySet();
@@ -31,6 +32,11 @@ public class TfIdfObject implements DocContainer {
     this.idf = idfObject.counts();
     this.partitioning = tfObject.partitioning();
     this.number = tfObject.number();
+    this.label = tfObject.label();
+  }
+
+  public String label() {
+    return label;
   }
 
   @Override
