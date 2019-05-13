@@ -1,13 +1,13 @@
-package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ftrl;
+package com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.DataPoint;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ModelState;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.OnlineModel;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Optimizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.DataPoint;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineModel;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Optimizer;
 
 import java.util.Arrays;
 import java.util.List;

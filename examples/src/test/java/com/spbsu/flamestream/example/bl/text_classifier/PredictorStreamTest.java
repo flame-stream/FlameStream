@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.bl.classifier;
+package com.spbsu.flamestream.example.bl.text_classifier;
 
 import akka.actor.ActorSystem;
 import com.expleague.commons.math.MathTools;
@@ -6,13 +6,13 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.CountVectorizer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Document;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TextUtils;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Topic;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Vectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.CountVectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Document;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.SklearnSgdPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TextUtils;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;

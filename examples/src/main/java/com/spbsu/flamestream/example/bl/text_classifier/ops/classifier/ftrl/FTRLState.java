@@ -1,8 +1,8 @@
-package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ftrl;
+package com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ModelState;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
 
 public class FTRLState implements ModelState {
   private final Mx weights;
