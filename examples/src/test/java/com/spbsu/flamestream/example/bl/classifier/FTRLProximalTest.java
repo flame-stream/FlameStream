@@ -10,11 +10,11 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.DataPoint;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.FTRLProximalOptimizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ftrl.FTRLProximalOptimizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ftrl.FTRLState;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ModelState;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Optimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;
@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@Test(enabled = false)
 public class FTRLProximalTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(FTRLProximalTest.class.getName());
   private static final String CNT_VECTORIZER_PATH = "src/main/resources/cnt_vectorizer";
@@ -78,7 +79,9 @@ public class FTRLProximalTest {
 
   @AfterClass
   public void afterClass() {
+    //noinspection ResultOfMethodCallIgnored
     new File(TMP_TEST_PATH).delete();
+    //noinspection ResultOfMethodCallIgnored
     new File(TMP_TRAIN_PATH).delete();
   }
 
@@ -119,17 +122,44 @@ public class FTRLProximalTest {
   }
 
   private void splitDatsetWindow(int seed, int windowSize, String lam) {
-    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %d %s %s", trainSize, testSize, offset, seed, windowSize, lam, "window");
+    String pythonCommand = String.format(
+            "sklearn_split_dataset.py %d %d %d %d %d %s %s",
+            trainSize,
+            testSize,
+            offset,
+            seed,
+            windowSize,
+            lam,
+            "window"
+    );
     LOGGER.info(callPython(pythonCommand));
   }
 
   private void splitDatsetRandomComplete(int seed) {
-    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %d %s %s", trainSize, testSize, 1000, seed, 3, "0.09", "random_complete");
+    String pythonCommand = String.format(
+            "sklearn_split_dataset.py %d %d %d %d %d %s %s",
+            trainSize,
+            testSize,
+            1000,
+            seed,
+            3,
+            "0.09",
+            "random_complete"
+    );
     LOGGER.info(callPython(pythonCommand));
   }
 
   private void splitDatsetOrderedComplete(int seed) {
-    String pythonCommand = String.format("sklearn_split_dataset.py %d %d %d %d %d %s %s", trainSize, testSize, 1000, seed, 3, "0.09", "ordered_complete");
+    String pythonCommand = String.format(
+            "sklearn_split_dataset.py %d %d %d %d %d %s %s",
+            trainSize,
+            testSize,
+            1000,
+            seed,
+            3,
+            "0.09",
+            "ordered_complete"
+    );
     LOGGER.info(callPython(pythonCommand));
   }
 
@@ -189,7 +219,10 @@ public class FTRLProximalTest {
       features = Integer.parseInt(trainInfo[1]);
       readDatasetFromFileToList(TMP_TRAIN_PATH, trainingSetList);
 
-      String[] kek = Files.lines(new File(TMP_TRAIN_PATH).toPath()).skip(trainingSetList.size() + 1).limit(1).toArray(String[]::new);
+      String[] kek = Files.lines(new File(TMP_TRAIN_PATH).toPath())
+              .skip(trainingSetList.size() + 1)
+              .limit(1)
+              .toArray(String[]::new);
       isTrain = Arrays.stream(kek[0].split(",")).map(Integer::parseInt).map(x -> x == 1).toArray(Boolean[]::new);
     } catch (IOException e) {
       e.printStackTrace();
@@ -201,7 +234,9 @@ public class FTRLProximalTest {
   }
 
   private double accuracy(Mx newWeights) {
-    Mx probs = MxTools.multiply(new SparseMx(testSetList.stream().map(s -> (SparseVec) s.getFeatures()).toArray(SparseVec[]::new)), MxTools.transpose(newWeights));
+    Mx probs = MxTools.multiply(new SparseMx(testSetList.stream()
+            .map(s -> (SparseVec) s.getFeatures())
+            .toArray(SparseVec[]::new)), MxTools.transpose(newWeights));
     AtomicInteger truePositives = new AtomicInteger(0);
     IntStream.range(0, testSetList.size()).parallel().forEach(i -> {
       final int argmax = VecTools.argmax(probs.row(i));
@@ -210,20 +245,6 @@ public class FTRLProximalTest {
       }
     });
     final double accuracy = truePositives.get() / (double) testSize;
-    LOGGER.info("Accuracy {}", accuracy);
-    return accuracy;
-  }
-
-  private double trainAccuracy(Mx newWeights) {
-    Mx probs = MxTools.multiply(new SparseMx(trainingSetList.stream().map(s -> (SparseVec) s.getFeatures()).toArray(SparseVec[]::new)), MxTools.transpose(newWeights));
-    AtomicInteger truePositives = new AtomicInteger(0);
-    IntStream.range(0, trainingSetList.size()).parallel().forEach(i -> {
-      final int argmax = VecTools.argmax(probs.row(i));
-      if (allTopics[argmax].equals(trainingSetList.get(i).getLabel())) {
-        truePositives.incrementAndGet();
-      }
-    });
-    final double accuracy = truePositives.get() / (double) trainSize;
     LOGGER.info("Accuracy {}", accuracy);
     return accuracy;
   }
@@ -332,7 +353,7 @@ public class FTRLProximalTest {
     long splitTime = System.currentTimeMillis();
     splitDatsetWindow(42, 5, "0.761"); // 5 0.761 0.6936
     splitTime = System.currentTimeMillis() - splitTime;
-    LOGGER.info("Split time: {}",  splitTime);
+    LOGGER.info("Split time: {}", splitTime);
     readTestTrain();
 
     LOGGER.info("Updating weights");
@@ -349,12 +370,26 @@ public class FTRLProximalTest {
   @Test
   public void testSelectWindowSizeAndLambda() {
     List<Integer> windowSizes = IntStream.range(1, 21).filter(x -> x % 2 == 0).boxed().collect(Collectors.toList());
-    List<String> lams = Arrays.asList("0.05", "0.5", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.95", "0.99");
+    List<String> lams = Arrays.asList(
+            "0.05",
+            "0.5",
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "0.95",
+            "0.99"
+    );
     double bestAcc = 0;
     int bestSz = 0;
     String bestLam = "";
-    for (Integer sz: windowSizes) {
-      for (String lam: lams) {
+    for (Integer sz : windowSizes) {
+      for (String lam : lams) {
         LOGGER.info("Started split");
         splitDatsetWindow(42, sz, lam);
         readStreaming();
@@ -372,12 +407,19 @@ public class FTRLProximalTest {
 
   @Test
   public void testSelectSKLearnAlpha() {
-    List<String> alphas = Arrays.asList("0.0000008", "0.00000085", "0.00000095", "0.0000007", "0.00000075", "0.0000009");
+    List<String> alphas = Arrays.asList(
+            "0.0000008",
+            "0.00000085",
+            "0.00000095",
+            "0.0000007",
+            "0.00000075",
+            "0.0000009"
+    );
     String optAlpha = "";
     double maxAcc = 0;
     splitDatsetOrderedComplete(42);
     readTestTrain();
-    for (String alpha: alphas) {
+    for (String alpha : alphas) {
       double acc = accuracySKLearn(alpha);
       if (acc > maxAcc) {
         optAlpha = alpha;
@@ -413,7 +455,7 @@ public class FTRLProximalTest {
   }
 
   private double streamingAccuracy(FTRLProximalOptimizer optimizer) {
-    ModelState state = new ModelState(startMx());
+    ModelState state = new FTRLState(startMx());
     int truePositives = 0;
     int count = 0;
     for (int i = 0; i < trainingSetList.size(); i++) {
