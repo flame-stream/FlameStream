@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.example.bl.text_classifier.model;
 
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TextUtils;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TextUtils;
 
 import java.util.HashMap;
 import java.util.Map;

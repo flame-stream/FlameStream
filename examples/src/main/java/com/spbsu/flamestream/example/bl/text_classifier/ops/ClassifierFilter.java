@@ -1,22 +1,22 @@
-package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering;
+package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Document;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Vectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Document;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class Classifier implements Function<TfIdfObject, Stream<Prediction>> {
+public class ClassifierFilter implements Function<TfIdfObject, Stream<Prediction>> {
   private final Vectorizer vectorizer;
   private final TopicsPredictor predictor;
 
-  public Classifier(Vectorizer vectorizer, TopicsPredictor predictor) {
+  public ClassifierFilter(Vectorizer vectorizer, TopicsPredictor predictor) {
     this.vectorizer = vectorizer;
     this.predictor = predictor;
   }

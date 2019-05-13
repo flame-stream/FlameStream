@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.bl.classifier;
+package com.spbsu.flamestream.example.bl.text_classifier;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
@@ -9,12 +9,12 @@ import com.expleague.commons.math.vectors.impl.mx.SparseMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.DataPoint;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ftrl.FTRLProximalOptimizer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ftrl.FTRLState;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.ModelState;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Optimizer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.DataPoint;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLProximalOptimizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLState;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Optimizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.SklearnSgdPredictor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;

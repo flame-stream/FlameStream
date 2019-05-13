@@ -17,13 +17,13 @@ import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.entries.CountWordEntries;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.Classifier;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.IDFObjectCompleteFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.TfIdfFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.WordContainerOrderingFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Vectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.CountWordEntries;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.ClassifierFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.IDFObjectCompleteFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.TfIdfFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.WordContainerOrderingFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 
 import java.util.List;
 import java.util.function.Function;
@@ -124,15 +124,15 @@ public class TextClassifierGraph implements Supplier<Graph> {
             List.class
     );
 
-    final Classifier classifier = new Classifier(vectorizer, predictor);
+    final ClassifierFilter classifierFilter = new ClassifierFilter(vectorizer, predictor);
     //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<TfIdfObject, Prediction> filterClassifier = new FlameMap<>(
-            classifier,
+            classifierFilter,
             TfIdfObject.class,
             new Runnable() {
               @Override
               public void run() {
-                classifier.init();
+                classifierFilter.init();
               }
             }
     );
