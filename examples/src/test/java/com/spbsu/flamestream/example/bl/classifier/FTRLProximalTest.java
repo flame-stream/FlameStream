@@ -34,10 +34,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-//@Test(enabled = false)
+@Test(enabled = false)
 public class FTRLProximalTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(FTRLProximalTest.class.getName());
-  private static final String CNT_VECTORIZER_PATH = "src/main/resources/cnt_vectorizer";
   private static final String WEIGHTS_PATH = "src/main/resources/classifier_weights";
   private static final String TMP_TRAIN_PATH = "src/test/resources/tmp_train";
   private static final String TMP_TEST_PATH = "src/test/resources/tmp_test";
@@ -46,7 +45,7 @@ public class FTRLProximalTest {
   private static int offset;
   private static int features;
 
-  private final SklearnSgdPredictor predictor = new SklearnSgdPredictor(CNT_VECTORIZER_PATH, WEIGHTS_PATH);
+  private final SklearnSgdPredictor predictor = new SklearnSgdPredictor(WEIGHTS_PATH);
   private final List<DataPoint> trainingSetList = new ArrayList<>();
   private final List<DataPoint> testSetList = new ArrayList<>();
   private Boolean[] isTrain;
@@ -112,7 +111,6 @@ public class FTRLProximalTest {
     }
   }
 
-  @Test
   public void split() {
     splitDatsetWindow(42);
   }
@@ -260,7 +258,6 @@ public class FTRLProximalTest {
     return accuracySKLearn("0.0000009");
   }
 
-  @Test
   public void testSKLearnParams() {
     splitDatsetOrderedComplete(42);
     readTestTrain();
@@ -270,7 +267,6 @@ public class FTRLProximalTest {
     accuracySKLearn("0.000004"); // 0.000003, 0.6756
   }
 
-  @Test
   public void testCompareMultinomialAndSKLearnWindow() {
     Random random = new Random(42);
 
@@ -297,7 +293,6 @@ public class FTRLProximalTest {
     LOGGER.info("Average SKLearn accuracy {}", skAcc / 10);
   }
 
-  @Test
   public void testCompareMultinomialAndSKLearnRandomComplete() {
     Random random = new Random(42);
 
@@ -322,7 +317,6 @@ public class FTRLProximalTest {
     LOGGER.info("Average SKLearn accuracy {}", skAcc / 10);
   }
 
-  @Test
   public void testCompareMultinomialAndSKLearnOrderedComplete() {
     Random random = new Random(42);
 
@@ -347,7 +341,6 @@ public class FTRLProximalTest {
     LOGGER.info("Average SKLearn accuracy {}", skAcc / 10);
   }
 
-  @Test
   public void testFTRLProximalMultinomial() {
 
     long splitTime = System.currentTimeMillis();
@@ -367,7 +360,6 @@ public class FTRLProximalTest {
     //accuracySKLearn();
   }
 
-  @Test
   public void testSelectWindowSizeAndLambda() {
     List<Integer> windowSizes = IntStream.range(4, 21).filter(x -> x % 2 == 0).boxed().collect(Collectors.toList());
     List<String> lams = Arrays.asList(
@@ -405,7 +397,6 @@ public class FTRLProximalTest {
     }
   }
 
-  @Test
   public void testSelectSKLearnAlpha() {
     List<String> alphas = Arrays.asList(
             "0.0000008",
@@ -429,7 +420,6 @@ public class FTRLProximalTest {
     }
   }
 
-  @Test
   public void testCompleteOrdered() {
     splitDatsetOrderedComplete(42);
     readTestTrain();
@@ -438,7 +428,6 @@ public class FTRLProximalTest {
     accuracy(newWeights);
   }
 
-  @Test
   public void testChooseRegularisationParams() {
     splitDatsetWindow(42, 2, "0.7");
     readStreaming();

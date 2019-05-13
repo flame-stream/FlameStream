@@ -1,9 +1,11 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering;
 
+import com.expleague.commons.math.vectors.Vec;
 import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Document;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Vectorizer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,15 +13,18 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class Classifier implements Function<TfIdfObject, Stream<Prediction>> {
+  private final Vectorizer vectorizer;
   private final TopicsPredictor predictor;
 
-  public Classifier(TopicsPredictor predictor) {
+  public Classifier(Vectorizer vectorizer, TopicsPredictor predictor) {
+    this.vectorizer = vectorizer;
     this.predictor = predictor;
   }
 
   @Override
   public Stream<Prediction> apply(TfIdfObject tfIdfObject) {
     final Map<String, Double> tfIdf = new HashMap<>();
+    // TODO: 13.05.19 move normalization logic to extra vertex
     { //normalized tf-idf
       double squareSum = 0.0;
       for (String word : tfIdfObject.words()) {
@@ -34,11 +39,13 @@ public class Classifier implements Function<TfIdfObject, Stream<Prediction>> {
     }
 
     final Document document = new Document(tfIdf);
-    final Prediction result = new Prediction(tfIdfObject, predictor.predict(document));
+    final Vec vec = vectorizer.vectorize(document);
+    final Prediction result = new Prediction(tfIdfObject, predictor.predict(vec));
     return Stream.of(result);
   }
 
   public void init() {
+    vectorizer.init();
     predictor.init();
   }
 }

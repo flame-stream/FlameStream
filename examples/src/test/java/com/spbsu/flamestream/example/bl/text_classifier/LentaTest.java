@@ -4,9 +4,12 @@ import akka.actor.ActorSystem;
 import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.CountVectorizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TextUtils;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Topic;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Vectorizer;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
@@ -115,11 +118,12 @@ public class LentaTest extends FlameAkkaSuite {
 
     final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
     final String weightsPath = "src/main/resources/classifier_weights";
-    final TopicsPredictor predictor = new SklearnSgdPredictor(cntVectorizerPath, weightsPath);
+    final Vectorizer vectorizer = new CountVectorizer(cntVectorizerPath);
+    final TopicsPredictor predictor = new SklearnSgdPredictor(weightsPath);
 
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
 
-    try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(predictor).get())) {
+    try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(vectorizer, predictor).get())) {
       flame.attachRear("tfidfRear", new AkkaRearType<>(system, Prediction.class))
               .forEach(r -> r.addListener(resultQueue::add));
       final List<AkkaFront.FrontHandle<TextDocument>> handles = flame
@@ -152,8 +156,8 @@ public class LentaTest extends FlameAkkaSuite {
           }
 
           final TextDocument processedDoc = toCheckIter.next();
-          final List<String> pdWords = SklearnSgdPredictor.text2words(processedDoc.content()).collect(toList());
-          final Set<String> pdWordsSet = SklearnSgdPredictor.text2words(processedDoc.content())
+          final List<String> pdWords = TextUtils.text2words(processedDoc.content()).collect(toList());
+          final Set<String> pdWordsSet = TextUtils.text2words(processedDoc.content())
                   .collect(Collectors.toSet());
           pdWordsSet.forEach(w -> idfExpected2.merge(w, 1, Integer::sum));
           final TfIdfObject tfIdf = prediction.tfIdf();
@@ -175,7 +179,7 @@ public class LentaTest extends FlameAkkaSuite {
           }
 
           final Map<String, Integer> result = new HashMap<>();
-          SklearnSgdPredictor.text2words(processedDoc.content()).forEach(w -> result.merge(w, 1, Integer::sum));
+          TextUtils.text2words(processedDoc.content()).forEach(w -> result.merge(w, 1, Integer::sum));
           Assert.assertEquals(processedDoc.name(), tfIdf.document(), String.format(
                   "unexpected document: '%s' instead of '%s'%n",
                   tfIdf.document(),
