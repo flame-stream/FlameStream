@@ -23,6 +23,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.IDFObjectC
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.TfIdfFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.WordContainerOrderingFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Vectorizer;
 
 import java.util.List;
 import java.util.function.Function;
@@ -30,9 +31,12 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class TextClassifierGraph implements Supplier<Graph> {
+  private final Vectorizer vectorizer;
   private final TopicsPredictor predictor;
 
-  TextClassifierGraph(TopicsPredictor predictor) {
+  TextClassifierGraph(Vectorizer vectorizer,
+                      TopicsPredictor predictor) {
+    this.vectorizer = vectorizer;
     this.predictor = predictor;
   }
 
@@ -120,7 +124,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
             List.class
     );
 
-    final Classifier classifier = new Classifier(predictor);
+    final Classifier classifier = new Classifier(vectorizer, predictor);
     //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<TfIdfObject, Prediction> filterClassifier = new FlameMap<>(
             classifier,

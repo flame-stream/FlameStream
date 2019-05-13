@@ -2,9 +2,9 @@ package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifie
 
 import com.expleague.commons.math.vectors.Vec;
 
-public interface TopicsPredictor {
+public interface Vectorizer {
   default void init() {
   }
 
-  Topic[] predict(Vec vec);
+  Vec vectorize(Document document);
 }
