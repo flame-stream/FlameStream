@@ -1,12 +1,12 @@
 # coding=utf-8
-import time
 import numpy as np
 import pandas as pd
 import sys
+import time
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-import scipy.sparse as sp
+
 
 def put(X, y, file):
     ouf = open(file, "w+")
@@ -81,6 +81,7 @@ def main(argv):
     df = df[df['tags'] != 'Все']
     df = df[df['tags'] != '']
     df = df[:offset + trainSize + testSize]
+    df = df[::-1]
 
     X = df['text']
     y = df['tags']

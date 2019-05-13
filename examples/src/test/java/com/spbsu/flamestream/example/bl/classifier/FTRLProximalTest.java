@@ -441,7 +441,7 @@ public class FTRLProximalTest {
 
   @Test
   public void testStreaming() {
-    splitDatsetWindow(42, 2, "0.702"); // 7 0.46 0.657
+    splitDatsetWindow(42, 7, "0.46"); // 7 0.46 0.657
     readStreaming();
     long time = System.currentTimeMillis();
     streamingAccuracy(optimizer);
