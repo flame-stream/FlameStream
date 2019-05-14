@@ -158,16 +158,8 @@ public class TextClassifierGraph implements Supplier<Graph> {
             ClassifierOutput.class
     );
 
-    //noinspection Convert2Lambda
-    final Equalz equalzWeights = new Equalz() {
-      @Override
-      public boolean test(DataItem o1, DataItem o2) {
-        return true;
-      }
-    };
-
     final Grouping<ClassifierInput> groupingWeights =
-            new Grouping<>(HashFunction.constantHash(1), equalzWeights, 2, ClassifierInput.class);
+            new Grouping<>(HashFunction.broadcastBeforeGroupingHash(), Equalz.allEqualz(), 2, ClassifierInput.class);
 
     //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<ClassifierInput, ClassifierInput> broadcastTfidfObject = new FlameMap<>(

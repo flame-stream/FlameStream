@@ -8,6 +8,7 @@ import java.util.function.ToIntFunction;
 @SuppressWarnings("Convert2Lambda")
 public interface HashFunction extends ToIntFunction<DataItem> {
   Broadcast BROADCAST = new Broadcast();
+  int BROADCAST_GROUPING_HASH = Integer.MAX_VALUE;
 
   static <T> HashFunction objectHash(Class<T> clazz) {
     return new HashFunction() {
@@ -38,6 +39,15 @@ public interface HashFunction extends ToIntFunction<DataItem> {
       @Override
       public int hash(DataItem item) {
         return h;
+      }
+    };
+  }
+
+  static HashFunction broadcastBeforeGroupingHash() {
+    return new HashFunction() {
+      @Override
+      public int hash(DataItem item) {
+        return BROADCAST_GROUPING_HASH;
       }
     };
   }

@@ -116,7 +116,7 @@ public class LentaTest extends FlameAkkaSuite {
   public void onlineGraphValidation() throws IOException, InterruptedException, TimeoutException {
     final Graph onlineGraph = new TextClassifierGraph(initPredictor()).get();
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
-    final int parallelism = 2;
+    final int parallelism = 3;
     final int totalDocuments = 2;//1000;
 
     final List<TextDocument> rawDocuments = documents("lenta/lenta-ru-news.csv")
