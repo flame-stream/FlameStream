@@ -10,11 +10,10 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.DataPoint;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLProximalOptimizer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLState;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Optimizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.SklearnSgdPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLProximal;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;
@@ -50,9 +49,7 @@ public class FTRLProximalTest {
   private final List<DataPoint> testSetList = new ArrayList<>();
   private Boolean[] isTrain;
   private String[] allTopics;
-
-  private Optimizer nonStreamingOptimizer;
-  private FTRLProximalOptimizer optimizer;
+  private FTRLProximal optimizer;
 
   @BeforeClass
   public void beforeClass() {
@@ -61,14 +58,7 @@ public class FTRLProximalTest {
     offset = 1000;
     predictor.init();
     allTopics = Arrays.stream(predictor.getTopics()).map(String::trim).map(String::toLowerCase).toArray(String[]::new);
-    nonStreamingOptimizer = FTRLProximalOptimizer.builder()
-            .alpha(250)
-            .beta(0.82)
-            .lambda1(0.03)
-            .lambda2(0.134)
-            .build(allTopics);
-
-    optimizer = FTRLProximalOptimizer.builder()
+    optimizer = FTRLProximal.builder()
             .alpha(132)
             .beta(0.1)
             .lambda1(0.0086)
@@ -306,7 +296,7 @@ public class FTRLProximalTest {
       LOGGER.info("Updating weights");
 
       long time = System.currentTimeMillis();
-      Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx());
+      Mx newWeights = optimizeWeights(trainingSetList, startMx());
       time = System.currentTimeMillis() - time;
       LOGGER.info("Execution time {}", time);
 
@@ -330,7 +320,7 @@ public class FTRLProximalTest {
       LOGGER.info("Updating weights");
 
       long time = System.currentTimeMillis();
-      Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx());
+      Mx newWeights = optimizeWeights(trainingSetList, startMx());
       time = System.currentTimeMillis() - time;
       LOGGER.info("Execution time {}", time);
 
@@ -352,7 +342,7 @@ public class FTRLProximalTest {
     LOGGER.info("Updating weights");
 
     long time = System.currentTimeMillis();
-    Mx newWeights = optimizer.optimizeWeights(trainingSetList, startMx());
+    Mx newWeights = optimizeWeights(trainingSetList, startMx());
     time = System.currentTimeMillis() - time;
     LOGGER.info("Execution time {}", time);
 
@@ -424,7 +414,7 @@ public class FTRLProximalTest {
     splitDatsetOrderedComplete(42);
     readTestTrain();
 
-    Mx newWeights = nonStreamingOptimizer.optimizeWeights(trainingSetList, startMx());
+    Mx newWeights = optimizeWeights(trainingSetList, startMx());
     accuracy(newWeights);
   }
 
@@ -433,7 +423,7 @@ public class FTRLProximalTest {
     readStreaming();
     for (int i = 1; i <= 500; i++) {
       double lambda2 = 0.001 * i;
-      final FTRLProximalOptimizer optimizer = FTRLProximalOptimizer.builder()
+      final FTRLProximal optimizer = FTRLProximal.builder()
               .alpha(132)
               .beta(0.1)
               .lambda1(0.0086)
@@ -443,7 +433,7 @@ public class FTRLProximalTest {
     }
   }
 
-  private double streamingAccuracy(FTRLProximalOptimizer optimizer) {
+  private double streamingAccuracy(FTRLProximal optimizer) {
     ModelState state = new FTRLState(startMx());
     int truePositives = 0;
     int count = 0;
@@ -478,5 +468,21 @@ public class FTRLProximalTest {
     long time = System.currentTimeMillis();
     streamingAccuracy(optimizer);
     LOGGER.info("Execution time: {}", System.currentTimeMillis() - time);
+  }
+
+  private Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights) {
+    ModelState state = new FTRLState(prevWeights);
+    for (DataPoint aTrainingSet : trainingSet) {
+      state = optimizer.step(aTrainingSet, state);
+    }
+
+    final Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
+    for (int i = 0; i < prevWeights.rows(); i++) {
+      VecIterator nz = state.weights().row(i).nonZeroes();
+      while (nz.advance()) {
+        ans.set(i, nz.index(), nz.value());
+      }
+    }
+    return ans;
   }
 }
