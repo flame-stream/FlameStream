@@ -1,12 +1,14 @@
-package com.spbsu.flamestream.example.bl.text_classifier.ops.filtering;
+package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.impl.mx.SparseMx;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.*;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Document;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Topic;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.CountVectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Document;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +18,8 @@ import java.util.stream.Stream;
 
 public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<ClassifierOutput>> {
   private final TopicsPredictor predictor;
+  private final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
+  private final Vectorizer vectorizer = new CountVectorizer(cntVectorizerPath);
 
   public ClassifierFilter(TopicsPredictor predictor) {
     this.predictor = predictor;
@@ -59,6 +63,7 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
 
   private Prediction predict(TfIdfObject tfIdfObject) {
     final Map<String, Double> tfIdf = new HashMap<>();
+    // TODO: 13.05.19 move normalization logic to extra vertex
     { //normalized tf-idf
       double squareSum = 0.0;
       for (String word : tfIdfObject.words()) {
@@ -73,8 +78,9 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
     }
 
     final Document document = new Document(tfIdf);
+
     System.out.println("CLASSIFIER PREDICTS");
-    return new Prediction(tfIdfObject, predictor.predict(document));
+    return new Prediction(tfIdfObject, predictor.predict(vectorizer.vectorize(document)));
   }
 
   public void init() {
