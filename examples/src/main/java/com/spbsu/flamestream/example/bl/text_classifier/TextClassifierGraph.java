@@ -8,20 +8,10 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.example.bl.text_classifier.model.IdfObject;
-import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
-import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
-import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
-import com.spbsu.flamestream.example.bl.text_classifier.model.TfObject;
-import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
-import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.model.*;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.*;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.entries.CountWordEntries;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.Classifier;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.IDFObjectCompleteFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.TfIdfFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.WordContainerOrderingFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.*;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
 
 import java.util.List;
@@ -120,11 +110,11 @@ public class TextClassifierGraph implements Supplier<Graph> {
             List.class
     );
 
-    final Classifier classifier = new Classifier(predictor);
+    final ClassifierFilter classifier = new ClassifierFilter(predictor);
     //noinspection Convert2Lambda,Anonymous2MethodRef
-    final FlameMap<TfIdfObject, Prediction> filterClassifier = new FlameMap<>(
+    final FlameMap<ClassifierInput, ClassifierOutput> filterClassifier = new FlameMap<>(
             classifier,
-            TfIdfObject.class,
+            ClassifierInput.class,
             new Runnable() {
               @Override
               public void run() {
@@ -147,6 +137,34 @@ public class TextClassifierGraph implements Supplier<Graph> {
             }
     );
 
+
+    final FlameMap<TfIdfObject, ClassifierInput> labeledFilter = new FlameMap<>(
+            new LabeledFilter(),
+            TfIdfObject.class
+    );
+
+    final FlameMap<TfIdfObject, ClassifierInput> nonLabeledFilter = new FlameMap<>(
+            new NonLabeledFilter(),
+            TfIdfObject.class
+    );
+
+    //noinspection Convert2Lambda
+    final Equalz equalzWeights = new Equalz() {
+      @Override
+      public boolean test(DataItem o1, DataItem o2) {
+        return false;
+      }
+    };
+
+    final Grouping<ClassifierInput> groupingWeights =
+            new Grouping<>(HashFunction.constantHash(1), equalzWeights, 2, ClassifierInput.class);
+
+    final FlameMap<ClassifierInput, ClassifierInput> broadcastTfidfObject = new FlameMap<>(
+            Stream::of,
+            ClassifierInput.class,
+            HashFunction.broadcastHash()
+    );
+
     final Sink sink = new Sink();
     return new Graph.Builder()
             .link(source, splitterTf)
@@ -161,8 +179,16 @@ public class TextClassifierGraph implements Supplier<Graph> {
             .link(counterWord, idfObjectCompleteFilter)
             .link(idfObjectCompleteFilter, gropingTfIdf)
             .link(gropingTfIdf, filterTfIdf)
-            .link(filterTfIdf, filterClassifier)
+
+            .link(filterTfIdf, nonLabeledFilter)
+            .link(nonLabeledFilter, groupingWeights)
+            .link(groupingWeights, filterClassifier)
+            .link(filterClassifier, groupingWeights)
             .link(filterClassifier, sink)
+
+            .link(filterTfIdf, labeledFilter)
+            .link(labeledFilter, broadcastTfidfObject)
+            .link(broadcastTfidfObject, groupingWeights)
 
             .colocate(splitterTf, splitterWord)
             .colocate(groupingWord, filterWord, counterWord)
@@ -170,9 +196,14 @@ public class TextClassifierGraph implements Supplier<Graph> {
                     idfObjectCompleteFilter,
                     gropingTfIdf,
                     filterTfIdf,
+                    labeledFilter,
+                    groupingWeights,
                     filterClassifier,
                     sink
             )
+            .colocate(filterClassifier, groupingWeights)
+            .colocate(filterTfIdf, nonLabeledFilter)
+           // .colocate(broadcastTfidfObject, groupingWeights)
 
             .build(source, sink);
   }

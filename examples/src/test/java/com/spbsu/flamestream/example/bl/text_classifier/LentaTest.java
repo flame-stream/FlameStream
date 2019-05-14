@@ -1,7 +1,8 @@
 package com.spbsu.flamestream.example.bl.text_classifier;
 
 import akka.actor.ActorSystem;
-import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
+import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
@@ -29,14 +30,7 @@ import scala.concurrent.duration.Duration;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
@@ -110,17 +104,69 @@ public class LentaTest extends FlameAkkaSuite {
     }
   }
 
+  private TopicsPredictor initPredictor() {
+    final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
+    final String weightsPath = "src/main/resources/classifier_weights";
+    return new SklearnSgdPredictor(cntVectorizerPath, weightsPath);
+  }
+
+  @Test
+  public void onlineGraphValidation() throws IOException, InterruptedException, TimeoutException {
+    final ActorSystem system = ActorSystem.create("lentaTfIdf", ConfigFactory.load("remote"));
+    final Graph onlineGraph = new TextClassifierGraph(initPredictor()).get();
+    final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
+    final int parallelism = 4;
+    final int totalDocuments = 2;//1000;
+
+    final List<TextDocument> rawDocuments = documents("lenta/lenta-ru-news.csv")
+            .limit(totalDocuments)
+            .collect(toList());
+    final List<TextDocument> labeledDocuments = rawDocuments
+            .stream()
+            .limit(totalDocuments / 2)
+            .collect(toList());
+
+    final Map<String, String> expectedLabels = new HashMap<>();
+    final List<TextDocument> nonLabeledDocuments = rawDocuments
+            .stream()
+            .skip(totalDocuments / 2)
+            .map(doc -> {
+              expectedLabels.put(doc.name(), doc.label());
+              return new TextDocument(doc.name(), doc.content(), doc.partitioning(), doc.number(), null);
+            })
+            .collect(toList());
+
+    List<TextDocument> testDocuments = new ArrayList<>(labeledDocuments);
+    testDocuments.addAll(nonLabeledDocuments);
+    Collections.shuffle(testDocuments);
+
+    try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(parallelism).build()) {
+      try (final FlameRuntime.Flame flame = runtime.run(onlineGraph)) {
+        flame.attachRear("tfidfRear", new AkkaRearType<>(system, Prediction.class))
+                .forEach(r -> r.addListener(resultQueue::add));
+        final List<AkkaFront.FrontHandle<TextDocument>> handles = flame
+                .attachFront("tfidfFront", new AkkaFrontType<TextDocument>(system))
+                .collect(toList());
+
+        final AkkaFront.FrontHandle<TextDocument> front = handles.get(0);
+        for (int i = 1; i < handles.size(); i++) {
+          handles.get(i).unregister();
+        }
+
+        testDocuments.forEach(front);
+      }
+    }
+
+    Await.ready(system.terminate(), Duration.Inf());
+  }
+
   private void test(FlameRuntime runtime, ActorSystem system) throws IOException, InterruptedException {
     final String testFilePath = "lenta/lenta-ru-news.csv";
     final long expectedDocs = documents(testFilePath).count();
 
-    final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
-    final String weightsPath = "src/main/resources/classifier_weights";
-    final TopicsPredictor predictor = new SklearnSgdPredictor(cntVectorizerPath, weightsPath);
-
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
 
-    try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(predictor).get())) {
+    try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(initPredictor()).get())) {
       flame.attachRear("tfidfRear", new AkkaRearType<>(system, Prediction.class))
               .forEach(r -> r.addListener(resultQueue::add));
       final List<AkkaFront.FrontHandle<TextDocument>> handles = flame
