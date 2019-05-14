@@ -67,7 +67,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
     final Source source = new Source();
     final Grouping<WordContainer> groupingWord =
             new Grouping<>(wordHash, equalzWord, 2, WordContainer.class);
-    final Grouping<DocContainer> gropingTfIdf =
+    final Grouping<DocContainer> groupingTfIdf =
             new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
 
 
@@ -112,9 +112,9 @@ public class TextClassifierGraph implements Supplier<Graph> {
 
     final ClassifierFilter classifier = new ClassifierFilter(predictor);
     //noinspection Convert2Lambda,Anonymous2MethodRef
-    final FlameMap<ClassifierInput, ClassifierOutput> filterClassifier = new FlameMap<>(
+    final FlameMap<List<ClassifierInput>, ClassifierOutput> filterClassifier = new FlameMap<>(
             classifier,
-            ClassifierInput.class,
+            List.class,
             new Runnable() {
               @Override
               public void run() {
@@ -148,19 +148,35 @@ public class TextClassifierGraph implements Supplier<Graph> {
             TfIdfObject.class
     );
 
+    final FlameMap<ClassifierOutput, ClassifierInput> weightsFilter = new FlameMap<>(
+            new WeightsFilter(),
+            ClassifierOutput.class
+    );
+
+    final FlameMap<ClassifierOutput, Prediction> predictionFilter = new FlameMap<>(
+            new PredictionFilter(),
+            ClassifierOutput.class
+    );
+
     //noinspection Convert2Lambda
     final Equalz equalzWeights = new Equalz() {
       @Override
       public boolean test(DataItem o1, DataItem o2) {
-        return false;
+        return true;
       }
     };
 
     final Grouping<ClassifierInput> groupingWeights =
             new Grouping<>(HashFunction.constantHash(1), equalzWeights, 2, ClassifierInput.class);
 
+    //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<ClassifierInput, ClassifierInput> broadcastTfidfObject = new FlameMap<>(
-            Stream::of,
+            new Function<ClassifierInput, Stream<ClassifierInput>>() {
+              @Override
+              public Stream<ClassifierInput> apply(ClassifierInput t) {
+                return Stream.of(t);
+              }
+            },
             ClassifierInput.class,
             HashFunction.broadcastHash()
     );
@@ -168,7 +184,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
     final Sink sink = new Sink();
     return new Graph.Builder()
             .link(source, splitterTf)
-            .link(splitterTf, gropingTfIdf)
+            .link(splitterTf, groupingTfIdf)
             .link(splitterTf, splitterWord)
 
             .link(splitterWord, groupingWord)
@@ -177,14 +193,17 @@ public class TextClassifierGraph implements Supplier<Graph> {
             .link(counterWord, groupingWord)
 
             .link(counterWord, idfObjectCompleteFilter)
-            .link(idfObjectCompleteFilter, gropingTfIdf)
-            .link(gropingTfIdf, filterTfIdf)
+            .link(idfObjectCompleteFilter, groupingTfIdf)
+            .link(groupingTfIdf, filterTfIdf)
 
             .link(filterTfIdf, nonLabeledFilter)
             .link(nonLabeledFilter, groupingWeights)
+
             .link(groupingWeights, filterClassifier)
-            .link(filterClassifier, groupingWeights)
-            .link(filterClassifier, sink)
+            .link(filterClassifier, weightsFilter)
+            .link(weightsFilter, groupingWeights)
+            .link(filterClassifier, predictionFilter)
+            .link(predictionFilter, sink)
 
             .link(filterTfIdf, labeledFilter)
             .link(labeledFilter, broadcastTfidfObject)
@@ -194,16 +213,19 @@ public class TextClassifierGraph implements Supplier<Graph> {
             .colocate(groupingWord, filterWord, counterWord)
             .colocate(
                     idfObjectCompleteFilter,
-                    gropingTfIdf,
+                    groupingTfIdf,
                     filterTfIdf,
                     labeledFilter,
+                    nonLabeledFilter
+            )
+            .colocate(
+                    broadcastTfidfObject,
                     groupingWeights,
                     filterClassifier,
+                    predictionFilter,
+                    weightsFilter,
                     sink
             )
-            .colocate(filterClassifier, groupingWeights)
-            .colocate(filterTfIdf, nonLabeledFilter)
-            .colocate(broadcastTfidfObject, groupingWeights)
 
             .build(source, sink);
   }

@@ -2,6 +2,7 @@ package com.spbsu.flamestream.example.bl.text_classifier;
 
 import akka.actor.ActorSystem;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierOutput;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
@@ -42,6 +43,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.toList;
+import static org.testng.AssertJUnit.assertEquals;
 
 public class LentaTest extends FlameAkkaSuite {
   private static final Logger LOGGER = LoggerFactory.getLogger(LentaTest.class);
@@ -114,7 +116,7 @@ public class LentaTest extends FlameAkkaSuite {
   public void onlineGraphValidation() throws IOException, InterruptedException, TimeoutException {
     final Graph onlineGraph = new TextClassifierGraph(initPredictor()).get();
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
-    final int parallelism = 4;
+    final int parallelism = 2;
     final int totalDocuments = 2;//1000;
 
     final List<TextDocument> rawDocuments = documents("lenta/lenta-ru-news.csv")
@@ -137,12 +139,12 @@ public class LentaTest extends FlameAkkaSuite {
 
     List<TextDocument> testDocuments = new ArrayList<>(labeledDocuments);
     testDocuments.addAll(nonLabeledDocuments);
-    Collections.shuffle(testDocuments);
+    //Collections.shuffle(testDocuments);
+    final ActorSystem system = ActorSystem.create("lentaTfIdf", ConfigFactory.load("remote"));
 
-    //LocalClusterRuntime
-    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(parallelism).build()) {
-      //final ActorSystem system = ActorSystem.create("lentaTfIdf", ConfigFactory.load("remote"));
-      ActorSystem system = runtime.system();
+    final AtomicInteger counter = new AtomicInteger(0);
+    try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(parallelism).build()) {
+      //ActorSystem system = runtime.system();
       try (final FlameRuntime.Flame flame = runtime.run(onlineGraph)) {
         flame.attachRear("tfidfRear", new AkkaRearType<>(system, Prediction.class))
                 .forEach(r -> r.addListener(resultQueue::add));
@@ -155,10 +157,30 @@ public class LentaTest extends FlameAkkaSuite {
           handles.get(i).unregister();
         }
 
-        testDocuments.forEach(front);
-      }
+        final Thread checker = new Thread(Unchecked.runnable(() -> {
+            Prediction item = resultQueue.poll();
+            while (item == null) {
+              try {
+                Thread.sleep(10);
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+              item = resultQueue.poll();
 
-      Await.ready(system.terminate(), Duration.Inf());
+              if (item != null) {
+                counter.incrementAndGet();
+                System.out.println(item.tfIdf().document());
+                System.out.println(item.tfIdf().label());
+              }
+            }
+        }));
+
+        checker.start();
+        testDocuments.forEach(front);
+        checker.join();
+
+        assertEquals(totalDocuments / 2, counter.get());
+      }
     }
   }
 
