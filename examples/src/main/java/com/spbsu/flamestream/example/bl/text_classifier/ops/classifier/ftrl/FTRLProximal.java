@@ -3,17 +3,15 @@ package com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.DataPoint;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineModel;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Optimizer;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class FTRLProximalOptimizer implements Optimizer, OnlineModel {
+public class FTRLProximal implements OnlineModel {
 
   public static class Builder {
     private double alpha = 0.2;
@@ -41,8 +39,8 @@ public class FTRLProximalOptimizer implements Optimizer, OnlineModel {
       return this;
     }
 
-    public FTRLProximalOptimizer build(String[] allTopics) {
-      return new FTRLProximalOptimizer(alpha, beta, lambda1, lambda2, allTopics);
+    public FTRLProximal build(String[] allTopics) {
+      return new FTRLProximal(alpha, beta, lambda1, lambda2, allTopics);
     }
   }
 
@@ -56,29 +54,12 @@ public class FTRLProximalOptimizer implements Optimizer, OnlineModel {
   private final double lambda2;
   private final String[] topics;
 
-  private FTRLProximalOptimizer(double alpha, double beta, double lambda1, double lambda2, final String[] topics) {
+  private FTRLProximal(double alpha, double beta, double lambda1, double lambda2, final String[] topics) {
     this.alpha = alpha;
     this.beta = beta;
     this.lambda1 = lambda1;
     this.lambda2 = lambda2;
     this.topics = topics;
-  }
-
-  @Override
-  public Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights) {
-    ModelState state = new FTRLState(prevWeights);
-    for (DataPoint aTrainingSet : trainingSet) {
-      state = step(aTrainingSet, state);
-    }
-
-    final Mx ans = new VecBasedMx(prevWeights.rows(), prevWeights.columns());
-    for (int i = 0; i < prevWeights.rows(); i++) {
-      VecIterator nz = state.weights().row(i).nonZeroes();
-      while (nz.advance()) {
-        ans.set(i, nz.index(), nz.value());
-      }
-    }
-    return ans;
   }
 
   @Override
