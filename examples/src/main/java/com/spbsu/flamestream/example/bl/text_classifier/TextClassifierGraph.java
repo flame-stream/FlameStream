@@ -203,7 +203,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
             )
             .colocate(filterClassifier, groupingWeights)
             .colocate(filterTfIdf, nonLabeledFilter)
-           // .colocate(broadcastTfidfObject, groupingWeights)
+            .colocate(broadcastTfidfObject, groupingWeights)
 
             .build(source, sink);
   }

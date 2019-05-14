@@ -112,7 +112,6 @@ public class LentaTest extends FlameAkkaSuite {
 
   @Test
   public void onlineGraphValidation() throws IOException, InterruptedException, TimeoutException {
-    final ActorSystem system = ActorSystem.create("lentaTfIdf", ConfigFactory.load("remote"));
     final Graph onlineGraph = new TextClassifierGraph(initPredictor()).get();
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
     final int parallelism = 4;
@@ -140,7 +139,10 @@ public class LentaTest extends FlameAkkaSuite {
     testDocuments.addAll(nonLabeledDocuments);
     Collections.shuffle(testDocuments);
 
-    try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(parallelism).build()) {
+    //LocalClusterRuntime
+    try (final LocalRuntime runtime = new LocalRuntime.Builder().parallelism(parallelism).build()) {
+      //final ActorSystem system = ActorSystem.create("lentaTfIdf", ConfigFactory.load("remote"));
+      ActorSystem system = runtime.system();
       try (final FlameRuntime.Flame flame = runtime.run(onlineGraph)) {
         flame.attachRear("tfidfRear", new AkkaRearType<>(system, Prediction.class))
                 .forEach(r -> r.addListener(resultQueue::add));
@@ -155,9 +157,9 @@ public class LentaTest extends FlameAkkaSuite {
 
         testDocuments.forEach(front);
       }
-    }
 
-    Await.ready(system.terminate(), Duration.Inf());
+      Await.ready(system.terminate(), Duration.Inf());
+    }
   }
 
   private void test(FlameRuntime runtime, ActorSystem system) throws IOException, InterruptedException {
