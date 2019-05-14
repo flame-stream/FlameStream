@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.example.bl.classifier;
+package com.spbsu.flamestream.example.bl.text_classifier;
 
 import akka.actor.ActorSystem;
 import com.expleague.commons.math.MathTools;
@@ -6,10 +6,13 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Document;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Topic;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.CountVectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Document;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.SklearnSgdPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TextUtils;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
@@ -64,7 +67,7 @@ public class PredictorStreamTest {
     final List<String> texts = new ArrayList<>();
     final List<double[]> pyPredictions = new ArrayList<>();
     { //read data for test
-      final SklearnSgdPredictor predictor = new SklearnSgdPredictor(CNT_VECTORIZER_PATH, WEIGHTS_PATH);
+      final CountVectorizer vectorizer = new CountVectorizer(CNT_VECTORIZER_PATH);
       try (BufferedReader br = new BufferedReader(new FileReader(new File(PATH_TO_TEST_DATA)))) {
         final double[] data = parseDoubles(br.readLine());
         final int testCount = (int) data[0];
@@ -77,8 +80,9 @@ public class PredictorStreamTest {
           final Map<String, Double> tfIdf = new HashMap<>();
           final double[] tfidfFeatures = parseDoubles(br.readLine());
           texts.add(docText);
-          SklearnSgdPredictor.text2words(docText).forEach(word -> {
-            final int featureIndex = predictor.wordIndex(word);
+          final Stream<String> result = TextUtils.text2words(docText);
+          result.forEach(word -> {
+            final int featureIndex = vectorizer.wordIndex(word);
             tfIdf.put(word, tfidfFeatures[featureIndex]);
           });
           final Document document = new Document(tfIdf);
@@ -136,13 +140,15 @@ public class PredictorStreamTest {
   private Graph predictorGraph() {
     final Source source = new Source();
     final Sink sink = new Sink();
-    final SklearnSgdPredictor predictor = new SklearnSgdPredictor(CNT_VECTORIZER_PATH, WEIGHTS_PATH);
+    final Vectorizer vectorizer = new CountVectorizer(CNT_VECTORIZER_PATH);
+    final SklearnSgdPredictor predictor = new SklearnSgdPredictor(WEIGHTS_PATH);
     final FlameMap<Document, Topic[]> classifierMap = new FlameMap<>(
-            new ClassifierFunction(predictor),
+            new ClassifierFunction(vectorizer, predictor),
             Document.class,
             new Runnable() {
               @Override
               public void run() {
+                vectorizer.init();
                 predictor.init();
               }
             }
@@ -155,15 +161,18 @@ public class PredictorStreamTest {
   }
 
   private static class ClassifierFunction implements Function<Document, Stream<Topic[]>> {
+    private final Vectorizer vectorizer;
     private final TopicsPredictor predictor;
 
-    private ClassifierFunction(TopicsPredictor predictor) {
+    private ClassifierFunction(Vectorizer vectorizer,
+                               TopicsPredictor predictor) {
+      this.vectorizer = vectorizer;
       this.predictor = predictor;
     }
 
     @Override
     public Stream<Topic[]> apply(Document document) {
-      return Stream.of(new Topic[][]{predictor.predict(document)});
+      return Stream.of(new Topic[][]{predictor.predict(vectorizer.vectorize(document))});
     }
   }
 

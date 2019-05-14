@@ -1,9 +1,8 @@
-package com.spbsu.flamestream.example.bl.text_classifier.model.containers;
+package com.spbsu.flamestream.example.bl.text_classifier.model;
 
-import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Topic;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
 
-public class Prediction implements ClassifierOutput {
+public class Prediction {
   private final TfIdfObject tfIdf;
   private final Topic[] topics;
 

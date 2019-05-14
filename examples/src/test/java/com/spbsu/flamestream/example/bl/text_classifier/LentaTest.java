@@ -1,14 +1,15 @@
 package com.spbsu.flamestream.example.bl.text_classifier;
 
 import akka.actor.ActorSystem;
-import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierOutput;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.Prediction;
+import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.SklearnSgdPredictor;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.Topic;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.CountVectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.SklearnSgdPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TextUtils;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
@@ -31,7 +32,14 @@ import scala.concurrent.duration.Duration;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
@@ -43,7 +51,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.toList;
-import static org.testng.AssertJUnit.assertEquals;
 
 public class LentaTest extends FlameAkkaSuite {
   private static final Logger LOGGER = LoggerFactory.getLogger(LentaTest.class);
@@ -75,8 +82,7 @@ public class LentaTest extends FlameAkkaSuite {
               r.get(0), // url order
               text.substring(1).toLowerCase(),
               String.valueOf(ThreadLocalRandom.current().nextInt(0, 10)),
-              counter.incrementAndGet(),
-              r.get(4) // label
+              counter.incrementAndGet()
       );
     });
 
@@ -106,91 +112,18 @@ public class LentaTest extends FlameAkkaSuite {
     }
   }
 
-  private TopicsPredictor initPredictor() {
-    final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
-    final String weightsPath = "src/main/resources/classifier_weights";
-    return new SklearnSgdPredictor(cntVectorizerPath, weightsPath);
-  }
-
-  @Test
-  public void onlineGraphValidation() throws IOException, InterruptedException, TimeoutException {
-    final Graph onlineGraph = new TextClassifierGraph(initPredictor()).get();
-    final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
-    final int parallelism = 3;
-    final int totalDocuments = 2;//1000;
-
-    final List<TextDocument> rawDocuments = documents("lenta/lenta-ru-news.csv")
-            .limit(totalDocuments)
-            .collect(toList());
-    final List<TextDocument> labeledDocuments = rawDocuments
-            .stream()
-            .limit(totalDocuments / 2)
-            .collect(toList());
-
-    final Map<String, String> expectedLabels = new HashMap<>();
-    final List<TextDocument> nonLabeledDocuments = rawDocuments
-            .stream()
-            .skip(totalDocuments / 2)
-            .map(doc -> {
-              expectedLabels.put(doc.name(), doc.label());
-              return new TextDocument(doc.name(), doc.content(), doc.partitioning(), doc.number(), null);
-            })
-            .collect(toList());
-
-    List<TextDocument> testDocuments = new ArrayList<>(labeledDocuments);
-    testDocuments.addAll(nonLabeledDocuments);
-    //Collections.shuffle(testDocuments);
-    final ActorSystem system = ActorSystem.create("lentaTfIdf", ConfigFactory.load("remote"));
-
-    final AtomicInteger counter = new AtomicInteger(0);
-    try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(parallelism).build()) {
-      //ActorSystem system = runtime.system();
-      try (final FlameRuntime.Flame flame = runtime.run(onlineGraph)) {
-        flame.attachRear("tfidfRear", new AkkaRearType<>(system, Prediction.class))
-                .forEach(r -> r.addListener(resultQueue::add));
-        final List<AkkaFront.FrontHandle<TextDocument>> handles = flame
-                .attachFront("tfidfFront", new AkkaFrontType<TextDocument>(system))
-                .collect(toList());
-
-        final AkkaFront.FrontHandle<TextDocument> front = handles.get(0);
-        for (int i = 1; i < handles.size(); i++) {
-          handles.get(i).unregister();
-        }
-
-        final Thread checker = new Thread(Unchecked.runnable(() -> {
-            Prediction item = resultQueue.poll();
-            while (item == null) {
-              try {
-                Thread.sleep(10);
-              } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-              }
-              item = resultQueue.poll();
-
-              if (item != null) {
-                counter.incrementAndGet();
-                System.out.println(item.tfIdf().document());
-                System.out.println(item.tfIdf().label());
-              }
-            }
-        }));
-
-        checker.start();
-        testDocuments.forEach(front);
-        checker.join();
-
-        assertEquals(totalDocuments / 2, counter.get());
-      }
-    }
-  }
-
   private void test(FlameRuntime runtime, ActorSystem system) throws IOException, InterruptedException {
     final String testFilePath = "lenta/lenta-ru-news.csv";
     final long expectedDocs = documents(testFilePath).count();
 
+    final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
+    final String weightsPath = "src/main/resources/classifier_weights";
+    final Vectorizer vectorizer = new CountVectorizer(cntVectorizerPath);
+    final TopicsPredictor predictor = new SklearnSgdPredictor(weightsPath);
+
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
 
-    try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(initPredictor()).get())) {
+    try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(vectorizer, predictor).get())) {
       flame.attachRear("tfidfRear", new AkkaRearType<>(system, Prediction.class))
               .forEach(r -> r.addListener(resultQueue::add));
       final List<AkkaFront.FrontHandle<TextDocument>> handles = flame
@@ -223,8 +156,8 @@ public class LentaTest extends FlameAkkaSuite {
           }
 
           final TextDocument processedDoc = toCheckIter.next();
-          final List<String> pdWords = SklearnSgdPredictor.text2words(processedDoc.content()).collect(toList());
-          final Set<String> pdWordsSet = SklearnSgdPredictor.text2words(processedDoc.content())
+          final List<String> pdWords = TextUtils.text2words(processedDoc.content()).collect(toList());
+          final Set<String> pdWordsSet = TextUtils.text2words(processedDoc.content())
                   .collect(Collectors.toSet());
           pdWordsSet.forEach(w -> idfExpected2.merge(w, 1, Integer::sum));
           final TfIdfObject tfIdf = prediction.tfIdf();
@@ -246,7 +179,7 @@ public class LentaTest extends FlameAkkaSuite {
           }
 
           final Map<String, Integer> result = new HashMap<>();
-          SklearnSgdPredictor.text2words(processedDoc.content()).forEach(w -> result.merge(w, 1, Integer::sum));
+          TextUtils.text2words(processedDoc.content()).forEach(w -> result.merge(w, 1, Integer::sum));
           Assert.assertEquals(processedDoc.name(), tfIdf.document(), String.format(
                   "unexpected document: '%s' instead of '%s'%n",
                   tfIdf.document(),
