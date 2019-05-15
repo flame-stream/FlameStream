@@ -2,7 +2,7 @@ package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierInput;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierOutput;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierWeights;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierState;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.Prediction;
 
 import java.util.function.Function;
@@ -15,7 +15,7 @@ public class WeightsFilter implements Function<ClassifierOutput, Stream<Classifi
         if (output instanceof Prediction) {
             return Stream.of();
         } else {
-            return Stream.of((ClassifierWeights) output);
+            return Stream.of((ClassifierState) output);
         }
     }
 }

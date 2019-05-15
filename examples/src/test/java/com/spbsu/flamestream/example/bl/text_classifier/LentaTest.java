@@ -112,7 +112,7 @@ public class LentaTest extends FlameAkkaSuite {
   public void onlineGraphValidation() throws IOException, InterruptedException, TimeoutException {
     final Graph onlineGraph = new TextClassifierGraph(initPredictor()).get();
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
-    final int parallelism = 3;
+    final int parallelism = 2;
     final int totalDocuments = 2;//1000;
 
     final List<TextDocument> rawDocuments = documents("lenta/lenta-ru-news.csv")
@@ -186,7 +186,6 @@ public class LentaTest extends FlameAkkaSuite {
     final String weightsPath = "src/main/resources/classifier_weights";
 
     final TopicsPredictor predictor = new SklearnSgdPredictor(weightsPath);
-
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
 
     try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(predictor).get())) {

@@ -1,15 +1,18 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
-import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.impl.mx.SparseMx;
+import com.expleague.commons.math.vectors.Vec;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.*;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.CountVectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.DataPoint;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Document;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TextUtils;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TopicsPredictor;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLProximal;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +23,8 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
   private final TopicsPredictor predictor;
   private final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
   private final Vectorizer vectorizer = new CountVectorizer(cntVectorizerPath);
+  private final String topicsPath = "src/main/resources/topics";
+  private final FTRLProximal updater = new FTRLProximal.Builder().build(TextUtils.readTopics(topicsPath));
 
   public ClassifierFilter(TopicsPredictor predictor) {
     this.predictor = predictor;
@@ -29,11 +34,11 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
     TfIdfObject tfIdfObject = ((ClassifierTfIdf) input).getTfidf();
 
     if (tfIdfObject.label() != null) {
-      Mx newWeights = new SparseMx(1, 1); // change to new classifier weights
-      System.out.println("SENDING NEW WEIGHTS");
-      return Stream.of(new ClassifierWeights("New weights"));
+      DataPoint point = new DataPoint(vectorize(tfIdfObject), tfIdfObject.label());
+      ModelState newState = updater.step(point, predictor.getState());
+      return Stream.of(new ClassifierState(newState));
     } else {
-      final Prediction result = new Prediction(tfIdfObject, new Topic[10]);//predict(tfIdfObject);
+      final Prediction result = predict(tfIdfObject);
       return Stream.of(result);
     }
   }
@@ -44,7 +49,7 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
       return processTfIdf(input.get(0));
     }
 
-    if (input.get(0) instanceof ClassifierWeights) {
+    if (input.get(0) instanceof ClassifierState) {
       return processWithNewWeights(input.get(0), input.get(1));
     } else {
       return Stream.empty();
@@ -52,16 +57,12 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
 
   }
 
-  private Stream<ClassifierOutput> processWithNewWeights(ClassifierInput weights, ClassifierInput tfidf) {
-    String newWeights = ((ClassifierWeights) weights).getWeights();
-
-    // update weights of the classifier
-    System.out.println("CLASSIFIER UPDATING ITS WEIGHTS");
-
+  private Stream<ClassifierOutput> processWithNewWeights(ClassifierInput state, ClassifierInput tfidf) {
+    predictor.updateState(((ClassifierState) state).getState());
     return processTfIdf(tfidf);
   }
 
-  private Prediction predict(TfIdfObject tfIdfObject) {
+  private Vec vectorize(TfIdfObject tfIdfObject) {
     final Map<String, Double> tfIdf = new HashMap<>();
     // TODO: 13.05.19 move normalization logic to extra vertex
     { //normalized tf-idf
@@ -77,10 +78,12 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
       tfIdf.forEach((s, v) -> tfIdf.put(s, v / norm));
     }
 
-    final Document document = new Document(tfIdf);
+    return vectorizer.vectorize(new Document(tfIdf));
+  }
 
-    System.out.println("CLASSIFIER PREDICTS");
-    return new Prediction(tfIdfObject, predictor.predict(vectorizer.vectorize(document)));
+  private Prediction predict(TfIdfObject tfIdfObject) {
+    return new Prediction(tfIdfObject,
+            predictor.predict(vectorize(tfIdfObject)));
   }
 
   public void init() {
