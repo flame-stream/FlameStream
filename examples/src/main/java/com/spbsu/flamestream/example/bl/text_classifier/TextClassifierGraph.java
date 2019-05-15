@@ -8,8 +8,17 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
-import com.spbsu.flamestream.example.bl.text_classifier.model.*;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.*;
+import com.spbsu.flamestream.example.bl.text_classifier.model.IdfObject;
+import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
+import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
+import com.spbsu.flamestream.example.bl.text_classifier.model.TfObject;
+import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
+import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierInput;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierOutput;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.Prediction;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.ClassifierFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.CountWordEntries;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.IDFObjectCompleteFilter;
@@ -19,7 +28,11 @@ import com.spbsu.flamestream.example.bl.text_classifier.ops.PredictionFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.TfIdfFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.WeightsFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.WordContainerOrderingFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.CountVectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TextUtils;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLProximal;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLState;
 
 import java.util.List;
 import java.util.function.Function;
@@ -27,10 +40,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class TextClassifierGraph implements Supplier<Graph> {
-  private final TopicsPredictor predictor;
-
-  TextClassifierGraph(TopicsPredictor predictor) {
-    this.predictor = predictor;
+  TextClassifierGraph() {
   }
 
   @SuppressWarnings("Convert2Lambda")
@@ -117,17 +127,18 @@ public class TextClassifierGraph implements Supplier<Graph> {
             List.class
     );
 
-    final ClassifierFilter classifier = new ClassifierFilter(predictor);
+    final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
+    final String topicsPath = "src/main/resources/topics";
+    final double[] meta = TextUtils.readDimension("src/main/resources/classifier_weights");
+
+    final Vectorizer vectorizer = new CountVectorizer(cntVectorizerPath);
+    final FTRLProximal updater = new FTRLProximal.Builder().build(TextUtils.readTopics(topicsPath));
+    final ClassifierFilter classifier =
+            new ClassifierFilter(vectorizer, new FTRLState((int) meta[0], (int) meta[1]), updater);
     //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<List<ClassifierInput>, ClassifierOutput> filterClassifier = new FlameMap<>(
             classifier,
-            List.class,
-            new Runnable() {
-              @Override
-              public void run() {
-                classifier.init();
-              }
-            }
+            List.class
     );
 
     final IDFObjectCompleteFilter completeFilter = new IDFObjectCompleteFilter();

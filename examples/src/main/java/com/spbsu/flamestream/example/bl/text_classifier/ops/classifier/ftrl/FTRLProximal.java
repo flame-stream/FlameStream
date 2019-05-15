@@ -14,10 +14,10 @@ import java.util.stream.IntStream;
 public class FTRLProximal implements OnlineModel {
 
   public static class Builder {
-    private double alpha = 0.2;
+    private double alpha = 132;
     private double beta = 0.1;
-    private double lambda1 = 0.1;
-    private double lambda2 = 0.001;
+    private double lambda1 = 0.0086;
+    private double lambda2 = 0.095;
 
     public Builder alpha(double alpha) {
       this.alpha = alpha;

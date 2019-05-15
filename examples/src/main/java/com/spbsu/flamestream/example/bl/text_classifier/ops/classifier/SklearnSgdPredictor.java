@@ -65,16 +65,6 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return result;
   }
 
-  @Override
-  public void updateState(ModelState newState) {
-    this.weights = newState.weights();
-  }
-
-  @Override
-  public ModelState getState() {
-    return new FTRLState(weights);
-  }
-
   public void init() {
     if (weights != null) {
       return;
