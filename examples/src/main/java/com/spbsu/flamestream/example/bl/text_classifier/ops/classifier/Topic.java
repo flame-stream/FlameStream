@@ -7,7 +7,7 @@ public class Topic implements Comparable<Topic> {
   private final String id;
   private final double probability;
 
-  Topic(String name, String id, double probability) {
+  public Topic(String name, String id, double probability) {
     this.name = name;
     this.id = id;
     this.probability = probability;
