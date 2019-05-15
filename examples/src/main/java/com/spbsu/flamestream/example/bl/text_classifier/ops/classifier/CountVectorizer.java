@@ -44,6 +44,10 @@ public class CountVectorizer implements Vectorizer {
     }
   }
 
+  public int size() {
+    return countVectorizer.size();
+  }
+
   @Override
   public Vec vectorize(Document document) {
     init();

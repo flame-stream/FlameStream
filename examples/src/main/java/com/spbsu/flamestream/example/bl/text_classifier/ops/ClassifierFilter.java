@@ -7,12 +7,14 @@ import com.spbsu.flamestream.example.bl.text_classifier.model.containers.Classif
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierState;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierTfIdf;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.Prediction;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.CountVectorizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.DataPoint;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Document;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLProximal;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLState;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,15 +24,18 @@ import java.util.stream.Stream;
 
 public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<ClassifierOutput>> {
   private final Vectorizer vectorizer;
-  private final ModelState defaultState;
   private final FTRLProximal optimizer;
+  private final int rows;
+  private final int columns;
 
-  public ClassifierFilter(Vectorizer vectorizer,
-                          ModelState defaultState,
-                          FTRLProximal optimizer) {
-    this.vectorizer = vectorizer;
-    this.defaultState = defaultState;
-    this.optimizer = optimizer;
+  public ClassifierFilter(String cntVectorizerPath, String[] topics) {
+    final CountVectorizer countVectorizer = new CountVectorizer(cntVectorizerPath);
+    countVectorizer.init();
+
+    this.vectorizer = countVectorizer;
+    this.optimizer = new FTRLProximal.Builder().build(topics);
+    this.rows = topics.length;
+    this.columns = countVectorizer.size();
   }
 
   private Stream<ClassifierOutput> processTfIdf(ClassifierInput input) {
@@ -38,7 +43,7 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
 
     if (tfIdfObject.label() != null) {
       DataPoint point = new DataPoint(vectorize(tfIdfObject), tfIdfObject.label());
-      ModelState firstState = optimizer.step(point, defaultState);
+      ModelState firstState = optimizer.step(point, new FTRLState(rows, columns));
       return Stream.of(new ClassifierState(firstState));
     } else {
       final Prediction result = new Prediction(tfIdfObject, new Topic[1]);

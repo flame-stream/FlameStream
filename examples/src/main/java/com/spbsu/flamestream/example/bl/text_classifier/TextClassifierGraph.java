@@ -40,7 +40,14 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class TextClassifierGraph implements Supplier<Graph> {
+  private final ClassifierFilter classifier;
+
   TextClassifierGraph() {
+    final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
+    final String topicsPath = "src/main/resources/topics";
+    final String[] topics = TextUtils.readTopics(topicsPath);
+
+    classifier = new ClassifierFilter(cntVectorizerPath, topics);
   }
 
   @SuppressWarnings("Convert2Lambda")
@@ -127,14 +134,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
             List.class
     );
 
-    final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
-    final String topicsPath = "src/main/resources/topics";
-    final double[] meta = TextUtils.readDimension("src/main/resources/classifier_weights");
 
-    final Vectorizer vectorizer = new CountVectorizer(cntVectorizerPath);
-    final FTRLProximal updater = new FTRLProximal.Builder().build(TextUtils.readTopics(topicsPath));
-    final ClassifierFilter classifier =
-            new ClassifierFilter(vectorizer, new FTRLState((int) meta[0], (int) meta[1]), updater);
     //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<List<ClassifierInput>, ClassifierOutput> filterClassifier = new FlameMap<>(
             classifier,
