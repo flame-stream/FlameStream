@@ -64,6 +64,16 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     return result;
   }
 
+  @Override
+  public void updateState(ModelState newState) {
+    this.weights = newState.weights();
+  }
+
+  @Override
+  public ModelState getState() {
+    return () -> weights;
+  }
+
   public void init() {
     if (weights != null) {
       return;
@@ -113,7 +123,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
     }
   }
 
-  private static double[] parseDoubles(String line) {
+  static double[] parseDoubles(String line) {
     return Arrays
             .stream(line.split(" "))
             .mapToDouble(Double::parseDouble)

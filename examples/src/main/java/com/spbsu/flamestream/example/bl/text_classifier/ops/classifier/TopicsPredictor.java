@@ -7,4 +7,8 @@ public interface TopicsPredictor {
   }
 
   Topic[] predict(Vec vec);
+
+  void updateState(ModelState newState);
+
+  ModelState getState();
 }
