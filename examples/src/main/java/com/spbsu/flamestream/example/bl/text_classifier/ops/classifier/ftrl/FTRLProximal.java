@@ -1,17 +1,22 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl;
 
 import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.DataPoint;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineModel;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineTopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class FTRLProximal implements OnlineModel {
+public class FTRLProximal implements OnlineModel, OnlineTopicsPredictor {
 
   public static class Builder {
     private double alpha = 132;
@@ -113,5 +118,34 @@ public class FTRLProximal implements OnlineModel {
       }
     });
     return prevState;
+  }
+
+  @Override
+  public Topic[] predict(ModelState state, Vec vec) {
+    final Vec probabilities;
+    { // compute topic probabilities
+      final Vec score = MxTools.multiply(state.weights(), vec);
+      final Vec scaled = VecTools.scale(score, -1);
+      VecTools.exp(scaled);
+
+      final double[] ones = new double[score.dim()];
+      Arrays.fill(ones, 1);
+      final Vec vecOnes = new ArrayVec(ones, 0, ones.length);
+      probabilities = VecTools.sum(scaled, vecOnes);
+      for (int i = 0; i < probabilities.dim(); i++) {
+        double changed = 1 / probabilities.get(i);
+        probabilities.set(i, changed);
+      }
+      final double rowSum = VecTools.sum(probabilities);
+      VecTools.scale(probabilities, 1 / rowSum);
+    }
+
+    final Topic[] result = new Topic[probabilities.dim()];
+    { //fill in topics
+      for (int index = 0; index < probabilities.dim(); index++) {
+        result[index] = new Topic(topics[index], Integer.toString(index), probabilities.get(index));
+      }
+    }
+    return result;
   }
 }
