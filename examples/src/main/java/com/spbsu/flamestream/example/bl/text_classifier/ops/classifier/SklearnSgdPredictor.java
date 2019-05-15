@@ -7,6 +7,7 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLState;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -71,7 +72,7 @@ public class SklearnSgdPredictor implements TopicsPredictor {
 
   @Override
   public ModelState getState() {
-    return () -> weights;
+    return new FTRLState(weights);
   }
 
   public void init() {
