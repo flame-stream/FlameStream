@@ -434,7 +434,8 @@ public class FTRLProximalTest {
   }
 
   private double streamingAccuracy(FTRLProximal optimizer) {
-    ModelState state = new FTRLState(startMx());
+    Mx startMatrix = startMx();
+    ModelState state = new FTRLState(startMatrix.rows(), startMatrix.columns());
     int truePositives = 0;
     int count = 0;
     for (int i = 0; i < trainingSetList.size(); i++) {
@@ -471,7 +472,7 @@ public class FTRLProximalTest {
   }
 
   private Mx optimizeWeights(List<DataPoint> trainingSet, Mx prevWeights) {
-    ModelState state = new FTRLState(prevWeights);
+    ModelState state = new FTRLState(prevWeights.rows(), prevWeights.columns());
     for (DataPoint aTrainingSet : trainingSet) {
       state = optimizer.step(aTrainingSet, state);
     }

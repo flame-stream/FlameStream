@@ -52,4 +52,17 @@ public class TextUtils {
 
     return null;
   }
+
+  public static double[] readDimension(String metaPath) {
+    try (final BufferedReader br = new BufferedReader(new InputStreamReader(
+            new FileInputStream(metaPath),
+            StandardCharsets.UTF_8
+    ))) {
+      return parseDoubles(br.readLine());
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    return null;
+  }
 }
