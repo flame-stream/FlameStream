@@ -47,16 +47,17 @@ class Cluster extends LoggingActor {
   private final boolean blinking;
   private final int blinkPeriodSec;
 
-  private Cluster
-          (Graph g,
-           StateStorage stateStorage,
-           int parallelism,
-           int maxElementsInGraph,
-           int millisBetweenCommits,
-           boolean distributedAcker,
-           boolean blinking,
-           int blinkPeriodSec
-          ) {
+  private Cluster(
+          Graph g,
+          StateStorage stateStorage,
+          int parallelism,
+          int maxElementsInGraph,
+          boolean barrierDisabled,
+          int millisBetweenCommits,
+          boolean distributedAcker,
+          boolean blinking,
+          int blinkPeriodSec
+  ) {
     this.blinking = blinking;
     this.blinkPeriodSec = blinkPeriodSec;
 
@@ -123,6 +124,7 @@ class Cluster extends LoggingActor {
                      StateStorage stateStorage,
                      int parallelism,
                      int maxElementsInGraph,
+                     boolean barrierDisabled,
                      int millisBetweenCommits,
                      boolean distributedAcker,
                      boolean blinking,
@@ -134,6 +136,7 @@ class Cluster extends LoggingActor {
             stateStorage,
             parallelism,
             maxElementsInGraph,
+            barrierDisabled,
             millisBetweenCommits,
             distributedAcker,
             blinking,
