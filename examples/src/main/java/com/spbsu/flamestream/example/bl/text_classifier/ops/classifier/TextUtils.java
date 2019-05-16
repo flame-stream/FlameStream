@@ -5,13 +5,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.SklearnSgdPredictor.parseDoubles;
 
 public class TextUtils {
   private static final Pattern PATTERN = Pattern.compile("\\b\\w\\w+\\b", Pattern.UNICODE_CHARACTER_CLASS);
@@ -37,7 +36,10 @@ public class TextUtils {
             new FileInputStream(topicsPath),
             StandardCharsets.UTF_8
     ))) {
-      final double[] meta = parseDoubles(br.readLine());
+      final double[] meta = Arrays
+              .stream(br.readLine().split(" "))
+              .mapToDouble(Double::parseDouble)
+              .toArray();
       final int classes = (int) meta[0];
       String[] topics = new String[classes];
       for (int i = 0; i < classes; i++) {
