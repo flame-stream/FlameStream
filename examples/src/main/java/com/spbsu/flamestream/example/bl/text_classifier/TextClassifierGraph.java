@@ -17,7 +17,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierInput;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierOutput;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.Prediction;
+import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.ClassifierFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.CountWordEntries;
@@ -227,10 +227,10 @@ public class TextClassifierGraph implements Supplier<Graph> {
                     idfObjectCompleteFilter,
                     groupingTfIdf,
                     filterTfIdf,
-                    labeledFilter,
-                    nonLabeledFilter
+                    labeledFilter
             )
             .colocate(
+                    nonLabeledFilter,
                     broadcastTfidfObject,
                     groupingWeights,
                     filterClassifier,

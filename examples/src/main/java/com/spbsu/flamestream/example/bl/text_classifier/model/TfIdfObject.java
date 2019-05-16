@@ -1,12 +1,13 @@
 package com.spbsu.flamestream.example.bl.text_classifier.model;
 
 
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierInput;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
 
 import java.util.Map;
 import java.util.Set;
 
-public class TfIdfObject implements DocContainer {
+public class TfIdfObject implements DocContainer, ClassifierInput {
   private final int number;
   private final Map<String, Integer> tf;
   private final Map<String, Integer> idf;
