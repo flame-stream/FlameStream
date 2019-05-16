@@ -40,14 +40,16 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
 
   private Stream<ClassifierOutput> processTfIdf(ClassifierInput input) {
     TfIdfObject tfIdfObject = ((ClassifierTfIdf) input).getTfidf();
+    ModelState initialState = new FTRLState(rows, columns);
 
     if (tfIdfObject.label() != null) {
       DataPoint point = new DataPoint(vectorize(tfIdfObject), tfIdfObject.label());
-      ModelState firstState = optimizer.step(point, new FTRLState(rows, columns));
+      ModelState firstState = optimizer.step(point, initialState);
       return Stream.of(new ClassifierState(firstState));
     } else {
-      final Prediction result = new Prediction(tfIdfObject, new Topic[1]);
-      //TopicsPredictor.predict(tfIdfObject, vectorize(tfIdfObject)));
+      Vec features = vectorize(tfIdfObject);
+      final Prediction result = new Prediction(tfIdfObject,
+              new ClassifierState(initialState), optimizer.predict(initialState, features));
       return Stream.of(result);
     }
   }
@@ -59,11 +61,14 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
     }
 
     if (input.get(0) instanceof ClassifierState) {
-      //return TopicsPredictor.predict(input.get(0), vectorize(input.get(1)));
       TfIdfObject tfIdfObject = ((ClassifierTfIdf) input.get(1)).getTfidf();
-      return Stream.of(new Prediction(tfIdfObject, new Topic[2]));
+      ModelState state = ((ClassifierState) input.get(0)).getState();
+      Vec features = vectorize(tfIdfObject);
+      Topic[] prediction = optimizer.predict(state, features);
+
+      return Stream.of(new Prediction(tfIdfObject, (ClassifierState) input.get(0), prediction));
     } else {
-      return Stream.empty();
+      return Stream.of();
     }
 
   }
