@@ -11,7 +11,7 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.DataPoint;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.SklearnSgdPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TextUtils;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLProximal;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLState;
 import org.slf4j.Logger;
@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,15 +37,14 @@ import java.util.stream.IntStream;
 @Test(enabled = false)
 public class FTRLProximalTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(FTRLProximalTest.class.getName());
-  private static final String WEIGHTS_PATH = "src/main/resources/classifier_weights";
   private static final String TMP_TRAIN_PATH = "src/test/resources/tmp_train";
   private static final String TMP_TEST_PATH = "src/test/resources/tmp_test";
+  private static final String topicsPath = "src/main/resources/topics";
   private static int testSize;
   private static int trainSize;
   private static int offset;
   private static int features;
 
-  private final SklearnSgdPredictor predictor = new SklearnSgdPredictor(WEIGHTS_PATH);
   private final List<DataPoint> trainingSetList = new ArrayList<>();
   private final List<DataPoint> testSetList = new ArrayList<>();
   private Boolean[] isTrain;
@@ -56,8 +56,10 @@ public class FTRLProximalTest {
     testSize = 5000;
     trainSize = 10000;
     offset = 1000;
-    predictor.init();
-    allTopics = Arrays.stream(predictor.getTopics()).map(String::trim).map(String::toLowerCase).toArray(String[]::new);
+    allTopics = Arrays.stream(Objects.requireNonNull(TextUtils.readTopics(topicsPath)))
+            .map(String::trim)
+            .map(String::toLowerCase)
+            .toArray(String[]::new);
     optimizer = FTRLProximal.builder()
             .alpha(132)
             .beta(0.1)
