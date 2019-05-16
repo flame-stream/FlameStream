@@ -10,12 +10,11 @@ import java.util.stream.Stream;
 
 public class WeightsFilter implements Function<ClassifierOutput, Stream<ClassifierInput>> {
 
-    @Override
-    public Stream<ClassifierInput> apply(ClassifierOutput output) {
-        if (output instanceof Prediction) {
-            return Stream.of(((Prediction) output).getState());
-        } else {
-            return Stream.of((ClassifierState) output);
-        }
+  @Override
+  public Stream<ClassifierInput> apply(ClassifierOutput output) {
+    if (output instanceof ClassifierState) {
+      return Stream.of((ClassifierState) output);
     }
+    return Stream.empty();
+  }
 }

@@ -42,11 +42,10 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
       ModelState firstState = model.step(point, initialState);
       return Stream.of(new ClassifierState(firstState));
     } else {
-      Vec features = vectorize(tfIdfObject);
-      final Prediction result = new Prediction(tfIdfObject,
-              new ClassifierState(initialState), model.predict(initialState, features)
-      );
-      return Stream.of(result);
+      final Vec features = vectorize(tfIdfObject);
+      final Prediction result = new Prediction(tfIdfObject, model.predict(initialState, features));
+      final ClassifierState state = new ClassifierState(initialState);
+      return Stream.of(result, state);
     }
   }
 
@@ -62,7 +61,7 @@ public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<
       Vec features = vectorize(tfIdfObject);
       Topic[] prediction = model.predict(state, features);
 
-      return Stream.of(new Prediction(tfIdfObject, (ClassifierState) input.get(0), prediction));
+      return Stream.of(new Prediction(tfIdfObject, prediction), (ClassifierState) input.get(0));
     } else {
       return Stream.of();
     }
