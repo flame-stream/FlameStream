@@ -9,14 +9,13 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.DataPoint;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ModelState;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineModel;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineTopicsPredictor;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class FTRLProximal implements OnlineModel, OnlineTopicsPredictor {
+public class FTRLProximal implements OnlineModel {
 
   public static class Builder {
     private double alpha = 132;
@@ -147,5 +146,10 @@ public class FTRLProximal implements OnlineModel, OnlineTopicsPredictor {
       }
     }
     return result;
+  }
+
+  @Override
+  public int classes() {
+    return topics.length;
   }
 }

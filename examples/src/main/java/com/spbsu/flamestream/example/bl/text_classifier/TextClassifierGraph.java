@@ -28,11 +28,8 @@ import com.spbsu.flamestream.example.bl.text_classifier.ops.PredictionFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.TfIdfFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.WeightsFilter;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.WordContainerOrderingFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.CountVectorizer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TextUtils;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineModel;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLProximal;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLState;
 
 import java.util.List;
 import java.util.function.Function;
@@ -40,14 +37,12 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class TextClassifierGraph implements Supplier<Graph> {
-  private final ClassifierFilter classifier;
+  private final Vectorizer vectorizer;
+  private final OnlineModel onlineModel;
 
-  TextClassifierGraph() {
-    final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
-    final String topicsPath = "src/main/resources/topics";
-    final String[] topics = TextUtils.readTopics(topicsPath);
-
-    classifier = new ClassifierFilter(cntVectorizerPath, topics);
+  TextClassifierGraph(Vectorizer vectorizer, OnlineModel onlineModel) {
+    this.vectorizer = vectorizer;
+    this.onlineModel = onlineModel;
   }
 
   @SuppressWarnings("Convert2Lambda")
@@ -135,10 +130,17 @@ public class TextClassifierGraph implements Supplier<Graph> {
     );
 
 
+    final ClassifierFilter classifier = new ClassifierFilter(vectorizer, onlineModel);
     //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<List<ClassifierInput>, ClassifierOutput> filterClassifier = new FlameMap<>(
             classifier,
-            List.class
+            List.class,
+            new Runnable() {
+              @Override
+              public void run() {
+                classifier.init();
+              }
+            }
     );
 
     final IDFObjectCompleteFilter completeFilter = new IDFObjectCompleteFilter();

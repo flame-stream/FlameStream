@@ -22,7 +22,7 @@ public class CountVectorizer implements Vectorizer {
   }
 
   public void init() {
-    if (countVectorizer != null && countVectorizer.size() != 0) { // ?
+    if (countVectorizer != null) {
       return;
     }
 
@@ -44,10 +44,6 @@ public class CountVectorizer implements Vectorizer {
     }
   }
 
-  public int size() {
-    return countVectorizer.size();
-  }
-
   @Override
   public Vec vectorize(Document document) {
     init();
@@ -64,7 +60,12 @@ public class CountVectorizer implements Vectorizer {
       }
     }
 
-    return new SparseVec(size(), indices, values);
+    return new SparseVec(dim(), indices, values);
+  }
+
+  @Override
+  public int dim() {
+    return countVectorizer.size();
   }
 
   public int wordIndex(String word) {
