@@ -7,4 +7,6 @@ public interface Vectorizer {
   }
 
   Vec vectorize(Document document);
+
+  int dim();
 }
