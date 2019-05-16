@@ -1,8 +1,7 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierInput;
-import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierTfIdf;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierInput;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -14,7 +13,7 @@ public class LabeledFilter implements Function<TfIdfObject, Stream<ClassifierInp
         if (tfidf.label() == null) {
             return Stream.of();
         } else {
-            return Stream.of(new ClassifierTfIdf(tfidf));
+            return Stream.of(tfidf);
         }
     }
 }

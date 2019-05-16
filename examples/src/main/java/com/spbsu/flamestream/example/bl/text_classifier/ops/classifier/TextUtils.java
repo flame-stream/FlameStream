@@ -2,7 +2,6 @@ package com.spbsu.flamestream.example.bl.text_classifier.ops.classifier;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -46,19 +45,6 @@ public class TextUtils {
       }
 
       return topics;
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-    return null;
-  }
-
-  public static double[] readDimension(String metaPath) {
-    try (final BufferedReader br = new BufferedReader(new InputStreamReader(
-            new FileInputStream(metaPath),
-            StandardCharsets.UTF_8
-    ))) {
-      return parseDoubles(br.readLine());
     } catch (IOException e) {
       e.printStackTrace();
     }
