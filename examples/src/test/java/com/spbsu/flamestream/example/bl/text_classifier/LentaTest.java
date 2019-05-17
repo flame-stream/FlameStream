@@ -122,7 +122,12 @@ public class LentaTest extends FlameAkkaSuite {
     final String[] topics = TextUtils.readTopics(topicsPath);
     final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
     final Vectorizer vectorizer = new CountVectorizer(cntVectorizerPath);
-    final OnlineModel model = FTRLProximal.builder().build(topics);
+    final OnlineModel model = FTRLProximal.builder()
+            .alpha(132)
+            .beta(0.1)
+            .lambda1(0.5)
+            .lambda2(0.095)
+            .build(topics);
 
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
     try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(vectorizer, model).get())) {
