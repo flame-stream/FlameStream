@@ -121,13 +121,19 @@ public class Component extends LoggingActor {
                               final Iterator<Map.Entry<HashUnit, ActorRef>> iterator = routes.entrySet().iterator();
                               int childId = 0;
                               while (iterator.hasNext()) {
+                                final Map.Entry<HashUnit, ActorRef> next = iterator.next();
+                                if (next.getKey().to() == next.getKey().from()) {
+                                  //ignore empty ranges
+                                  continue;
+                                }
+
                                 final DataItem cloned = item.cloneWith(new Meta(
                                         item.meta(),
                                         0,
                                         childId++
                                 ));
                                 ack(new Ack(cloned.meta().globalTime(), cloned.xor()), joba);
-                                iterator.next().getValue().tell(new AddressedItem(cloned, toDest), self());
+                                next.getValue().tell(new AddressedItem(cloned, toDest), self());
                               }
                             } else {
                               ack(new Ack(item.meta().globalTime(), item.xor()), joba);

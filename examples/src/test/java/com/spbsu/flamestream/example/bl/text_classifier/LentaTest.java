@@ -5,11 +5,11 @@ import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.CountVectorizer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.SklearnSgdPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineModel;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TextUtils;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Topic;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.TopicsPredictor;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRLProximal;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
@@ -21,6 +21,7 @@ import com.typesafe.config.ConfigFactory;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +84,8 @@ public class LentaTest extends FlameAkkaSuite {
               r.get(0), // url order
               text.substring(1).toLowerCase(),
               String.valueOf(ThreadLocalRandom.current().nextInt(0, 10)),
-              counter.incrementAndGet()
+              counter.incrementAndGet(),
+              r.get(4) // label
       );
     });
 
@@ -95,7 +98,7 @@ public class LentaTest extends FlameAkkaSuite {
             .parallelism(2)
             .millisBetweenCommits(1000)
             .build()) {
-      test(runtime, system);
+      test(runtime, system, 1);
     }
     Await.ready(system.terminate(), Duration.Inf());
   }
@@ -108,22 +111,26 @@ public class LentaTest extends FlameAkkaSuite {
             .blinkPeriodSec(7)
             .millisBetweenCommits(2000)
             .build()) {
-      test(runtime, runtime.system());
+      test(runtime, runtime.system(), 2);
     }
   }
 
-  private void test(FlameRuntime runtime, ActorSystem system) throws IOException, InterruptedException {
-    final String testFilePath = "lenta/lenta-ru-news.csv";
-    final long expectedDocs = documents(testFilePath).count();
-
+  private void test(FlameRuntime runtime, ActorSystem system, int realParallelism) throws
+                                                                                   IOException,
+                                                                                   InterruptedException {
+    final String topicsPath = "src/main/resources/topics";
+    final String[] topics = TextUtils.readTopics(topicsPath);
     final String cntVectorizerPath = "src/main/resources/cnt_vectorizer";
-    final String weightsPath = "src/main/resources/classifier_weights";
     final Vectorizer vectorizer = new CountVectorizer(cntVectorizerPath);
-    final TopicsPredictor predictor = new SklearnSgdPredictor(weightsPath);
+    final OnlineModel model = FTRLProximal.builder()
+            .alpha(132)
+            .beta(0.1)
+            .lambda1(0.5)
+            .lambda2(0.095)
+            .build(topics);
 
     final ConcurrentLinkedDeque<Prediction> resultQueue = new ConcurrentLinkedDeque<>();
-
-    try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(vectorizer, predictor).get())) {
+    try (final FlameRuntime.Flame flame = runtime.run(new TextClassifierGraph(vectorizer, model).get())) {
       flame.attachRear("tfidfRear", new AkkaRearType<>(system, Prediction.class))
               .forEach(r -> r.addListener(resultQueue::add));
       final List<AkkaFront.FrontHandle<TextDocument>> handles = flame
@@ -135,12 +142,16 @@ public class LentaTest extends FlameAkkaSuite {
         handles.get(i).unregister();
       }
 
+      final String testFilePath = "lenta/lenta-ru-news.csv";
+      final long expectedDocs = documents(testFilePath).count();
       final AtomicInteger counter = new AtomicInteger(0);
+      final AtomicInteger allCounter = new AtomicInteger(0);
+      final Set<String> alreadySeen = new HashSet<>();
       final Thread thread = new Thread(Unchecked.runnable(() -> {
         final Iterator<TextDocument> toCheckIter = documents(testFilePath).iterator();
         final Map<String, Integer> idfExpected2 = new HashMap<>();
         for (int i = 0; i < expectedDocs; i++) {
-          Prediction prediction = resultQueue.poll();
+          Prediction prediction = null;
           while (prediction == null) {
             try {
               Thread.sleep(10);
@@ -148,6 +159,14 @@ public class LentaTest extends FlameAkkaSuite {
               throw new RuntimeException(e);
             }
             prediction = resultQueue.poll();
+            if (prediction != null) {
+              allCounter.incrementAndGet();
+              if (alreadySeen.contains(prediction.tfIdf().document())) {
+                prediction = null;
+              } else {
+                alreadySeen.add(prediction.tfIdf().document());
+              }
+            }
           }
 
           final int got = counter.incrementAndGet();
@@ -207,21 +226,32 @@ public class LentaTest extends FlameAkkaSuite {
             );
           }
 
-          final Topic[] topics = prediction.topics();
-          Arrays.sort(topics);
+          final Topic[] pred = prediction.topics();
+          Arrays.sort(pred);
           LOGGER.info("Doc: {}", processedDoc.content());
-          LOGGER.info("Predict: {}", (Object) topics);
+          LOGGER.info("Predict: {}", (Object) pred);
           LOGGER.info("\n");
         }
       }));
 
       thread.start();
 
-      documents(testFilePath).forEach(front);
+      final long firstPart = expectedDocs / 2;
+      final long secondPart = expectedDocs - firstPart;
+      Seq.zipWithIndex(documents(testFilePath)).forEach(objects -> {
+        final TextDocument source = objects.v1;
+        if (objects.v2 < firstPart) {
+          front.accept(source);
+        } else {
+          front.accept(new TextDocument(source.name(), source.content(), source.partitioning(), source.number(), null));
+        }
+      });
 
       thread.join();
 
       Assert.assertEquals(counter.get(), expectedDocs);
+      //noinspection PointlessArithmeticExpression
+      Assert.assertEquals(allCounter.get(), secondPart + firstPart * realParallelism);
     }
   }
 }
