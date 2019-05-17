@@ -59,7 +59,13 @@ public class CountVectorizer implements Vectorizer {
         ind++;
       }
     }
-    return new SparseVec(countVectorizer.size(), indices, values);
+
+    return new SparseVec(dim(), indices, values);
+  }
+
+  @Override
+  public int dim() {
+    return countVectorizer.size();
   }
 
   public int wordIndex(String word) {
