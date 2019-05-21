@@ -16,7 +16,7 @@ public abstract class Joba {
             .<Id, String>comparing(id -> id.nodeId)
             .thenComparing(id -> id.vertexId);
 
-    Id(String nodeId, String vertexId) {
+    public Id(String nodeId, String vertexId) {
       this.nodeId = nodeId;
       this.vertexId = vertexId;
     }

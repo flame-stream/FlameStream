@@ -6,10 +6,10 @@ addons:
   apt:
     packages:
       - sshpass
-      - oracle-java8-set-default
+      - oracle-java9-set-default
       - libgfortran3
 jdk:
-  - oraclejdk8
+  - oraclejdk9
 
 cache:
   directories:
@@ -23,7 +23,7 @@ env:
 install: true
 
 script:
-  - mvn --errors --batch-mode clean package
+  - travis_wait 40 mvn --errors --batch-mode clean package
 
 after_failure:
   - ls -al

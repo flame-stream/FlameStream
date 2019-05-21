@@ -9,22 +9,27 @@ import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.example.bl.text_classifier.model.IdfObject;
-import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TextDocument;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierInput;
+import com.spbsu.flamestream.example.bl.text_classifier.model.containers.ClassifierOutput;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocContainer;
+import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.entries.CountWordEntries;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.entries.IDFAggregator;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.Classifier;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.DocContainerOrderingFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.IDFObjectCompleteFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.TfIdfFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.WordContainerOrderingFilter;
-import com.spbsu.flamestream.example.bl.text_classifier.ops.filtering.classifier.TopicsPredictor;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.ClassifierFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.CountWordEntries;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.IDFObjectCompleteFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.LabeledFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.NonLabeledFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.PredictionFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.TfIdfFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.WeightsFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.WordContainerOrderingFilter;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineModel;
+import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 
 import java.util.List;
 import java.util.function.Function;
@@ -32,10 +37,12 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class TextClassifierGraph implements Supplier<Graph> {
-  private final TopicsPredictor predictor;
+  private final Vectorizer vectorizer;
+  private final OnlineModel onlineModel;
 
-  TextClassifierGraph(TopicsPredictor predictor) {
-    this.predictor = predictor;
+  TextClassifierGraph(Vectorizer vectorizer, OnlineModel onlineModel) {
+    this.vectorizer = vectorizer;
+    this.onlineModel = onlineModel;
   }
 
   @SuppressWarnings("Convert2Lambda")
@@ -79,11 +86,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
     final Source source = new Source();
     final Grouping<WordContainer> groupingWord =
             new Grouping<>(wordHash, equalzWord, 2, WordContainer.class);
-
-    final Grouping<DocContainer> groupingDoc =
-            new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
-
-    final Grouping<DocContainer> gropingTfIdf =
+    final Grouping<DocContainer> groupingTfIdf =
             new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
 
 
@@ -109,7 +112,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
         TfObject tfObject = TfObject.ofText(text);
         return Stream.of(tfObject);
       }
-    }, TextDocument.class);
+    }, TextDocument.class, docHash);
 
     final FlameMap<List<WordContainer>, List<WordContainer>> filterWord = new FlameMap<>(
             new WordContainerOrderingFilter(),
@@ -121,26 +124,17 @@ public class TextClassifierGraph implements Supplier<Graph> {
             List.class
     );
 
-    final FlameMap<List<DocContainer>, DocContainer> idfAggregator = new FlameMap<>(
-            new IDFAggregator(),
-            List.class
-    );
-
-    final FlameMap<List<DocContainer>, List<DocContainer>> filterDoc = new FlameMap<>(
-            new DocContainerOrderingFilter(),
-            List.class
-    );
-
     final FlameMap<List<DocContainer>, DocContainer> filterTfIdf = new FlameMap<>(
             new TfIdfFilter(),
             List.class
     );
 
-    final Classifier classifier = new Classifier(predictor);
+
+    final ClassifierFilter classifier = new ClassifierFilter(vectorizer, onlineModel);
     //noinspection Convert2Lambda,Anonymous2MethodRef
-    final FlameMap<TfIdfObject, Prediction> filterClassifier = new FlameMap<>(
+    final FlameMap<List<ClassifierInput>, ClassifierOutput> filterClassifier = new FlameMap<>(
             classifier,
-            TfIdfObject.class,
+            List.class,
             new Runnable() {
               @Override
               public void run() {
@@ -149,15 +143,60 @@ public class TextClassifierGraph implements Supplier<Graph> {
             }
     );
 
-    final FlameMap<IdfObject, IdfObject> idfObjectCompleteFilter = new FlameMap<>(
-            new IDFObjectCompleteFilter(),
-            IdfObject.class
+    final IDFObjectCompleteFilter completeFilter = new IDFObjectCompleteFilter();
+    //noinspection Convert2Lambda,Anonymous2MethodRef
+    final FlameMap<WordCounter, IdfObject> idfObjectCompleteFilter = new FlameMap<>(
+            completeFilter,
+            WordCounter.class,
+            docHash,
+            new Runnable() {
+              @Override
+              public void run() {
+                completeFilter.init();
+              }
+            }
+    );
+
+
+    final FlameMap<TfIdfObject, ClassifierInput> labeledFilter = new FlameMap<>(
+            new LabeledFilter(),
+            TfIdfObject.class
+    );
+
+    final FlameMap<TfIdfObject, ClassifierInput> nonLabeledFilter = new FlameMap<>(
+            new NonLabeledFilter(),
+            TfIdfObject.class
+    );
+
+    final FlameMap<ClassifierOutput, ClassifierInput> weightsFilter = new FlameMap<>(
+            new WeightsFilter(),
+            ClassifierOutput.class
+    );
+
+    final FlameMap<ClassifierOutput, Prediction> predictionFilter = new FlameMap<>(
+            new PredictionFilter(),
+            ClassifierOutput.class
+    );
+
+    final Grouping<ClassifierInput> groupingWeights =
+            new Grouping<>(HashFunction.broadcastBeforeGroupingHash(), Equalz.allEqualz(), 2, ClassifierInput.class);
+
+    //noinspection Convert2Lambda,Anonymous2MethodRef
+    final FlameMap<ClassifierInput, ClassifierInput> broadcastTfidfObject = new FlameMap<>(
+            new Function<ClassifierInput, Stream<ClassifierInput>>() {
+              @Override
+              public Stream<ClassifierInput> apply(ClassifierInput t) {
+                return Stream.of(t);
+              }
+            },
+            ClassifierInput.class,
+            HashFunction.broadcastHash()
     );
 
     final Sink sink = new Sink();
     return new Graph.Builder()
             .link(source, splitterTf)
-            .link(splitterTf, gropingTfIdf)
+            .link(splitterTf, groupingTfIdf)
             .link(splitterTf, splitterWord)
 
             .link(splitterWord, groupingWord)
@@ -165,28 +204,38 @@ public class TextClassifierGraph implements Supplier<Graph> {
             .link(filterWord, counterWord)
             .link(counterWord, groupingWord)
 
-            .link(counterWord, groupingDoc)
-            .link(groupingDoc, filterDoc)
-            .link(filterDoc, idfAggregator)
-            .link(idfAggregator, groupingDoc)
+            .link(counterWord, idfObjectCompleteFilter)
+            .link(idfObjectCompleteFilter, groupingTfIdf)
+            .link(groupingTfIdf, filterTfIdf)
 
-            .link(idfAggregator, idfObjectCompleteFilter)
+            .link(filterTfIdf, nonLabeledFilter)
+            .link(nonLabeledFilter, groupingWeights)
 
-            .link(idfObjectCompleteFilter, gropingTfIdf)
-            .link(gropingTfIdf, filterTfIdf)
-            .link(filterTfIdf, filterClassifier)
-            .link(filterClassifier, sink)
+            .link(groupingWeights, filterClassifier)
+            .link(filterClassifier, weightsFilter)
+            .link(weightsFilter, groupingWeights)
+            .link(filterClassifier, predictionFilter)
+            .link(predictionFilter, sink)
 
-            .colocate(source, splitterTf, splitterWord)
+            .link(filterTfIdf, labeledFilter)
+            .link(labeledFilter, broadcastTfidfObject)
+            .link(broadcastTfidfObject, groupingWeights)
+
+            .colocate(splitterTf, splitterWord)
             .colocate(groupingWord, filterWord, counterWord)
             .colocate(
-                    groupingDoc,
-                    filterDoc,
-                    idfAggregator,
                     idfObjectCompleteFilter,
-                    gropingTfIdf,
+                    groupingTfIdf,
                     filterTfIdf,
+                    labeledFilter
+            )
+            .colocate(
+                    nonLabeledFilter,
+                    broadcastTfidfObject,
+                    groupingWeights,
                     filterClassifier,
+                    predictionFilter,
+                    weightsFilter,
                     sink
             )
 
