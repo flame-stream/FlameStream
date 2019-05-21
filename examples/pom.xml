@@ -66,6 +66,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.expleague</groupId>
+            <artifactId>commons</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.jblas</groupId>
             <artifactId>jblas</artifactId>
             <version>1.2.4</version>
