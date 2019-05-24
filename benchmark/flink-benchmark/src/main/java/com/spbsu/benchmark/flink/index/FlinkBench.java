@@ -11,7 +11,6 @@ import com.spbsu.flamestream.example.benchmark.GraphDeployer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -19,6 +18,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.jooq.lambda.Unchecked;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -74,8 +74,12 @@ public class FlinkBench {
         }
 
         final String rocksDbPath = deployerConfig.getString("rocksdb-path");
-        final StateBackend backend = new FsStateBackend("file:///" + rocksDbPath, true);
-        environment.setStateBackend(backend);
+        try {
+          final FsStateBackend backend = new FsStateBackend("file:///" + rocksDbPath, true);
+          environment.setStateBackend(backend);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
 
 
         environment
