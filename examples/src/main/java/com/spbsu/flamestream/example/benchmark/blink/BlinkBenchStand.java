@@ -11,6 +11,7 @@ import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.example.bl.index.utils.WikipeadiaInput;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
+import com.spbsu.flamestream.runtime.WorkerApplication;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
@@ -228,10 +229,10 @@ public class BlinkBenchStand implements AutoCloseable {
     if (deployerConfig.hasPath("local")) {
       runtime = new LocalRuntime.Builder().parallelism(deployerConfig.getConfig("local").getInt("parallelism")).build();
     } else if (deployerConfig.hasPath("local-cluster")) {
-      runtime = new LocalClusterRuntime.Builder()
-              .parallelism(deployerConfig.getConfig("local-cluster").getInt("parallelism"))
-              .millisBetweenCommits(10000)
-              .build();
+      runtime = new LocalClusterRuntime(
+              deployerConfig.getConfig("local-cluster").getInt("parallelism"),
+              new WorkerApplication.WorkerConfig.Builder().millisBetweenCommits(10000)::build
+      );
     } else {
       final String zkString = deployerConfig.getConfig("remote").getString("zk");
       final CuratorFramework curator = CuratorFrameworkFactory.newClient(

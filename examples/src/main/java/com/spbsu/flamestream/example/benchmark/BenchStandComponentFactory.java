@@ -13,6 +13,7 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
+import com.spbsu.flamestream.runtime.WorkerApplication;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
@@ -129,10 +130,10 @@ public class BenchStandComponentFactory {
     if (config.hasPath("local")) {
       runtime = new LocalRuntime.Builder().parallelism(config.getConfig("local").getInt("parallelism")).build();
     } else if (config.hasPath("local-cluster")) {
-      runtime = new LocalClusterRuntime.Builder()
-              .parallelism(config.getConfig("local-cluster").getInt("parallelism"))
-              .millisBetweenCommits(10000)
-              .build();
+      runtime = new LocalClusterRuntime(
+              config.getConfig("local-cluster").getInt("parallelism"),
+              new WorkerApplication.WorkerConfig.Builder().millisBetweenCommits(10000)::build
+      );
     } else {
       // temporary solution to keep bench stand in working state
       final String zkString = config.getConfig("remote").getString("zk");
