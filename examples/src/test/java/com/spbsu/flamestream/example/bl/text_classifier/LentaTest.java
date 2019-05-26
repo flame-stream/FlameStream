@@ -13,6 +13,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.ftrl.FTRL
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
+import com.spbsu.flamestream.runtime.WorkerApplication;
 import com.spbsu.flamestream.runtime.acceptance.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
@@ -94,10 +95,10 @@ public class LentaTest extends FlameAkkaSuite {
   @Test
   public void lentaTest() throws TimeoutException, InterruptedException, IOException {
     final ActorSystem system = ActorSystem.create("lentaTfIdf", ConfigFactory.load("remote"));
-    try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().maxElementsInGraph(10)
-            .parallelism(2)
-            .millisBetweenCommits(1000)
-            .build()) {
+    try (final LocalClusterRuntime runtime = new LocalClusterRuntime(
+            2,
+            new WorkerApplication.WorkerConfig.Builder().maxElementsInGraph(10).millisBetweenCommits(1000)::build
+    )) {
       test(runtime, system, 1);
     }
     Await.ready(system.terminate(), Duration.Inf());

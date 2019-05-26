@@ -30,12 +30,11 @@ public class LocalClusterRuntime implements FlameRuntime {
   private final String zkString;
   private final CuratorFramework curator;
 
-  private LocalClusterRuntime(
-          int parallelism,
-          int maxElementsInGraph,
-          int millisBetweenCommits,
-          boolean distributedAcker
-  ) {
+  public interface WorkerConfigFactory {
+    WorkerApplication.WorkerConfig create(String name, DumbInetSocketAddress localAddress, String zkString);
+  }
+
+  public LocalClusterRuntime(int parallelism, WorkerConfigFactory workerConfigFactory) {
     final List<Integer> ports;
     try {
       ports = new ArrayList<>(freePorts(parallelism + 1));
@@ -53,12 +52,7 @@ public class LocalClusterRuntime implements FlameRuntime {
       final String name = "worker" + i;
       final DumbInetSocketAddress address = new DumbInetSocketAddress("localhost", ports.get(i + 1));
 
-      final WorkerApplication.WorkerConfig workerConfig = new WorkerApplication.WorkerConfig.Builder()
-              .maxElementsInGraph(maxElementsInGraph)
-              .millisBetweenCommits(millisBetweenCommits)
-              .distributedAcker(distributedAcker)
-              .build(name, address, zkString);
-      final WorkerApplication worker = new WorkerApplication(workerConfig);
+      final WorkerApplication worker = new WorkerApplication(workerConfigFactory.create(name, address, zkString));
       workers.add(worker);
       worker.run();
     }
@@ -115,37 +109,5 @@ public class LocalClusterRuntime implements FlameRuntime {
       }
     }
     return ports;
-  }
-
-  @SuppressWarnings("unused")
-  public static class Builder {
-    private int parallelism = DEFAULT_PARALLELISM;
-    private int maxElementsInGraph = DEFAULT_MAX_ELEMENTS_IN_GRAPH;
-    private int millisBetweenCommits = DEFAULT_MILLIS_BETWEEN_COMMITS;
-    private boolean distributedAcker = true;
-
-    public Builder parallelism(int parallelism) {
-      this.parallelism = parallelism;
-      return this;
-    }
-
-    public Builder maxElementsInGraph(int maxElementsInGraph) {
-      this.maxElementsInGraph = maxElementsInGraph;
-      return this;
-    }
-
-    public Builder millisBetweenCommits(int millisBetweenCommits) {
-      this.millisBetweenCommits = millisBetweenCommits;
-      return this;
-    }
-
-    public Builder distributedAcker(boolean distributedAcker) {
-      this.distributedAcker = distributedAcker;
-      return this;
-    }
-
-    public LocalClusterRuntime build() {
-      return new LocalClusterRuntime(parallelism, maxElementsInGraph, millisBetweenCommits, distributedAcker);
-    }
   }
 }
