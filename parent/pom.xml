@@ -36,7 +36,6 @@
         <testng.version>6.10</testng.version>
         <sqlparser.version>0.9.6</sqlparser.version>
         <zookeeper.version>3.4.9</zookeeper.version>
-        <hadoop-commons.version>2.7.3</hadoop-commons.version>
         <leveldb.version>0.7</leveldb.version>
         <leveldb-jni.version>1.8</leveldb-jni.version>
         <jetbrains.version>13.0</jetbrains.version>
@@ -263,26 +262,6 @@
                     <!--<groupId>commons-logging</groupId>-->
                     <!--<artifactId>commons-logging</artifactId>-->
                     <!--</exclusion>-->
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-common</artifactId>
-                <version>${hadoop-commons.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
 
