@@ -9,6 +9,7 @@
   synchronize:
     src: lib
     dest: "{{ flamestream_dir }}"
+    delete: true
 
 - name: Copy the worker application
   copy:

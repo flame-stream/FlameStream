@@ -15,6 +15,7 @@ copy_worker_artifacts() {
   local examples_dependencies=examples/target/lib
 
   if [[ -f "$worker" && -d "$dependencies" && -f "$entrypoint" && -f "$examples" && -d "$examples_dependencies" ]]; then
+    rm -rf "${files}/lib"
     cp "$worker" "$files"
     cp "$entrypoint" "$files"
     cp -r "$dependencies" "$files"
