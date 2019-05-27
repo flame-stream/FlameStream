@@ -59,11 +59,6 @@
   roles:
     - { role: zookeeper-destroy }
 
-- name: Destroy bench
-  hosts: bench
-  roles:
-    - { role: flamestream-bench-destroy }
-
 - hosts: all
   tasks:
     - name: Fetch traces
