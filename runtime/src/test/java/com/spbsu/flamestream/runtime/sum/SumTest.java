@@ -9,6 +9,7 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
+import com.spbsu.flamestream.runtime.WorkerApplication;
 import com.spbsu.flamestream.runtime.acceptance.FlameAkkaSuite;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
@@ -142,7 +143,10 @@ public final class SumTest extends FlameAkkaSuite {
   @Test(invocationCount = 10)
   public void integrationTest() throws Exception {
     final ActorSystem system = ActorSystem.create("testStand", ConfigFactory.load("remote"));
-    try (final LocalClusterRuntime runtime = new LocalClusterRuntime.Builder().parallelism(2).build()) {
+    try (final LocalClusterRuntime runtime = new LocalClusterRuntime(
+            2,
+            new WorkerApplication.WorkerConfig.Builder()::build
+    )) {
       try (final FlameRuntime.Flame flame = runtime.run(sumGraph())) {
         final List<LongNumb> source = new Random()
                 .ints(1000)
