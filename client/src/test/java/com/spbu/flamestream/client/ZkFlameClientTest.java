@@ -10,6 +10,7 @@ import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
+import com.spbsu.flamestream.runtime.WorkerApplication;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,10 @@ public class ZkFlameClientTest {
     final CountDownLatch latch = new CountDownLatch(inputSize);
     final Server rear = rear(latch, result, rearPort);
 
-    try (final LocalClusterRuntime localClusterRuntime = new LocalClusterRuntime.Builder().parallelism(4).build()) {
+    try (final LocalClusterRuntime localClusterRuntime = new LocalClusterRuntime(
+            4,
+            new WorkerApplication.WorkerConfig.Builder()::build
+    )) {
       final FlameClient flameClient = new ZkFlameClient(localClusterRuntime.zkString());
       flameClient.push(new Job.Builder(testGraph())
               .addFront(new Job.Front("socket-front", "localhost", frontPort, String.class))
