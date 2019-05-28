@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 public class Component extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 100;
   private final ActorRef localAcker;
+  private final ComputationProps props;
 
   private enum JobaTimesTick {
     OBJECT
@@ -83,6 +84,7 @@ public class Component extends LoggingActor {
                     ComputationProps props,
                     Map<String, GroupGroupingState> stateByVertex) {
     this.localAcker = localAcker;
+    this.props = props;
     this.wrappedJobas = componentVertices.stream().collect(Collectors.toMap(
             vertex -> GraphManager.Destination.fromVertexId(vertex.id()),
             vertex -> {
@@ -93,6 +95,9 @@ public class Component extends LoggingActor {
               } else if (vertex instanceof FlameMap) {
                 joba = new MapJoba(jobaId, (FlameMap<?, ?>) vertex);
               } else if (vertex instanceof Grouping) {
+                if (props.barrierIsDisabled()) {
+                  throw new RuntimeException("grouping operations are not supported when barrier is disabled");
+                }
                 final Grouping grouping = (Grouping) vertex;
                 final Collection<HashUnit> values = props.hashGroups()
                         .values()
@@ -102,7 +107,7 @@ public class Component extends LoggingActor {
                 stateByVertex.putIfAbsent(vertex.id(), new GroupGroupingState(values));
                 joba = new GroupingJoba(jobaId, grouping, stateByVertex.get(vertex.id()));
               } else if (vertex instanceof Source) {
-                joba = new SourceJoba(jobaId, props.maxElementsInGraph(), context());
+                joba = new SourceJoba(jobaId, props.maxElementsInGraph(), context(), props.barrierIsDisabled());
               } else {
                 throw new RuntimeException("Invalid vertex type");
               }
@@ -227,7 +232,9 @@ public class Component extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(FLUSH_DELAY_IN_MILLIS)), self());
+    if (!props.barrierIsDisabled()) {
+      pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(FLUSH_DELAY_IN_MILLIS)), self());
+    }
   }
 
   private void onCommit(Commit commit) {
@@ -250,6 +257,9 @@ public class Component extends LoggingActor {
   }
 
   private void ack(Ack ack, Joba joba) {
+    if (props.barrierIsDisabled()) {
+      return;
+    }
     joba.time++;
     localAcker.tell(new JobaTime(joba.id, joba.time), self());
     localAcker.tell(ack, self());

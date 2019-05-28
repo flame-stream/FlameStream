@@ -21,12 +21,14 @@ public class SourceJoba extends Joba {
   private final ActorContext context;
 
   private int unutilizedRequests;
+  private final boolean barrierIsDisabled;
 
-  public SourceJoba(Joba.Id id, int maxInFlightItems, ActorContext context) {
+  public SourceJoba(Joba.Id id, int maxInFlightItems, ActorContext context, boolean barrierIsDisabled) {
     super(id);
     this.maxInFlightItems = maxInFlightItems;
     this.context = context;
     this.unutilizedRequests = maxInFlightItems;
+    this.barrierIsDisabled = barrierIsDisabled;
   }
 
   @Override
@@ -34,7 +36,9 @@ public class SourceJoba extends Joba {
     sink.accept(item);
     unutilizedRequests--;
     final GlobalTime globalTime = item.meta().globalTime();
-    inFlight.add(globalTime);
+    if (!barrierIsDisabled) {
+      inFlight.add(globalTime);
+    }
     requestNext();
   }
 
