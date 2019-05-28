@@ -173,7 +173,7 @@ public class WorkerApplication implements Runnable {
       private int millisBetweenCommits = 100;
       private int defaultMinimalTime = 0;
       private boolean distributedAcker = false;
-      private boolean barrierDisabled = true;
+      private boolean barrierDisabled = false;
 
       public Builder snapshotPath(String snapshotPath) {
         this.snapshotPath = snapshotPath;
