@@ -93,8 +93,8 @@ public class WikiBenchStand {
             AutoCloseable ignored = benchStandComponentFactory.producer(
                     WikipediaPage.class,
                     pages(validator.inputLimit()).peek(page -> {
-                      latencies.put(page.id(), new LatencyMeasurer());
                       LockSupport.parkNanos((long) (nextExp(1.0 / sleepBetweenDocs) * 1.0e6));
+                      latencies.put(page.id(), new LatencyMeasurer());
                     }),
                     inputHost,
                     frontPort
