@@ -250,10 +250,12 @@ public class LocalAcker extends LoggingActor {
   }
 
   private void flush() {
-    jobaTimesCache.forEach((jobaId, value) -> ackers.forEach(acker -> acker.tell(
-            new JobaTime(jobaId, value),
-            context().parent()
-    )));
+    if (ackers.size() > 1) {
+      jobaTimesCache.forEach((jobaId, value) -> ackers.forEach(acker -> acker.tell(
+              new JobaTime(jobaId, value),
+              context().parent()
+      )));
+    }
     jobaTimesCache.clear();
 
     final boolean acksEmpty = ackCache.isEmpty();
