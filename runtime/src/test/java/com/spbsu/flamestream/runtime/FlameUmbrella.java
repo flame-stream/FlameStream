@@ -25,6 +25,7 @@ import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.master.acker.Acker;
 import com.spbsu.flamestream.runtime.master.acker.Committer;
 import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
+import com.spbsu.flamestream.runtime.master.acker.MinTimeUpdater;
 import com.spbsu.flamestream.runtime.master.acker.Registry;
 import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
 import com.spbsu.flamestream.runtime.state.StateStorage;
@@ -102,7 +103,7 @@ class Cluster extends LoggingActor {
                       clusterConfig.paths().size(),
                       systemConfig,
                       registryHolder,
-                      localAcker
+                      new MinTimeUpdater(ackers)
               ));
               return paths.keySet().stream().map(id -> context.actorOf(FlameNode.props(
                       id,

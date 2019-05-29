@@ -152,14 +152,14 @@ public class LocalAcker extends LoggingActor {
 
   private final List<ActorRef> ackers;
   private final List<ActorRef> listeners = new ArrayList<>();
-  private final MinTimeUpdater<ActorRef> minTimeUpdater;
+  private final MinTimeUpdater minTimeUpdater;
   private final ActorRef pingActor;
 
   private int flushCounter = 0;
 
   public LocalAcker(List<ActorRef> ackers) {
     this.ackers = ackers;
-    minTimeUpdater = new MinTimeUpdater<>(ackers);
+    minTimeUpdater = new MinTimeUpdater(ackers);
     pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH));
   }
 
@@ -170,7 +170,7 @@ public class LocalAcker extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    ackers.forEach(acker -> acker.tell(new MinTimeUpdateListener(self()), self()));
+    minTimeUpdater.subscribe(self());
     pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(FLUSH_DELAY_IN_MILLIS)), self());
   }
 
