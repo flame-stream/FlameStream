@@ -165,7 +165,7 @@ public class ProcessingWatcher extends LoggingActor {
         throw new RuntimeException(e);
       }
     }).collect(Collectors.toList());
-    final ActorRef localAcker = context().actorOf(LocalAcker.props(ackers));
+    final ActorRef localAcker = context().actorOf(LocalAcker.props(ackers, id));
     final ActorRef committer, registryHolder;
     if (zookeeperWorkersNode.isLeader(id)) {
       registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), ackers), "registry-holder");

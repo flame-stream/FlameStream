@@ -94,7 +94,7 @@ class Cluster extends LoggingActor {
               } else {
                 ackers = Collections.singletonList(context.actorOf(Acker.props(0, true), "acker"));
               }
-              final ActorRef localAcker = context.actorOf(LocalAcker.props(ackers), "localAcker");
+              final ActorRef localAcker = context.actorOf(LocalAcker.props(ackers, ""), "localAcker");
               final ActorRef registryHolder = context.actorOf(
                       RegistryHolder.props(registry, ackers),
                       "registry-holder"
