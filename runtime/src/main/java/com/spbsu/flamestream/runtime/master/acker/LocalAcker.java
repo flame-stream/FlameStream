@@ -4,11 +4,10 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.graph.Joba;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.master.acker.api.JobaTime;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.master.acker.api.NodeTime;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
@@ -17,7 +16,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -27,7 +25,7 @@ public class LocalAcker extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 5;
   private static final int FLUSH_COUNT = 1000;
 
-  private final HashMap<Joba.Id, Long> jobaTimesCache = new HashMap<>();
+  private long nodeTime = Long.MIN_VALUE;
   private final SortedMap<GlobalTime, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
   private final List<Heartbeat> heartbeatCache = new ArrayList<>();
   private final List<UnregisterFront> unregisterCache = new ArrayList<>();
@@ -35,18 +33,20 @@ public class LocalAcker extends LoggingActor {
   private final List<ActorRef> ackers;
   private final List<ActorRef> listeners = new ArrayList<>();
   private final MinTimeUpdater minTimeUpdater;
+  private final String nodeId;
   private final ActorRef pingActor;
 
   private int flushCounter = 0;
 
-  public LocalAcker(List<ActorRef> ackers) {
+  public LocalAcker(List<ActorRef> ackers, String nodeId) {
     this.ackers = ackers;
     minTimeUpdater = new MinTimeUpdater(ackers);
+    this.nodeId = nodeId;
     pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH));
   }
 
-  public static Props props(List<ActorRef> ackers) {
-    return Props.create(LocalAcker.class, ackers).withDispatcher("processing-dispatcher");
+  public static Props props(List<ActorRef> ackers, String nodeId) {
+    return Props.create(LocalAcker.class, ackers, nodeId).withDispatcher("processing-dispatcher");
   }
 
   @Override
@@ -65,7 +65,6 @@ public class LocalAcker extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(JobaTime.class, this::handleJobaTime)
             .match(Ack.class, this::handleAck)
             .match(Flush.class, flush -> flush())
             .match(Heartbeat.class, heartbeatCache::add)
@@ -89,18 +88,6 @@ public class LocalAcker extends LoggingActor {
     }
   }
 
-  private void handleJobaTime(JobaTime jobaTime) {
-    jobaTimesCache.compute(jobaTime.jobaId, (__, value) -> {
-      if (value == null) {
-        return jobaTime.time;
-      } else {
-        return Math.max(jobaTime.time, value);
-      }
-    });
-
-    tick();
-  }
-
   private void handleAck(Ack ack) {
     ackCache.compute(ack.time(), (globalTime, xor) -> {
       if (xor == null) {
@@ -115,12 +102,9 @@ public class LocalAcker extends LoggingActor {
 
   private void flush() {
     if (ackers.size() > 1) {
-      jobaTimesCache.forEach((jobaId, value) -> ackers.forEach(acker -> acker.tell(
-              new JobaTime(jobaId, value),
-              context().parent()
-      )));
+      ackers.forEach(acker -> acker.tell(new NodeTime(nodeId, nodeTime), context().parent()));
+      nodeTime++;
     }
-    jobaTimesCache.clear();
 
     final boolean acksEmpty = ackCache.isEmpty();
     ackCache.forEach((globalTime, xor) -> ackers.get((int) (globalTime.time() % ackers.size()))
