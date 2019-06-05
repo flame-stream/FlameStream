@@ -1,7 +1,9 @@
 package com.spbsu.flamestream.runtime.master.acker;
 
+import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
+import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -12,26 +14,30 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
-public class MinTimeUpdater<Shard> {
+public class MinTimeUpdater {
   private class ShardState {
     GlobalTime minTime = lastMinTime.minTime();
-    JobaTimes operationsTime = new JobaTimes();
-    TreeMap<GlobalTime, JobaTimes> minTimeUpdates = new TreeMap<>();
+    NodeTimes operationsTime = new NodeTimes();
+    TreeMap<GlobalTime, NodeTimes> minTimeUpdates = new TreeMap<>();
   }
 
-  private Map<Shard, ShardState> shardStates;
+  private Map<ActorRef, ShardState> shardStates;
 
-  private MinTimeUpdate lastMinTime = new MinTimeUpdate(GlobalTime.MIN, new JobaTimes());
+  private MinTimeUpdate lastMinTime = new MinTimeUpdate(GlobalTime.MIN, new NodeTimes());
 
-  public MinTimeUpdater(List<Shard> shards) {
+  public MinTimeUpdater(List<ActorRef> shards) {
     this.shardStates = shards.stream().collect(Collectors.toMap(Function.identity(), __ -> new ShardState()));
   }
 
+  public void subscribe(ActorRef self) {
+    shardStates.keySet().forEach(acker -> acker.tell(new MinTimeUpdateListener(self), self));
+  }
+
   @Nullable
-  public MinTimeUpdate onShardMinTimeUpdate(Shard shard, MinTimeUpdate shardMinTimeUpdate) {
+  public MinTimeUpdate onShardMinTimeUpdate(ActorRef shard, MinTimeUpdate shardMinTimeUpdate) {
     ShardState shardState = shardStates.get(shard);
-    shardState.operationsTime = shardMinTimeUpdate.getJobaTimes();
-    shardState.minTimeUpdates.put(shardMinTimeUpdate.minTime(), shardMinTimeUpdate.getJobaTimes());
+    shardState.operationsTime = shardMinTimeUpdate.getNodeTimes();
+    shardState.minTimeUpdates.put(shardMinTimeUpdate.minTime(), shardMinTimeUpdate.getNodeTimes());
     final MinTimeUpdate minAmongTables = minAmongTables();
     if (minAmongTables.minTime().compareTo(lastMinTime.minTime()) > 0) {
       this.lastMinTime = minAmongTables;
@@ -44,13 +50,13 @@ public class MinTimeUpdater<Shard> {
     if (shardStates.isEmpty()) {
       return lastMinTime;
     }
-    JobaTimes min =
+    NodeTimes min =
             shardStates.values()
                     .stream()
                     .map(shardState -> shardState.operationsTime)
-                    .reduce(new JobaTimes(), JobaTimes::min);
+                    .reduce(new NodeTimes(), NodeTimes::min);
     for (ShardState shardState : shardStates.values()) {
-      final Map.Entry<GlobalTime, JobaTimes> minTimeUpdate = shardState.minTimeUpdates.entrySet()
+      final Map.Entry<GlobalTime, NodeTimes> minTimeUpdate = shardState.minTimeUpdates.entrySet()
               .stream()
               .filter(entry -> entry.getValue().greaterThanOrNotComparableTo(min))
               .findFirst()

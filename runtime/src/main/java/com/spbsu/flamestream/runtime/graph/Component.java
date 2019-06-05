@@ -20,13 +20,11 @@ import com.spbsu.flamestream.runtime.graph.api.NewRear;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
-import com.spbsu.flamestream.runtime.master.acker.api.JobaTime;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
-import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.jetbrains.annotations.Nullable;
@@ -37,20 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class Component extends LoggingActor {
-  private static final int FLUSH_DELAY_IN_MILLIS = 100;
   private final ActorRef localAcker;
   private final ComputationProps props;
-
-  private enum JobaTimesTick {
-    OBJECT
-  }
-
-  private final ActorRef pingActor;
 
   private class JobaWrapper<WrappedJoba extends Joba> {
     WrappedJoba joba;
@@ -137,18 +127,18 @@ public class Component extends LoggingActor {
                                         0,
                                         childId++
                                 ));
-                                ack(new Ack(cloned.meta().globalTime(), cloned.xor()), joba);
+                                ack(new Ack(cloned.meta().globalTime(), cloned.xor()));
                                 next.getValue().tell(new AddressedItem(cloned, toDest), self());
                               }
                             } else {
-                              ack(new Ack(item.meta().globalTime(), item.xor()), joba);
+                              ack(new Ack(item.meta().globalTime(), item.xor()));
                               routes.get(Objects.requireNonNull(hash).applyAsInt(item))
                                       .tell(new AddressedItem(item, toDest), self());
                             }
                           };
                         } else {
                           sink = item -> {
-                            ack(new Ack(item.meta().globalTime(), item.xor()), joba);
+                            ack(new Ack(item.meta().globalTime(), item.xor()));
                             localManager.tell(new AddressedItem(item, toDest), self());
                           };
                         }
@@ -181,7 +171,6 @@ public class Component extends LoggingActor {
               }
             }
     ));
-    pingActor = context().actorOf(PingActor.props(self(), JobaTimesTick.OBJECT));
   }
 
   public static Props props(String nodeId,
@@ -216,25 +205,7 @@ public class Component extends LoggingActor {
             .match(UnregisterFront.class, u -> localAcker.forward(u, context()))
             .match(Prepare.class, this::onPrepare)
             .match(Commit.class, this::onCommit)
-            .match(
-                    JobaTimesTick.class,
-                    __ -> wrappedJobas.values().forEach(jobaWrapper -> {
-                      jobaWrapper.joba.time++;
-                      localAcker.tell(
-                              new JobaTime(jobaWrapper.joba.id, jobaWrapper.joba.time),
-                              self()
-                      );
-                    })
-            )
             .build();
-  }
-
-  @Override
-  public void preStart() throws Exception {
-    super.preStart();
-    if (!props.barrierIsDisabled()) {
-      pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(FLUSH_DELAY_IN_MILLIS)), self());
-    }
   }
 
   private void onCommit(Commit commit) {
@@ -252,16 +223,14 @@ public class Component extends LoggingActor {
     final DataItem item = addressedItem.item();
     injectInTracer.log(item.xor());
     localCall(item, addressedItem.destination());
-    ack(new Ack(item.meta().globalTime(), item.xor()), wrappedJobas.get(addressedItem.destination()).joba);
+    ack(new Ack(item.meta().globalTime(), item.xor()));
     injectOutTracer.log(item.xor());
   }
 
-  private void ack(Ack ack, Joba joba) {
+  private void ack(Ack ack) {
     if (props.barrierIsDisabled()) {
       return;
     }
-    joba.time++;
-    localAcker.tell(new JobaTime(joba.id, joba.time), self());
     localAcker.tell(ack, self());
   }
 
