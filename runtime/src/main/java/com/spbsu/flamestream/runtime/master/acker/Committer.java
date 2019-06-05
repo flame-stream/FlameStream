@@ -30,6 +30,8 @@ public class Committer extends LoggingActor {
   private final int managersCount;
   private final int millisBetweenCommits;
   private final ActorRef registryHolder;
+  @org.jetbrains.annotations.NotNull
+  private final MinTimeUpdater minTimeUpdater;
   private final ActorRef pingActor;
 
   private long minAmongTables;
@@ -42,24 +44,25 @@ public class Committer extends LoggingActor {
                     long defaultMinimalTime,
                     int millisBetweenCommits,
                     ActorRef registryHolder,
-                    ActorRef acker) {
+                    MinTimeUpdater minTimeUpdater) {
     this.managersCount = managersCount;
     this.minAmongTables = defaultMinimalTime;
     this.millisBetweenCommits = millisBetweenCommits;
     this.registryHolder = registryHolder;
+    this.minTimeUpdater = minTimeUpdater;
 
     pingActor = context().actorOf(
             PingActor.props(self(), StartCommit.START),
             "acker-ping"
     );
-    acker.tell(new MinTimeUpdateListener(self()), self());
+    minTimeUpdater.subscribe(self());
   }
 
   public static Props props(
           int managersCount,
           SystemConfig systemConfig,
           ActorRef registryHolder,
-          ActorRef acker
+          MinTimeUpdater minTimeUpdater
   ) {
     return Props.create(
             Committer.class,
@@ -67,7 +70,7 @@ public class Committer extends LoggingActor {
             systemConfig.defaultMinimalTime(),
             systemConfig.millisBetweenCommits(),
             registryHolder,
-            acker
+            minTimeUpdater
     ).withDispatcher("processing-dispatcher");
   }
 
@@ -105,7 +108,11 @@ public class Committer extends LoggingActor {
   private Receive waiting() {
     return ReceiveBuilder.create()
             .match(StartCommit.class, __ -> commit(new GlobalTime(minAmongTables, EdgeId.MIN)))
-            .match(MinTimeUpdate.class, minTimeUpdate -> minAmongTables = minTimeUpdate.minTime().time())
+            .match(MinTimeUpdate.class, minTimeUpdate -> {
+              if ((minTimeUpdate = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate)) != null) {
+                minAmongTables = minTimeUpdate.minTime().time();
+              }
+            })
             .build();
   }
 

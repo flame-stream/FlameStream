@@ -1,15 +1,15 @@
 package com.spbsu.flamestream.runtime.master.acker.api;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.master.acker.JobaTimes;
+import com.spbsu.flamestream.runtime.master.acker.NodeTimes;
 
 public class MinTimeUpdate {
   private final GlobalTime minTime;
-  private final JobaTimes jobaTimes;
+  private final NodeTimes nodeTimes;
 
-  public MinTimeUpdate(GlobalTime minTime, JobaTimes jobaTimes) {
+  public MinTimeUpdate(GlobalTime minTime, NodeTimes nodeTimes) {
     this.minTime = minTime;
-    this.jobaTimes = jobaTimes;
+    this.nodeTimes = nodeTimes;
   }
 
   public GlobalTime minTime() {
@@ -21,7 +21,7 @@ public class MinTimeUpdate {
     return "MinTimeUpdate{" + "minTime=" + minTime + '}';
   }
 
-  public JobaTimes getJobaTimes() {
-    return jobaTimes;
+  public NodeTimes getNodeTimes() {
+    return nodeTimes;
   }
 }

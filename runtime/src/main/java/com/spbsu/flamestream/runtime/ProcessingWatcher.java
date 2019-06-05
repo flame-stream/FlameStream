@@ -14,6 +14,7 @@ import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
 import com.spbsu.flamestream.runtime.master.acker.Committer;
 import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
+import com.spbsu.flamestream.runtime.master.acker.MinTimeUpdater;
 import com.spbsu.flamestream.runtime.master.acker.RegistryHolder;
 import com.spbsu.flamestream.runtime.master.acker.ZkRegistry;
 import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
@@ -164,15 +165,15 @@ public class ProcessingWatcher extends LoggingActor {
         throw new RuntimeException(e);
       }
     }).collect(Collectors.toList());
-    final ActorRef localAcker = context().actorOf(LocalAcker.props(ackers));
+    final ActorRef localAcker = context().actorOf(LocalAcker.props(ackers, id));
     final ActorRef committer, registryHolder;
     if (zookeeperWorkersNode.isLeader(id)) {
-      registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), localAcker), "registry-holder");
+      registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), ackers), "registry-holder");
       committer = context().actorOf(Committer.props(
               config.paths().size(),
               systemConfig,
               registryHolder,
-              localAcker
+              new MinTimeUpdater(ackers)
       ), "committer");
     } else {
       final ActorPath masterPath = config.paths().get(config.masterLocation()).child("processing-watcher");

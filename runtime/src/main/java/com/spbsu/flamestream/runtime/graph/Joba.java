@@ -46,8 +46,6 @@ public abstract class Joba {
     this.id = id;
   }
 
-  public long time = Long.MIN_VALUE;
-
   abstract void accept(DataItem item, Consumer<DataItem> sink);
 
   void onMinTime(GlobalTime time) {
