@@ -23,7 +23,7 @@ env:
 install: true
 
 before_install:
-  - sudo add-apt-repository ppa:webupd8team/java
+  - sudo add-apt-repository ppa:linuxuprising/java
   - sudo apt-get update
 
 script:
