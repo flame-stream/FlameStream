@@ -6,7 +6,8 @@ addons:
   apt:
     packages:
       - sshpass
-      - oracle-java9-set-default
+      - oracle-java11-installer
+      - oracle-java11-set-default-local
       - libgfortran3
 jdk:
   - oraclejdk11
