@@ -6,10 +6,9 @@ addons:
   apt:
     packages:
       - sshpass
-      - oracle-java9-set-default
       - libgfortran3
 jdk:
-  - oraclejdk9
+  - openjdk8
 
 cache:
   directories:
