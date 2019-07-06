@@ -21,6 +21,12 @@ env:
 
 install: true
 
+before_install:
+    - sudo apt-get update -qq;
+    - sudo /bin/echo -e oracle-java9-installer shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections;
+    - sudo apt-get install -y oracle-java9-installer oracle-java9-set-default oracle-java9-unlimited-jce-policy;
+    - sudo update-java-alternatives -s java-9-oracle;
+
 script:
   - travis_wait 40 mvn --errors --batch-mode clean package
 
