@@ -6,11 +6,10 @@ addons:
   apt:
     packages:
       - sshpass
-      - oracle-java11-installer
-      - oracle-java11-set-default-local
+      - oracle-java9-set-default-local
       - libgfortran3
 jdk:
-  - oraclejdk11
+  - oraclejdk9
 
 cache:
   directories:
@@ -22,6 +21,10 @@ env:
     - JAVA_OPTS="-Xmx2048m -Xms2048m"
 
 install: true
+
+before_install:
+  - sudo add-apt-repository ppa:webupd8team/java
+  - sudo apt-get update
 
 script:
   - travis_wait 40 mvn --errors --batch-mode clean package
