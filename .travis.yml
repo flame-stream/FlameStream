@@ -6,7 +6,6 @@ addons:
   apt:
     packages:
       - sshpass
-      - oracle-java9-set-default
       - libgfortran3
 jdk:
   - oraclejdk9
@@ -21,10 +20,6 @@ env:
     - JAVA_OPTS="-Xmx2048m -Xms2048m"
 
 install: true
-
-before_install:
-  - sudo add-apt-repository ppa:linuxuprising/java
-  - sudo apt-get update
 
 script:
   - travis_wait 40 mvn --errors --batch-mode clean package
