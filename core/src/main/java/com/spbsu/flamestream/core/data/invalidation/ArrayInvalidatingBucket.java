@@ -4,7 +4,6 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -12,13 +11,13 @@ import java.util.function.Consumer;
  * Date: 01.11.2017
  */
 public class ArrayInvalidatingBucket implements InvalidatingBucket {
-  protected final List<DataItem> innerList;
+  protected final ArrayList<Entry> innerList;
 
   public ArrayInvalidatingBucket() {
     this(new ArrayList<>());
   }
 
-  protected ArrayInvalidatingBucket(List<DataItem> innerList) {
+  protected ArrayInvalidatingBucket(ArrayList<Entry> innerList) {
     this.innerList = innerList;
   }
 
@@ -26,10 +25,10 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
   public void insert(DataItem insertee) {
     if (!insertee.meta().isTombstone()) {
       final int position = lowerBound(insertee.meta());
-      innerList.add(position, insertee);
+      innerList.add(position, new Entry(insertee));
     } else {
       final int position = lowerBound(insertee.meta()) - 1;
-      if (!innerList.get(position).meta().isInvalidedBy(insertee.meta())) {
+      if (!innerList.get(position).dataItem.meta().isInvalidedBy(insertee.meta())) {
         throw new IllegalStateException("There is no invalidee");
       }
       innerList.remove(position);
@@ -37,12 +36,12 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
   }
 
   @Override
-  public DataItem get(int index) {
+  public Entry get(int index) {
     return innerList.get(index);
   }
 
   @Override
-  public void forRange(int fromIndex, int toIndex, Consumer<DataItem> consumer) {
+  public void forRange(int fromIndex, int toIndex, Consumer<Entry> consumer) {
     for (int i = fromIndex; i < toIndex; i++) {
       consumer.accept(innerList.get(i));
     }
@@ -73,7 +72,7 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
     int right = innerList.size();
     while (left != right) {
       final int middle = left + (right - left) / 2;
-      if (innerList.get(middle).meta().compareTo(meta) >= 0) {
+      if (innerList.get(middle).dataItem.meta().compareTo(meta) >= 0) {
         right = middle;
       } else {
         left = middle + 1;

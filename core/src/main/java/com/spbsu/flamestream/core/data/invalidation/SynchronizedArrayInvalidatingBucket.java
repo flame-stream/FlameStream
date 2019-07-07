@@ -12,7 +12,7 @@ public class SynchronizedArrayInvalidatingBucket extends ArrayInvalidatingBucket
     super(new ArrayList<>());
   }
 
-  private SynchronizedArrayInvalidatingBucket(List<DataItem> list) {
+  private SynchronizedArrayInvalidatingBucket(ArrayList<Entry> list) {
     super(list);
   }
 
@@ -22,12 +22,12 @@ public class SynchronizedArrayInvalidatingBucket extends ArrayInvalidatingBucket
   }
 
   @Override
-  public synchronized DataItem get(int index) {
+  public synchronized Entry get(int index) {
     return super.get(index);
   }
 
   @Override
-  public synchronized void forRange(int fromIndex, int toIndex, Consumer<DataItem> consumer) {
+  public synchronized void forRange(int fromIndex, int toIndex, Consumer<Entry> consumer) {
     super.forRange(fromIndex, toIndex, consumer);
   }
 

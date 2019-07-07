@@ -7,6 +7,7 @@ import akka.event.LoggingAdapter;
 import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.Batch;
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.OutputPayload;
 import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
@@ -47,7 +48,7 @@ public class SinkJoba extends Joba {
     if (barrierDisabled) {
       rears.forEach((rear, lastEmmit) -> emmitRearBatch(
               rear,
-              new BatchImpl(item.meta().globalTime(), Collections.singletonList(item))
+              new BatchImpl(item.meta().globalTime(), Collections.singletonList(new OutputPayload(item, 0)))
       ));
     } else {
       invalidatingBucket.insert(item);
@@ -83,10 +84,11 @@ public class SinkJoba extends Joba {
     final int pos = invalidatingBucket.lowerBound(new Meta(upTo));
 
     rears.forEach((rear, lastEmmit) -> {
-      final List<DataItem> data = new ArrayList<>();
+      final List<OutputPayload> data = new ArrayList<>();
+      long emmissionTime = System.nanoTime();
       invalidatingBucket.forRange(0, pos, item -> {
-        if (item.meta().globalTime().compareTo(lastEmmit) > 0) {
-          data.add(item);
+        if (item.dataItem.meta().globalTime().compareTo(lastEmmit) > 0) {
+          data.add(new OutputPayload(item.dataItem, emmissionTime - item.insertionTimeNs));
         }
       });
 
@@ -114,10 +116,10 @@ public class SinkJoba extends Joba {
   }
 
   public static class BatchImpl implements Batch {
-    private final List<DataItem> items;
+    final List<OutputPayload> items;
     private final GlobalTime time;
 
-    private BatchImpl(GlobalTime time, List<DataItem> items) {
+    private BatchImpl(GlobalTime time, List<OutputPayload> items) {
       this.items = items;
       this.time = time;
     }
@@ -127,8 +129,8 @@ public class SinkJoba extends Joba {
     }
 
     @Override
-    public <T> Stream<T> payload(Class<T> clazz) {
-      return items.stream().map(i -> i.payload(clazz));
+    public Stream<OutputPayload> payload() {
+      return items.stream();
     }
   }
 }

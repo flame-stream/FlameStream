@@ -6,6 +6,12 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 import java.util.function.Consumer;
 
 public interface InvalidatingBucket {
+  class Entry {
+    public final DataItem dataItem;
+    public final long insertionTimeNs = System.nanoTime();
+
+    public Entry(DataItem dataItem) {this.dataItem = dataItem;}
+  }
 
   /**
    * Inserts data item in list according to its meta
@@ -17,7 +23,7 @@ public interface InvalidatingBucket {
    * @return DataItem that located on the index position
    * @throws IndexOutOfBoundsException if the index is out of range
    */
-  DataItem get(int index);
+  Entry get(int index);
 
   /**
    * @param fromIndex low endpoint (inclusive) of the range
@@ -25,7 +31,7 @@ public interface InvalidatingBucket {
    * @param consumer for emitting items
    * @throws IndexOutOfBoundsException if at least one index is out of range
    */
-  void forRange(int fromIndex, int toIndex, Consumer<DataItem> consumer);
+  void forRange(int fromIndex, int toIndex, Consumer<Entry> consumer);
 
   /**
    * Removes the elements of bucket between fromIndex and toIndex

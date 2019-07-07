@@ -124,7 +124,7 @@ public class AkkaRear implements Rear {
               })
               .match(Batch.class, b -> {
                 lastBatch = b;
-                b.payload(clazz).forEach(consumer);
+                b.payload().map(outputPayload -> outputPayload.payload(clazz)).forEach(consumer);
                 sender().tell(new BatchAccepted(), self());
               })
               .match(GimmeLastBatch.class, g -> sender().tell(lastBatch, self()))

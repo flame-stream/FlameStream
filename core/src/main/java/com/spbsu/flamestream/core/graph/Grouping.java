@@ -82,8 +82,8 @@ public class Grouping<T> extends HashingVertexStub {
         final int left = Math.max(right - window, 0);
         final List<T> groupingResult = new ArrayList<>();
         //noinspection unchecked
-        bucket.forRange(left, right, dataItem -> groupingResult.add(dataItem.payload((Class<T>) clazz)));
-        final Meta meta = new Meta(bucket.get(right - 1).meta(), physicalId, areTombs);
+        bucket.forRange(left, right, dataItem -> groupingResult.add(dataItem.dataItem.payload((Class<T>) clazz)));
+        final Meta meta = new Meta(bucket.get(right - 1).dataItem.meta(), physicalId, areTombs);
         items.add(new PayloadDataItem(meta, groupingResult));
       }
       return items;

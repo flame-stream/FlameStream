@@ -37,7 +37,7 @@ public class GroupingState {
         //noinspection unchecked
         final List<InvalidatingBucket> container = (List<InvalidatingBucket>) obj;
         final InvalidatingBucket result = container.stream()
-                .filter(bucket -> bucket.isEmpty() || equalz.test(bucket.get(0), item))
+                .filter(bucket -> bucket.isEmpty() || equalz.test(bucket.get(0).dataItem, item))
                 .findAny()
                 .orElse(new SynchronizedArrayInvalidatingBucket());
 
@@ -47,7 +47,7 @@ public class GroupingState {
         return result;
       } else {
         final InvalidatingBucket bucket = (InvalidatingBucket) obj;
-        if (bucket.isEmpty() || equalz.test(bucket.get(0), item)) {
+        if (bucket.isEmpty() || equalz.test(bucket.get(0).dataItem, item)) {
           return bucket;
         } else {
           final List<InvalidatingBucket> container = new CopyOnWriteArrayList<>();

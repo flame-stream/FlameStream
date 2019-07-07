@@ -5,12 +5,13 @@ import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.spbsu.flamestream.core.Batch;
-import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.OutputPayload;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ public class SocketRear implements Rear {
     Arrays.stream(classes).forEach(clazz -> client.getKryo().register(clazz));
     { //register inners of data item
       client.getKryo().register(PayloadDataItem.class);
+      client.getKryo().register(OutputPayload.class);
       client.getKryo().register(Meta.class);
       client.getKryo().register(GlobalTime.class);
       client.getKryo().register(EdgeId.class);
@@ -64,7 +66,7 @@ public class SocketRear implements Rear {
   @Override
   public void accept(Batch batch) {
     if (client.isConnected()) {
-      batch.payload(Object.class).forEach(client::sendTCP);
+      batch.payload().forEach(client::sendTCP);
     } else {
       LOG.warn("{}: writing to closed log", edgeId);
     }

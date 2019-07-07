@@ -6,6 +6,7 @@ import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Job;
+import com.spbsu.flamestream.core.OutputPayload;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
@@ -134,9 +135,9 @@ public class ZkFlameClientTest {
     consumer.addListener(new Listener() {
       @Override
       public void received(Connection connection, Object o) {
-        if (o instanceof String) {
+        if (o instanceof OutputPayload) {
           LOG.info("Received: {}", o);
-          result.add((String) o);
+          result.add(((OutputPayload) o).payload(String.class));
           latch.countDown();
         }
       }

@@ -4,8 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.OutputPayload;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
@@ -89,6 +89,7 @@ public class BenchStandComponentFactory {
       server.getKryo().register(clazz);
     }
     server.getKryo().register(PayloadDataItem.class);
+    server.getKryo().register(OutputPayload.class);
     server.getKryo().register(Meta.class);
     server.getKryo().register(GlobalTime.class);
     server.getKryo().register(EdgeId.class);
@@ -112,8 +113,8 @@ public class BenchStandComponentFactory {
     server.addListener(new Listener() {
       @Override
       public void received(Connection connection, Object object) {
-        if (object instanceof DataItem) {
-          consumer.accept(((DataItem) object).payload(type));
+        if (object instanceof OutputPayload) {
+          consumer.accept(((OutputPayload) object).payload(type));
         } else if (type.isInstance(object)) {
           consumer.accept(type.cast(object));
         }
