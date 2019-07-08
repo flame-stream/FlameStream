@@ -6,6 +6,7 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
+import com.spbsu.flamestream.runtime.master.acker.api.CachedAcks;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.NodeTime;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class LocalAcker extends LoggingActor {
   private static final int FLUSH_DELAY_IN_MILLIS = 5;
@@ -110,8 +112,11 @@ public class LocalAcker extends LoggingActor {
     }
 
     final boolean acksEmpty = ackCache.isEmpty();
-    ackCache.forEach((globalTime, xor) -> ackers.get((int) (globalTime.time() % ackers.size()))
-            .tell(new Ack(globalTime, xor), context().parent()));
+    final Map<ActorRef, List<Ack>> acksByAckers = ackCache.entrySet()
+            .stream()
+            .map(entry -> new Ack(entry.getKey(), entry.getValue()))
+            .collect(Collectors.groupingBy(o -> ackers.get((int) (o.time().time() % ackers.size()))));
+    acksByAckers.forEach((actorRef, acks) -> actorRef.tell(new CachedAcks(acks), self()));
     ackCache.clear();
 
     lastHearbeats.values().forEach(heartbeat -> ackers.forEach(acker -> acker.tell(heartbeat, self())));
