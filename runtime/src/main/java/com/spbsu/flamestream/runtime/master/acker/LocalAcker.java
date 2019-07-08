@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime.master.acker;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
@@ -16,7 +17,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +30,7 @@ public class LocalAcker extends LoggingActor {
 
   private long nodeTime = Long.MIN_VALUE;
   private final SortedMap<GlobalTime, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
-  private final List<Heartbeat> heartbeatCache = new ArrayList<>();
+  private final Map<EdgeId, Heartbeat> lastHearbeats = new HashMap<>();
   private final List<UnregisterFront> unregisterCache = new ArrayList<>();
 
   private final List<ActorRef> ackers;
@@ -67,7 +70,7 @@ public class LocalAcker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
             .match(Flush.class, flush -> flush())
-            .match(Heartbeat.class, heartbeatCache::add)
+            .match(Heartbeat.class, heartbeat -> lastHearbeats.put(heartbeat.time().frontId(), heartbeat))
             .match(UnregisterFront.class, unregisterCache::add)
             .match(MinTimeUpdateListener.class, minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef))
             .match(MinTimeUpdate.class, minTimeUpdate -> {
@@ -111,8 +114,8 @@ public class LocalAcker extends LoggingActor {
             .tell(new Ack(globalTime, xor), context().parent()));
     ackCache.clear();
 
-    heartbeatCache.forEach(heartbeat -> ackers.forEach(acker -> acker.tell(heartbeat, self())));
-    heartbeatCache.clear();
+    lastHearbeats.values().forEach(heartbeat -> ackers.forEach(acker -> acker.tell(heartbeat, self())));
+    lastHearbeats.clear();
 
     if (acksEmpty) {
       unregisterCache.forEach(unregisterFront -> ackers.forEach(acker -> acker.tell(unregisterFront, self())));
