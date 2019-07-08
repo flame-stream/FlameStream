@@ -154,7 +154,7 @@ public final class SumTest extends FlameAkkaSuite {
                 .collect(Collectors.toList());
         final List<AkkaFront.FrontHandle<LongNumb>> handles = flame.attachFront(
                 "totalOrderFront",
-                new AkkaFrontType<LongNumb>(system)
+                new AkkaFrontType<LongNumb>(system, false)
         ).collect(Collectors.toList());
         for (int i = 1; i < handles.size(); i++) {
           handles.get(i).unregister();
