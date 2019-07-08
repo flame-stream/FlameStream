@@ -7,6 +7,7 @@ import akka.event.LoggingAdapter;
 import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.Batch;
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.invalidation.ArrayInvalidatingBucket;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
@@ -25,6 +26,12 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class SinkJoba extends Joba {
+  public static class Emitted {
+    public final GlobalTime upTo;
+
+    public Emitted(GlobalTime upTo) {this.upTo = upTo;}
+  }
+
   private final LoggingAdapter log;
   private final boolean barrierDisabled;
   private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
@@ -89,6 +96,9 @@ public class SinkJoba extends Joba {
           data.add(item);
         }
       });
+      if (barrierDisabled) {
+        data.add(new PayloadDataItem(new Meta(upTo), new Emitted(upTo)));
+      }
 
       if (!data.isEmpty()) {
         emmitRearBatch(rear, new BatchImpl(upTo, data));
