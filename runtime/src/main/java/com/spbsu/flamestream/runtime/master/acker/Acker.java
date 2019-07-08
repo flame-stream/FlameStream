@@ -6,6 +6,7 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
+import com.spbsu.flamestream.runtime.master.acker.api.CachedAcks;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.NodeTime;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
@@ -32,6 +33,7 @@ import java.util.Set;
  * <ol>
  * <li>{@link RegisterFront} requests to add frontClass to the supervision</li>
  * <li>{@link Ack} acks</li>
+ * <li>{@link CachedAcks} cached acks from local acker</li>
  * <li>{@link Heartbeat} heartbeats</li>
  * </ol>
  * <h4>Outbound Messages</h4>
@@ -62,7 +64,8 @@ public class Acker extends LoggingActor {
   }
 
   public static Props props(long defaultMinimalTime, boolean assertAckingBackInTime) {
-    return Props.create(Acker.class, defaultMinimalTime, assertAckingBackInTime).withDispatcher("processing-dispatcher");
+    return Props.create(Acker.class, defaultMinimalTime, assertAckingBackInTime)
+            .withDispatcher("processing-dispatcher");
   }
 
   @Override
@@ -70,17 +73,20 @@ public class Acker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(
                     MinTimeUpdateListener.class,
-                    minTimeUpdateListener -> {
-                      listeners.add(minTimeUpdateListener.actorRef);
-                    }
+                    minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef)
             )
             .match(NodeTime.class, nodeTime -> nodeTimes = nodeTimes.updated(nodeTime.jobaId, nodeTime.time))
             .match(Ack.class, this::handleAck)
+            .match(CachedAcks.class, this::handleCachedAcks)
             .match(Heartbeat.class, this::handleHeartBeat)
             .match(RegisterFront.class, registerFront -> registerFront(registerFront.frontId()))
             .match(RegisterFrontFromTime.class, registerFront -> registerFrontFromTime(registerFront.startTime))
             .match(UnregisterFront.class, unregisterFront -> unregisterFront(unregisterFront.frontId()))
             .build();
+  }
+
+  private void handleCachedAcks(CachedAcks cachedAcks) {
+    cachedAcks.acks().forEach(this::handleAck);
   }
 
   private void registerFront(EdgeId frontId) {
