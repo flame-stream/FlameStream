@@ -70,6 +70,7 @@ public class RegistryHolder extends LoggingActor {
       this.sender = sender;
       ackersWaitedFor = new LinkedHashSet<>(ackers);
       ackers.forEach(acker -> acker.tell(new RegisterFront(frontId), self()));
+      checkIfRegistered();
     }
 
     @Override
@@ -83,18 +84,23 @@ public class RegistryHolder extends LoggingActor {
                           maxFrontTicket = frontTicket;
                         }
                         ackersWaitedFor.remove(sender());
-                        if (!ackersWaitedFor.isEmpty()) {
-                          return;
-                        }
-                        context().parent().tell(new Registered(maxFrontTicket, sender), self());
-                        context().stop(self());
+                        checkIfRegistered();
                       }
               )
               .build();
     }
+
+    private void checkIfRegistered() {
+      if (ackersWaitedFor.isEmpty()) {
+        context().parent().tell(new Registered(maxFrontTicket, sender), self());
+        context().stop(self());
+      }
+    }
   }
 
   private static class AlreadyRegisteredFrontRegisterer extends LoggingActor {
+    private final GlobalTime startTime;
+
     static class Registered {
       private final FrontTicket frontTicket;
       private final @NotNull
@@ -125,27 +131,29 @@ public class RegistryHolder extends LoggingActor {
 
     public AlreadyRegisteredFrontRegisterer(@Nullable ActorRef sender, List<ActorRef> ackers, GlobalTime startTime) {
       this.sender = sender;
+      this.startTime = startTime;
       ackersWaitedFor = new LinkedHashSet<>(ackers);
       ackers.forEach(acker -> acker.tell(new RegisterFrontFromTime(startTime), self()));
+      checkIfRegistered();
     }
 
     @Override
     public Receive createReceive() {
       return ReceiveBuilder.create()
-              .match(
-                      FrontTicket.class,
-                      frontTicket -> {
-                        ackersWaitedFor.remove(sender());
-                        if (!ackersWaitedFor.isEmpty()) {
-                          return;
-                        }
-                        if (sender != null) {
-                          context().parent().tell(new Registered(frontTicket, sender), self());
-                        }
-                        context().stop(self());
-                      }
-              )
+              .match(FrontTicket.class, ignored -> {
+                ackersWaitedFor.remove(sender());
+                checkIfRegistered();
+              })
               .build();
+    }
+
+    private void checkIfRegistered() {
+      if (ackersWaitedFor.isEmpty()) {
+        if (sender != null) {
+          context().parent().tell(new Registered(new FrontTicket(startTime), sender), self());
+        }
+        context().stop(self());
+      }
     }
   }
 

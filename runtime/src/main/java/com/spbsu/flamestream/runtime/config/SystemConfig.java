@@ -1,23 +1,29 @@
 package com.spbsu.flamestream.runtime.config;
 
 public class SystemConfig {
+  public enum Acking {
+    DISABLED,
+    CENTRALIZED,
+    DISTRIBUTED;
+  }
+
   private final int maxElementsInGraph;
   private final int millisBetweenCommits;
   private final long defaultMinimalTime;
-  private final boolean distributedAcker;
+  private final Acking acking;
   private final boolean barrierDisabled;
 
   public SystemConfig(
           int maxElementsInGraph,
           int millisBetweenCommits,
           long defaultMinimalTime,
-          boolean distributedAcker,
+          Acking acking,
           boolean barrierDisabled
   ) {
     this.maxElementsInGraph = maxElementsInGraph;
     this.millisBetweenCommits = millisBetweenCommits;
     this.defaultMinimalTime = defaultMinimalTime;
-    this.distributedAcker = distributedAcker;
+    this.acking = acking;
     this.barrierDisabled = barrierDisabled;
   }
 
@@ -33,8 +39,8 @@ public class SystemConfig {
     return this.millisBetweenCommits;
   }
 
-  public boolean distributedAcker() {
-    return this.distributedAcker;
+  public Acking acking() {
+    return this.acking;
   }
 
   @Override

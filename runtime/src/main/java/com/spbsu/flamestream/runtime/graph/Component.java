@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
 
 public class Component extends LoggingActor {
   private final ActorRef localAcker;
-  private final ComputationProps props;
 
   private class JobaWrapper<WrappedJoba extends Joba> {
     WrappedJoba joba;
@@ -70,11 +69,10 @@ public class Component extends LoggingActor {
                     Graph graph,
                     HashUnitMap<ActorRef> routes,
                     ActorRef localManager,
-                    ActorRef localAcker,
+                    @Nullable ActorRef localAcker,
                     ComputationProps props,
                     Map<String, GroupGroupingState> stateByVertex) {
     this.localAcker = localAcker;
-    this.props = props;
     this.wrappedJobas = componentVertices.stream().collect(Collectors.toMap(
             vertex -> GraphManager.Destination.fromVertexId(vertex.id()),
             vertex -> {
@@ -178,7 +176,7 @@ public class Component extends LoggingActor {
                             Graph graph,
                             HashUnitMap<ActorRef> localManager,
                             ActorRef routes,
-                            ActorRef localAcker,
+                            @Nullable ActorRef localAcker,
                             ComputationProps props,
                             Map<String, GroupGroupingState> stateByVertex) {
     return Props.create(
@@ -228,10 +226,9 @@ public class Component extends LoggingActor {
   }
 
   private void ack(Ack ack) {
-    if (props.barrierIsDisabled()) {
-      return;
+    if (localAcker != null) {
+      localAcker.tell(ack, self());
     }
-    localAcker.tell(ack, self());
   }
 
   private void localCall(DataItem item, GraphManager.Destination destination) {

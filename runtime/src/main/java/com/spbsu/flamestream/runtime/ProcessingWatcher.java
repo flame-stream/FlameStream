@@ -30,8 +30,10 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -148,24 +150,10 @@ public class ProcessingWatcher extends LoggingActor {
     } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     }
-    
     this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
-    final Stream<ActorPath> ackerPaths = systemConfig.distributedAcker() ? config.paths()
-            .values()
-            .stream() : Stream.of(config.masterPath());
-    final List<CompletableFuture<ActorRef>> ackerFutures = ackerPaths
-            .map(actorPath -> AwaitResolver.resolve(actorPath.child("acker"), context()).toCompletableFuture())
-            .collect(Collectors.toList());
-    ackerFutures.forEach(CompletableFuture::join);
-    final List<ActorRef> ackers = ackerFutures.stream().map(future -> {
-      try {
-        return future.get();
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-    }).collect(Collectors.toList());
-    final ActorRef localAcker = context().actorOf(LocalAcker.props(ackers, id));
+    final List<ActorRef> ackers = ackers(config);
+    final @Nullable ActorRef localAcker = ackers.isEmpty() ? null : context().actorOf(LocalAcker.props(ackers, id));
     final ActorRef committer, registryHolder;
     if (zookeeperWorkersNode.isLeader(id)) {
       registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), ackers), "registry-holder");
@@ -256,5 +244,34 @@ public class ProcessingWatcher extends LoggingActor {
 
   private enum InitDone {
     OBJECT
+  }
+
+  private List<ActorRef> ackers(ClusterConfig config) {
+    {
+      final Stream<ActorPath> paths;
+      switch (systemConfig.acking()) {
+        case DISABLED:
+          return Collections.emptyList();
+        case CENTRALIZED:
+          paths = Stream.of(config.masterPath());
+          break;
+        case DISTRIBUTED:
+          paths = config.paths().values().stream();
+          break;
+        default:
+          throw new IllegalStateException("Unexpected value: " + systemConfig.acking());
+      }
+      final List<CompletableFuture<ActorRef>> ackerFutures = paths
+              .map(actorPath -> AwaitResolver.resolve(actorPath.child("acker"), context()).toCompletableFuture())
+              .collect(Collectors.toList());
+      ackerFutures.forEach(CompletableFuture::join);
+      return ackerFutures.stream().map(future -> {
+        try {
+          return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+          throw new RuntimeException(e);
+        }
+      }).collect(Collectors.toList());
+    }
   }
 }
