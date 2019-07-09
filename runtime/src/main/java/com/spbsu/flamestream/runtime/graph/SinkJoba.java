@@ -59,12 +59,7 @@ public class SinkJoba extends Joba {
       final Batch batch = PatternsCS.ask(rear, new GimmeLastBatch(), FlameConfig.config.bigTimeout())
               .thenApply(e -> (Batch) e)
               .toCompletableFuture().get();
-      if (batch == Batch.Default.EMPTY) {
-        rears.put(rear, GlobalTime.MIN);
-      } else {
-        final GlobalTime time = ((BatchImpl) batch).time();
-        rears.put(rear, time);
-      }
+      rears.put(rear, batch.time());
 
       tryEmmit(minTime);
       log.info("Attached rear to graph {}", rears.get(rear));
@@ -122,6 +117,7 @@ public class SinkJoba extends Joba {
       this.time = time;
     }
 
+    @Override
     public GlobalTime time() {
       return time;
     }
