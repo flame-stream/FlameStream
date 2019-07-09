@@ -85,7 +85,7 @@ public class SinkJoba extends Joba {
         }
       });
 
-      if (!data.isEmpty()) {
+      if (!data.isEmpty() || barrierDisabled) {
         emmitRearBatch(rear, new BatchImpl(upTo, data));
       }
     });

@@ -65,6 +65,9 @@ public class SocketRear implements Rear {
   public void accept(Batch batch) {
     if (client.isConnected()) {
       batch.payload(Object.class).forEach(client::sendTCP);
+      if (batch.payload(Object.class).noneMatch(ignored -> true)) {
+        client.sendTCP(new MinTime(batch.time()));
+      }
     } else {
       LOG.warn("{}: writing to closed log", edgeId);
     }
