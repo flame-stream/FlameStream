@@ -57,18 +57,18 @@ public class RegistryHolder extends LoggingActor {
       }
     }
 
-    public static Props props(ActorRef sender, List<ActorRef> ackers, EdgeId frontId) {
-      return Props.create(NewFrontRegisterer.class, sender, ackers, frontId);
+    public static Props props(ActorRef sender, List<ActorRef> ackers, EdgeId frontId, long defaultMinimalTime) {
+      return Props.create(NewFrontRegisterer.class, sender, ackers, frontId, defaultMinimalTime);
     }
 
     final ActorRef sender;
     final Set<ActorRef> ackersWaitedFor;
-    @Nullable
-    FrontTicket maxFrontTicket;
+    GlobalTime maxAllowedTimestamp;
 
-    public NewFrontRegisterer(ActorRef sender, List<ActorRef> ackers, EdgeId frontId) {
+    public NewFrontRegisterer(ActorRef sender, List<ActorRef> ackers, EdgeId frontId, long defaultMinimalTime) {
       this.sender = sender;
       ackersWaitedFor = new LinkedHashSet<>(ackers);
+      maxAllowedTimestamp = new GlobalTime(defaultMinimalTime, frontId);
       ackers.forEach(acker -> acker.tell(new RegisterFront(frontId), self()));
       checkIfRegistered();
     }
@@ -79,9 +79,8 @@ public class RegistryHolder extends LoggingActor {
               .match(
                       FrontTicket.class,
                       frontTicket -> {
-                        if (maxFrontTicket == null
-                                || maxFrontTicket.allowedTimestamp().compareTo(frontTicket.allowedTimestamp()) < 0) {
-                          maxFrontTicket = frontTicket;
+                        if (maxAllowedTimestamp.compareTo(frontTicket.allowedTimestamp()) < 0) {
+                          maxAllowedTimestamp = frontTicket.allowedTimestamp();
                         }
                         ackersWaitedFor.remove(sender());
                         checkIfRegistered();
@@ -92,7 +91,7 @@ public class RegistryHolder extends LoggingActor {
 
     private void checkIfRegistered() {
       if (ackersWaitedFor.isEmpty()) {
-        context().parent().tell(new Registered(maxFrontTicket, sender), self());
+        context().parent().tell(new Registered(new FrontTicket(maxAllowedTimestamp), sender), self());
         context().stop(self());
       }
     }
@@ -159,14 +158,17 @@ public class RegistryHolder extends LoggingActor {
 
   private final Registry registry;
   private final List<ActorRef> ackers;
+  private final long defaultMinimalTime;
 
-  private RegistryHolder(Registry registry, List<ActorRef> ackers) {
+  private RegistryHolder(Registry registry, List<ActorRef> ackers, long defaultMinimalTime) {
     this.registry = registry;
     this.ackers = ackers;
+    this.defaultMinimalTime = defaultMinimalTime;
   }
 
-  public static Props props(Registry registry, List<ActorRef> ackers) {
-    return Props.create(RegistryHolder.class, registry, ackers).withDispatcher("processing-dispatcher");
+  public static Props props(Registry registry, List<ActorRef> ackers, long defaultMinimalTime) {
+    return Props.create(RegistryHolder.class, registry, ackers, defaultMinimalTime)
+            .withDispatcher("processing-dispatcher");
   }
 
   @Override
@@ -200,7 +202,7 @@ public class RegistryHolder extends LoggingActor {
   private void registerFront(EdgeId frontId) {
     final long registeredTime = registry.registeredTime(frontId);
     if (registeredTime == -1) {
-      context().actorOf(NewFrontRegisterer.props(sender(), ackers, frontId));
+      context().actorOf(NewFrontRegisterer.props(sender(), ackers, frontId, defaultMinimalTime));
     } else {
       context().actorOf(AlreadyRegisteredFrontRegisterer.props(
               sender(),
