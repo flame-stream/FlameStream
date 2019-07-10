@@ -17,6 +17,7 @@ import com.spbsu.flamestream.runtime.RemoteRuntime;
 import com.spbsu.flamestream.runtime.WorkerApplication;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.typesafe.config.Config;
 import org.apache.curator.framework.CuratorFramework;
@@ -94,6 +95,9 @@ public class BenchStandComponentFactory {
     server.getKryo().register(GlobalTime.class);
     server.getKryo().register(EdgeId.class);
     server.getKryo().register(int[].class);
+    server.getKryo().register(EdgeId.Min.class);
+    server.getKryo().register(EdgeId.Max.class);
+    server.getKryo().register(Rear.MinTime.class);
     ((Kryo.DefaultInstantiatorStrategy) server.getKryo()
             .getInstantiatorStrategy())
             .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
