@@ -79,22 +79,34 @@ class Cluster extends LoggingActor {
       ranges.put(id, new HashGroup(Collections.singleton(range)));
     }
     final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
+    SystemConfig.Acking acking = distributedAcker ? SystemConfig.Acking.DISTRIBUTED : SystemConfig.Acking.CENTRALIZED;
     final SystemConfig systemConfig =
-            new SystemConfig(maxElementsInGraph, millisBetweenCommits, 0, distributedAcker, false);
+            new SystemConfig(maxElementsInGraph, millisBetweenCommits, 0, acking, false);
 
     final Registry registry = new InMemoryRegistry();
     inner = context().actorOf(FlameUmbrella.props(
             context -> {
               final List<ActorRef> ackers;
-              if (distributedAcker) {
-                ackers = paths.keySet()
-                        .stream()
-                        .map(id -> context.actorOf(Acker.props(0, false), "acker-" + id))
-                        .collect(Collectors.toList());
-              } else {
-                ackers = Collections.singletonList(context.actorOf(Acker.props(0, true), "acker"));
+              switch (acking) {
+                case DISABLED:
+                  ackers = Collections.emptyList();
+                  break;
+                case CENTRALIZED:
+                  ackers = Collections.singletonList(context.actorOf(Acker.props(0, true), "acker"));
+                  break;
+                case DISTRIBUTED:
+                  ackers = paths.keySet()
+                          .stream()
+                          .map(id -> context.actorOf(Acker.props(0, false), "acker-" + id))
+                          .collect(Collectors.toList());
+                  break;
+                default:
+                  throw new IllegalStateException("Unexpected value: " + acking);
               }
-              final ActorRef localAcker = context.actorOf(LocalAcker.props(ackers, ""), "localAcker");
+              final ActorRef localAcker = ackers.isEmpty() ? null : context.actorOf(
+                      LocalAcker.props(ackers, ""),
+                      "localAcker"
+              );
               final ActorRef registryHolder = context.actorOf(
                       RegistryHolder.props(registry, ackers),
                       "registry-holder"

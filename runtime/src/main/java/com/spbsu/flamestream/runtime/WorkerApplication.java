@@ -48,7 +48,7 @@ public class WorkerApplication implements Runnable {
             .defaultMinimalTime(Integer.parseInt(System.getenv("DEFAULT_MINIMAL_TIME")))
             .millisBetweenCommits(Integer.parseInt(System.getenv("MILLIS_BETWEEN_COMMITS")))
             .maxElementsInGraph(Integer.parseInt(System.getenv("MAX_ELEMENTS_IN_GRAPH")))
-            .distributedAcker(Boolean.parseBoolean(System.getenv("DISTRIBUTED_ACKER")))
+            .acking(SystemConfig.Acking.valueOf(System.getenv("ACKING")))
             .barrierDisabled(Boolean.parseBoolean(System.getenv("BARRIER_DISABLED")))
             .build(
                     System.getenv("ID"),
@@ -84,7 +84,7 @@ public class WorkerApplication implements Runnable {
             workerConfig.maxElementsInGraph,
             workerConfig.millisBetweenCommits,
             workerConfig.defaultMinimalTime,
-            workerConfig.distributedAcker,
+            workerConfig.acking,
             workerConfig.barrierDisabled
     );
     //noinspection ConstantConditions
@@ -123,7 +123,7 @@ public class WorkerApplication implements Runnable {
     private final int maxElementsInGraph;
     private final int millisBetweenCommits;
     private final int defaultMinimalTime;
-    private final boolean distributedAcker;
+    private final SystemConfig.Acking acking;
     private final boolean barrierDisabled;
 
     private WorkerConfig(
@@ -135,7 +135,7 @@ public class WorkerApplication implements Runnable {
             int maxElementsInGraph,
             int millisBetweenCommits,
             int defaultMinimalTime,
-            boolean distributedAcker,
+            SystemConfig.Acking acking,
             boolean barrierDisabled
     ) {
       this.guarantees = guarantees;
@@ -146,7 +146,7 @@ public class WorkerApplication implements Runnable {
       this.maxElementsInGraph = maxElementsInGraph;
       this.millisBetweenCommits = millisBetweenCommits;
       this.defaultMinimalTime = defaultMinimalTime;
-      this.distributedAcker = distributedAcker;
+      this.acking = acking;
       this.barrierDisabled = barrierDisabled;
     }
 
@@ -161,7 +161,7 @@ public class WorkerApplication implements Runnable {
               ", maxElementsInGraph=" + maxElementsInGraph +
               ", millisBetweenCommits=" + millisBetweenCommits +
               ", defaultMinimalTime=" + defaultMinimalTime +
-              ", distributedAcker=" + distributedAcker +
+              ", acking=" + acking +
               '}';
     }
 
@@ -172,7 +172,7 @@ public class WorkerApplication implements Runnable {
       private int maxElementsInGraph = 500;
       private int millisBetweenCommits = 100;
       private int defaultMinimalTime = 0;
-      private boolean distributedAcker = false;
+      private SystemConfig.Acking acking = SystemConfig.Acking.CENTRALIZED;
       private boolean barrierDisabled = false;
 
       public Builder snapshotPath(String snapshotPath) {
@@ -200,8 +200,8 @@ public class WorkerApplication implements Runnable {
         return this;
       }
 
-      public Builder distributedAcker(boolean distributedAcker) {
-        this.distributedAcker = distributedAcker;
+      public Builder acking(SystemConfig.Acking acking) {
+        this.acking = acking;
         return this;
       }
 
@@ -215,7 +215,7 @@ public class WorkerApplication implements Runnable {
                 maxElementsInGraph,
                 millisBetweenCommits,
                 defaultMinimalTime,
-                distributedAcker,
+                acking,
                 barrierDisabled
         );
       }

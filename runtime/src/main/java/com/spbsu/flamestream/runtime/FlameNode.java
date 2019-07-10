@@ -14,6 +14,7 @@ import com.spbsu.flamestream.runtime.edge.negitioator.Negotiator;
 import com.spbsu.flamestream.runtime.state.StateStorage;
 import com.spbsu.flamestream.runtime.utils.akka.AwaitResolver;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +26,7 @@ public class FlameNode extends LoggingActor {
   private FlameNode(String id,
                     Graph bootstrapGraph,
                     ClusterConfig config,
-                    ActorRef localAcker,
+                    @Nullable ActorRef localAcker,
                     ActorRef registryHolder,
                     ActorRef committer,
                     int maxElementsInGraph,
@@ -56,7 +57,7 @@ public class FlameNode extends LoggingActor {
   public static Props props(String id,
                             Graph initialGraph,
                             ClusterConfig initialConfig,
-                            ActorRef localAcker,
+                            @Nullable ActorRef localAcker,
                             ActorRef registryHolder,
                             ActorRef committer,
                             int maxElementsInGraph,

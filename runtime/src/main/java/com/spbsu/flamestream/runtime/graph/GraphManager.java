@@ -33,6 +33,7 @@ import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListHashUnitMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,7 +49,8 @@ public class GraphManager extends LoggingActor {
   private final ComputationProps computationProps;
   private final StateStorage storage;
   private final String nodeId;
-  private final ActorRef localAcker;
+  private final @Nullable
+  ActorRef localAcker;
 
   private ActorRef sourceComponent;
   private ActorRef sinkComponent;
@@ -62,7 +64,7 @@ public class GraphManager extends LoggingActor {
 
   private GraphManager(String nodeId,
                        Graph graph,
-                       ActorRef localAcker,
+                       @Nullable ActorRef localAcker,
                        ActorRef registryHolder,
                        ActorRef committer,
                        ComputationProps computationProps,
@@ -79,13 +81,15 @@ public class GraphManager extends LoggingActor {
   @Override
   public void preStart() throws Exception {
     super.preStart();
-    localAcker.tell(new MinTimeUpdateListener(self()), self());
+    if (localAcker != null) {
+      localAcker.tell(new MinTimeUpdateListener(self()), self());
+    }
   }
 
   public static Props props(
           String nodeId,
           Graph graph,
-          ActorRef localAcker,
+          @Nullable ActorRef localAcker,
           ActorRef registryHolder,
           ActorRef committer,
           ComputationProps layout,
