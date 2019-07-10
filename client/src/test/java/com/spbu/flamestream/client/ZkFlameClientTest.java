@@ -4,8 +4,14 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
+import com.spbsu.flamestream.core.Batch;
+import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Job;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
+import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
@@ -53,7 +59,7 @@ public class ZkFlameClientTest {
       final FlameClient flameClient = new ZkFlameClient(localClusterRuntime.zkString());
       flameClient.push(new Job.Builder(testGraph())
               .addFront(new Job.Front("socket-front", "localhost", frontPort, String.class))
-              .addRear(new Job.Rear("socket-rear", "localhost", rearPort, String.class))
+              .addRear(new Job.Rear("socket-rear", "localhost", rearPort))
               .build());
 
       latch.await(5, TimeUnit.MINUTES);
@@ -118,6 +124,11 @@ public class ZkFlameClientTest {
     ((Kryo.DefaultInstantiatorStrategy) consumer.getKryo()
             .getInstantiatorStrategy())
             .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
+    consumer.getKryo().register(PayloadDataItem.class);
+    consumer.getKryo().register(Meta.class);
+    consumer.getKryo().register(GlobalTime.class);
+    consumer.getKryo().register(EdgeId.class);
+    consumer.getKryo().register(int[].class);
 
     consumer.addListener(new Listener() {
       @Override
@@ -134,9 +145,9 @@ public class ZkFlameClientTest {
     consumer.addListener(new Listener() {
       @Override
       public void received(Connection connection, Object o) {
-        if (o instanceof String) {
+        if (o instanceof DataItem) {
           LOG.info("Received: {}", o);
-          result.add((String) o);
+          result.add(((DataItem) o).payload(String.class));
           latch.countDown();
         }
       }

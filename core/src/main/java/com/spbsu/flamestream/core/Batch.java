@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 public interface Batch {
   GlobalTime time();
 
-  <T> Stream<T> payload(Class<T> clazz);
+  Stream<DataItem> payload();
 
   enum Default implements Batch {
     EMPTY;
@@ -18,7 +18,7 @@ public interface Batch {
     }
 
     @Override
-    public <T> Stream<T> payload(Class<T> clazz) {
+    public Stream<DataItem> payload() {
       return Stream.empty();
     }
   }
