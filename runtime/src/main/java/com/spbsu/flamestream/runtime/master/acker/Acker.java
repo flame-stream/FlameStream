@@ -143,11 +143,11 @@ public class Acker extends LoggingActor {
   private GlobalTime minAmongTables() {
     final GlobalTime minHeartbeat;
     if (maxHeartbeats.isEmpty()) {
-      minHeartbeat = new GlobalTime(defaultMinimalTime, EdgeId.MIN);
+      minHeartbeat = new GlobalTime(defaultMinimalTime, EdgeId.Min.INSTANCE);
     } else {
       minHeartbeat = Collections.min(maxHeartbeats.values());
     }
     final long minTime = table.tryPromote(minHeartbeat.time());
-    return new GlobalTime(minTime, EdgeId.MIN);
+    return new GlobalTime(minTime, EdgeId.Min.INSTANCE);
   }
 }
