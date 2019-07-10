@@ -26,7 +26,7 @@ public class MetaMapTest extends FlameStreamSuite {
 
     final int inputSize = 10;
     final List<DataItem> input = IntStream.range(0, inputSize)
-            .mapToObj(i -> new PayloadDataItem(new Meta(new GlobalTime(i, EdgeId.MIN)), i))
+            .mapToObj(i -> new PayloadDataItem(new Meta(new GlobalTime(i, EdgeId.Min.INSTANCE)), i))
             .collect(Collectors.toList());
 
     //noinspection ConstantConditions
