@@ -17,6 +17,7 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.WorkerApplication;
+import com.spbsu.flamestream.runtime.edge.Rear;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,6 +130,9 @@ public class ZkFlameClientTest {
     consumer.getKryo().register(GlobalTime.class);
     consumer.getKryo().register(EdgeId.class);
     consumer.getKryo().register(int[].class);
+    consumer.getKryo().register(EdgeId.Min.class);
+    consumer.getKryo().register(EdgeId.Max.class);
+    consumer.getKryo().register(Rear.MinTime.class);
 
     consumer.addListener(new Listener() {
       @Override

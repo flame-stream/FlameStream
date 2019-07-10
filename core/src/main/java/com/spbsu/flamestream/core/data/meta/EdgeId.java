@@ -3,10 +3,16 @@ package com.spbsu.flamestream.core.data.meta;
 import java.util.Objects;
 
 public class EdgeId implements Comparable<EdgeId> {
-  public static final EdgeId MAX = new EdgeId("max", "max") {
+  static public class Max extends EdgeId {
+    public static EdgeId INSTANCE = new Max();
+
+    private Max() {
+      super("max", "max");
+    }
+
     @Override
     public int compareTo(EdgeId o) {
-      if (o == MAX) {
+      if (o == INSTANCE) {
         return 0;
       }
       return 1;
@@ -14,14 +20,19 @@ public class EdgeId implements Comparable<EdgeId> {
 
     @Override
     public boolean equals(Object o) {
-      return o == MAX;
+      return o == INSTANCE;
     }
-  };
+  }
 
-  public static final EdgeId MIN = new EdgeId("min", "min") {
+  static public class Min extends EdgeId {
+    public static EdgeId INSTANCE = new Min();
+
+    private Min() {
+      super("min", "min");
+    }
     @Override
     public int compareTo(EdgeId o) {
-      if (o == MIN) {
+      if (o == INSTANCE) {
         return 0;
       }
       return -1;
@@ -29,9 +40,9 @@ public class EdgeId implements Comparable<EdgeId> {
 
     @Override
     public boolean equals(Object o) {
-      return o == MIN;
+      return o == INSTANCE;
     }
-  };
+  }
 
   private final String edgeName;
   private final String nodeId;
@@ -69,9 +80,9 @@ public class EdgeId implements Comparable<EdgeId> {
 
   @Override
   public int compareTo(EdgeId o) {
-    if (o == MIN) {
+    if (o == Min.INSTANCE) {
       return 1;
-    } else if (o == MAX) {
+    } else if (o == Max.INSTANCE) {
       return -1;
     }
 

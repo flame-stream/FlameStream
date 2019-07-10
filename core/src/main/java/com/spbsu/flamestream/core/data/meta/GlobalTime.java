@@ -4,8 +4,8 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public final class GlobalTime implements Comparable<GlobalTime> {
-  public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, EdgeId.MIN);
-  public static final GlobalTime MAX = new GlobalTime(Long.MAX_VALUE, EdgeId.MAX);
+  public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, EdgeId.Min.INSTANCE);
+  public static final GlobalTime MAX = new GlobalTime(Long.MAX_VALUE, EdgeId.Max.INSTANCE);
   //Inner representation is a subject for a discussion and/or an optimization
 
   private static final Comparator<GlobalTime> NATURAL_ORDER = Comparator

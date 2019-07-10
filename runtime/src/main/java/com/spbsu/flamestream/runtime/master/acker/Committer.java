@@ -11,7 +11,6 @@ import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Commit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.GimmeLastCommit;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.LastCommit;
-import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepare;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Prepared;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.Ready;
@@ -107,7 +106,7 @@ public class Committer extends LoggingActor {
 
   private Receive waiting() {
     return ReceiveBuilder.create()
-            .match(StartCommit.class, __ -> commit(new GlobalTime(minAmongTables, EdgeId.MIN)))
+            .match(StartCommit.class, __ -> commit(new GlobalTime(minAmongTables, EdgeId.Min.INSTANCE)))
             .match(MinTimeUpdate.class, minTimeUpdate -> {
               if ((minTimeUpdate = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate)) != null) {
                 minAmongTables = minTimeUpdate.minTime().time();

@@ -40,6 +40,9 @@ public class SocketRear implements Rear {
       client.getKryo().register(GlobalTime.class);
       client.getKryo().register(EdgeId.class);
       client.getKryo().register(int[].class);
+      client.getKryo().register(EdgeId.Min.class);
+      client.getKryo().register(EdgeId.Max.class);
+      client.getKryo().register(Rear.MinTime.class);
     }
 
     ((Kryo.DefaultInstantiatorStrategy) client.getKryo().getInstantiatorStrategy())
