@@ -123,8 +123,8 @@ public class SinkJoba extends Joba {
     }
 
     @Override
-    public <T> Stream<T> payload(Class<T> clazz) {
-      return items.stream().map(i -> i.payload(clazz));
+    public Stream<DataItem> payload() {
+      return items.stream();
     }
   }
 }
