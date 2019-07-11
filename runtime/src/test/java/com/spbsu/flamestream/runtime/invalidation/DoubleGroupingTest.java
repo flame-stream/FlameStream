@@ -15,6 +15,7 @@ import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameRuntime;
+import com.spbsu.flamestream.runtime.config.SystemConfig;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
@@ -118,14 +119,12 @@ public class DoubleGroupingTest extends FlameStreamSuite {
 
   @Test(invocationCount = 10)
   public void distributedAckerMultipleWorkersTest() throws InterruptedException {
-    try (LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).distributedAcker(true).build()) {
-      doubleGroupingTest(runtime, 10000, false);
-    }
-  }
-
-  @Test(invocationCount = 10)
-  public void disabledBarrierMultipleWorkersTest() throws InterruptedException {
-    try (LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).barrierDisabled(true).build()) {
+    try (
+            LocalRuntime runtime = new LocalRuntime.Builder()
+                    .parallelism(4)
+                    .acking(SystemConfig.Acking.DISTRIBUTED)
+                    .build()
+    ) {
       doubleGroupingTest(runtime, 10000, false);
     }
   }
@@ -146,7 +145,13 @@ public class DoubleGroupingTest extends FlameStreamSuite {
 
   @Test
   public void multipleWorkersDistributedAckerBlinkTest() throws InterruptedException {
-    try (LocalRuntime runtime = new LocalRuntime.Builder().parallelism(4).withBlink().distributedAcker(true).build()) {
+    try (
+            LocalRuntime runtime = new LocalRuntime.Builder()
+                    .parallelism(4)
+                    .withBlink()
+                    .acking(SystemConfig.Acking.DISTRIBUTED)
+                    .build()
+    ) {
       doubleGroupingTest(runtime, 20_000, true);
     }
   }
