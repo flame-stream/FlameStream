@@ -55,7 +55,7 @@ class Cluster extends LoggingActor {
           int maxElementsInGraph,
           boolean barrierDisabled,
           int millisBetweenCommits,
-          boolean distributedAcker,
+          SystemConfig.Acking acking,
           boolean blinking,
           int blinkPeriodSec
   ) {
@@ -79,10 +79,9 @@ class Cluster extends LoggingActor {
       ranges.put(id, new HashGroup(Collections.singleton(range)));
     }
     final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
-    SystemConfig.Acking acking = distributedAcker ? SystemConfig.Acking.DISTRIBUTED : SystemConfig.Acking.CENTRALIZED;
     final int defaultMinimalTime = 0;
     final SystemConfig systemConfig =
-            new SystemConfig(maxElementsInGraph, millisBetweenCommits, defaultMinimalTime, acking, false);
+            new SystemConfig(maxElementsInGraph, millisBetweenCommits, defaultMinimalTime, acking, barrierDisabled);
 
     final Registry registry = new InMemoryRegistry();
     inner = context().actorOf(FlameUmbrella.props(
@@ -126,7 +125,7 @@ class Cluster extends LoggingActor {
                       registryHolder,
                       committer,
                       maxElementsInGraph,
-                      false,
+                      barrierDisabled,
                       stateStorage
               ), id)).collect(Collectors.toList());
             },
@@ -140,7 +139,7 @@ class Cluster extends LoggingActor {
                      int maxElementsInGraph,
                      boolean barrierDisabled,
                      int millisBetweenCommits,
-                     boolean distributedAcker,
+                     SystemConfig.Acking acking,
                      boolean blinking,
                      int blinkPeriodSec
   ) {
@@ -152,7 +151,7 @@ class Cluster extends LoggingActor {
             maxElementsInGraph,
             barrierDisabled,
             millisBetweenCommits,
-            distributedAcker,
+            acking,
             blinking,
             blinkPeriodSec
     );
