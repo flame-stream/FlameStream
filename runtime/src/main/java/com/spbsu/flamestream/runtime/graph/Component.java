@@ -199,8 +199,16 @@ public class Component extends LoggingActor {
             .match(DataItem.class, this::accept)
             .match(MinTimeUpdate.class, this::onMinTime)
             .match(NewRear.class, this::onNewRear)
-            .match(Heartbeat.class, h -> localAcker.forward(h, context()))
-            .match(UnregisterFront.class, u -> localAcker.forward(u, context()))
+            .match(Heartbeat.class, h -> {
+              if (localAcker != null) {
+                localAcker.forward(h, context());
+              }
+            })
+            .match(UnregisterFront.class, u -> {
+              if (localAcker != null) {
+                localAcker.forward(u, context());
+              }
+            })
             .match(Prepare.class, this::onPrepare)
             .match(Commit.class, this::onCommit)
             .build();
