@@ -20,6 +20,8 @@ public class SystemConfig {
           Acking acking,
           boolean barrierDisabled
   ) {
+    if (acking == SystemConfig.Acking.DISABLED && !barrierDisabled)
+      throw new IllegalArgumentException("barrier should be disabled when acking is");
     this.maxElementsInGraph = maxElementsInGraph;
     this.millisBetweenCommits = millisBetweenCommits;
     this.defaultMinimalTime = defaultMinimalTime;
