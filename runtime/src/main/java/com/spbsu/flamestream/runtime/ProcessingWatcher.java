@@ -156,7 +156,10 @@ public class ProcessingWatcher extends LoggingActor {
     final @Nullable ActorRef localAcker = ackers.isEmpty() ? null : context().actorOf(LocalAcker.props(ackers, id));
     final ActorRef committer, registryHolder;
     if (zookeeperWorkersNode.isLeader(id)) {
-      registryHolder = context().actorOf(RegistryHolder.props(new ZkRegistry(curator), ackers), "registry-holder");
+      registryHolder = context().actorOf(
+              RegistryHolder.props(new ZkRegistry(curator), ackers, systemConfig.defaultMinimalTime()),
+              "registry-holder"
+      );
       committer = context().actorOf(Committer.props(
               config.paths().size(),
               systemConfig,

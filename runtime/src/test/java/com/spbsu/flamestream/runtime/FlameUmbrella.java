@@ -80,8 +80,9 @@ class Cluster extends LoggingActor {
     }
     final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
     SystemConfig.Acking acking = distributedAcker ? SystemConfig.Acking.DISTRIBUTED : SystemConfig.Acking.CENTRALIZED;
+    final int defaultMinimalTime = 0;
     final SystemConfig systemConfig =
-            new SystemConfig(maxElementsInGraph, millisBetweenCommits, 0, acking, false);
+            new SystemConfig(maxElementsInGraph, millisBetweenCommits, defaultMinimalTime, acking, false);
 
     final Registry registry = new InMemoryRegistry();
     inner = context().actorOf(FlameUmbrella.props(
@@ -92,12 +93,12 @@ class Cluster extends LoggingActor {
                   ackers = Collections.emptyList();
                   break;
                 case CENTRALIZED:
-                  ackers = Collections.singletonList(context.actorOf(Acker.props(0, true), "acker"));
+                  ackers = Collections.singletonList(context.actorOf(Acker.props(defaultMinimalTime, true), "acker"));
                   break;
                 case DISTRIBUTED:
                   ackers = paths.keySet()
                           .stream()
-                          .map(id -> context.actorOf(Acker.props(0, false), "acker-" + id))
+                          .map(id -> context.actorOf(Acker.props(defaultMinimalTime, false), "acker-" + id))
                           .collect(Collectors.toList());
                   break;
                 default:
@@ -108,7 +109,7 @@ class Cluster extends LoggingActor {
                       "localAcker"
               );
               final ActorRef registryHolder = context.actorOf(
-                      RegistryHolder.props(registry, ackers),
+                      RegistryHolder.props(registry, ackers, defaultMinimalTime),
                       "registry-holder"
               );
               final ActorRef committer = context.actorOf(Committer.props(
