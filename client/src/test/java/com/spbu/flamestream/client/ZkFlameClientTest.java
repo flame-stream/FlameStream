@@ -17,11 +17,13 @@ import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.WorkerApplication;
+import com.spbsu.flamestream.runtime.config.SystemConfig;
 import com.spbsu.flamestream.runtime.edge.Rear;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -38,8 +40,17 @@ import java.util.stream.Stream;
 public class ZkFlameClientTest {
   private static final Logger LOG = LoggerFactory.getLogger(ZkFlameClientTest.class);
 
-  @Test
-  public void testPushJobWorks() throws InterruptedException, IOException {
+  @DataProvider
+  public static Object[][] dataProvider() {
+    return new Object[][]{
+            {SystemConfig.Acking.DISABLED},
+            {SystemConfig.Acking.CENTRALIZED},
+            {SystemConfig.Acking.DISTRIBUTED}
+    };
+  }
+
+  @Test(dataProvider = "dataProvider")
+  public void testPushJobWorks(SystemConfig.Acking acking) throws InterruptedException, IOException {
     final int inputSize = 100;
     final int frontPort = 4567;
     final int rearPort = 5678;
@@ -55,7 +66,8 @@ public class ZkFlameClientTest {
 
     try (final LocalClusterRuntime localClusterRuntime = new LocalClusterRuntime(
             4,
-            new WorkerApplication.WorkerConfig.Builder()::build
+            new WorkerApplication.WorkerConfig.Builder().acking(acking)
+                    .barrierDisabled(acking == SystemConfig.Acking.DISABLED)::build
     )) {
       final FlameClient flameClient = new ZkFlameClient(localClusterRuntime.zkString());
       flameClient.push(new Job.Builder(testGraph())

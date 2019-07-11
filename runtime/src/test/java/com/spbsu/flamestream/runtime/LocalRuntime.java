@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.pattern.PatternsCS;
+import com.spbsu.flamestream.runtime.config.SystemConfig;
 import com.spbsu.flamestream.runtime.edge.Front;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.edge.Rear;
@@ -25,7 +26,7 @@ public class LocalRuntime implements FlameRuntime {
   private final StateStorage stateStorage;
   private final int parallelism;
   private final int maxElementsInGraph;
-  private final boolean distributedAcker;
+  private final SystemConfig.Acking acking;
   private final int millisBetweenCommits;
   private final boolean barrierDisabled;
   private final boolean blinking;
@@ -39,7 +40,7 @@ public class LocalRuntime implements FlameRuntime {
           int millisBetweenCommits,
           boolean blinking,
           int blinkPeriodSec,
-          boolean distributedAcker,
+          SystemConfig.Acking acking,
           StateStorage stateStorage
   ) {
     this.parallelism = parallelism;
@@ -49,7 +50,7 @@ public class LocalRuntime implements FlameRuntime {
     this.millisBetweenCommits = millisBetweenCommits;
     this.system = system;
     this.blinkPeriodSec = blinkPeriodSec;
-    this.distributedAcker = distributedAcker;
+    this.acking = acking;
     this.stateStorage = stateStorage;
   }
 
@@ -67,7 +68,7 @@ public class LocalRuntime implements FlameRuntime {
                     maxElementsInGraph,
                     barrierDisabled,
                     millisBetweenCommits,
-                    distributedAcker,
+                    acking,
                     blinking,
                     blinkPeriodSec
             ),
@@ -119,7 +120,7 @@ public class LocalRuntime implements FlameRuntime {
     private int millisBetweenCommits = DEFAULT_MILLIS_BETWEEN_COMMITS;
     private boolean blinking = false;
     private int blinkPeriodSec = 10;
-    private boolean distributedAcker = false;
+    private SystemConfig.Acking acking = SystemConfig.Acking.CENTRALIZED;
     private StateStorage stateStorage = new InMemStateStorage();
 
     @Nullable
@@ -161,8 +162,8 @@ public class LocalRuntime implements FlameRuntime {
       return this;
     }
 
-    public Builder distributedAcker(boolean distributedAcker) {
-      this.distributedAcker = distributedAcker;
+    public Builder acking(SystemConfig.Acking acking) {
+      this.acking = acking;
       return this;
     }
 
@@ -183,7 +184,7 @@ public class LocalRuntime implements FlameRuntime {
               millisBetweenCommits,
               blinking,
               blinkPeriodSec,
-              distributedAcker,
+              acking,
               stateStorage
       );
     }
