@@ -32,7 +32,8 @@
         <jool.version>0.9.12</jool.version>
         <joda.version>2.9.4</joda.version>
         <junit.version>4.8.1</junit.version>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson-core.version>2.9.9</jackson-core.version>
+        <jackson-databind.version>2.9.9.2</jackson-databind.version>
         <testng.version>6.10</testng.version>
         <sqlparser.version>0.9.6</sqlparser.version>
         <zookeeper.version>3.4.14</zookeeper.version>
@@ -180,12 +181,12 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson-core.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson-databind.version}</version>
             </dependency>
 
             <dependency>
