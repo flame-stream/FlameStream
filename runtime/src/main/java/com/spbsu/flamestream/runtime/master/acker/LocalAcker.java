@@ -6,7 +6,7 @@ import akka.japi.pf.ReceiveBuilder;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
-import com.spbsu.flamestream.runtime.master.acker.api.CachedAcks;
+import com.spbsu.flamestream.runtime.master.acker.api.BufferedMessages;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
 import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.NodeTime;
@@ -106,27 +106,38 @@ public class LocalAcker extends LoggingActor {
   }
 
   private void flush() {
+    final Map<ActorRef, List<Object>> ackerBufferedMessages = new HashMap<>();
     if (ackers.size() > 1) {
-      ackers.forEach(acker -> acker.tell(new NodeTime(nodeId, nodeTime), context().parent()));
-      nodeTime++;
+      final NodeTime nodeTime = new NodeTime(nodeId, this.nodeTime);
+      ackers.forEach(acker -> ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).add(nodeTime));
     }
+    nodeTime++;
 
     final boolean acksEmpty = ackCache.isEmpty();
-    final Map<ActorRef, List<Ack>> acksByAckers = ackCache.entrySet()
+    ackCache.entrySet()
             .stream()
             .map(entry -> new Ack(entry.getKey(), entry.getValue()))
-            .collect(Collectors.groupingBy(o -> ackers.get((int) (o.time().time() % ackers.size()))));
-    acksByAckers.forEach((actorRef, acks) -> actorRef.tell(new CachedAcks(acks), self()));
+            .collect(Collectors.groupingBy(o -> ackers.get((int) (o.time().time() % ackers.size()))))
+            .forEach((acker, acks) ->
+                    ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).addAll(acks)
+            );
     ackCache.clear();
 
-    lastHearbeats.values().forEach(heartbeat -> ackers.forEach(acker -> acker.tell(heartbeat, self())));
-    lastHearbeats.clear();
+    if (!lastHearbeats.isEmpty()) {
+      ackers.forEach(acker ->
+              ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).addAll(lastHearbeats.values())
+      );
+      lastHearbeats.clear();
+    }
 
-    if (acksEmpty) {
-      unregisterCache.forEach(unregisterFront -> ackers.forEach(acker -> acker.tell(unregisterFront, self())));
+    if (acksEmpty && !unregisterCache.isEmpty()) {
+      ackers.forEach(acker ->
+              ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).addAll(unregisterCache)
+      );
       unregisterCache.clear();
     }
 
+    ackerBufferedMessages.forEach((acker, messages) -> acker.tell(new BufferedMessages(messages), self()));
     flushCounter = 0;
   }
 
