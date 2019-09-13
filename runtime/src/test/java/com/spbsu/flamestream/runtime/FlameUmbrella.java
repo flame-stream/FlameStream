@@ -78,7 +78,7 @@ class Cluster extends LoggingActor {
       );
       ranges.put(id, new HashGroup(Collections.singleton(range)));
     }
-    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0", ranges);
+    final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0");
     final int defaultMinimalTime = 0;
     final SystemConfig systemConfig =
             new SystemConfig(maxElementsInGraph, millisBetweenCommits, defaultMinimalTime, acking, barrierDisabled);
@@ -121,6 +121,7 @@ class Cluster extends LoggingActor {
                       id,
                       g,
                       clusterConfig,
+                      ranges,
                       localAcker,
                       registryHolder,
                       committer,
