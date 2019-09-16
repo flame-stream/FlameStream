@@ -25,17 +25,37 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class LocalAcker extends LoggingActor {
+  public static class Partitions {
+    final int size;
+
+    public Partitions(int size) {this.size = size;}
+
+    public long partitionTime(int partition, long time) {
+      return Math.floorDiv(time + size - 1 - partition, size) * size + partition;
+    }
+
+    public int timePartition(long time) {
+      return (int) Math.floorMod(time, size);
+    }
+  }
+
+  private static class HeartbeatIncrease {
+    long previous = Long.MIN_VALUE, current = Long.MIN_VALUE;
+  }
+
   private static final int FLUSH_DELAY_IN_MILLIS = 5;
   private static final int FLUSH_COUNT = 1000;
 
   private long nodeTime = Long.MIN_VALUE;
   private final SortedMap<GlobalTime, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
-  private final Map<EdgeId, Heartbeat> lastHearbeats = new HashMap<>();
+  private final Map<EdgeId, HeartbeatIncrease> edgeIdHeartbeatIncrease = new HashMap<>();
   private final List<UnregisterFront> unregisterCache = new ArrayList<>();
 
   private final List<ActorRef> ackers;
+  private final Partitions partitions;
   private final List<ActorRef> listeners = new ArrayList<>();
   private final MinTimeUpdater minTimeUpdater;
   private final String nodeId;
@@ -45,6 +65,7 @@ public class LocalAcker extends LoggingActor {
 
   public LocalAcker(List<ActorRef> ackers, String nodeId) {
     this.ackers = ackers;
+    partitions = new Partitions(ackers.size());
     minTimeUpdater = new MinTimeUpdater(ackers);
     this.nodeId = nodeId;
     pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH));
@@ -72,7 +93,7 @@ public class LocalAcker extends LoggingActor {
     return ReceiveBuilder.create()
             .match(Ack.class, this::handleAck)
             .match(Flush.class, flush -> flush())
-            .match(Heartbeat.class, heartbeat -> lastHearbeats.put(heartbeat.time().frontId(), heartbeat))
+            .match(Heartbeat.class, this::receiveHeartbeat)
             .match(UnregisterFront.class, unregisterCache::add)
             .match(MinTimeUpdateListener.class, minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef))
             .match(MinTimeUpdate.class, minTimeUpdate -> {
@@ -83,6 +104,14 @@ public class LocalAcker extends LoggingActor {
             })
             .matchAny(e -> ackers.forEach(acker -> acker.forward(e, context())))
             .build();
+  }
+
+  private void receiveHeartbeat(Heartbeat heartbeat) {
+    final HeartbeatIncrease heartbeatIncrease = edgeIdHeartbeatIncrease.computeIfAbsent(
+            heartbeat.time().frontId(),
+            __ -> new HeartbeatIncrease()
+    );
+    heartbeatIncrease.current = Math.max(heartbeatIncrease.current, heartbeat.time().time());
   }
 
   private void tick() {
@@ -117,18 +146,22 @@ public class LocalAcker extends LoggingActor {
     ackCache.entrySet()
             .stream()
             .map(entry -> new Ack(entry.getKey(), entry.getValue()))
-            .collect(Collectors.groupingBy(o -> ackers.get((int) (o.time().time() % ackers.size()))))
+            .collect(Collectors.groupingBy(o -> ackers.get(partitions.timePartition(o.time().time()))))
             .forEach((acker, acks) ->
                     ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).addAll(acks)
             );
     ackCache.clear();
 
-    if (!lastHearbeats.isEmpty()) {
-      ackers.forEach(acker ->
-              ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).addAll(lastHearbeats.values())
-      );
-      lastHearbeats.clear();
-    }
+    edgeIdHeartbeatIncrease.forEach((edgeId, heartbeatIncrease) -> {
+      IntStream.range(0, ackers.size()).forEach(partition -> {
+        long current = partitions.partitionTime(partition, heartbeatIncrease.current);
+        if (partitions.partitionTime(partition, heartbeatIncrease.previous) < current) {
+          ackerBufferedMessages.computeIfAbsent(ackers.get(partition), __ -> new ArrayList<>())
+                  .add(new Heartbeat(new GlobalTime(current, edgeId)));
+        }
+      });
+      heartbeatIncrease.previous = heartbeatIncrease.current;
+    });
 
     if (acksEmpty && !unregisterCache.isEmpty()) {
       ackers.forEach(acker ->
