@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime;
 
 import akka.actor.ActorSystem;
+import akka.actor.CoordinatedShutdown;
 import com.spbsu.flamestream.runtime.config.SystemConfig;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
@@ -93,7 +94,7 @@ public class WorkerApplication implements Runnable {
             "watcher"
     );
 
-    system.registerOnTermination(() -> {
+    CoordinatedShutdown.get(system).addJvmShutdownHook(() -> {
       try {
         Tracing.TRACING.flush(Paths.get("/tmp/trace.csv"));
       } catch (IOException e) {
