@@ -8,6 +8,8 @@ import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.HashGroup;
+import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.config.SystemConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
@@ -33,8 +35,11 @@ import org.apache.zookeeper.data.Stat;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -152,6 +157,13 @@ public class ProcessingWatcher extends LoggingActor {
     }
     this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
+    final List<HashUnit> covering = HashUnit.covering(config.paths().size() - 1)
+            .collect(Collectors.toCollection(ArrayList::new));
+    final Map<String, HashGroup> ranges = new HashMap<>();
+    config.paths().keySet().forEach(s -> ranges.put(s, new HashGroup(Collections.singleton(
+            s.equals(config.masterLocation()) ? new HashUnit(0, 0) : covering.remove(0)
+    ))));
+    assert covering.isEmpty();
     final List<ActorRef> ackers = ackers(config);
     final @Nullable ActorRef localAcker = ackers.isEmpty() ? null : context().actorOf(LocalAcker.props(ackers, id));
     final ActorRef committer, registryHolder;
@@ -172,12 +184,12 @@ public class ProcessingWatcher extends LoggingActor {
       committer = AwaitResolver.syncResolve(masterPath.child("committer"), context());
     }
 
-
     this.flameNode = context().actorOf(
             FlameNode.props(
                     id,
                     graph,
                     config.withChildPath("processing-watcher").withChildPath("graph"),
+                    new HashMap<>(ranges),
                     localAcker,
                     registryHolder,
                     committer,
