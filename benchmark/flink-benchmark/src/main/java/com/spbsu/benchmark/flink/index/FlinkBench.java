@@ -19,8 +19,11 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.jooq.lambda.Unchecked;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Map;
 
 public class FlinkBench {
   public static void main(String[] args) throws Exception {
@@ -36,7 +39,7 @@ public class FlinkBench {
     WikiBenchStand wikiBenchStand = new WikiBenchStand(benchConfig);
     wikiBenchStand.run(new GraphDeployer() {
       @Override
-      public void deploy() {
+      public Map<String, Handle> deploy() {
         final int parallelism = deployerConfig.getInt("parallelism");
         final StreamExecutionEnvironment environment;
         if (deployerConfig.hasPath("remote")) {
@@ -101,6 +104,10 @@ public class FlinkBench {
                 .setParallelism(parallelism);
         new Thread(Unchecked.runnable(environment::execute)).start();
 
+        return Collections.singletonMap("", new Handle(
+                new InetSocketAddress(wikiBenchStand.benchHost, wikiBenchStand.frontPort),
+                new InetSocketAddress(wikiBenchStand.benchHost, wikiBenchStand.rearPort)
+        ));
       }
 
       @Override

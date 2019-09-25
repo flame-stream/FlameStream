@@ -7,7 +7,7 @@ import com.spbsu.flamestream.runtime.edge.EdgeContext;
  * User: Artem
  * Date: 29.12.2017
  */
-public class SocketRearType implements FlameRuntime.RearType<SocketRear, Void> {
+public class SocketRearType implements FlameRuntime.RearType<SocketRear, EdgeContext> {
   private final String host;
   private final int port;
   private final Class<?>[] outClasses;
@@ -24,8 +24,8 @@ public class SocketRearType implements FlameRuntime.RearType<SocketRear, Void> {
   }
 
   @Override
-  public Void handle(EdgeContext context) {
-    return null;
+  public EdgeContext handle(EdgeContext context) {
+    return context;
   }
 
   private static class SocketRearRearInstance implements FlameRuntime.RearInstance<SocketRear> {
