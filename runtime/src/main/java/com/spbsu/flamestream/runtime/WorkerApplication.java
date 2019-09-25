@@ -3,7 +3,6 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.ActorSystem;
 import akka.actor.CoordinatedShutdown;
 import com.spbsu.flamestream.runtime.config.SystemConfig;
-import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -17,6 +16,7 @@ import scala.concurrent.duration.Duration;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +43,7 @@ public class WorkerApplication implements Runnable {
   }
 
   public static void main(String... args) {
+    final String[] localAddressHostAndPort = System.getenv("LOCAL_ADDRESS").split(":");
     final WorkerConfig config = new WorkerConfig.Builder()
             .snapshotPath(System.getenv("SNAPSHOT_PATH"))
             .guarantees(Guarantees.valueOf(System.getenv("GUARANTEES")))
@@ -53,7 +54,7 @@ public class WorkerApplication implements Runnable {
             .barrierDisabled(Boolean.parseBoolean(System.getenv("BARRIER_DISABLED")))
             .build(
                     System.getenv("ID"),
-                    new DumbInetSocketAddress(System.getenv("LOCAL_ADDRESS")),
+                    new InetSocketAddress(localAddressHostAndPort[0], Integer.parseInt(localAddressHostAndPort[1])),
                     System.getenv("ZK_STRING")
             );
     new WorkerApplication(config).run();
@@ -64,10 +65,10 @@ public class WorkerApplication implements Runnable {
     log.info("Starting worker with workerConfig '{}'", workerConfig);
 
     final Map<String, String> props = new HashMap<>();
-    props.put("akka.remote.artery.canonical.hostname", workerConfig.localAddress.host());
-    props.put("akka.remote.artery.canonical.port", String.valueOf(workerConfig.localAddress.port()));
+    props.put("akka.remote.artery.canonical.hostname", workerConfig.localAddress.getHostName());
+    props.put("akka.remote.artery.canonical.port", String.valueOf(workerConfig.localAddress.getPort()));
     props.put("akka.remote.artery.bind.hostname", "0.0.0.0");
-    props.put("akka.remote.artery.bind.port", String.valueOf(workerConfig.localAddress.port()));
+    props.put("akka.remote.artery.bind.port", String.valueOf(workerConfig.localAddress.getPort()));
     try {
       final File shm = new File(("/dev/shm"));
       if (shm.exists() && shm.isDirectory()) {
@@ -115,7 +116,7 @@ public class WorkerApplication implements Runnable {
 
   public static class WorkerConfig {
     private final String id;
-    private final DumbInetSocketAddress localAddress;
+    private final InetSocketAddress localAddress;
     private final String zkString;
 
     private final String snapshotPath;
@@ -129,7 +130,7 @@ public class WorkerApplication implements Runnable {
 
     private WorkerConfig(
             String id,
-            DumbInetSocketAddress localAddress,
+            InetSocketAddress localAddress,
             String zkString,
             String snapshotPath,
             Guarantees guarantees,
@@ -206,7 +207,7 @@ public class WorkerApplication implements Runnable {
         return this;
       }
 
-      public WorkerConfig build(String id, DumbInetSocketAddress localAddress, String zkString) {
+      public WorkerConfig build(String id, InetSocketAddress localAddress, String zkString) {
         return new WorkerConfig(
                 id,
                 localAddress,
