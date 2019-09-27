@@ -95,7 +95,7 @@ public class LentaTest extends FlameAkkaSuite {
   @Test
   public void lentaTest() throws TimeoutException, InterruptedException, IOException {
     final ActorSystem system = ActorSystem.create("lentaTfIdf", ConfigFactory.load("remote"));
-    try (final LocalClusterRuntime runtime = new LocalClusterRuntime(
+    try (final LocalClusterRuntime runtime = LocalClusterRuntime.create(
             2,
             new WorkerApplication.WorkerConfig.Builder().maxElementsInGraph(10).millisBetweenCommits(1000)::build
     )) {

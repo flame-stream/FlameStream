@@ -229,7 +229,7 @@ public class BlinkBenchStand implements AutoCloseable {
     if (deployerConfig.hasPath("local")) {
       runtime = new LocalRuntime.Builder().parallelism(deployerConfig.getConfig("local").getInt("parallelism")).build();
     } else if (deployerConfig.hasPath("local-cluster")) {
-      runtime = new LocalClusterRuntime(
+      runtime = LocalClusterRuntime.create(
               deployerConfig.getConfig("local-cluster").getInt("parallelism"),
               new WorkerApplication.WorkerConfig.Builder().millisBetweenCommits(10000)::build
       );

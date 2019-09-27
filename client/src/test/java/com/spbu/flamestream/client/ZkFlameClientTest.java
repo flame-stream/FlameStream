@@ -64,7 +64,7 @@ public class ZkFlameClientTest {
     final CountDownLatch latch = new CountDownLatch(inputSize);
     final Server rear = rear(latch, result, rearPort);
 
-    try (final LocalClusterRuntime localClusterRuntime = new LocalClusterRuntime(
+    try (final LocalClusterRuntime localClusterRuntime = LocalClusterRuntime.create(
             4,
             new WorkerApplication.WorkerConfig.Builder().acking(acking)
                     .barrierDisabled(acking == SystemConfig.Acking.DISABLED)::build

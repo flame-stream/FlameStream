@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.runtime;
 
-import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
@@ -21,12 +20,11 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-public class LocalClusterRuntime implements FlameRuntime {
+public class LocalClusterRuntime extends RemoteRuntime {
   private static final Logger LOG = LoggerFactory.getLogger(LocalClusterRuntime.class);
 
   private final ZooKeeperApplication zooKeeperApplication;
-  private final RemoteRuntime remoteRuntime;
-  private final Set<WorkerApplication> workers = new HashSet<>();
+  private final Set<WorkerApplication> workers;
   private final String zkString;
   private final CuratorFramework curator;
 
@@ -34,7 +32,7 @@ public class LocalClusterRuntime implements FlameRuntime {
     WorkerApplication.WorkerConfig create(String name, DumbInetSocketAddress localAddress, String zkString);
   }
 
-  public LocalClusterRuntime(int parallelism, WorkerConfigFactory workerConfigFactory) {
+  public static LocalClusterRuntime create(int parallelism, WorkerConfigFactory workerConfigFactory) {
     final List<Integer> ports;
     try {
       ports = new ArrayList<>(freePorts(parallelism + 1));
@@ -42,12 +40,13 @@ public class LocalClusterRuntime implements FlameRuntime {
       throw new RuntimeException(e);
     }
 
-    this.zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
+    final ZooKeeperApplication zooKeeperApplication = new ZooKeeperApplication(ports.get(0));
     zooKeeperApplication.run();
 
-    zkString = "localhost:" + ports.get(0);
+    final String zkString = "localhost:" + ports.get(0);
     LOG.info("ZK string: {}", zkString);
 
+    final Set<WorkerApplication> workers = new HashSet<>();
     for (int i = 0; i < parallelism; i++) {
       final String name = "worker" + i;
       final DumbInetSocketAddress address = new DumbInetSocketAddress("localhost", ports.get(i + 1));
@@ -57,7 +56,7 @@ public class LocalClusterRuntime implements FlameRuntime {
       worker.run();
     }
 
-    this.curator = CuratorFrameworkFactory.newClient(
+    final CuratorFramework curator = CuratorFrameworkFactory.newClient(
             zkString,
             new ExponentialBackoffRetry(1000, 3)
     );
@@ -69,13 +68,27 @@ public class LocalClusterRuntime implements FlameRuntime {
 
     final ClusterConfig config = ClusterConfig.fromWorkers(workersNode.workers());
     LOG.info("Pushing configuration {}", config);
-    this.remoteRuntime = new RemoteRuntime(curator, new KryoSerializer(), config);
+    return new LocalClusterRuntime(zooKeeperApplication, workers, zkString, curator, config);
+  }
+
+  public LocalClusterRuntime(
+          ZooKeeperApplication zooKeeperApplication,
+          Set<WorkerApplication> workers,
+          String zkString,
+          CuratorFramework curator,
+          ClusterConfig config
+  ) {
+    super(curator, new KryoSerializer(), config);
+    this.zooKeeperApplication = zooKeeperApplication;
+    this.workers = workers;
+    this.zkString = zkString;
+    this.curator = curator;
   }
 
   @Override
   public void close() {
     try {
-      remoteRuntime.close();
+      super.close();
       curator.close();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -85,16 +98,11 @@ public class LocalClusterRuntime implements FlameRuntime {
     }
   }
 
-  @Override
-  public Flame run(Graph g) {
-    return remoteRuntime.run(g);
-  }
-
   public String zkString() {
     return zkString;
   }
 
-  private Set<Integer> freePorts(int n) throws IOException {
+  private static Set<Integer> freePorts(int n) throws IOException {
     final Set<ServerSocket> sockets = new HashSet<>();
     final Set<Integer> ports = new HashSet<>();
     try {

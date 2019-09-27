@@ -35,6 +35,10 @@ public class RemoteRuntime implements FlameRuntime {
     return new RemoteFlame(config);
   }
 
+  public ClusterConfig clusterConfig() {
+    return config;
+  }
+
   private class RemoteFlame implements Flame {
     private final ClusterConfig clusterConfig;
 

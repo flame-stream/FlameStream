@@ -135,7 +135,7 @@ public class BenchStandComponentFactory {
     if (config.hasPath("local")) {
       runtime = new LocalRuntime.Builder().parallelism(config.getConfig("local").getInt("parallelism")).build();
     } else if (config.hasPath("local-cluster")) {
-      runtime = new LocalClusterRuntime(
+      runtime = LocalClusterRuntime.create(
               config.getConfig("local-cluster").getInt("parallelism"),
               new WorkerApplication.WorkerConfig.Builder().millisBetweenCommits(10000)::build
       );
