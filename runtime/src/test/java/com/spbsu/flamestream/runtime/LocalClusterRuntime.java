@@ -4,7 +4,6 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
-import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -13,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -31,7 +31,7 @@ public class LocalClusterRuntime implements FlameRuntime {
   private final CuratorFramework curator;
 
   public interface WorkerConfigFactory {
-    WorkerApplication.WorkerConfig create(String name, DumbInetSocketAddress localAddress, String zkString);
+    WorkerApplication.WorkerConfig create(String name, InetSocketAddress localAddress, String zkString);
   }
 
   public LocalClusterRuntime(int parallelism, WorkerConfigFactory workerConfigFactory) {
@@ -50,7 +50,7 @@ public class LocalClusterRuntime implements FlameRuntime {
 
     for (int i = 0; i < parallelism; i++) {
       final String name = "worker" + i;
-      final DumbInetSocketAddress address = new DumbInetSocketAddress("localhost", ports.get(i + 1));
+      final InetSocketAddress address = new InetSocketAddress("localhost", ports.get(i + 1));
 
       final WorkerApplication worker = new WorkerApplication(workerConfigFactory.create(name, address, zkString));
       workers.add(worker);
