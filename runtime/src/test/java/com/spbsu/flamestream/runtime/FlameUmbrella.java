@@ -92,12 +92,12 @@ class Cluster extends LoggingActor {
                   ackers = Collections.emptyList();
                   break;
                 case CENTRALIZED:
-                  ackers = Collections.singletonList(context.actorOf(Acker.props(defaultMinimalTime, true), "acker"));
+                  ackers = Collections.singletonList(context.actorOf(Acker.props(defaultMinimalTime, true, g), "acker"));
                   break;
                 case DISTRIBUTED:
                   ackers = paths.keySet()
                           .stream()
-                          .map(id -> context.actorOf(Acker.props(defaultMinimalTime, false), "acker-" + id))
+                          .map(id -> context.actorOf(Acker.props(defaultMinimalTime, false, g), "acker-" + id))
                           .collect(Collectors.toList());
                   break;
                 default:

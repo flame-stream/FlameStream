@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime.graph;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.TrackingComponent;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
@@ -22,13 +23,21 @@ public class SourceJoba extends Joba {
 
   private int unutilizedRequests;
   private final boolean barrierIsDisabled;
+  private final int sinkTrackingComponent;
 
-  public SourceJoba(Joba.Id id, int maxInFlightItems, ActorContext context, boolean barrierIsDisabled) {
+  public SourceJoba(
+          Id id,
+          int maxInFlightItems,
+          ActorContext context,
+          boolean barrierIsDisabled,
+          int sinkTrackingComponent
+  ) {
     super(id);
     this.maxInFlightItems = maxInFlightItems;
     this.context = context;
     this.unutilizedRequests = maxInFlightItems;
     this.barrierIsDisabled = barrierIsDisabled;
+    this.sinkTrackingComponent = sinkTrackingComponent;
   }
 
   @Override
@@ -44,6 +53,9 @@ public class SourceJoba extends Joba {
 
   @Override
   public void onMinTime(GlobalTime minTime) {
+    if (minTime.trackingComponent() != sinkTrackingComponent) {
+      return;
+    }
     inFlight.removeIf(nextTime -> nextTime.compareTo(minTime) < 0);
     requestNext();
   }

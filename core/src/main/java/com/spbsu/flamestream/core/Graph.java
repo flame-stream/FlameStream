@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,8 +29,17 @@ public interface Graph {
 
   Stream<Vertex> adjacent(Vertex vertex);
 
+  default TrackingComponent sinkTrackingComponent() {
+    for (Vertex vertex : (Iterable<Vertex>) components().flatMap(Function.identity())::iterator)
+      if (vertex instanceof Sink)
+        return vertex.trackingComponent();
+      return null;
+  }
+
   interface Vertex {
     String id();
+
+    default TrackingComponent trackingComponent() { return TrackingComponent.SOURCE; }
 
     abstract class Stub implements Vertex {
       private final long id = ThreadLocalRandom.current().nextLong();
