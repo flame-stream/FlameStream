@@ -1,28 +1,39 @@
 package com.spbsu.flamestream.core.data.meta;
 
+import com.spbsu.flamestream.core.TrackingComponent;
+
 import java.util.Comparator;
 import java.util.Objects;
 
 public final class GlobalTime implements Comparable<GlobalTime> {
   public static final GlobalTime MIN = new GlobalTime(Long.MIN_VALUE, EdgeId.Min.INSTANCE);
-  public static final GlobalTime MAX = new GlobalTime(Long.MAX_VALUE, EdgeId.Max.INSTANCE);
+  public static final GlobalTime MAX = new GlobalTime(Long.MAX_VALUE, EdgeId.Max.INSTANCE, TrackingComponent.MAX.index);
   //Inner representation is a subject for a discussion and/or an optimization
 
   private static final Comparator<GlobalTime> NATURAL_ORDER = Comparator
-          .comparingLong(GlobalTime::time)
+          .comparing(GlobalTime::trackingComponent)
+          .thenComparingLong(GlobalTime::time)
           .thenComparing(GlobalTime::frontId);
 
   private final long time;
   private final EdgeId frontId;
+  private final int trackingComponent;
 
   public GlobalTime(long time, EdgeId frontId) {
+    this(time, frontId, TrackingComponent.SOURCE.index);
+  }
+
+  public GlobalTime(long time, EdgeId frontId, int trackingComponent) {
     this.time = time;
     this.frontId = frontId;
+    this.trackingComponent = trackingComponent;
   }
 
   public long time() {
     return time;
   }
+
+  public int trackingComponent() { return trackingComponent; }
 
   public EdgeId frontId() {
     return frontId;
@@ -43,6 +54,7 @@ public final class GlobalTime implements Comparable<GlobalTime> {
     }
     final GlobalTime that = (GlobalTime) o;
     return time == that.time &&
+            trackingComponent == that.trackingComponent &&
             Objects.equals(frontId, that.frontId);
   }
 
@@ -53,6 +65,6 @@ public final class GlobalTime implements Comparable<GlobalTime> {
 
   @Override
   public String toString() {
-    return String.format("(%07d, %s)", time, frontId);
+    return String.format("(%07d, %s, %s)", time, frontId, trackingComponent);
   }
 }

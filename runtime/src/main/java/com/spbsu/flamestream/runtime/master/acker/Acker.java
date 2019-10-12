@@ -3,6 +3,8 @@ package com.spbsu.flamestream.runtime.master.acker;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.TrackingComponent;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.master.acker.api.Ack;
@@ -25,6 +27,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Function;
 
 
 /**
@@ -49,24 +53,49 @@ import java.util.Set;
 public class Acker extends LoggingActor {
   private static final int WINDOW = 1;
   private static final int SIZE = 100000;
+  private final ComponentAckTable sinkComponent;
 
   private NodeTimes nodeTimes = new NodeTimes();
   private final Set<ActorRef> listeners = new HashSet<>();
   private final Map<EdgeId, GlobalTime> maxHeartbeats = new HashMap<>();
 
-  private final AckTable table;
-
+  private final ComponentAckTable[] componentTable;
   private long defaultMinimalTime;
-  private long lastMinTime;
 
-  private Acker(long defaultMinimalTime, boolean assertAckingBackInTime) {
-    table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW, assertAckingBackInTime);
-    lastMinTime = defaultMinimalTime;
+  private static class ComponentAckTable {
+    final TrackingComponent component;
+    final AckTable ackTable;
+    long lastMinTime;
+
+    private ComponentAckTable(TrackingComponent component, AckTable ackTable, long defaultMinimialTime) {
+      this.component = component;
+      this.ackTable = ackTable;
+      lastMinTime = defaultMinimialTime;
+    }
+  }
+
+  private Acker(long defaultMinimalTime, boolean assertAckingBackInTime, Graph graph) {
+    int componentsNumber = 0;
+    final Iterable<Graph.Vertex> vertices = () -> graph.components().flatMap(Function.identity()).iterator();
+    for (Graph.Vertex component : vertices) {
+      componentsNumber = Integer.max(componentsNumber, component.trackingComponent().index + 1);
+    }
+    componentTable = new ComponentAckTable[componentsNumber];
+    for (final Graph.Vertex vertex : vertices) {
+      if (componentTable[vertex.trackingComponent().index] == null) {
+        componentTable[vertex.trackingComponent().index] = new ComponentAckTable(
+                vertex.trackingComponent(),
+                new ArrayAckTable(defaultMinimalTime, SIZE / componentsNumber, WINDOW, assertAckingBackInTime),
+                defaultMinimalTime
+        );
+      }
+    }
+    sinkComponent = componentTable[componentTable.length - 1];
     this.defaultMinimalTime = defaultMinimalTime;
   }
 
-  public static Props props(long defaultMinimalTime, boolean assertAckingBackInTime) {
-    return Props.create(Acker.class, defaultMinimalTime, assertAckingBackInTime)
+  public static Props props(long defaultMinimalTime, boolean assertAckingBackInTime, Graph graph) {
+    return Props.create(Acker.class, defaultMinimalTime, assertAckingBackInTime, graph)
             .withDispatcher("processing-dispatcher");
   }
 
@@ -85,11 +114,11 @@ public class Acker extends LoggingActor {
   }
 
   private void registerFront(EdgeId frontId) {
-    registerFrontFromTime(new GlobalTime(lastMinTime, frontId));
+    registerFrontFromTime(new GlobalTime(sinkComponent.lastMinTime, frontId));
   }
 
   private void registerFrontFromTime(GlobalTime startTime) {
-    if (startTime.time() < lastMinTime) {
+    if (startTime.time() < sinkComponent.lastMinTime) {
       throw new RuntimeException("Registering front back in time");
     }
     maxHeartbeats.put(startTime.frontId(), startTime);
@@ -107,6 +136,10 @@ public class Acker extends LoggingActor {
     checkMinTime();
   }
 
+  private void checkMinTime() {
+    checkMinTime(componentTable[0].component);
+  }
+
   private void handleHeartBeat(Heartbeat heartbeat) {
     final GlobalTime time = heartbeat.time();
     final GlobalTime previousHeartbeat = maxHeartbeats.get(heartbeat.time().frontId());
@@ -121,20 +154,34 @@ public class Acker extends LoggingActor {
 
   private void handleAck(Ack ack) {
     tracer.log(ack.xor());
-    if (table.ack(ack.time().time(), ack.xor())) {
-      checkMinTime();
+    final ComponentAckTable table = componentTable[ack.time().trackingComponent()];
+    if (table.ackTable.ack(ack.time().time(), ack.xor())) {
+      checkMinTime(table.component);
     }
   }
 
-  private void checkMinTime() {
+  private void checkMinTime(TrackingComponent component) {
     final long minHeartbeat =
             maxHeartbeats.isEmpty() ? defaultMinimalTime : Collections.min(maxHeartbeats.values()).time();
-    final long minTime = table.tryPromote(minHeartbeat);
-    if (lastMinTime < minTime) {
-      this.lastMinTime = minTime;
-      log().debug("New min time: {}", lastMinTime);
-      final GlobalTime minAmongTables = new GlobalTime(minTime, EdgeId.Min.INSTANCE);
-      listeners.forEach(s -> s.tell(new MinTimeUpdate(minAmongTables, nodeTimes), self()));
+    final TreeSet<TrackingComponent> componentsToRefresh = new TreeSet<>();
+    componentsToRefresh.add(component);
+    while ((component = componentsToRefresh.pollFirst()) != null) {
+      final ComponentAckTable table = componentTable[component.index];
+      final long minTime = table.ackTable.tryPromote(minHeartbeat);
+      if (minTime == table.lastMinTime) {
+        continue;
+      }
+      componentsToRefresh.addAll(component.adjacent);
+      table.lastMinTime = minTime;
+      final GlobalTime minAmongTables = new GlobalTime(
+              table.lastMinTime,
+              EdgeId.Min.INSTANCE,
+              table.component.index
+      );
+      log().debug("New min time: {}", minHeartbeat);
+      for (final ActorRef listener : listeners) {
+        listener.tell(new MinTimeUpdate(minAmongTables, nodeTimes), self());
+      }
     }
   }
 }
