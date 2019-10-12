@@ -167,7 +167,7 @@ public class ProcessingWatcher extends LoggingActor {
     assert covering.isEmpty();
     boolean distributedAcking = systemConfig.acking() == SystemConfig.Acking.DISTRIBUTED;
     if (distributedAcking || zookeeperWorkersNode.isLeader(id)) {
-      context().actorOf(Acker.props(systemConfig.defaultMinimalTime(), !distributedAcking), "acker");
+      context().actorOf(Acker.props(systemConfig.defaultMinimalTime(), !distributedAcking, graph), "acker");
     }
     final List<ActorRef> ackers = ackers(config);
     final @Nullable ActorRef localAcker = ackers.isEmpty() ? null
