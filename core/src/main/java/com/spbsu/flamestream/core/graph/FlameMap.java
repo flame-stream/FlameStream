@@ -6,36 +6,41 @@ import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Function;
+import java.io.Serializable;
 import java.util.stream.Stream;
 
 public class FlameMap<T, R> extends HashingVertexStub {
-  private final Function<T, Stream<R>> function;
+  public interface SerializableFunction<T, R> extends java.util.function.Function<T, R>, Serializable {
+  }
+  public interface SerializableRunnable extends java.lang.Runnable, Serializable {
+  }
+
+  private final SerializableFunction<T, Stream<R>> function;
   private final Class<?> clazz;
   private final @Nullable
   HashFunction hashFunction;
   private final @Nullable
-  Runnable init;
+  SerializableRunnable init;
 
-  public FlameMap(Function<T, Stream<R>> function,
+  public FlameMap(SerializableFunction<T, Stream<R>> function,
                   Class<?> clazz,
                   @Nullable HashFunction hashFunction,
-                  @Nullable Runnable init) {
+                  @Nullable SerializableRunnable init) {
     this.function = function;
     this.clazz = clazz;
     this.hashFunction = hashFunction;
     this.init = init;
   }
 
-  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz, @Nullable Runnable init) {
+  public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz, @Nullable SerializableRunnable init) {
     this(function, clazz, null, init);
   }
 
-  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz, @Nullable HashFunction hashFunction) {
+  public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz, @Nullable HashFunction hashFunction) {
     this(function, clazz, hashFunction, null);
   }
 
-  public FlameMap(Function<T, Stream<R>> function, Class<?> clazz) {
+  public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz) {
     this(function, clazz, null, null);
   }
 
@@ -50,7 +55,7 @@ public class FlameMap<T, R> extends HashingVertexStub {
             '}';
   }
 
-  public Function<T, Stream<R>> function() {
+  public SerializableFunction<T, Stream<R>> function() {
     return function;
   }
 

@@ -49,7 +49,6 @@ public class DoubleGroupingTest extends FlameStreamSuite {
   ));
   private static final Equalz EQUALZ = Equalz.hashEqualz(HASH_FUNCTION);
 
-  @SuppressWarnings("Convert2Lambda")
   private Graph graph() {
     final Grouping<Integer> firstGroup = new Grouping<>(
             HASH_FUNCTION,
@@ -57,36 +56,21 @@ public class DoubleGroupingTest extends FlameStreamSuite {
             WINDOW,
             Integer.class
     );
-    final FlameMap<List<Integer>, Integer> firstHash = new FlameMap<>(new Function<List<Integer>, Stream<Integer>>() {
-      @Override
-      public Stream<Integer> apply(List<Integer> longs) {
-        return Stream.of(longs.hashCode());
-      }
-    }, List.class);
+    final FlameMap<List<Integer>, Integer> firstHash = new FlameMap<>(longs -> Stream.of(longs.hashCode()), List.class);
     final Grouping<Integer> secondGroup = new Grouping<>(
             HASH_FUNCTION,
             EQUALZ,
             WINDOW,
             Integer.class
     );
-    final FlameMap<List<Integer>, Integer> secondHash = new FlameMap<>(new Function<List<Integer>, Stream<Integer>>() {
-      @Override
-      public Stream<Integer> apply(List<Integer> longs) {
-        return Stream.of(longs.hashCode());
-      }
-    }, List.class);
+    final FlameMap<List<Integer>, Integer> secondHash = new FlameMap<>(longs -> Stream.of(longs.hashCode()), List.class);
     final Grouping<Integer> thirdGroup = new Grouping<>(
             HASH_FUNCTION,
             EQUALZ,
             WINDOW,
             Integer.class
     );
-    final FlameMap<List<Integer>, Integer> thirdHash = new FlameMap<>(new Function<List<Integer>, Stream<Integer>>() {
-      @Override
-      public Stream<Integer> apply(List<Integer> longs) {
-        return Stream.of(longs.hashCode());
-      }
-    }, List.class);
+    final FlameMap<List<Integer>, Integer> thirdHash = new FlameMap<>(longs -> Stream.of(longs.hashCode()), List.class);
 
 
     final Source source = new Source();

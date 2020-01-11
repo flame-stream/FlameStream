@@ -1,21 +1,18 @@
 package com.spbsu.flamestream.example.bl.index.ops;
 
+import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.example.bl.index.model.WordBase;
 import com.spbsu.flamestream.example.bl.index.model.WordIndex;
 import com.spbsu.flamestream.example.bl.index.model.WordPagePositions;
-import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
-import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
  * User: Artem
  * Date: 10.07.2017
  */
-public class WrongOrderingFilter implements Function<List<WordBase>, Stream<List<WordBase>>> {
+public class WrongOrderingFilter implements FlameMap.SerializableFunction<List<WordBase>, Stream<List<WordBase>>> {
   //private transient final Tracing.Tracer tracer = Tracing.TRACING.forEvent("wrong-ordering-filter-receive");
 
   @Override
