@@ -31,6 +31,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.ops.WordContainerOrderin
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineModel;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -45,13 +46,9 @@ public class TextClassifierGraph implements Supplier<Graph> {
     this.onlineModel = onlineModel;
   }
 
-  @SuppressWarnings("Convert2Lambda")
-  private final HashFunction wordHash = HashFunction.uniformHash(new HashFunction() {
-    @Override
-    public int hash(DataItem dataItem) {
-      return dataItem.payload(WordContainer.class).word().hashCode();
-    }
-  });
+  private final HashFunction wordHash = HashFunction.uniformHash(
+          dataItem -> dataItem.payload(WordContainer.class).word().hashCode()
+  );
 
   private final HashFunction docHash = HashFunction.uniformHash(new HashFunction() {
     @Override
@@ -65,21 +62,12 @@ public class TextClassifierGraph implements Supplier<Graph> {
     }
   });
 
-  @SuppressWarnings("Convert2Lambda")
-  private final Equalz equalzWord = new Equalz() {
-    @Override
-    public boolean test(DataItem o1, DataItem o2) {
-      return o1.payload(WordContainer.class).word().equals(o2.payload(WordContainer.class).word());
-    }
-  };
+  private final Equalz equalzWord = (o1, o2) ->
+          o1.payload(WordContainer.class).word().equals(o2.payload(WordContainer.class).word());
 
-  @SuppressWarnings("Convert2Lambda")
-  private final Equalz equalzDoc = new Equalz() {
-    @Override
-    public boolean test(DataItem o1, DataItem o2) {
-      return o1.payload(DocContainer.class).partitioning().equals(o2.payload(DocContainer.class).partitioning());
-    }
-  };
+  private final Equalz equalzDoc = (o1, o2) -> o1.payload(DocContainer.class)
+          .partitioning()
+          .equals(o2.payload(DocContainer.class).partitioning());
 
   @Override
   public Graph get() {
@@ -90,29 +78,24 @@ public class TextClassifierGraph implements Supplier<Graph> {
             new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
 
 
-    //noinspection Convert2Lambda
-    final FlameMap<TfObject, WordEntry> splitterWord = new FlameMap<>(new Function<TfObject, Stream<WordEntry>>() {
-      @Override
-      public Stream<WordEntry> apply(TfObject tfObject) {
-        return tfObject.counts().entrySet().stream()
-                .map(word -> new WordEntry(
-                        word.getKey(),
-                        tfObject.document(),
-                        tfObject.counts().size(),
-                        tfObject.partitioning()
-                ));
-      }
-    }, TfObject.class);
+    final FlameMap<TfObject, WordEntry> splitterWord = new FlameMap<>(
+            tfObject ->
+                    tfObject.counts().entrySet().stream()
+                            .map(word -> new WordEntry(
+                                    word.getKey(),
+                                    tfObject.document(),
+                                    tfObject.counts().size(),
+                                    tfObject.partitioning()
+                            )),
+            TfObject.class
+    );
 
 
-    //noinspection Convert2Lambda
-    final FlameMap<TextDocument, TfObject> splitterTf = new FlameMap<>(new Function<TextDocument, Stream<TfObject>>() {
-      @Override
-      public Stream<TfObject> apply(TextDocument text) {
-        TfObject tfObject = TfObject.ofText(text);
-        return Stream.of(tfObject);
-      }
-    }, TextDocument.class, docHash);
+    final FlameMap<TextDocument, TfObject> splitterTf = new FlameMap<>(
+            text -> Stream.of(TfObject.ofText(text)),
+            TextDocument.class,
+            docHash
+    );
 
     final FlameMap<List<WordContainer>, List<WordContainer>> filterWord = new FlameMap<>(
             new WordContainerOrderingFilter(),
@@ -131,30 +114,18 @@ public class TextClassifierGraph implements Supplier<Graph> {
 
 
     final ClassifierFilter classifier = new ClassifierFilter(vectorizer, onlineModel);
-    //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<List<ClassifierInput>, ClassifierOutput> filterClassifier = new FlameMap<>(
             classifier,
             List.class,
-            new Runnable() {
-              @Override
-              public void run() {
-                classifier.init();
-              }
-            }
+            classifier::init
     );
 
     final IDFObjectCompleteFilter completeFilter = new IDFObjectCompleteFilter();
-    //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<WordCounter, IdfObject> idfObjectCompleteFilter = new FlameMap<>(
             completeFilter,
             WordCounter.class,
             docHash,
-            new Runnable() {
-              @Override
-              public void run() {
-                completeFilter.init();
-              }
-            }
+            completeFilter::init
     );
 
 
@@ -181,14 +152,8 @@ public class TextClassifierGraph implements Supplier<Graph> {
     final Grouping<ClassifierInput> groupingWeights =
             new Grouping<>(HashFunction.broadcastBeforeGroupingHash(), Equalz.allEqualz(), 2, ClassifierInput.class);
 
-    //noinspection Convert2Lambda,Anonymous2MethodRef
     final FlameMap<ClassifierInput, ClassifierInput> broadcastTfidfObject = new FlameMap<>(
-            new Function<ClassifierInput, Stream<ClassifierInput>>() {
-              @Override
-              public Stream<ClassifierInput> apply(ClassifierInput t) {
-                return Stream.of(t);
-              }
-            },
+            Stream::of,
             ClassifierInput.class,
             HashFunction.broadcastHash()
     );

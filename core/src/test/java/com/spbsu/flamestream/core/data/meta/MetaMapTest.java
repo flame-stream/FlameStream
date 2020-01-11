@@ -21,8 +21,10 @@ public class MetaMapTest extends FlameStreamSuite {
   @Test
   public void testFlatFilterLogic() {
     final int flatNumber = 10;
-    final Function<Integer, Stream<Integer>> function = integer -> Stream.generate(() -> integer).limit(flatNumber);
-    final FlameMap<Integer, Integer> map = new FlameMap<>(function, Integer.class);
+    final FlameMap<Integer, Integer> map = new FlameMap<>(
+            integer -> Stream.generate(() -> integer).limit(flatNumber),
+            Integer.class
+    );
 
     final int inputSize = 10;
     final List<DataItem> input = IntStream.range(0, inputSize)

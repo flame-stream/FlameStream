@@ -1,9 +1,9 @@
 package com.spbsu.flamestream.core;
 
+import java.io.Serializable;
 import java.util.function.BiPredicate;
 
-@SuppressWarnings("Convert2Lambda")
-public interface Equalz extends BiPredicate<DataItem, DataItem> {
+public interface Equalz extends BiPredicate<DataItem, DataItem>, Serializable {
   static Equalz hashEqualz(HashFunction hashFunction) {
     return new Equalz() {
       private final HashFunction h = hashFunction;
@@ -16,12 +16,7 @@ public interface Equalz extends BiPredicate<DataItem, DataItem> {
   }
 
   static Equalz allEqualz() {
-    return new Equalz() {
-      @Override
-      public boolean test(DataItem dataItem, DataItem dataItem2) {
-        return true;
-      }
-    };
+    return (dataItem, dataItem2) -> true;
   }
 
   static <T> Equalz objectEqualz(Class<T> clazz) {
