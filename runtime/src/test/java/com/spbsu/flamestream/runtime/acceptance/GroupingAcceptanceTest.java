@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-@SuppressWarnings("Convert2Lambda")
 public final class GroupingAcceptanceTest extends FlameAkkaSuite {
 
   @Test
@@ -40,12 +39,7 @@ public final class GroupingAcceptanceTest extends FlameAkkaSuite {
       final Graph graph = groupGraph(
               window,
               HashFunction.uniformHash(HashFunction.objectHash(Long.class)),
-              new Equalz() {
-                @Override
-                public boolean test(DataItem dataItem, DataItem dataItem2) {
-                  return dataItem.payload(Long.class).equals(dataItem2.payload(Long.class));
-                }
-              }
+              (dataItem, dataItem2) -> dataItem.payload(Long.class).equals(dataItem2.payload(Long.class))
       );
 
       try (final FlameRuntime.Flame flame = runtime.run(graph)) {

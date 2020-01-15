@@ -182,13 +182,7 @@ public class ZkFlameClientTest {
     final Source source = new Source();
     final Sink sink = new Sink();
 
-    //noinspection Convert2Lambda
-    final FlameMap<String, String> dumbMap = new FlameMap<>(new Function<String, Stream<String>>() {
-      @Override
-      public Stream<String> apply(String s) {
-        return Stream.of("prefix_" + s);
-      }
-    }, String.class);
+    final FlameMap<String, String> dumbMap = new FlameMap<>(s -> Stream.of("prefix_" + s), String.class);
     return new Graph.Builder().link(source, dumbMap).link(dumbMap, sink).build(source, sink);
   }
 }

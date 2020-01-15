@@ -40,13 +40,7 @@ public final class SumTest extends FlameAkkaSuite {
   private static Graph sumGraph() {
     final HashFunction identity = HashFunction.constantHash(1);
 
-    //noinspection Convert2Lambda
-    final Equalz predicate = new Equalz() {
-      @Override
-      public boolean test(DataItem dataItem, DataItem dataItem2) {
-        return true;
-      }
-    };
+    final Equalz predicate = (dataItem, dataItem2) -> true;
 
     final Source source = new Source();
     final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2, Numb.class);

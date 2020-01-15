@@ -19,7 +19,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,7 +72,7 @@ public final class FilterAcceptanceTest extends FlameAkkaSuite {
     }
   }
 
-  static final class HumbleFiler implements Function<Integer, Stream<Integer>> {
+  static final class HumbleFiler implements FlameMap.SerializableFunction<Integer, Stream<Integer>> {
     private final int factor;
 
     HumbleFiler(int factor) {

@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.example.bl.text_classifier.model.ClassifierState;
 import com.spbsu.flamestream.example.bl.text_classifier.model.Prediction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
@@ -19,10 +20,9 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class ClassifierFilter implements Function<List<ClassifierInput>, Stream<ClassifierOutput>> {
+public class ClassifierFilter implements FlameMap.SerializableFunction<List<ClassifierInput>, Stream<ClassifierOutput>> {
   private final static Logger LOG = LoggerFactory.getLogger(ClassifierFilter.class);
   private final Vectorizer vectorizer;
   private final OnlineModel model;

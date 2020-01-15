@@ -1,18 +1,18 @@
 package com.spbsu.flamestream.example.bl.wordcount.ops;
 
+import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordContainer;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordEntry;
 
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
  * User: Artem
  * Date: 25.06.2017
  */
-public class CountWordEntries implements Function<List<WordContainer>, Stream<WordCounter>> {
+public class CountWordEntries implements FlameMap.SerializableFunction<List<WordContainer>, Stream<WordCounter>> {
 
   @Override
   public Stream<WordCounter> apply(List<WordContainer> wordContainers) {

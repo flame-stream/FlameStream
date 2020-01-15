@@ -3,7 +3,10 @@ package com.spbsu.flamestream.runtime.serialization;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
+import com.esotericsoftware.kryo.serializers.ClosureSerializer;
 import org.objenesis.strategy.StdInstantiatorStrategy;
+
+import java.lang.invoke.SerializedLambda;
 
 public class KryoSerializer implements FlameSerializer {
   private static final int MAX_BUFFER_SIZE = 20000;
@@ -14,6 +17,10 @@ public class KryoSerializer implements FlameSerializer {
     ((Kryo.DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy())
             .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
     kryo.getFieldSerializerConfig().setIgnoreSyntheticFields(false);
+    kryo.register(Object[].class);
+    kryo.register(Class.class);
+    kryo.register(SerializedLambda.class);
+    kryo.register(ClosureSerializer.Closure.class, new ClosureSerializer());
     return kryo;
   });
 

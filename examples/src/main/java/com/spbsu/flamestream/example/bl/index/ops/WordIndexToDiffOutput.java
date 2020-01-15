@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.example.bl.index.ops;
 
+import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.example.bl.index.model.WordBase;
 import com.spbsu.flamestream.example.bl.index.model.WordIndex;
 import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
@@ -9,14 +10,13 @@ import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
  * User: Artem
  * Date: 10.07.2017
  */
-public class WordIndexToDiffOutput implements Function<List<WordBase>, Stream<WordBase>> {
+public class WordIndexToDiffOutput implements FlameMap.SerializableFunction<List<WordBase>, Stream<WordBase>> {
   @Override
   public Stream<WordBase> apply(List<WordBase> wordBases) {
     final WordBase first = wordBases.get(0);
