@@ -1,14 +1,14 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
+import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
 
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class CountWordEntries implements Function<List<WordContainer>, Stream<WordCounter>> {
+public class CountWordEntries implements FlameMap.SerializableFunction<List<WordContainer>, Stream<WordCounter>> {
   @Override
   public Stream<WordCounter> apply(List<WordContainer> wordContainers) {
     if (wordContainers.size() == 1) {

@@ -3,8 +3,8 @@ package com.spbsu.flamestream.example.bl.index.ops;
 import com.expleague.commons.text.lexical.StemsTokenizer;
 import com.expleague.commons.text.lexical.Tokenizer;
 import com.expleague.commons.text.stem.Stemmer;
+import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.example.bl.index.model.WikipediaPage;
-import com.spbsu.flamestream.example.bl.index.model.WordIndexAdd;
 import com.spbsu.flamestream.example.bl.index.model.WordPagePositions;
 import com.spbsu.flamestream.example.bl.index.utils.IndexItemInLong;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
@@ -15,14 +15,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
  * User: Artem
  * Date: 10.07.2017
  */
-public class WikipediaPageToWordPositions implements Function<WikipediaPage, Stream<WordPagePositions>> {
+public class WikipediaPageToWordPositions
+        implements FlameMap.SerializableFunction<WikipediaPage, Stream<WordPagePositions>> {
   //private transient final Tracing.Tracer inputTracer;
   //private transient final Tracing.Tracer outputTracer;
 

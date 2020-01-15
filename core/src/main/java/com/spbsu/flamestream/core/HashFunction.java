@@ -2,11 +2,11 @@ package com.spbsu.flamestream.core;
 
 import com.google.common.hash.Hashing;
 
+import java.io.Serializable;
 import java.util.function.ToIntFunction;
 
 @FunctionalInterface
-@SuppressWarnings("Convert2Lambda")
-public interface HashFunction extends ToIntFunction<DataItem> {
+public interface HashFunction extends ToIntFunction<DataItem>, Serializable {
   Broadcast BROADCAST = new Broadcast();
   int BROADCAST_GROUPING_HASH = Integer.MAX_VALUE;
 
@@ -44,12 +44,7 @@ public interface HashFunction extends ToIntFunction<DataItem> {
   }
 
   static HashFunction broadcastBeforeGroupingHash() {
-    return new HashFunction() {
-      @Override
-      public int hash(DataItem item) {
-        return BROADCAST_GROUPING_HASH;
-      }
-    };
+    return item -> BROADCAST_GROUPING_HASH;
   }
 
   static HashFunction bucketedHash(HashFunction hash, int buckets) {
