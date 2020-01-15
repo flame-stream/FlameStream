@@ -33,12 +33,12 @@ public class LocalAcker extends LoggingActor {
 
     public Partitions(int size) {this.size = size;}
 
-    public long partitionTime(int partition, long time) {
-      return Math.floorDiv(time + size - 1 - partition, size) * size + partition;
+    public long partitionTimeCeil(int partition, int hash, long time) {
+      return Math.floorDiv(hash + time + size - 1 - partition, size) * size - hash + partition;
     }
 
-    public int timePartition(long time) {
-      return (int) Math.floorMod(time, size);
+    public int timePartition(int hash, long time) {
+      return (int) Math.floorMod(hash + time, size);
     }
   }
 
@@ -146,7 +146,10 @@ public class LocalAcker extends LoggingActor {
     ackCache.entrySet()
             .stream()
             .map(entry -> new Ack(entry.getKey(), entry.getValue()))
-            .collect(Collectors.groupingBy(o -> ackers.get(partitions.timePartition(o.time().time()))))
+            .collect(Collectors.groupingBy(o -> ackers.get(partitions.timePartition(
+                    o.time().frontId().hashCode(),
+                    o.time().time()
+            ))))
             .forEach((acker, acks) ->
                     ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).addAll(acks)
             );
@@ -154,8 +157,8 @@ public class LocalAcker extends LoggingActor {
 
     edgeIdHeartbeatIncrease.forEach((edgeId, heartbeatIncrease) -> {
       IntStream.range(0, ackers.size()).forEach(partition -> {
-        long current = partitions.partitionTime(partition, heartbeatIncrease.current);
-        if (partitions.partitionTime(partition, heartbeatIncrease.previous) < current) {
+        long current = partitions.partitionTimeCeil(partition, edgeId.hashCode(), heartbeatIncrease.current);
+        if (partitions.partitionTimeCeil(partition, edgeId.hashCode(), heartbeatIncrease.previous) < current) {
           ackerBufferedMessages.computeIfAbsent(ackers.get(partition), __ -> new ArrayList<>())
                   .add(new Heartbeat(new GlobalTime(current, edgeId)));
         }
