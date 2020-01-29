@@ -14,6 +14,7 @@ import com.spbsu.flamestream.runtime.config.SystemConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
 import com.spbsu.flamestream.runtime.edge.api.AttachFront;
 import com.spbsu.flamestream.runtime.edge.api.AttachRear;
+import com.spbsu.flamestream.runtime.master.acker.Acker;
 import com.spbsu.flamestream.runtime.master.acker.Committer;
 import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.master.acker.MinTimeUpdater;
@@ -164,6 +165,10 @@ public class ProcessingWatcher extends LoggingActor {
             s.equals(config.masterLocation()) ? new HashUnit(0, 0) : covering.remove(0)
     ))));
     assert covering.isEmpty();
+    boolean distributedAcking = systemConfig.acking() == SystemConfig.Acking.DISTRIBUTED;
+    if (distributedAcking || zookeeperWorkersNode.isLeader(id)) {
+      context().actorOf(Acker.props(systemConfig.defaultMinimalTime(), !distributedAcking), "acker");
+    }
     final List<ActorRef> ackers = ackers(config);
     final @Nullable ActorRef localAcker = ackers.isEmpty() ? null
             : context().actorOf(LocalAcker.props(ackers, id, systemConfig.defaultMinimalTime()));
@@ -278,7 +283,7 @@ public class ProcessingWatcher extends LoggingActor {
           throw new IllegalStateException("Unexpected value: " + systemConfig.acking());
       }
       final List<CompletableFuture<ActorRef>> ackerFutures = paths
-              .map(actorPath -> AwaitResolver.resolve(actorPath.child("acker"), context()).toCompletableFuture())
+              .map(actorPath -> AwaitResolver.resolve(actorPath.child("processing-watcher").child("acker"), context()).toCompletableFuture())
               .collect(Collectors.toList());
       ackerFutures.forEach(CompletableFuture::join);
       return ackerFutures.stream().map(future -> {
