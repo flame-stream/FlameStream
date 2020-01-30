@@ -57,10 +57,12 @@ public class Acker extends LoggingActor {
   private final AckTable table;
 
   private long defaultMinimalTime;
-  private GlobalTime lastMinTime = GlobalTime.MIN;
+  private long lastMinTime;
 
   private Acker(long defaultMinimalTime, boolean assertAckingBackInTime) {
     table = new ArrayAckTable(defaultMinimalTime, SIZE, WINDOW, assertAckingBackInTime);
+    lastMinTime = defaultMinimalTime;
+    this.defaultMinimalTime = defaultMinimalTime;
   }
 
   public static Props props(long defaultMinimalTime, boolean assertAckingBackInTime) {
@@ -71,10 +73,7 @@ public class Acker extends LoggingActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-            .match(
-                    MinTimeUpdateListener.class,
-                    minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef)
-            )
+            .match(MinTimeUpdateListener.class, minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef))
             .match(NodeTime.class, nodeTime -> nodeTimes = nodeTimes.updated(nodeTime.jobaId, nodeTime.time))
             .match(Ack.class, this::handleAck)
             .match(BufferedMessages.class, bufferedMessages -> bufferedMessages.all().forEach(receive()::apply))
@@ -86,11 +85,11 @@ public class Acker extends LoggingActor {
   }
 
   private void registerFront(EdgeId frontId) {
-    registerFrontFromTime(new GlobalTime(minAmongTables().time(), frontId));
+    registerFrontFromTime(new GlobalTime(lastMinTime, frontId));
   }
 
   private void registerFrontFromTime(GlobalTime startTime) {
-    if (startTime.compareTo(minAmongTables()) < 0) {
+    if (startTime.time() < lastMinTime) {
       throw new RuntimeException("Registering front back in time");
     }
     maxHeartbeats.put(startTime.frontId(), startTime);
@@ -128,22 +127,14 @@ public class Acker extends LoggingActor {
   }
 
   private void checkMinTime() {
-    final GlobalTime minAmongTables = minAmongTables();
-    if (minAmongTables.compareTo(lastMinTime) > 0) {
-      this.lastMinTime = minAmongTables;
+    final long minHeartbeat =
+            maxHeartbeats.isEmpty() ? defaultMinimalTime : Collections.min(maxHeartbeats.values()).time();
+    final long minTime = table.tryPromote(minHeartbeat);
+    if (lastMinTime < minTime) {
+      this.lastMinTime = minTime;
       log().debug("New min time: {}", lastMinTime);
-      listeners.forEach(s -> s.tell(new MinTimeUpdate(lastMinTime, nodeTimes), self()));
+      final GlobalTime minAmongTables = new GlobalTime(minTime, EdgeId.Min.INSTANCE);
+      listeners.forEach(s -> s.tell(new MinTimeUpdate(minAmongTables, nodeTimes), self()));
     }
-  }
-
-  private GlobalTime minAmongTables() {
-    final GlobalTime minHeartbeat;
-    if (maxHeartbeats.isEmpty()) {
-      minHeartbeat = new GlobalTime(defaultMinimalTime, EdgeId.Min.INSTANCE);
-    } else {
-      minHeartbeat = Collections.min(maxHeartbeats.values());
-    }
-    final long minTime = table.tryPromote(minHeartbeat.time());
-    return new GlobalTime(minTime, EdgeId.Min.INSTANCE);
   }
 }
