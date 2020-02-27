@@ -31,7 +31,7 @@ public class GroupingJoba extends Joba {
   public void accept(DataItem item, Consumer<DataItem> sink) {
     tracer.log(item.xor());
 
-    final InvalidatingBucket bucket = state.bucketFor(item, grouping.hash(), grouping.equalz());
+    final InvalidatingBucket bucket = state.bucketFor(item);
     instance.apply(item, bucket).forEach(sink);
     { //clear outdated
       final int position = Math.max(bucket.lowerBound(new Meta(currentMinTime)) - grouping.window() + 1, 0);

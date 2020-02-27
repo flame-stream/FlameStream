@@ -90,14 +90,17 @@ public class Component extends LoggingActor {
                 if (props.barrierIsDisabled()) {
                   throw new RuntimeException("grouping operations are not supported when barrier is disabled");
                 }
-                final Grouping grouping = (Grouping) vertex;
+                final Grouping<?> grouping = (Grouping<?>) vertex;
                 final Collection<HashUnit> values = props.hashGroups()
                         .values()
                         .stream()
                         .flatMap(g -> g.units().stream())
                         .collect(Collectors.toSet());
-                stateByVertex.putIfAbsent(vertex.id(), new GroupGroupingState(values));
-                joba = new GroupingJoba(jobaId, grouping, stateByVertex.get(vertex.id()));
+                joba = new GroupingJoba(
+                        jobaId,
+                        grouping,
+                        stateByVertex.computeIfAbsent(vertex.id(), __ -> new GroupGroupingState(grouping, values))
+                );
               } else if (vertex instanceof Source) {
                 joba = new SourceJoba(
                         jobaId,
