@@ -131,13 +131,14 @@ public class GraphManager extends LoggingActor {
                         .flatMap(vertexStream -> vertexStream)
                         .filter(vertex -> vertex instanceof Grouping)
                         .forEach(vertex -> {
-                          unitState.putIfAbsent(vertex.id(), new GroupingState());
-                          groupingWindows.put(vertex.id(), ((Grouping) vertex).window());
+                          final Grouping<?> grouping = (Grouping<?>) vertex;
+                          unitState.computeIfAbsent(vertex.id(), __ -> new GroupingState(grouping));
+                          groupingWindows.put(vertex.id(), grouping.window());
                         });
-                unitState.forEach((vertexId, groupingState) -> {
-                  stateByVertex.putIfAbsent(vertexId, new GroupGroupingState());
-                  stateByVertex.get(vertexId).addUnitState(unit, groupingState);
-                });
+                unitState.forEach((vertexId, groupingState) ->
+                        stateByVertex.computeIfAbsent(vertexId, __ -> new GroupGroupingState(groupingState.grouping))
+                                .addUnitState(unit, groupingState)
+                );
                 unitStates.put(unit, unitState);
               }
 
