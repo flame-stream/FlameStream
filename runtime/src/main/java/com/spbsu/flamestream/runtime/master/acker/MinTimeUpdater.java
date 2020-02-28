@@ -7,6 +7,7 @@ import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListener;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -16,63 +17,85 @@ import java.util.stream.Collectors;
 
 
 public class MinTimeUpdater {
-  private class ShardState {
-    GlobalTime minTime = lastMinTime.minTime();
-    NodeTimes operationsTime = new NodeTimes();
-    TreeMap<GlobalTime, NodeTimes> minTimeUpdates = new TreeMap<>();
+  private final ArrayList<TrackingComponent> trackingComponents = new ArrayList<>();
+  private final List<ActorRef> shards;
+  private final long defaultMinimalTime;
+
+  private static class TrackingComponent {
+    private Map<ActorRef, ShardState> shardStates;
+    private MinTimeUpdate lastMinTime;
+
+    public TrackingComponent(List<ActorRef> shards, long defaultMinimalTime) {
+      lastMinTime = new MinTimeUpdate(
+              new GlobalTime(defaultMinimalTime, EdgeId.MIN),
+              new NodeTimes()
+      );
+      shardStates = shards.stream().collect(Collectors.toMap(Function.identity(), __ -> new ShardState()));
+    }
+
+    @Nullable
+    public MinTimeUpdate onShardMinTimeUpdate(ActorRef shard, MinTimeUpdate shardMinTimeUpdate) {
+      final ShardState shardState = shardStates.get(shard);
+      shardState.operationsTime = shardMinTimeUpdate.getNodeTimes();
+      shardState.minTimeUpdates.put(shardMinTimeUpdate.minTime(), shardMinTimeUpdate.getNodeTimes());
+      final MinTimeUpdate minAmongTables = minAmongTables();
+      if (minAmongTables.minTime().compareTo(lastMinTime.minTime()) > 0) {
+        this.lastMinTime = minAmongTables;
+        return minAmongTables;
+      }
+      return null;
+    }
+
+    private MinTimeUpdate minAmongTables() {
+      if (shardStates.isEmpty()) {
+        return lastMinTime;
+      }
+      NodeTimes min =
+              shardStates.values()
+                      .stream()
+                      .map(shardState -> shardState.operationsTime)
+                      .reduce(new NodeTimes(), NodeTimes::min);
+      for (ShardState shardState : shardStates.values()) {
+        final Map.Entry<GlobalTime, NodeTimes> minTimeUpdate = shardState.minTimeUpdates.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().greaterThanOrNotComparableTo(min))
+                .findFirst()
+                .map(entry -> shardState.minTimeUpdates.lowerEntry(entry.getKey()))
+                .orElse(shardState.minTimeUpdates.lastEntry());
+        if (minTimeUpdate == null) {
+          continue;
+        }
+        shardState.minTime = minTimeUpdate.getKey();
+        shardState.minTimeUpdates.tailMap(shardState.minTime).clear();
+      }
+      return new MinTimeUpdate(Collections.min(shardStates.values()
+              .stream()
+              .map(shardState -> shardState.minTime)
+              .collect(Collectors.toList())), min);
+    }
+
+    private class ShardState {
+      GlobalTime minTime = lastMinTime.minTime();
+      NodeTimes operationsTime = new NodeTimes();
+      TreeMap<GlobalTime, NodeTimes> minTimeUpdates = new TreeMap<GlobalTime, NodeTimes>();
+    }
   }
 
-  private Map<ActorRef, ShardState> shardStates;
-
-  private MinTimeUpdate lastMinTime;
-
   public MinTimeUpdater(List<ActorRef> shards, long defaultMinimalTime) {
-    lastMinTime = new MinTimeUpdate(new GlobalTime(defaultMinimalTime, EdgeId.MIN), new NodeTimes());
-    this.shardStates = shards.stream().collect(Collectors.toMap(Function.identity(), __ -> new ShardState()));
+    this.shards = shards;
+    this.defaultMinimalTime = defaultMinimalTime;
   }
 
   public void subscribe(ActorRef self) {
-    shardStates.keySet().forEach(acker -> acker.tell(new MinTimeUpdateListener(self), self));
+    shards.forEach(acker -> acker.tell(new MinTimeUpdateListener(self), self));
   }
 
   @Nullable
   public MinTimeUpdate onShardMinTimeUpdate(ActorRef shard, MinTimeUpdate shardMinTimeUpdate) {
-    ShardState shardState = shardStates.get(shard);
-    shardState.operationsTime = shardMinTimeUpdate.getNodeTimes();
-    shardState.minTimeUpdates.put(shardMinTimeUpdate.minTime(), shardMinTimeUpdate.getNodeTimes());
-    final MinTimeUpdate minAmongTables = minAmongTables();
-    if (minAmongTables.minTime().compareTo(lastMinTime.minTime()) > 0) {
-      this.lastMinTime = minAmongTables;
-      return minAmongTables;
+    final int trackingComponent = shardMinTimeUpdate.minTime().trackingComponent();
+    for (int i = trackingComponents.size(); i < trackingComponent + 1; i++) {
+      trackingComponents.add(new TrackingComponent(shards, defaultMinimalTime));
     }
-    return null;
-  }
-
-  private MinTimeUpdate minAmongTables() {
-    if (shardStates.isEmpty()) {
-      return lastMinTime;
-    }
-    NodeTimes min =
-            shardStates.values()
-                    .stream()
-                    .map(shardState -> shardState.operationsTime)
-                    .reduce(new NodeTimes(), NodeTimes::min);
-    for (ShardState shardState : shardStates.values()) {
-      final Map.Entry<GlobalTime, NodeTimes> minTimeUpdate = shardState.minTimeUpdates.entrySet()
-              .stream()
-              .filter(entry -> entry.getValue().greaterThanOrNotComparableTo(min))
-              .findFirst()
-              .map(entry -> shardState.minTimeUpdates.lowerEntry(entry.getKey()))
-              .orElse(shardState.minTimeUpdates.lastEntry());
-      if (minTimeUpdate == null) {
-        continue;
-      }
-      shardState.minTime = minTimeUpdate.getKey();
-      shardState.minTimeUpdates.tailMap(shardState.minTime).clear();
-    }
-    return new MinTimeUpdate(Collections.min(shardStates.values()
-            .stream()
-            .map(shardState -> shardState.minTime)
-            .collect(Collectors.toList())), min);
+    return trackingComponents.get(trackingComponent).onShardMinTimeUpdate(shard, shardMinTimeUpdate);
   }
 }
