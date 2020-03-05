@@ -14,6 +14,7 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
+import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.SystemConfig;
 import com.spbsu.flamestream.core.graph.HashGroup;
 import com.spbsu.flamestream.core.graph.HashUnit;
@@ -62,11 +63,13 @@ class Cluster extends LoggingActor {
     this.blinking = blinking;
     this.blinkPeriodSec = blinkPeriodSec;
 
+    final List<String> ids = new ArrayList<>();
     final Map<String, HashGroup> ranges = new HashMap<>();
     final Map<String, ActorPath> paths = new HashMap<>();
     final List<HashUnit> ra = HashUnit.covering(parallelism).collect(Collectors.toList());
     for (int i = 0; i < parallelism; ++i) {
       final String id = "node-" + i;
+      ids.add(id);
       final HashUnit range = ra.get(i);
       paths.put(
               id,
@@ -81,30 +84,50 @@ class Cluster extends LoggingActor {
     final ClusterConfig clusterConfig = new ClusterConfig(paths, "node-0");
     final int defaultMinimalTime = 0;
     final SystemConfig systemConfig =
-            new SystemConfig(maxElementsInGraph, millisBetweenCommits, defaultMinimalTime, acking, barrierDisabled);
+            new SystemConfig(
+                    maxElementsInGraph,
+                    millisBetweenCommits,
+                    defaultMinimalTime,
+                    barrierDisabled,
+                    new LocalAcker.Builder(),
+                    1,
+                    __ -> {
+                      switch (acking) {
+                        case DISABLED:
+                          return Collections.emptyList();
+                        case CENTRALIZED:
+                          return ids.subList(0, 1);
+                        case DISTRIBUTED:
+                          return ids;
+                        default:
+                          throw new IllegalStateException("Unexpected value: " + acking);
+                      }
+                    }
+            );
 
     final Registry registry = new InMemoryRegistry();
     inner = context().actorOf(FlameUmbrella.props(
             context -> {
+              final Props ackerProps = Acker.props(defaultMinimalTime, false, g);
               final List<ActorRef> ackers;
               switch (acking) {
                 case DISABLED:
                   ackers = Collections.emptyList();
                   break;
                 case CENTRALIZED:
-                  ackers = Collections.singletonList(context.actorOf(Acker.props(defaultMinimalTime, true, g), "acker"));
+                  ackers = Collections.singletonList(context.actorOf(ackerProps, "acker"));
                   break;
                 case DISTRIBUTED:
                   ackers = paths.keySet()
                           .stream()
-                          .map(id -> context.actorOf(Acker.props(defaultMinimalTime, false, g), "acker-" + id))
+                          .map(id -> context.actorOf(ackerProps, "acker-" + id))
                           .collect(Collectors.toList());
                   break;
                 default:
                   throw new IllegalStateException("Unexpected value: " + acking);
               }
               final ActorRef localAcker = ackers.isEmpty() ? null : context.actorOf(
-                      LocalAcker.props(ackers, "", systemConfig.defaultMinimalTime()),
+                      systemConfig.localAckerProps(ackers, ""),
                       "localAcker"
               );
               final ActorRef registryHolder = context.actorOf(

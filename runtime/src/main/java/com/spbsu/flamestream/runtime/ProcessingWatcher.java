@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -165,13 +166,15 @@ public class ProcessingWatcher extends LoggingActor {
       throw new RuntimeException(e);
     }
     this.graph = graph;
-    boolean distributedAcking = systemConfig.acking() == SystemConfig.Acking.DISTRIBUTED;
-    if (distributedAcking || zookeeperWorkersNode.isLeader(id)) {
-      context().actorOf(Acker.props(systemConfig.defaultMinimalTime(), !distributedAcking, graph), "acker");
+    final List<String> ackerIds = systemConfig.workersResourcesDistributor.ackers(
+            zookeeperWorkersNode.workers().stream().map(ZookeeperWorkersNode.Worker::id).collect(Collectors.toList())
+    );
+    if (ackerIds.contains(id)) {
+      context().actorOf(Acker.props(systemConfig.defaultMinimalTime(), ackerIds.size() < 2, graph), "acker");
     }
     final List<ActorRef> ackers = ackers(config);
     final @Nullable ActorRef localAcker = ackers.isEmpty() ? null
-            : context().actorOf(LocalAcker.props(ackers, id, systemConfig.defaultMinimalTime()));
+            : context().actorOf(systemConfig.localAckerProps(ackers, id));
     final ActorRef committer, registryHolder;
     if (zookeeperWorkersNode.isLeader(id)) {
       registryHolder = context().actorOf(
@@ -273,31 +276,20 @@ public class ProcessingWatcher extends LoggingActor {
   }
 
   private List<ActorRef> ackers(ClusterConfig config) {
-    {
-      final Stream<ActorPath> paths;
-      switch (systemConfig.acking()) {
-        case DISABLED:
-          return Collections.emptyList();
-        case CENTRALIZED:
-          paths = Stream.of(config.masterPath());
-          break;
-        case DISTRIBUTED:
-          paths = config.paths().values().stream();
-          break;
-        default:
-          throw new IllegalStateException("Unexpected value: " + systemConfig.acking());
+    final Stream<ActorPath> paths =
+            systemConfig.workersResourcesDistributor.ackers(new ArrayList<>(config.paths().keySet()))
+                    .stream().map(config.paths()::get);
+    final List<CompletableFuture<ActorRef>> ackerFutures = paths
+            .map(actorPath -> AwaitResolver.resolve(actorPath.child("processing-watcher").child("acker"), context())
+                    .toCompletableFuture())
+            .collect(Collectors.toList());
+    ackerFutures.forEach(CompletableFuture::join);
+    return ackerFutures.stream().map(future -> {
+      try {
+        return future.get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
       }
-      final List<CompletableFuture<ActorRef>> ackerFutures = paths
-              .map(actorPath -> AwaitResolver.resolve(actorPath.child("processing-watcher").child("acker"), context()).toCompletableFuture())
-              .collect(Collectors.toList());
-      ackerFutures.forEach(CompletableFuture::join);
-      return ackerFutures.stream().map(future -> {
-        try {
-          return future.get();
-        } catch (InterruptedException | ExecutionException e) {
-          throw new RuntimeException(e);
-        }
-      }).collect(Collectors.toList());
-    }
+    }).collect(Collectors.toList());
   }
 }
