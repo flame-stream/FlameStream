@@ -17,16 +17,24 @@ import com.spbsu.flamestream.runtime.utils.akka.PingActor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static java.lang.Integer.parseInt;
 
 public class LocalAcker extends LoggingActor {
   private static class AckKey implements Comparable<AckKey> {
@@ -52,7 +60,7 @@ public class LocalAcker extends LoggingActor {
 
     public Partitions(int size) {this.size = size;}
 
-    public long partitionTimeCeil(int partition, int hash, long time) {
+    public long partitionTime(int partition, int hash, long time) {
       return Math.floorDiv(hash + time + size - 1 - partition, size) * size - hash + partition;
     }
 
@@ -65,11 +73,12 @@ public class LocalAcker extends LoggingActor {
     long previous = Long.MIN_VALUE, current = Long.MIN_VALUE;
   }
 
-  private static final int FLUSH_DELAY_IN_MILLIS = 5;
-  private static final int FLUSH_COUNT = 1000;
+  private final int flushDelayInMillis;
+  private final int flushCount;
 
   private long nodeTime = Long.MIN_VALUE;
   private final SortedMap<AckKey, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
+  private boolean bumpNodeTimes;
   private final Map<EdgeId, HeartbeatIncrease> edgeIdHeartbeatIncrease = new HashMap<>();
   private final List<UnregisterFront> unregisterCache = new ArrayList<>();
 
@@ -82,23 +91,47 @@ public class LocalAcker extends LoggingActor {
 
   private int flushCounter = 0;
 
-  public LocalAcker(List<ActorRef> ackers, String nodeId, long defaultMinimalTime) {
+  public LocalAcker(
+          List<ActorRef> ackers,
+          String nodeId,
+          long defaultMinimalTime,
+          int flushDelayInMillis,
+          int flushCount
+  ) {
     this.ackers = ackers;
     partitions = new Partitions(ackers.size());
     minTimeUpdater = new MinTimeUpdater(ackers, defaultMinimalTime);
     this.nodeId = nodeId;
     pingActor = context().actorOf(PingActor.props(self(), Flush.FLUSH));
+    this.flushDelayInMillis = flushDelayInMillis;
+    this.flushCount = flushCount;
   }
 
-  public static Props props(List<ActorRef> ackers, String nodeId, long defaultMinimalTime) {
-    return Props.create(LocalAcker.class, ackers, nodeId, defaultMinimalTime).withDispatcher("processing-dispatcher");
+  public static class Builder {
+    private int flushDelayInMillis = 5;
+    private int flushCount = 1000;
+
+    public Props props(List<ActorRef> ackers, String nodeId, long defaultMinimalTime) {
+      return Props.create(LocalAcker.class, ackers, nodeId, defaultMinimalTime, flushDelayInMillis, flushCount)
+              .withDispatcher("processing-dispatcher");
+    }
+
+    public Builder flushDelayInMillis(int flushDelayInMillis) {
+      this.flushDelayInMillis = flushDelayInMillis;
+      return this;
+    }
+
+    public Builder flushCount(int flushCount) {
+      this.flushCount = flushCount;
+      return this;
+    }
   }
 
   @Override
   public void preStart() throws Exception {
     super.preStart();
     minTimeUpdater.subscribe(self());
-    pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(FLUSH_DELAY_IN_MILLIS)), self());
+    pingActor.tell(new PingActor.Start(TimeUnit.MILLISECONDS.toNanos(flushDelayInMillis)), self());
   }
 
   @Override
@@ -113,7 +146,13 @@ public class LocalAcker extends LoggingActor {
             .match(Ack.class, this::handleAck)
             .match(Flush.class, flush -> flush())
             .match(Heartbeat.class, this::receiveHeartbeat)
-            .match(UnregisterFront.class, unregisterCache::add)
+            .match(UnregisterFront.class, unregisterFront -> {
+              if (flushCount == 0) {
+                ackers.forEach(acker -> acker.tell(unregisterFront, self()));
+              } else {
+                unregisterCache.add(unregisterFront);
+              }
+            })
             .match(MinTimeUpdateListener.class, minTimeUpdateListener -> listeners.add(minTimeUpdateListener.actorRef))
             .match(MinTimeUpdate.class, minTimeUpdate -> {
               @Nullable MinTimeUpdate minTime = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate);
@@ -126,15 +165,25 @@ public class LocalAcker extends LoggingActor {
   }
 
   private void receiveHeartbeat(Heartbeat heartbeat) {
+    final GlobalTime time = heartbeat.time();
     final HeartbeatIncrease heartbeatIncrease = edgeIdHeartbeatIncrease.computeIfAbsent(
-            heartbeat.time().frontId(),
+            time.frontId(),
             __ -> new HeartbeatIncrease()
     );
-    heartbeatIncrease.current = Math.max(heartbeatIncrease.current, heartbeat.time().time());
+    heartbeatIncrease.current = Math.max(heartbeatIncrease.current, time.time());
+    if (flushCount == 0) {
+      IntStream.range(0, ackers.size()).forEach(partition -> {
+        long current = partitions.partitionTime(partition, time.frontId().hashCode(), heartbeatIncrease.current);
+        if (partitions.partitionTime(partition, time.frontId().hashCode(), heartbeatIncrease.previous) < current) {
+          ackers.get(partition).tell(new Heartbeat(new GlobalTime(current, time.frontId())), self());
+        }
+      });
+      heartbeatIncrease.previous = heartbeatIncrease.current;
+    }
   }
 
   private void tick() {
-    if (flushCounter == FLUSH_COUNT) {
+    if (flushCounter == flushCount) {
       flush();
     } else {
       flushCounter++;
@@ -142,6 +191,12 @@ public class LocalAcker extends LoggingActor {
   }
 
   private void handleAck(Ack ack) {
+    bumpNodeTimes = true;
+    if (flushCount == 0) {
+      ackers.get((int) (ack.time().time() % ackers.size())).tell(ack, self());
+      return;
+    }
+
     ackCache.compute(new AckKey(ack.trackingComponent(), ack.time()), (globalTime, xor) -> {
       if (xor == null) {
         return ack.xor();
@@ -154,14 +209,17 @@ public class LocalAcker extends LoggingActor {
   }
 
   private void flush() {
-    final Map<ActorRef, List<Object>> ackerBufferedMessages = new HashMap<>();
-    if (ackers.size() > 1) {
-      final NodeTime nodeTime = new NodeTime(nodeId, this.nodeTime);
-      ackers.forEach(acker -> ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).add(nodeTime));
-    }
-    nodeTime++;
-
+    final Map<ActorRef, List<Object>> ackerBufferedMessages = ackers.stream().collect(Collectors.toMap(
+            Function.identity(),
+            __ -> new ArrayList<>()
+    ));
     final boolean acksEmpty = ackCache.isEmpty();
+    if (bumpNodeTimes && ackers.size() > 1) {
+      final NodeTime nodeTime = new NodeTime(nodeId, ++this.nodeTime);
+      ackers.forEach(acker -> ackerBufferedMessages.get(acker).add(nodeTime));
+    }
+    bumpNodeTimes = false;
+
     ackCache.entrySet()
             .stream()
             .map(entry -> new Ack(entry.getKey().trackingComponent, entry.getKey().globalTime, entry.getValue()))
@@ -169,30 +227,29 @@ public class LocalAcker extends LoggingActor {
                     o.time().frontId().hashCode(),
                     o.time().time()
             ))))
-            .forEach((acker, acks) ->
-                    ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).addAll(acks)
-            );
+            .forEach((acker, acks) -> ackerBufferedMessages.get(acker).addAll(acks));
     ackCache.clear();
 
     edgeIdHeartbeatIncrease.forEach((edgeId, heartbeatIncrease) -> {
       IntStream.range(0, ackers.size()).forEach(partition -> {
-        long current = partitions.partitionTimeCeil(partition, edgeId.hashCode(), heartbeatIncrease.current);
-        if (partitions.partitionTimeCeil(partition, edgeId.hashCode(), heartbeatIncrease.previous) < current) {
-          ackerBufferedMessages.computeIfAbsent(ackers.get(partition), __ -> new ArrayList<>())
-                  .add(new Heartbeat(new GlobalTime(current, edgeId)));
+        long current = partitions.partitionTime(partition, edgeId.hashCode(), heartbeatIncrease.current);
+        if (partitions.partitionTime(partition, edgeId.hashCode(), heartbeatIncrease.previous) < current) {
+          ackerBufferedMessages.get(ackers.get(partition)).add(new Heartbeat(new GlobalTime(current, edgeId)));
         }
       });
       heartbeatIncrease.previous = heartbeatIncrease.current;
     });
 
-    if (acksEmpty && !unregisterCache.isEmpty()) {
-      ackers.forEach(acker ->
-              ackerBufferedMessages.computeIfAbsent(acker, __ -> new ArrayList<>()).addAll(unregisterCache)
-      );
+    if (acksEmpty) {
+      ackers.forEach(acker -> ackerBufferedMessages.get(acker).addAll(unregisterCache));
       unregisterCache.clear();
     }
 
-    ackerBufferedMessages.forEach((acker, messages) -> acker.tell(new BufferedMessages(messages), self()));
+    ackerBufferedMessages.forEach((acker, messages) -> {
+      if (!messages.isEmpty()) {
+        acker.tell(new BufferedMessages(messages), self());
+      }
+    });
     flushCounter = 0;
   }
 
