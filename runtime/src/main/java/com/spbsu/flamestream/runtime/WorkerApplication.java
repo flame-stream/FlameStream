@@ -3,6 +3,7 @@ package com.spbsu.flamestream.runtime;
 import akka.actor.ActorSystem;
 import akka.actor.CoordinatedShutdown;
 import com.spbsu.flamestream.runtime.config.SystemConfig;
+import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -22,8 +23,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import static com.spbsu.flamestream.runtime.ConfigureFromEnv.*;
+
 public class WorkerApplication implements Runnable {
   private final Logger log = LoggerFactory.getLogger(WorkerApplication.class);
+  private final SystemConfig systemConfig;
   private final WorkerConfig workerConfig;
 
   @Nullable
@@ -37,27 +41,37 @@ public class WorkerApplication implements Runnable {
     }
   }
 
-  @SuppressWarnings("WeakerAccess")
-  public WorkerApplication(WorkerConfig workerConfig) {
+  public WorkerApplication(WorkerConfig workerConfig, SystemConfig systemConfig) {
     this.workerConfig = workerConfig;
+    this.systemConfig = systemConfig;
   }
 
   public static void main(String... args) {
     final String[] localAddressHostAndPort = System.getenv("LOCAL_ADDRESS").split(":");
-    final WorkerConfig config = new WorkerConfig.Builder()
-            .snapshotPath(System.getenv("SNAPSHOT_PATH"))
-            .guarantees(Guarantees.valueOf(System.getenv("GUARANTEES")))
-            .defaultMinimalTime(Integer.parseInt(System.getenv("DEFAULT_MINIMAL_TIME")))
-            .millisBetweenCommits(Integer.parseInt(System.getenv("MILLIS_BETWEEN_COMMITS")))
-            .maxElementsInGraph(Integer.parseInt(System.getenv("MAX_ELEMENTS_IN_GRAPH")))
-            .acking(SystemConfig.Acking.valueOf(System.getenv("ACKING")))
-            .barrierDisabled(Boolean.parseBoolean(System.getenv("BARRIER_DISABLED")))
-            .build(
-                    System.getenv("ID"),
-                    new InetSocketAddress(localAddressHostAndPort[0], Integer.parseInt(localAddressHostAndPort[1])),
-                    System.getenv("ZK_STRING")
-            );
-    new WorkerApplication(config).run();
+    LocalAcker.Builder localAckerBuilder = new LocalAcker.Builder();
+    configureFromEnv("LOCAL_ACKER_FLUSH_DELAY_IN_MILLIS", localAckerBuilder::flushDelayInMillis);
+    configureFromEnv("LOCAL_ACKER_FLUSH_COUNT", localAckerBuilder::flushCount);
+    final WorkerConfig.Builder configBuilder = new WorkerConfig.Builder();
+    configureFromEnv("SNAPSHOT_PATH", configBuilder::snapshotPath);
+    configureFromEnv("GUARANTEES", Guarantees::valueOf, configBuilder::guarantees);
+    final SystemConfig.Builder systemConfigBuilder = new SystemConfig.Builder().localAckerBuilder(localAckerBuilder);
+    configureFromEnv("DEFAULT_MINIMAL_TIME", systemConfigBuilder::defaultMinimalTime);
+    configureFromEnv("MILLIS_BETWEEN_COMMITS", systemConfigBuilder::millisBetweenCommits);
+    configureFromEnv("MAX_ELEMENTS_IN_GRAPH", systemConfigBuilder::maxElementsInGraph);
+    configureFromEnv("BARRIER_DISABLED", Boolean::parseBoolean, systemConfigBuilder::barrierDisabled);
+    configureFromEnv("ACKERS_NUMBER", (int ackersNumber) ->
+            systemConfigBuilder.workersResourcesDistributor(new SystemConfig.WorkersResourcesDistributor.Enumerated(
+                    "flamestream-benchmarks-worker-",
+                    ackersNumber
+            ))
+    );
+    configureFromEnv("ACKER_WINDOW", systemConfigBuilder::ackerWindow);
+    final WorkerConfig config = configBuilder.build(
+            System.getenv("ID"),
+            new InetSocketAddress(localAddressHostAndPort[0], Integer.parseInt(localAddressHostAndPort[1])),
+            System.getenv("ZK_STRING")
+    );
+    new WorkerApplication(config, systemConfigBuilder.build()).run();
   }
 
   @Override
@@ -82,14 +96,6 @@ public class WorkerApplication implements Runnable {
 
     final Config config = ConfigFactory.parseMap(props).withFallback(ConfigFactory.load("remote"));
     this.system = ActorSystem.create("worker", config);
-    final SystemConfig systemConfig = new SystemConfig(
-            workerConfig.maxElementsInGraph,
-            workerConfig.millisBetweenCommits,
-            workerConfig.defaultMinimalTime,
-            workerConfig.acking,
-            workerConfig.barrierDisabled
-    );
-    //noinspection ConstantConditions
     system.actorOf(
             StartupWatcher.props(workerConfig.id, workerConfig.zkString, workerConfig.snapshotPath, systemConfig),
             "watcher"
@@ -122,34 +128,18 @@ public class WorkerApplication implements Runnable {
     private final String snapshotPath;
     private final Guarantees guarantees;
 
-    private final int maxElementsInGraph;
-    private final int millisBetweenCommits;
-    private final int defaultMinimalTime;
-    private final SystemConfig.Acking acking;
-    private final boolean barrierDisabled;
-
     private WorkerConfig(
             String id,
             InetSocketAddress localAddress,
             String zkString,
             String snapshotPath,
-            Guarantees guarantees,
-            int maxElementsInGraph,
-            int millisBetweenCommits,
-            int defaultMinimalTime,
-            SystemConfig.Acking acking,
-            boolean barrierDisabled
+            Guarantees guarantees
     ) {
       this.guarantees = guarantees;
       this.id = id;
       this.localAddress = localAddress;
       this.zkString = zkString;
       this.snapshotPath = snapshotPath;
-      this.maxElementsInGraph = maxElementsInGraph;
-      this.millisBetweenCommits = millisBetweenCommits;
-      this.defaultMinimalTime = defaultMinimalTime;
-      this.acking = acking;
-      this.barrierDisabled = barrierDisabled;
     }
 
     @Override
@@ -160,22 +150,12 @@ public class WorkerApplication implements Runnable {
               ", zkString='" + zkString + '\'' +
               ", snapshotPath='" + snapshotPath + '\'' +
               ", guarantees=" + guarantees +
-              ", maxElementsInGraph=" + maxElementsInGraph +
-              ", millisBetweenCommits=" + millisBetweenCommits +
-              ", defaultMinimalTime=" + defaultMinimalTime +
-              ", acking=" + acking +
               '}';
     }
 
     public static class Builder {
       private String snapshotPath = null;
       private Guarantees guarantees = Guarantees.AT_MOST_ONCE;
-
-      private int maxElementsInGraph = 500;
-      private int millisBetweenCommits = 100;
-      private int defaultMinimalTime = 0;
-      private SystemConfig.Acking acking = SystemConfig.Acking.CENTRALIZED;
-      private boolean barrierDisabled = false;
 
       public Builder snapshotPath(String snapshotPath) {
         this.snapshotPath = snapshotPath;
@@ -187,44 +167,14 @@ public class WorkerApplication implements Runnable {
         return this;
       }
 
-      public Builder maxElementsInGraph(int maxElementsInGraph) {
-        this.maxElementsInGraph = maxElementsInGraph;
-        return this;
-      }
-
-      public Builder millisBetweenCommits(int millisBetweenCommits) {
-        this.millisBetweenCommits = millisBetweenCommits;
-        return this;
-      }
-
-      public Builder defaultMinimalTime(int defaultMinimalTime) {
-        this.defaultMinimalTime = defaultMinimalTime;
-        return this;
-      }
-
-      public Builder acking(SystemConfig.Acking acking) {
-        this.acking = acking;
-        return this;
-      }
-
       public WorkerConfig build(String id, InetSocketAddress localAddress, String zkString) {
         return new WorkerConfig(
                 id,
                 localAddress,
                 zkString,
                 snapshotPath,
-                guarantees,
-                maxElementsInGraph,
-                millisBetweenCommits,
-                defaultMinimalTime,
-                acking,
-                barrierDisabled
+                guarantees
         );
-      }
-
-      public Builder barrierDisabled(boolean barrierDisabled) {
-        this.barrierDisabled = barrierDisabled;
-        return this;
       }
     }
   }
