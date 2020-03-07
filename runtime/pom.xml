@@ -23,18 +23,18 @@
         <!--Akka-->
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_2.13</artifactId>
+            <artifactId>akka-actor_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-remote_2.13</artifactId>
+            <artifactId>akka-remote_2.11</artifactId>
         </dependency>
 
         <!--Fast serialization-->
         <dependency>
-            <groupId>io.altoo</groupId>
-            <artifactId>akka-kryo-serialization_2.13</artifactId>
-            <version>${akka-kryo-serialization.version}</version>
+            <groupId>com.github.romix.akka</groupId>
+            <artifactId>akka-kryo-serialization_2.11</artifactId>
+            <version>0.5.0</version>
         </dependency>
 
         <!--Pretty serialization-->
@@ -58,7 +58,7 @@
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-slf4j_2.13</artifactId>
+            <artifactId>akka-slf4j_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -127,7 +127,7 @@
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit_2.13</artifactId>
+            <artifactId>akka-testkit_2.11</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

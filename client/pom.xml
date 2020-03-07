@@ -20,9 +20,8 @@
 
         <!--Fast serialization-->
         <dependency>
-            <groupId>io.altoo</groupId>
-            <artifactId>akka-kryo-serialization_2.13</artifactId>
-            <version>${akka-kryo-serialization.version}</version>
+            <groupId>com.github.romix.akka</groupId>
+            <artifactId>akka-kryo-serialization_2.11</artifactId>
         </dependency>
 
         <!--Curator-->
