@@ -4,8 +4,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-import com.spbsu.flamestream.core.Batch;
-import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
@@ -14,7 +12,6 @@ import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
-import com.spbsu.flamestream.runtime.WorkerApplication;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.SystemConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
@@ -24,55 +21,88 @@ import com.typesafe.config.Config;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.jetbrains.annotations.NotNull;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.io.Writer;
+import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class BenchStandComponentFactory {
   private static final Logger LOG = LoggerFactory.getLogger(BenchStandComponentFactory.class);
 
+  @NotNull
   public <Payload> Server producer(
-          Class<Payload> type,
-          Stream<Payload> payloadStream,
-          String remoteHost,
-          int port
+          Iterable<Payload> payloads,
+          int port,
+          Stream<String> remotes,
+          Class<?>... classesToRegister
   ) throws IOException {
-    final Server producer = new Server(1_000_000, 1000);
-    producer.getKryo().register(type);
+    List<String> remotesList = remotes.collect(Collectors.toList());
+    return producerConnections(
+            connections -> {
+              int index = 0;
+              for (final Payload payload : payloads) {
+                index++;
+                connections.get(remotesList.get(index % remotesList.size())).sendTCP(payload);
+              }
+            },
+            port,
+            remotesList,
+            classesToRegister
+    );
+  }
+
+  @NotNull
+  public Server producerConnections(
+          Consumer<Map<String, Connection>> consumer,
+          int port,
+          List<String> remotes,
+          Class<?>... classesToRegister
+  ) throws IOException {
+    Map<String, Connection> connections = new HashMap<>();
+    CountDownLatch allConnected = new CountDownLatch(remotes.size());
+    new Thread(() -> {
+      try {
+        allConnected.await();
+      } catch (InterruptedException e) {
+        throw new RuntimeException();
+      }
+      consumer.accept(connections);
+    }).start();
+    final Server producer = new Server(200_000_000 / remotes.size(), 1000 / remotes.size());
+    for (final Class<?> clazz : classesToRegister) {
+      producer.getKryo().register(clazz);
+    }
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo()
             .getInstantiatorStrategy())
             .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
 
     producer.addListener(new Listener() {
-      boolean accepted = false;
-
       @Override
-      public synchronized void connected(Connection newConnection) {
-        LOG.info("There is new connection: {}", newConnection.getRemoteAddressTCP());
-        try {
-          //first condition for local testing
-          if (!accepted && newConnection.getRemoteAddressTCP().getAddress().equals(InetAddress.getByName(remoteHost))) {
-            accepted = true;
-            LOG.info("Accepting connection: {}", newConnection.getRemoteAddressTCP());
-            new Thread(() -> {
-              int i = 0;
-              for (final Payload payload : (Iterable<Payload>) payloadStream::iterator) {
-                newConnection.sendTCP(payload);
-                LOG.info("Sending: {}", i++);
-              }
-            }).start();
-          } else {
-            LOG.info("Closing connection {}", newConnection.getRemoteAddressTCP());
-            newConnection.close();
-          }
-        } catch (UnknownHostException e) {
-          throw new RuntimeException(e);
+      public synchronized void received(Connection connection, Object received) {
+        if (!(received instanceof String)) {
+          return;
+        }
+        String id = (String) received;
+        if (remotes.contains(id) && !connections.containsKey(id)) {
+          LOG.info("Accepting connection: {}", id);
+          connections.put(id, connection);
+          allConnected.countDown();
+        } else {
+          LOG.info("Closing connection {}", id);
+          connection.close();
         }
       }
     });
@@ -81,12 +111,7 @@ public class BenchStandComponentFactory {
     return producer;
   }
 
-  public <Payload> Server consumer(
-          Class<Payload> type,
-          Consumer<Payload> consumer,
-          int port,
-          Class<?>... classesToRegister
-  ) throws IOException {
+  public Server consumer(Consumer<Object> consumer, int port, Class<?>... classesToRegister) throws IOException {
     final Server server = new Server(2000, 1_000_000);
     for (final Class<?> clazz : classesToRegister) {
       server.getKryo().register(clazz);
@@ -117,11 +142,7 @@ public class BenchStandComponentFactory {
     server.addListener(new Listener() {
       @Override
       public void received(Connection connection, Object object) {
-        if (object instanceof DataItem) {
-          consumer.accept(((DataItem) object).payload(type));
-        } else if (type.isInstance(object)) {
-          consumer.accept(type.cast(object));
-        }
+        consumer.accept(object);
       }
     });
 
@@ -131,13 +152,17 @@ public class BenchStandComponentFactory {
   }
 
   public FlameRuntime runtime(Config config) {
+    return runtime(config, new SystemConfig.Builder().build());
+  }
+
+  public FlameRuntime runtime(Config config, SystemConfig systemConfig) {
     final FlameRuntime runtime;
     if (config.hasPath("local")) {
       runtime = new LocalRuntime.Builder().parallelism(config.getConfig("local").getInt("parallelism")).build();
     } else if (config.hasPath("local-cluster")) {
       runtime = new LocalClusterRuntime(
               config.getConfig("local-cluster").getInt("parallelism"),
-              new SystemConfig.Builder().millisBetweenCommits(10000).build()
+              systemConfig
       );
     } else {
       // temporary solution to keep bench stand in working state
@@ -160,5 +185,10 @@ public class BenchStandComponentFactory {
     }
 
     return runtime;
+  }
+
+  public Closeable recordNanoDuration(Writer output) {
+    long start = System.nanoTime();
+    return () -> output.write(String.valueOf(System.nanoTime() - start));
   }
 }
