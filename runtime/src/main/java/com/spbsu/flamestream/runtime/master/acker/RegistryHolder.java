@@ -176,7 +176,7 @@ public class RegistryHolder extends LoggingActor {
     return ReceiveBuilder.create()
             .match(GimmeLastCommit.class, gimmeLastCommit -> {
               log().info("Got gimme '{}'", gimmeLastCommit);
-              sender().tell(new LastCommit(new GlobalTime(registry.lastCommit(), EdgeId.Min.INSTANCE)), self());
+              sender().tell(new LastCommit(new GlobalTime(registry.lastCommit(), EdgeId.MIN)), self());
             })
             .match(Commit.class, commit -> {
               registry.committed(commit.globalTime().time());

@@ -95,8 +95,7 @@ public class BenchStandComponentFactory {
     server.getKryo().register(GlobalTime.class);
     server.getKryo().register(EdgeId.class);
     server.getKryo().register(int[].class);
-    server.getKryo().register(EdgeId.Min.class);
-    server.getKryo().register(EdgeId.Max.class);
+    server.getKryo().register(EdgeId.Limit.class);
     server.getKryo().register(Rear.MinTime.class);
     ((Kryo.DefaultInstantiatorStrategy) server.getKryo()
             .getInstantiatorStrategy())

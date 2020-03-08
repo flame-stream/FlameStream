@@ -8,7 +8,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -28,7 +27,7 @@ public class MetaMapTest extends FlameStreamSuite {
 
     final int inputSize = 10;
     final List<DataItem> input = IntStream.range(0, inputSize)
-            .mapToObj(i -> new PayloadDataItem(new Meta(new GlobalTime(i, EdgeId.Min.INSTANCE)), i))
+            .mapToObj(i -> new PayloadDataItem(new Meta(new GlobalTime(i, EdgeId.MIN)), i))
             .collect(Collectors.toList());
 
     //noinspection ConstantConditions
