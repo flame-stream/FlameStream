@@ -27,7 +27,7 @@ public class MinTimeUpdater {
   private MinTimeUpdate lastMinTime;
 
   public MinTimeUpdater(List<ActorRef> shards, long defaultMinimalTime) {
-    lastMinTime = new MinTimeUpdate(new GlobalTime(defaultMinimalTime, EdgeId.Min.INSTANCE), new NodeTimes());
+    lastMinTime = new MinTimeUpdate(new GlobalTime(defaultMinimalTime, EdgeId.MIN), new NodeTimes());
     this.shardStates = shards.stream().collect(Collectors.toMap(Function.identity(), __ -> new ShardState()));
   }
 

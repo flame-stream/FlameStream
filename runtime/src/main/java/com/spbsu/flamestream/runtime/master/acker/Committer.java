@@ -106,7 +106,7 @@ public class Committer extends LoggingActor {
 
   private Receive waiting() {
     return ReceiveBuilder.create()
-            .match(StartCommit.class, __ -> commit(new GlobalTime(minAmongTables, EdgeId.Min.INSTANCE)))
+            .match(StartCommit.class, __ -> commit(new GlobalTime(minAmongTables, EdgeId.MIN)))
             .match(MinTimeUpdate.class, minTimeUpdate -> {
               if ((minTimeUpdate = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate)) != null) {
                 minAmongTables = minTimeUpdate.minTime().time();

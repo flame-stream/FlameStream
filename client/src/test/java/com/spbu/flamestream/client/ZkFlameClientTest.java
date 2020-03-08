@@ -142,8 +142,7 @@ public class ZkFlameClientTest {
     consumer.getKryo().register(GlobalTime.class);
     consumer.getKryo().register(EdgeId.class);
     consumer.getKryo().register(int[].class);
-    consumer.getKryo().register(EdgeId.Min.class);
-    consumer.getKryo().register(EdgeId.Max.class);
+    consumer.getKryo().register(EdgeId.Limit.class);
     consumer.getKryo().register(Rear.MinTime.class);
 
     consumer.addListener(new Listener() {
