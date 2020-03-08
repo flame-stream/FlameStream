@@ -3,11 +3,11 @@ package com.spbsu.flamestream.runtime.graph;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.TrackingComponent;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.runtime.edge.api.Checkpoint;
 import com.spbsu.flamestream.runtime.edge.api.RequestNext;
+import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,11 +52,11 @@ public class SourceJoba extends Joba {
   }
 
   @Override
-  public void onMinTime(GlobalTime minTime) {
+  public void onMinTime(MinTimeUpdate minTime) {
     if (minTime.trackingComponent() != sinkTrackingComponent) {
       return;
     }
-    inFlight.removeIf(nextTime -> nextTime.compareTo(minTime) < 0);
+    inFlight.removeIf(nextTime -> nextTime.compareTo(minTime.minTime()) < 0);
     requestNext();
   }
 

@@ -12,6 +12,7 @@ import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.edge.api.GimmeLastBatch;
+import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
@@ -71,12 +72,12 @@ public class SinkJoba extends Joba {
   }
 
   @Override
-  public void onMinTime(GlobalTime minTime) {
+  public void onMinTime(MinTimeUpdate minTime) {
     if (minTime.trackingComponent() != sinkTrackingComponent) {
       return;
     }
-    this.minTime = minTime;
-    tryEmmit(minTime);
+    this.minTime = minTime.minTime();
+    tryEmmit(minTime.minTime());
   }
 
   private void tryEmmit(GlobalTime upTo) {

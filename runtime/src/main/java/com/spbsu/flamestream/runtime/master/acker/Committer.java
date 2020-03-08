@@ -31,6 +31,7 @@ public class Committer extends LoggingActor {
   private final ActorRef registryHolder;
   @org.jetbrains.annotations.NotNull
   private final MinTimeUpdater minTimeUpdater;
+  private int sinkTrackingComponent;
   private final ActorRef pingActor;
 
   private long minAmongTables;
@@ -39,16 +40,20 @@ public class Committer extends LoggingActor {
   private boolean commitRuns = false;
   private long commitStartTime = -1;
 
-  private Committer(int managersCount,
-                    long defaultMinimalTime,
-                    int millisBetweenCommits,
-                    ActorRef registryHolder,
-                    MinTimeUpdater minTimeUpdater) {
+  private Committer(
+          int managersCount,
+          long defaultMinimalTime,
+          int millisBetweenCommits,
+          ActorRef registryHolder,
+          MinTimeUpdater minTimeUpdater,
+          int sinkTrackingComponent
+  ) {
     this.managersCount = managersCount;
     this.minAmongTables = defaultMinimalTime;
     this.millisBetweenCommits = millisBetweenCommits;
     this.registryHolder = registryHolder;
     this.minTimeUpdater = minTimeUpdater;
+    this.sinkTrackingComponent = sinkTrackingComponent;
 
     pingActor = context().actorOf(
             PingActor.props(self(), StartCommit.START),
@@ -61,7 +66,8 @@ public class Committer extends LoggingActor {
           int managersCount,
           SystemConfig systemConfig,
           ActorRef registryHolder,
-          MinTimeUpdater minTimeUpdater
+          MinTimeUpdater minTimeUpdater,
+          int sinkTrackingComponent
   ) {
     return Props.create(
             Committer.class,
@@ -69,7 +75,8 @@ public class Committer extends LoggingActor {
             systemConfig.defaultMinimalTime(),
             systemConfig.millisBetweenCommits(),
             registryHolder,
-            minTimeUpdater
+            minTimeUpdater,
+            sinkTrackingComponent
     ).withDispatcher("processing-dispatcher");
   }
 
@@ -108,7 +115,8 @@ public class Committer extends LoggingActor {
     return ReceiveBuilder.create()
             .match(StartCommit.class, __ -> commit(new GlobalTime(minAmongTables, EdgeId.MIN)))
             .match(MinTimeUpdate.class, minTimeUpdate -> {
-              if ((minTimeUpdate = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate)) != null) {
+              if ((minTimeUpdate = minTimeUpdater.onShardMinTimeUpdate(sender(), minTimeUpdate)) != null
+                      && minTimeUpdate.trackingComponent() == sinkTrackingComponent) {
                 minAmongTables = minTimeUpdate.minTime().time();
               }
             })
