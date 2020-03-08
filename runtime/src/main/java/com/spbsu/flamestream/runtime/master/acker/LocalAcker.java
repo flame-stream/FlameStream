@@ -14,6 +14,7 @@ import com.spbsu.flamestream.runtime.master.acker.api.commit.MinTimeUpdateListen
 import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.akka.PingActor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -28,6 +29,24 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class LocalAcker extends LoggingActor {
+  private static class AckKey implements Comparable<AckKey> {
+    static Comparator<AckKey> COMPARATOR =
+            Comparator.<AckKey>comparingInt(key -> key.trackingComponent).thenComparing(key -> key.globalTime);
+
+    final int trackingComponent;
+    final GlobalTime globalTime;
+
+    private AckKey(int trackingComponent, GlobalTime globalTime) {
+      this.trackingComponent = trackingComponent;
+      this.globalTime = globalTime;
+    }
+
+    @Override
+    public int compareTo(@NotNull AckKey ackKey) {
+      return COMPARATOR.compare(this, ackKey);
+    }
+  }
+
   public static class Partitions {
     final int size;
 
@@ -50,7 +69,7 @@ public class LocalAcker extends LoggingActor {
   private static final int FLUSH_COUNT = 1000;
 
   private long nodeTime = Long.MIN_VALUE;
-  private final SortedMap<GlobalTime, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
+  private final SortedMap<AckKey, Long> ackCache = new TreeMap<>(Comparator.reverseOrder());
   private final Map<EdgeId, HeartbeatIncrease> edgeIdHeartbeatIncrease = new HashMap<>();
   private final List<UnregisterFront> unregisterCache = new ArrayList<>();
 
@@ -123,7 +142,7 @@ public class LocalAcker extends LoggingActor {
   }
 
   private void handleAck(Ack ack) {
-    ackCache.compute(ack.time(), (globalTime, xor) -> {
+    ackCache.compute(new AckKey(ack.trackingComponent(), ack.time()), (globalTime, xor) -> {
       if (xor == null) {
         return ack.xor();
       } else {
@@ -145,7 +164,7 @@ public class LocalAcker extends LoggingActor {
     final boolean acksEmpty = ackCache.isEmpty();
     ackCache.entrySet()
             .stream()
-            .map(entry -> new Ack(entry.getKey(), entry.getValue()))
+            .map(entry -> new Ack(entry.getKey().trackingComponent, entry.getKey().globalTime, entry.getValue()))
             .collect(Collectors.groupingBy(o -> ackers.get(partitions.timePartition(
                     o.time().frontId().hashCode(),
                     o.time().time()

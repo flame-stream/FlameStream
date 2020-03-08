@@ -1,8 +1,8 @@
 package com.spbsu.flamestream.runtime.graph;
 
 import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -48,7 +48,7 @@ public abstract class Joba {
 
   abstract void accept(DataItem item, Consumer<DataItem> sink);
 
-  void onMinTime(GlobalTime time) {
+  void onMinTime(MinTimeUpdate time) {
   }
 
   void onPrepareCommit(GlobalTime time) {

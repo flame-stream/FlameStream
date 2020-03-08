@@ -22,14 +22,13 @@ public class MinTimeUpdater {
   private final long defaultMinimalTime;
 
   private static class TrackingComponent {
+    private int index;
     private Map<ActorRef, ShardState> shardStates;
     private MinTimeUpdate lastMinTime;
 
-    public TrackingComponent(List<ActorRef> shards, long defaultMinimalTime) {
-      lastMinTime = new MinTimeUpdate(
-              new GlobalTime(defaultMinimalTime, EdgeId.MIN),
-              new NodeTimes()
-      );
+    public TrackingComponent(int index, long defaultMinimalTime, List<ActorRef> shards) {
+      this.index = index;
+      lastMinTime = new MinTimeUpdate(index, new GlobalTime(defaultMinimalTime, EdgeId.MIN), new NodeTimes());
       shardStates = shards.stream().collect(Collectors.toMap(Function.identity(), __ -> new ShardState()));
     }
 
@@ -68,10 +67,14 @@ public class MinTimeUpdater {
         shardState.minTime = minTimeUpdate.getKey();
         shardState.minTimeUpdates.tailMap(shardState.minTime).clear();
       }
-      return new MinTimeUpdate(Collections.min(shardStates.values()
-              .stream()
-              .map(shardState -> shardState.minTime)
-              .collect(Collectors.toList())), min);
+      return new MinTimeUpdate(
+              index,
+              Collections.min(shardStates.values()
+                      .stream()
+                      .map(shardState -> shardState.minTime)
+                      .collect(Collectors.toList())),
+              min
+      );
     }
 
     private class ShardState {
@@ -92,9 +95,9 @@ public class MinTimeUpdater {
 
   @Nullable
   public MinTimeUpdate onShardMinTimeUpdate(ActorRef shard, MinTimeUpdate shardMinTimeUpdate) {
-    final int trackingComponent = shardMinTimeUpdate.minTime().trackingComponent();
+    final int trackingComponent = shardMinTimeUpdate.trackingComponent();
     for (int i = trackingComponents.size(); i < trackingComponent + 1; i++) {
-      trackingComponents.add(new TrackingComponent(shards, defaultMinimalTime));
+      trackingComponents.add(new TrackingComponent(i, defaultMinimalTime, shards));
     }
     return trackingComponents.get(trackingComponent).onShardMinTimeUpdate(shard, shardMinTimeUpdate);
   }

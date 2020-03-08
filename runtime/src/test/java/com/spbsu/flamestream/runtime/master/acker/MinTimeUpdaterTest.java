@@ -26,11 +26,11 @@ public class MinTimeUpdaterTest {
     final EdgeId edgeId = new EdgeId("", "");
     assertNull(minTimeUpdater.onShardMinTimeUpdate(
             shard2,
-            new MinTimeUpdate(new GlobalTime(2, edgeId), new NodeTimes().updated(id, 1))
+            new MinTimeUpdate(0, new GlobalTime(2, edgeId), new NodeTimes().updated(id, 1))
     ));
     final MinTimeUpdate minTimeUpdate = minTimeUpdater.onShardMinTimeUpdate(
             shard1,
-            new MinTimeUpdate(new GlobalTime(1, edgeId), new NodeTimes().updated(id, 3))
+            new MinTimeUpdate(0, new GlobalTime(1, edgeId), new NodeTimes().updated(id, 3))
     );
     assertNotNull(minTimeUpdate);
     assertEquals(minTimeUpdate.minTime(), new GlobalTime(1, edgeId));

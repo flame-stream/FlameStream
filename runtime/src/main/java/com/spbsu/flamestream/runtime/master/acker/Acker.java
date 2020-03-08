@@ -154,7 +154,7 @@ public class Acker extends LoggingActor {
 
   private void handleAck(Ack ack) {
     tracer.log(ack.xor());
-    final ComponentAckTable table = componentTable[ack.time().trackingComponent()];
+    final ComponentAckTable table = componentTable[ack.trackingComponent()];
     if (table.ackTable.ack(ack.time().time(), ack.xor())) {
       checkMinTime(table.component);
     }
@@ -173,14 +173,10 @@ public class Acker extends LoggingActor {
       }
       componentsToRefresh.addAll(component.adjacent);
       table.lastMinTime = minTime;
-      final GlobalTime minAmongTables = new GlobalTime(
-              table.lastMinTime,
-              EdgeId.MIN,
-              table.component.index
-      );
       log().debug("New min time: {}", minHeartbeat);
+      final GlobalTime minAmongTables = new GlobalTime(minTime, EdgeId.MIN);
       for (final ActorRef listener : listeners) {
-        listener.tell(new MinTimeUpdate(minAmongTables, nodeTimes), self());
+        listener.tell(new MinTimeUpdate(table.component.index, minAmongTables, nodeTimes), self());
       }
     }
   }
