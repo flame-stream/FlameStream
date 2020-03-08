@@ -1,55 +1,37 @@
 package com.spbsu.flamestream.core.data.meta;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Comparator;
 import java.util.Objects;
 
-public class EdgeId implements Comparable<EdgeId> {
-  static public class Max extends EdgeId {
-    public static EdgeId INSTANCE = new Max();
-
-    private Max() {
-      super("max", "max");
-    }
-
-    @Override
-    public int compareTo(EdgeId o) {
-      if (o == INSTANCE) {
-        return 0;
-      }
-      return 1;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      return o == INSTANCE;
-    }
+public final class EdgeId implements Comparable<EdgeId> {
+  public enum Limit {
+    Min,
+    None,
+    Max
   }
 
-  static public class Min extends EdgeId {
-    public static EdgeId INSTANCE = new Min();
+  public static final EdgeId MIN = new EdgeId(Limit.Min, "", "");
+  public static final EdgeId MAX = new EdgeId(Limit.Max, "", "");
 
-    private Min() {
-      super("min", "min");
-    }
-    @Override
-    public int compareTo(EdgeId o) {
-      if (o == INSTANCE) {
-        return 0;
-      }
-      return -1;
-    }
+  private static final Comparator<EdgeId> COMPARATOR = Comparator
+          .<EdgeId, Limit>comparing(edgeId -> edgeId.limit)
+          .thenComparing(EdgeId::edgeName)
+          .thenComparing(EdgeId::nodeId);
 
-    @Override
-    public boolean equals(Object o) {
-      return o == INSTANCE;
-    }
-  }
-
+  private final Limit limit;
   private final String edgeName;
   private final String nodeId;
 
-  public EdgeId(String edgeName, String nodeId) {
+  private EdgeId(Limit limit, String edgeName, String nodeId) {
+    this.limit = limit;
     this.edgeName = edgeName;
     this.nodeId = nodeId;
+  }
+
+  public EdgeId(String edgeName, String nodeId) {
+    this(Limit.None, edgeName, nodeId);
   }
 
   public String edgeName() {
@@ -65,38 +47,24 @@ public class EdgeId implements Comparable<EdgeId> {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
+    if (o instanceof EdgeId) {
+      return compareTo((EdgeId) o) == 0;
     }
-    final EdgeId that = (EdgeId) o;
-    return Objects.equals(edgeName, that.edgeName) &&
-            Objects.equals(nodeId, that.nodeId);
+    return false;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(edgeName, nodeId);
+    return Objects.hash(limit, edgeName, nodeId);
   }
 
   @Override
-  public int compareTo(EdgeId o) {
-    if (o == Min.INSTANCE) {
-      return 1;
-    } else if (o == Max.INSTANCE) {
-      return -1;
-    }
-
-    if (edgeName.compareTo(o.edgeName) < 0) {
-      return -1;
-    } else if (edgeName.compareTo(o.edgeName) > 0) {
-      return 1;
-    } else {
-      return nodeId.compareTo(o.nodeId);
-    }
+  public int compareTo(@NotNull EdgeId edgeId) {
+    return COMPARATOR.compare(this, edgeId);
   }
 
   @Override
   public String toString() {
-    return edgeName + '@' + nodeId;
+    return limit == Limit.None ? edgeName + "@" + nodeId : limit.toString();
   }
 }
