@@ -248,7 +248,8 @@ public class Component extends LoggingActor {
     if (localAcker != null) {
       final GlobalTime globalTime = dataItem.meta().globalTime();
       localAcker.tell(new Ack(
-              new GlobalTime(globalTime.time(), globalTime.frontId(), globalTime.trackingComponent()),
+              to.trackingComponent().index,
+              new GlobalTime(globalTime.time(), globalTime.frontId()),
               dataItem.xor()
       ), self());
     }
@@ -259,7 +260,7 @@ public class Component extends LoggingActor {
   }
 
   private void onMinTime(MinTimeUpdate minTime) {
-    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTime.minTime()));
+    wrappedJobas.values().forEach(jobaWrapper -> jobaWrapper.joba.onMinTime(minTime));
   }
 
   private void accept(DataItem item) {

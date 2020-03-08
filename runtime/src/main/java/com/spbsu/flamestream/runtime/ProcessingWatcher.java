@@ -182,7 +182,8 @@ public class ProcessingWatcher extends LoggingActor {
               config.paths().size(),
               systemConfig,
               registryHolder,
-              new MinTimeUpdater(ackers, systemConfig.defaultMinimalTime())
+              new MinTimeUpdater(ackers, systemConfig.defaultMinimalTime()),
+              graph.sinkTrackingComponent().index
       ), "committer");
     } else {
       final ActorPath masterPath = config.paths().get(config.masterLocation()).child("processing-watcher");

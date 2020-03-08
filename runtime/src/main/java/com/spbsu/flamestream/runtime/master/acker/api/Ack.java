@@ -5,13 +5,19 @@ import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
 public class Ack implements AckerInputMessage {
   private static final Tracing.Tracer tracer = Tracing.TRACING.forEvent("ack-create");
+  private final int trackingComponent;
   private final GlobalTime time;
   private final long xor;
 
-  public Ack(GlobalTime time, long xor) {
+  public Ack(int trackingComponent, GlobalTime time, long xor) {
+    this.trackingComponent = trackingComponent;
     this.time = time;
     this.xor = xor;
     tracer.log(xor);
+  }
+
+  public int trackingComponent() {
+    return trackingComponent;
   }
 
   public GlobalTime time() {
@@ -24,6 +30,6 @@ public class Ack implements AckerInputMessage {
 
   @Override
   public String toString() {
-    return "Ack{" + "xor=" + xor + ", time=" + time + '}';
+    return "Ack{" + ", trackingComponent=" + trackingComponent + ", xor=" + xor + ", time=" + time + '}';
   }
 }

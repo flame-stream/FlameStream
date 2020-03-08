@@ -115,7 +115,8 @@ class Cluster extends LoggingActor {
                       clusterConfig.paths().size(),
                       systemConfig,
                       registryHolder,
-                      new MinTimeUpdater(ackers, systemConfig.defaultMinimalTime())
+                      new MinTimeUpdater(ackers, systemConfig.defaultMinimalTime()),
+                      g.sinkTrackingComponent().index
               ));
               return paths.keySet().stream().map(id -> context.actorOf(FlameNode.props(
                       id,
