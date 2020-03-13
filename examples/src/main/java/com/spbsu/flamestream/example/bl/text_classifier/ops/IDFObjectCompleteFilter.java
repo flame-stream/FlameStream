@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
-import com.spbsu.flamestream.core.graph.FlameMap;
+import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.IdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
 
@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  * 2. All word counters have the same global time, so corresponding row in acker will not be incorrectly nullified
  * 3. The loss of the field do not lead to the loss of exactly once
  * */
-public class IDFObjectCompleteFilter implements FlameMap.SerializableFunction<WordCounter, Stream<IdfObject>> {
+public class IDFObjectCompleteFilter implements SerializableFunction<WordCounter, Stream<IdfObject>> {
   //Do not put state in class fields in a general case
   private final Map<String, Set<WordCounter>> buffer = new HashMap<>();
 

@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.bl.index.ops;
 
-import com.spbsu.flamestream.core.graph.FlameMap;
+import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.example.bl.index.model.WordBase;
 import com.spbsu.flamestream.example.bl.index.model.WordIndex;
 
@@ -10,7 +10,7 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 10.07.2017
  */
-public class WordIndexFilter implements FlameMap.SerializableFunction<WordBase, Stream<WordBase>> {
+public class WordIndexFilter implements SerializableFunction<WordBase, Stream<WordBase>> {
 
   @Override
   public Stream<WordBase> apply(WordBase wordBase) {

@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
-import com.spbsu.flamestream.core.graph.FlameMap;
+import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.containers.WordContainer;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordCounter;
 import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
@@ -8,7 +8,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.model.WordEntry;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class WordContainerOrderingFilter implements FlameMap.SerializableFunction<List<WordContainer>, Stream<List<WordContainer>>> {
+public class WordContainerOrderingFilter implements SerializableFunction<List<WordContainer>, Stream<List<WordContainer>>> {
 
   @Override
   public Stream<List<WordContainer>> apply(List<WordContainer> wordContainers) {
