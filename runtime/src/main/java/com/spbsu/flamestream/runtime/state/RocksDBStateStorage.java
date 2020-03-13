@@ -2,7 +2,7 @@ package com.spbsu.flamestream.runtime.state;
 
 import akka.serialization.Serialization;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.config.HashUnit;
+import com.spbsu.flamestream.core.graph.HashUnit;
 import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;

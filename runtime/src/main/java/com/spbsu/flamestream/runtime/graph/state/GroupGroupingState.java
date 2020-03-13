@@ -1,10 +1,9 @@
 package com.spbsu.flamestream.runtime.graph.state;
 
 import com.spbsu.flamestream.core.DataItem;
-import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.graph.Grouping;
-import com.spbsu.flamestream.runtime.config.HashUnit;
+import com.spbsu.flamestream.core.graph.HashUnit;
 import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.collections.ListHashUnitMap;
 

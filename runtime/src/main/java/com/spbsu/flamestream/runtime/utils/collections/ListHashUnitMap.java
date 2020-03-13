@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.utils.collections;
 
 import com.spbsu.flamestream.core.HashFunction;
-import com.spbsu.flamestream.runtime.config.HashUnit;
+import com.spbsu.flamestream.core.graph.HashUnit;
 
 import java.util.HashSet;
 import java.util.Map;
