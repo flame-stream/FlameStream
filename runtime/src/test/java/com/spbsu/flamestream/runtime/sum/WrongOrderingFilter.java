@@ -1,11 +1,11 @@
 package com.spbsu.flamestream.runtime.sum;
 
-import com.spbsu.flamestream.core.graph.FlameMap;
+import com.spbsu.flamestream.core.graph.SerializableFunction;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-final class WrongOrderingFilter implements FlameMap.SerializableFunction<List<Numb>, Stream<List<Numb>>> {
+final class WrongOrderingFilter implements SerializableFunction<List<Numb>, Stream<List<Numb>>> {
   @Override
   public Stream<List<Numb>> apply(List<Numb> numbs) {
     if (numbs.size() != 2) {
