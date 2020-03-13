@@ -2,6 +2,7 @@ package com.spbsu.flamestream.runtime.acceptance;
 
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.FlameMap;
+import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.FlameRuntime;
@@ -72,7 +73,7 @@ public final class FilterAcceptanceTest extends FlameAkkaSuite {
     }
   }
 
-  static final class HumbleFiler implements FlameMap.SerializableFunction<Integer, Stream<Integer>> {
+  static final class HumbleFiler implements SerializableFunction<Integer, Stream<Integer>> {
     private final int factor;
 
     HumbleFiler(int factor) {

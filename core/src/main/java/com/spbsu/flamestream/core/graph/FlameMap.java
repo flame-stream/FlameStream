@@ -6,15 +6,9 @@ import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.Serializable;
 import java.util.stream.Stream;
 
 public class FlameMap<T, R> extends HashingVertexStub {
-  public interface SerializableFunction<T, R> extends java.util.function.Function<T, R>, Serializable {
-  }
-  public interface SerializableRunnable extends java.lang.Runnable, Serializable {
-  }
-
   private final SerializableFunction<T, Stream<R>> function;
   private final Class<?> clazz;
   private final @Nullable

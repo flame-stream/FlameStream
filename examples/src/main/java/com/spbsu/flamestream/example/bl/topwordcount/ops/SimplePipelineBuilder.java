@@ -4,6 +4,7 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.FlameMap;
 import com.spbsu.flamestream.core.graph.Grouping;
+import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import scala.util.Either;
@@ -65,14 +66,14 @@ public class SimplePipelineBuilder {
       }
     }
 
-    private class Source implements FlameMap.SerializableFunction<Input, Stream<Item>> {
+    private class Source implements SerializableFunction<Input, Stream<Item>> {
       @Override
       public Stream<Item> apply(Input input) {
         return Stream.of(new Item(new Left<>(input), input));
       }
     }
 
-    private class Reducer implements FlameMap.SerializableFunction<List<Item>, Stream<HashedState>> {
+    private class Reducer implements SerializableFunction<List<Item>, Stream<HashedState>> {
       @Override
       public Stream<HashedState> apply(List<Item> items) {
         switch (items.size()) {
@@ -98,14 +99,14 @@ public class SimplePipelineBuilder {
       }
     }
 
-    private class Regrouper implements FlameMap.SerializableFunction<HashedState, Stream<Item>> {
+    private class Regrouper implements SerializableFunction<HashedState, Stream<Item>> {
       @Override
       public Stream<Item> apply(HashedState item) {
         return Stream.of(new Item(new Right<>(item.state), item.hash));
       }
     }
 
-    private class Sink implements FlameMap.SerializableFunction<HashedState, Stream<Output>> {
+    private class Sink implements SerializableFunction<HashedState, Stream<Output>> {
       @Override
       public Stream<Output> apply(HashedState item) {
         return Stream.of(op.release(item.state));

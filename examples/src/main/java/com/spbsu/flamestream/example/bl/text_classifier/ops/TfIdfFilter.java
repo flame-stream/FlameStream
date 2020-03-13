@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.bl.text_classifier.ops;
 
-import com.spbsu.flamestream.core.graph.FlameMap;
+import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.example.bl.text_classifier.model.IdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfIdfObject;
 import com.spbsu.flamestream.example.bl.text_classifier.model.TfObject;
@@ -9,7 +9,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.model.containers.DocCont
 import java.util.List;
 import java.util.stream.Stream;
 
-public class TfIdfFilter implements FlameMap.SerializableFunction<List<DocContainer>, Stream<DocContainer>> {
+public class TfIdfFilter implements SerializableFunction<List<DocContainer>, Stream<DocContainer>> {
 
   @Override
   public Stream<DocContainer> apply(List<DocContainer> elements) {

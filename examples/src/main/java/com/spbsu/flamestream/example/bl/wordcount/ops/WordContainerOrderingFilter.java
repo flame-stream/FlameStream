@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.example.bl.wordcount.ops;
 
-import com.spbsu.flamestream.core.graph.FlameMap;
+import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordContainer;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordCounter;
 import com.spbsu.flamestream.example.bl.wordcount.model.WordEntry;
@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  * User: Artem
  * Date: 25.06.2017
  */
-public class WordContainerOrderingFilter implements FlameMap.SerializableFunction<List<WordContainer>, Stream<List<WordContainer>>> {
+public class WordContainerOrderingFilter implements SerializableFunction<List<WordContainer>, Stream<List<WordContainer>>> {
   @Override
   public Stream<List<WordContainer>> apply(List<WordContainer> wordContainers) {
     if (wordContainers.size() > 2) {
