@@ -13,29 +13,30 @@ public class FlameMap<T, R> extends HashingVertexStub {
   private final Class<?> clazz;
   private final @Nullable
   HashFunction hashFunction;
-  private final @Nullable
-  SerializableRunnable init;
+  private final SerializableConsumer<HashGroup> init;
 
-  public FlameMap(SerializableFunction<T, Stream<R>> function,
-                  Class<?> clazz,
-                  @Nullable HashFunction hashFunction,
-                  @Nullable SerializableRunnable init) {
+  public FlameMap(
+          SerializableFunction<T, Stream<R>> function,
+          Class<?> clazz,
+          @Nullable HashFunction hashFunction,
+          SerializableConsumer<HashGroup> init
+  ) {
     this.function = function;
     this.clazz = clazz;
     this.hashFunction = hashFunction;
     this.init = init;
   }
 
-  public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz, @Nullable SerializableRunnable init) {
+  public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz, SerializableConsumer<HashGroup> init) {
     this(function, clazz, null, init);
   }
 
   public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz, @Nullable HashFunction hashFunction) {
-    this(function, clazz, hashFunction, null);
+    this(function, clazz, hashFunction, __ -> {});
   }
 
   public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz) {
-    this(function, clazz, null, null);
+    this(function, clazz, null, __ -> {});
   }
 
   public FlameMapOperation operation(long physicalId) {
@@ -53,10 +54,8 @@ public class FlameMap<T, R> extends HashingVertexStub {
     return function;
   }
 
-  public void init() {
-    if (init != null) {
-      init.run();
-    }
+  public void init(HashGroup hashGroup) {
+    init.accept(hashGroup);
   }
 
   @Override

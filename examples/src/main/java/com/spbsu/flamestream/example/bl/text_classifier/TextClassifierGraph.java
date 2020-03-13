@@ -117,7 +117,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
     final FlameMap<List<ClassifierInput>, ClassifierOutput> filterClassifier = new FlameMap<>(
             classifier,
             List.class,
-            classifier::init
+            __ -> { classifier.init(); }
     );
 
     final IDFObjectCompleteFilter completeFilter = new IDFObjectCompleteFilter();
@@ -125,7 +125,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
             completeFilter,
             WordCounter.class,
             docHash,
-            completeFilter::init
+            __ -> completeFilter.init()
     );
 
 
