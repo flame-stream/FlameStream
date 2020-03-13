@@ -9,34 +9,44 @@ import org.jetbrains.annotations.Nullable;
 import java.util.stream.Stream;
 
 public class FlameMap<T, R> extends HashingVertexStub {
+  public static class Builder<T, R> {
+    private final SerializableFunction<T, Stream<R>> function;
+    private final Class<?> clazz;
+    private @Nullable
+    HashFunction hashFunction;
+    private SerializableConsumer<HashGroup> init = __ -> {};
+
+    public Builder(SerializableFunction<T, Stream<R>> function, Class<?> clazz) {
+      this.function = function;
+      this.clazz = clazz;
+    }
+
+    public Builder<T, R> hashFunction(@Nullable HashFunction hashFunction) {
+      this.hashFunction = hashFunction;
+      return this;
+    }
+
+    public Builder<T, R> init(SerializableConsumer<HashGroup> init) {
+      this.init = init;
+      return this;
+    }
+
+    public FlameMap<T, R> build() {
+      return new FlameMap<>(this);
+    }
+  }
+
   private final SerializableFunction<T, Stream<R>> function;
   private final Class<?> clazz;
   private final @Nullable
   HashFunction hashFunction;
   private final SerializableConsumer<HashGroup> init;
 
-  public FlameMap(
-          SerializableFunction<T, Stream<R>> function,
-          Class<?> clazz,
-          @Nullable HashFunction hashFunction,
-          SerializableConsumer<HashGroup> init
-  ) {
-    this.function = function;
-    this.clazz = clazz;
-    this.hashFunction = hashFunction;
-    this.init = init;
-  }
-
-  public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz, SerializableConsumer<HashGroup> init) {
-    this(function, clazz, null, init);
-  }
-
-  public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz, @Nullable HashFunction hashFunction) {
-    this(function, clazz, hashFunction, __ -> {});
-  }
-
-  public FlameMap(SerializableFunction<T, Stream<R>> function, Class<?> clazz) {
-    this(function, clazz, null, __ -> {});
+  private FlameMap(Builder<T, R> builder) {
+    function = builder.function;
+    clazz = builder.clazz;
+    hashFunction = builder.hashFunction;
+    init = builder.init;
   }
 
   public FlameMapOperation operation(long physicalId) {
