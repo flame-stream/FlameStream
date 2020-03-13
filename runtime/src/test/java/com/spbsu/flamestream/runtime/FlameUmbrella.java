@@ -205,9 +205,10 @@ class FlameUmbrella extends LoggingActor {
     this.paths = paths;
     this.toBeTold = toBeTold;
 
+    final HashGroup hashGroup = new HashGroup(HashUnit.covering(1).collect(Collectors.toSet()));
     graph.components().forEach(vertexStream -> vertexStream.forEach(vertex -> {
       if (vertex instanceof FlameMap) {
-        ((FlameMap) vertex).init();
+        ((FlameMap) vertex).init(hashGroup);
       }
     }));
     flameNodes = actorsStarter.apply(context());
