@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.runtime.config;
+package com.spbsu.flamestream.core.graph;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;

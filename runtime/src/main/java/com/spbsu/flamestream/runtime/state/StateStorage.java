@@ -1,7 +1,7 @@
 package com.spbsu.flamestream.runtime.state;
 
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
-import com.spbsu.flamestream.runtime.config.HashUnit;
+import com.spbsu.flamestream.core.graph.HashUnit;
 import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 
 import java.util.Map;
