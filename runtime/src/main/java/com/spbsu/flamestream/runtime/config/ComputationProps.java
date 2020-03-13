@@ -1,5 +1,7 @@
 package com.spbsu.flamestream.runtime.config;
 
+import com.spbsu.flamestream.core.graph.HashGroup;
+
 import java.util.Map;
 
 public class ComputationProps {
