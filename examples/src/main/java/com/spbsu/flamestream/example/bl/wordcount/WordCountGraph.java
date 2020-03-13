@@ -15,10 +15,8 @@ import com.spbsu.flamestream.example.bl.wordcount.ops.WordContainerOrderingFilte
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 public class WordCountGraph implements Supplier<Graph> {
   private final HashFunction wordHash = HashFunction.uniformHash(HashFunction.objectHash(WordContainer.class));
@@ -30,19 +28,15 @@ public class WordCountGraph implements Supplier<Graph> {
   public Graph get() {
     final Source source = new Source();
     final Pattern pattern = Pattern.compile("\\s");
-    final FlameMap<String, WordEntry> splitter = new FlameMap<>(
+    final FlameMap<String, WordEntry> splitter = new FlameMap.Builder<String, WordEntry>(
             s -> Arrays.stream(pattern.split(s)).map(WordEntry::new),
             String.class
-    );
+    ).build();
     final Grouping<WordContainer> grouping = new Grouping<>(wordHash, equalz, 2, WordContainer.class);
-    final FlameMap<List<WordContainer>, List<WordContainer>> filter = new FlameMap<>(
-            new WordContainerOrderingFilter(),
-            List.class
-    );
-    final FlameMap<List<WordContainer>, WordCounter> counter = new FlameMap<>(
-            new CountWordEntries(),
-            List.class
-    );
+    final FlameMap<List<WordContainer>, List<WordContainer>> filter =
+            new FlameMap.Builder<>(new WordContainerOrderingFilter(), List.class).build();
+    final FlameMap<List<WordContainer>, WordCounter> counter =
+            new FlameMap.Builder<>(new CountWordEntries(), List.class).build();
     final Sink sink = new Sink();
     return new Graph.Builder()
             .link(source, splitter)

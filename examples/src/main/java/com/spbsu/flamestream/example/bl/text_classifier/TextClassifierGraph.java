@@ -31,9 +31,7 @@ import com.spbsu.flamestream.example.bl.text_classifier.ops.WordContainerOrderin
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.OnlineModel;
 import com.spbsu.flamestream.example.bl.text_classifier.ops.classifier.Vectorizer;
 
-import java.io.Serializable;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -78,7 +76,7 @@ public class TextClassifierGraph implements Supplier<Graph> {
             new Grouping<>(docHash, equalzDoc, 2, DocContainer.class);
 
 
-    final FlameMap<TfObject, WordEntry> splitterWord = new FlameMap<>(
+    final FlameMap<TfObject, WordEntry> splitterWord = new FlameMap.Builder<TfObject, WordEntry>(
             tfObject ->
                     tfObject.counts().entrySet().stream()
                             .map(word -> new WordEntry(
@@ -88,75 +86,54 @@ public class TextClassifierGraph implements Supplier<Graph> {
                                     tfObject.partitioning()
                             )),
             TfObject.class
-    );
+    ).build();
 
 
-    final FlameMap<TextDocument, TfObject> splitterTf = new FlameMap<>(
-            text -> Stream.of(TfObject.ofText(text)),
-            TextDocument.class,
-            docHash
-    );
+    final FlameMap<TextDocument, TfObject> splitterTf =
+            new FlameMap.Builder<TextDocument, TfObject>(text -> Stream.of(TfObject.ofText(text)), TextDocument.class)
+                    .hashFunction(docHash)
+                    .build();
 
-    final FlameMap<List<WordContainer>, List<WordContainer>> filterWord = new FlameMap<>(
-            new WordContainerOrderingFilter(),
-            List.class
-    );
+    final FlameMap<List<WordContainer>, List<WordContainer>> filterWord =
+            new FlameMap.Builder<>(new WordContainerOrderingFilter(), List.class).build();
 
-    final FlameMap<List<WordContainer>, WordCounter> counterWord = new FlameMap<>(
-            new CountWordEntries(),
-            List.class
-    );
+    final FlameMap<List<WordContainer>, WordCounter> counterWord =
+            new FlameMap.Builder<>(new CountWordEntries(), List.class).build();
 
-    final FlameMap<List<DocContainer>, DocContainer> filterTfIdf = new FlameMap<>(
-            new TfIdfFilter(),
-            List.class
-    );
+    final FlameMap<List<DocContainer>, DocContainer> filterTfIdf =
+            new FlameMap.Builder<>(new TfIdfFilter(), List.class).build();
 
 
     final ClassifierFilter classifier = new ClassifierFilter(vectorizer, onlineModel);
-    final FlameMap<List<ClassifierInput>, ClassifierOutput> filterClassifier = new FlameMap<>(
-            classifier,
-            List.class,
-            __ -> { classifier.init(); }
-    );
+    final FlameMap<List<ClassifierInput>, ClassifierOutput> filterClassifier =
+            new FlameMap.Builder<>(classifier, List.class).init(__1 -> classifier.init()).build();
 
     final IDFObjectCompleteFilter completeFilter = new IDFObjectCompleteFilter();
-    final FlameMap<WordCounter, IdfObject> idfObjectCompleteFilter = new FlameMap<>(
-            completeFilter,
-            WordCounter.class,
-            docHash,
-            __ -> completeFilter.init()
-    );
+    final FlameMap<WordCounter, IdfObject> idfObjectCompleteFilter =
+            new FlameMap.Builder<>(completeFilter, WordCounter.class)
+                    .hashFunction(docHash).init(__ -> completeFilter.init())
+                    .build();
 
 
-    final FlameMap<TfIdfObject, ClassifierInput> labeledFilter = new FlameMap<>(
-            new LabeledFilter(),
-            TfIdfObject.class
-    );
+    final FlameMap<TfIdfObject, ClassifierInput> labeledFilter =
+            new FlameMap.Builder<>(new LabeledFilter(), TfIdfObject.class).build();
 
-    final FlameMap<TfIdfObject, ClassifierInput> nonLabeledFilter = new FlameMap<>(
-            new NonLabeledFilter(),
-            TfIdfObject.class
-    );
+    final FlameMap<TfIdfObject, ClassifierInput> nonLabeledFilter =
+            new FlameMap.Builder<>(new NonLabeledFilter(), TfIdfObject.class).build();
 
-    final FlameMap<ClassifierOutput, ClassifierInput> weightsFilter = new FlameMap<>(
-            new WeightsFilter(),
-            ClassifierOutput.class
-    );
+    final FlameMap<ClassifierOutput, ClassifierInput> weightsFilter =
+            new FlameMap.Builder<>(new WeightsFilter(), ClassifierOutput.class).build();
 
-    final FlameMap<ClassifierOutput, Prediction> predictionFilter = new FlameMap<>(
-            new PredictionFilter(),
-            ClassifierOutput.class
-    );
+    final FlameMap<ClassifierOutput, Prediction> predictionFilter =
+            new FlameMap.Builder<>(new PredictionFilter(), ClassifierOutput.class).build();
 
     final Grouping<ClassifierInput> groupingWeights =
             new Grouping<>(HashFunction.broadcastBeforeGroupingHash(), Equalz.allEqualz(), 2, ClassifierInput.class);
 
-    final FlameMap<ClassifierInput, ClassifierInput> broadcastTfidfObject = new FlameMap<>(
-            Stream::of,
-            ClassifierInput.class,
-            HashFunction.broadcastHash()
-    );
+    final FlameMap<ClassifierInput, ClassifierInput> broadcastTfidfObject =
+            new FlameMap.Builder<ClassifierInput, ClassifierInput>(Stream::of, ClassifierInput.class)
+                    .hashFunction(HashFunction.broadcastHash())
+                    .build();
 
     final Sink sink = new Sink();
     return new Graph.Builder()

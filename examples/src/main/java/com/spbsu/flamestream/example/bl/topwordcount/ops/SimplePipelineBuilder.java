@@ -114,7 +114,7 @@ public class SimplePipelineBuilder {
     }
 
     Node build(Graph.Builder graphBuilder) {
-      final FlameMap<Input, Item> source = new FlameMap<>(new Source(), op.inputClass());
+      final FlameMap<Input, Item> source = new FlameMap.Builder<>(new Source(), op.inputClass()).build();
       final Grouping grouping = new Grouping<>(
               HashFunction.objectHash(Item.class),
               (o1, o2) -> {
@@ -125,9 +125,9 @@ public class SimplePipelineBuilder {
               2,
               Item.class
       );
-      final FlameMap<List<Item>, HashedState> reducer = new FlameMap<>(new Reducer(), List.class);
-      final FlameMap<HashedState, Item> regrouper = new FlameMap<>(new Regrouper(), HashedState.class);
-      final FlameMap<HashedState, Output> sink = new FlameMap<>(new Sink(), HashedState.class);
+      final FlameMap<List<Item>, HashedState> reducer = new FlameMap.Builder<>(new Reducer(), List.class).build();
+      final FlameMap<HashedState, Item> regrouper = new FlameMap.Builder<>(new Regrouper(), HashedState.class).build();
+      final FlameMap<HashedState, Output> sink = new FlameMap.Builder<>(new Sink(), HashedState.class).build();
       graphBuilder
               .link(source, grouping)
               .link(grouping, reducer)
@@ -167,7 +167,7 @@ public class SimplePipelineBuilder {
   }
 
   public <Input, Output> Node node(MapOp<Input, Output> op) {
-    Graph.Vertex vertex = new FlameMap<>(op, op.inputClass());
+    Graph.Vertex vertex = new FlameMap.Builder<>(op, op.inputClass()).build();
     final Node node = new Node() {
       public Graph.Vertex source() {
         return vertex;

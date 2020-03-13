@@ -27,23 +27,22 @@ import java.util.stream.Stream;
 public class BroadcastAcceptanceTest extends FlameAkkaSuite {
   private static Graph graph() {
     final Source source = new Source();
-    final FlameMap<String, String> broadcastFilterSource = new FlameMap<>(
-            Stream::of,
-            String.class,
-            HashFunction.broadcastHash()
-    );
+    final FlameMap<String, String> broadcastFilterSource =
+            new FlameMap.Builder<String, String>(Stream::of, String.class)
+                    .hashFunction(HashFunction.broadcastHash())
+                    .build();
     final Grouping<String> grouping = new Grouping<>(
             HashFunction.uniformHash(HashFunction.objectHash(String.class)),
             (dataItem, dataItem2) -> dataItem.payload(String.class).equals(dataItem2.payload(String.class)),
             1,
             String.class
     );
-    final FlameMap<List<String>, String> toString = new FlameMap<>(strings -> Stream.of(strings.get(0)), List.class);
-    final FlameMap<String, String> broadcastFilterSink = new FlameMap<>(
-            Stream::of,
-            String.class,
-            HashFunction.broadcastHash()
-    );
+    final FlameMap<List<String>, String> toString =
+            new FlameMap.Builder<List<String>, String>(strings -> Stream.of(strings.get(0)), List.class).build();
+    final FlameMap<String, String> broadcastFilterSink =
+            new FlameMap.Builder<String, String>(Stream::of, String.class)
+                    .hashFunction(HashFunction.broadcastHash())
+                    .build();
     final Sink sink = new Sink();
 
     return new Graph.Builder().link(source, broadcastFilterSource)

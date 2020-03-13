@@ -4,7 +4,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-import com.spbsu.flamestream.core.Batch;
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.Job;
@@ -33,7 +32,6 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -181,7 +179,8 @@ public class ZkFlameClientTest {
     final Source source = new Source();
     final Sink sink = new Sink();
 
-    final FlameMap<String, String> dumbMap = new FlameMap<>(s -> Stream.of("prefix_" + s), String.class);
+    final FlameMap<String, String> dumbMap =
+            new FlameMap.Builder<String, String>(s -> Stream.of("prefix_" + s), String.class).build();
     return new Graph.Builder().link(source, dumbMap).link(dumbMap, sink).build(source, sink);
   }
 }

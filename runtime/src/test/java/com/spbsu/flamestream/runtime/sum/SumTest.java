@@ -1,7 +1,6 @@
 package com.spbsu.flamestream.runtime.sum;
 
 import akka.actor.ActorSystem;
-import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
@@ -44,15 +43,15 @@ public final class SumTest extends FlameAkkaSuite {
 
     final Source source = new Source();
     final Grouping<Numb> grouping = new Grouping<>(identity, predicate, 2, Numb.class);
-    final FlameMap<List<Numb>, List<Numb>> enricher = new FlameMap<>(
+    final FlameMap<List<Numb>, List<Numb>> enricher = new FlameMap.Builder<>(
             new IdentityEnricher(),
             List.class
-    );
-    final FlameMap<List<Numb>, List<Numb>> junkFilter = new FlameMap<>(
+    ).build();
+    final FlameMap<List<Numb>, List<Numb>> junkFilter = new FlameMap.Builder<>(
             new WrongOrderingFilter(),
             List.class
-    );
-    final FlameMap<List<Numb>, Sum> reducer = new FlameMap<>(new Reduce(), List.class);
+    ).build();
+    final FlameMap<List<Numb>, Sum> reducer = new FlameMap.Builder<>(new Reduce(), List.class).build();
     final Sink sink = new Sink();
 
     return new Graph.Builder()

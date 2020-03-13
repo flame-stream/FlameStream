@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,27 +49,15 @@ public class DoubleGroupingTest extends FlameStreamSuite {
   private static final Equalz EQUALZ = Equalz.hashEqualz(HASH_FUNCTION);
 
   private Graph graph() {
-    final Grouping<Integer> firstGroup = new Grouping<>(
-            HASH_FUNCTION,
-            EQUALZ,
-            WINDOW,
-            Integer.class
-    );
-    final FlameMap<List<Integer>, Integer> firstHash = new FlameMap<>(longs -> Stream.of(longs.hashCode()), List.class);
-    final Grouping<Integer> secondGroup = new Grouping<>(
-            HASH_FUNCTION,
-            EQUALZ,
-            WINDOW,
-            Integer.class
-    );
-    final FlameMap<List<Integer>, Integer> secondHash = new FlameMap<>(longs -> Stream.of(longs.hashCode()), List.class);
-    final Grouping<Integer> thirdGroup = new Grouping<>(
-            HASH_FUNCTION,
-            EQUALZ,
-            WINDOW,
-            Integer.class
-    );
-    final FlameMap<List<Integer>, Integer> thirdHash = new FlameMap<>(longs -> Stream.of(longs.hashCode()), List.class);
+    final Grouping<Integer> firstGroup = new Grouping<>(HASH_FUNCTION, EQUALZ, WINDOW, Integer.class);
+    final FlameMap<List<Integer>, Integer> firstHash =
+            new FlameMap.Builder<List<Integer>, Integer>(longs2 -> Stream.of(longs2.hashCode()), List.class).build();
+    final Grouping<Integer> secondGroup = new Grouping<>(HASH_FUNCTION, EQUALZ, WINDOW, Integer.class);
+    final FlameMap<List<Integer>, Integer> secondHash =
+            new FlameMap.Builder<List<Integer>, Integer>(longs1 -> Stream.of(longs1.hashCode()), List.class).build();
+    final Grouping<Integer> thirdGroup = new Grouping<>(HASH_FUNCTION, EQUALZ, WINDOW, Integer.class);
+    final FlameMap<List<Integer>, Integer> thirdHash =
+            new FlameMap.Builder<List<Integer>, Integer>(longs -> Stream.of(longs.hashCode()), List.class).build();
 
 
     final Source source = new Source();
