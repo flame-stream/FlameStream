@@ -27,10 +27,10 @@ public final class FilterAcceptanceTest extends FlameAkkaSuite {
 
   private static Graph multiGraph() {
     final Source source = new Source();
-    final FlameMap<Integer, Integer> filter1 = new FlameMap<>(new HumbleFiler(-1), Integer.class);
-    final FlameMap<Integer, Integer> filter2 = new FlameMap<>(new HumbleFiler(-2), Integer.class);
-    final FlameMap<Integer, Integer> filter3 = new FlameMap<>(new HumbleFiler(-3), Integer.class);
-    final FlameMap<Integer, Integer> filter4 = new FlameMap<>(new HumbleFiler(-4), Integer.class);
+    final FlameMap<Integer, Integer> filter1 = new FlameMap.Builder<>(new HumbleFiler(-1), Integer.class).build();
+    final FlameMap<Integer, Integer> filter2 = new FlameMap.Builder<>(new HumbleFiler(-2), Integer.class).build();
+    final FlameMap<Integer, Integer> filter3 = new FlameMap.Builder<>(new HumbleFiler(-3), Integer.class).build();
+    final FlameMap<Integer, Integer> filter4 = new FlameMap.Builder<>(new HumbleFiler(-4), Integer.class).build();
     final Sink sink = new Sink();
 
     return new Graph.Builder().link(source, filter1)

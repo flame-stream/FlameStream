@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.example.bl.index;
 
-import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Equalz;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
@@ -31,19 +30,27 @@ public class InvertedIndexGraph implements Supplier<Graph> {
   @Override
   public Graph get() {
     final Source source = new Source();
-    final FlameMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlameMap<>(
+    final FlameMap<WikipediaPage, WordPagePositions> wikiPageToPositions = new FlameMap.Builder<>(
             new WikipediaPageToWordPositions(),
-            WikipediaPage.class,
-            HashFunction.objectHash(WikipediaPage.class)
-    );
-    final FlameMap<WordBase, WordBase> indexDiffFilter = new FlameMap<>(new WordIndexDiffFilter(), WordBase.class);
+            WikipediaPage.class
+    ).hashFunction(HashFunction.objectHash(WikipediaPage.class)).build();
+    final FlameMap<WordBase, WordBase> indexDiffFilter = new FlameMap.Builder<>(
+            new WordIndexDiffFilter(),
+            WordBase.class
+    ).build();
     final Grouping<WordBase> grouping = new Grouping<>(wordHash, wordEqualz, 2, WordBase.class);
-    final FlameMap<List<WordBase>, List<WordBase>> wrongOrderingFilter = new FlameMap<>(
+    final FlameMap<List<WordBase>, List<WordBase>> wrongOrderingFilter = new FlameMap.Builder<>(
             new WrongOrderingFilter(),
             List.class
-    );
-    final FlameMap<List<WordBase>, WordBase> indexer = new FlameMap<>(new WordIndexToDiffOutput(), List.class);
-    final FlameMap<WordBase, WordBase> indexFilter = new FlameMap<>(new WordIndexFilter(), WordBase.class);
+    ).build();
+    final FlameMap<List<WordBase>, WordBase> indexer = new FlameMap.Builder<>(
+            new WordIndexToDiffOutput(),
+            List.class
+    ).build();
+    final FlameMap<WordBase, WordBase> indexFilter = new FlameMap.Builder<>(
+            new WordIndexFilter(),
+            WordBase.class
+    ).build();
     final Sink sink = new Sink();
 
     return new Graph.Builder()
