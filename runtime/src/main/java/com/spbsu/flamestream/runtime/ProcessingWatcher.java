@@ -149,14 +149,6 @@ public class ProcessingWatcher extends LoggingActor {
     if (this.graph != null) {
       throw new RuntimeException("Graph updating is not supported yet");
     }
-    try {
-      PatternsCS.ask(context().actorOf(InitAgent.props()), graph, FlameConfig.config.bigTimeout())
-              .toCompletableFuture()
-              .get();
-    } catch (InterruptedException | ExecutionException e) {
-      throw new RuntimeException(e);
-    }
-    this.graph = graph;
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
     final List<HashUnit> covering = HashUnit.covering(config.paths().size() - 1)
             .collect(Collectors.toCollection(ArrayList::new));
@@ -165,6 +157,14 @@ public class ProcessingWatcher extends LoggingActor {
             s.equals(config.masterLocation()) ? new HashUnit(0, 0) : covering.remove(0)
     ))));
     assert covering.isEmpty();
+    try {
+      PatternsCS.ask(context().actorOf(InitAgent.props(ranges.get(id))), graph, FlameConfig.config.bigTimeout())
+              .toCompletableFuture()
+              .get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
+    this.graph = graph;
     boolean distributedAcking = systemConfig.acking() == SystemConfig.Acking.DISTRIBUTED;
     if (distributedAcking || zookeeperWorkersNode.isLeader(id)) {
       context().actorOf(Acker.props(systemConfig.defaultMinimalTime(), !distributedAcking, graph), "acker");
@@ -244,13 +244,17 @@ public class ProcessingWatcher extends LoggingActor {
   }
 
   private static class InitAgent extends LoggingActor {
+    final HashGroup hashGroup;
+
+    private InitAgent(HashGroup hashGroup) {this.hashGroup = hashGroup;}
+
     @Override
     public Receive createReceive() {
       return ReceiveBuilder.create()
               .match(Graph.class, graph -> {
                 graph.components().forEach(vertexStream -> vertexStream.forEach(vertex -> {
                   if (vertex instanceof FlameMap) {
-                    ((FlameMap) vertex).init();
+                    ((FlameMap) vertex).init(hashGroup);
                   }
                 }));
                 sender().tell(InitDone.OBJECT, self());
@@ -259,8 +263,8 @@ public class ProcessingWatcher extends LoggingActor {
               .build();
     }
 
-    public static Props props() {
-      return Props.create(InitAgent.class);
+    public static Props props(HashGroup hashGroup) {
+      return Props.create(InitAgent.class, hashGroup);
     }
   }
 
