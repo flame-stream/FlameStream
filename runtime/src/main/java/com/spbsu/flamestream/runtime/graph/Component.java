@@ -126,7 +126,7 @@ public class Component extends LoggingActor {
                             if (hash instanceof HashFunction.Broadcast) {
                               int childId = 0;
                               for (Map.Entry<HashUnit, ActorRef> next : routes.entrySet()) {
-                                if (next.getKey().to() == next.getKey().from()) {
+                                if (next.getKey().isEmpty()) {
                                   //ignore empty ranges
                                   continue;
                                 }
