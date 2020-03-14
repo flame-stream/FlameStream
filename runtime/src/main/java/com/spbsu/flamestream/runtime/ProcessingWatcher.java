@@ -155,7 +155,7 @@ public class ProcessingWatcher extends LoggingActor {
             .collect(Collectors.toCollection(ArrayList::new));
     final Map<String, HashGroup> ranges = new HashMap<>();
     config.paths().keySet().forEach(s -> ranges.put(s, new HashGroup(Collections.singleton(
-            s.equals(config.masterLocation()) ? new HashUnit(0, 0) : covering.remove(0)
+            s.equals(config.masterLocation()) ? HashUnit.EMPTY : covering.remove(0)
     ))));
     assert covering.isEmpty();
     try {
