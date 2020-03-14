@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.runtime.utils.collections;
 
-import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.graph.HashUnit;
 
 import java.util.HashSet;
@@ -15,15 +14,16 @@ public class ListHashUnitMap<T> implements HashUnitMap<T> {
   }
 
   @Override
+  public T first() {
+    return mapping.iterator().next().getValue();
+  }
+
+  @Override
   public T get(int key) {
     for (final Map.Entry<HashUnit, T> entry : mapping) {
       if (entry.getKey().covers(key)) {
         return entry.getValue();
       }
-    }
-    if (key == HashFunction.BROADCAST_GROUPING_HASH) {
-      //hack for broadcast
-      return mapping.iterator().next().getValue();
     }
     return null;
   }

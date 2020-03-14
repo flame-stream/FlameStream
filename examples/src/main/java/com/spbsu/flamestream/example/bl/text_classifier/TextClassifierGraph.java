@@ -128,11 +128,11 @@ public class TextClassifierGraph implements Supplier<Graph> {
             new FlameMap.Builder<>(new PredictionFilter(), ClassifierOutput.class).build();
 
     final Grouping<ClassifierInput> groupingWeights =
-            new Grouping<>(HashFunction.broadcastBeforeGroupingHash(), Equalz.allEqualz(), 2, ClassifierInput.class);
+            new Grouping<>(HashFunction.PostBroadcast.INSTANCE, Equalz.allEqualz(), 2, ClassifierInput.class);
 
     final FlameMap<ClassifierInput, ClassifierInput> broadcastTfidfObject =
             new FlameMap.Builder<ClassifierInput, ClassifierInput>(Stream::of, ClassifierInput.class)
-                    .hashFunction(HashFunction.broadcastHash())
+                    .hashFunction(HashFunction.Broadcast.INSTANCE)
                     .build();
 
     final Sink sink = new Sink();
