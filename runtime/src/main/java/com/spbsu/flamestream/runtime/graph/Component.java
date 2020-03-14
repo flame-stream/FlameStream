@@ -123,7 +123,7 @@ public class Component extends LoggingActor {
                           sink = item -> {
                             groupingSendTracer.log(item.xor());
                             final HashFunction hash = ((HashingVertexStub) to).hash();
-                            if (hash instanceof HashFunction.Broadcast) {
+                            if (hash == HashFunction.Broadcast.INSTANCE) {
                               int childId = 0;
                               for (Map.Entry<HashUnit, ActorRef> next : routes.entrySet()) {
                                 if (next.getKey().isEmpty()) {

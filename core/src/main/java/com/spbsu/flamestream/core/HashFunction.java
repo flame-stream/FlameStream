@@ -7,8 +7,23 @@ import java.util.function.ToIntFunction;
 
 @FunctionalInterface
 public interface HashFunction extends ToIntFunction<DataItem>, Serializable {
-  Broadcast BROADCAST = new Broadcast();
-  int BROADCAST_GROUPING_HASH = Integer.MAX_VALUE;
+  enum Broadcast implements HashFunction {
+    INSTANCE;
+
+    @Override
+    public int hash(DataItem dataItem) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  enum PostBroadcast implements HashFunction {
+    INSTANCE;
+
+    @Override
+    public int hash(DataItem dataItem) {
+      return 0;
+    }
+  }
 
   static <T> HashFunction objectHash(Class<T> clazz) {
     return new HashFunction() {
@@ -43,10 +58,6 @@ public interface HashFunction extends ToIntFunction<DataItem>, Serializable {
     };
   }
 
-  static HashFunction broadcastBeforeGroupingHash() {
-    return item -> BROADCAST_GROUPING_HASH;
-  }
-
   static HashFunction bucketedHash(HashFunction hash, int buckets) {
     return new HashFunction() {
       private final HashFunction h = hash;
@@ -59,26 +70,10 @@ public interface HashFunction extends ToIntFunction<DataItem>, Serializable {
     };
   }
 
-  static HashFunction broadcastHash() {
-    return BROADCAST;
-  }
-
   int hash(DataItem dataItem);
 
   @Override
   default int applyAsInt(DataItem dataItem) {
     return hash(dataItem);
-  }
-
-  class Broadcast implements HashFunction {
-
-    private Broadcast() {
-
-    }
-
-    @Override
-    public int hash(DataItem dataItem) {
-      return 0; //this value is not used
-    }
   }
 }

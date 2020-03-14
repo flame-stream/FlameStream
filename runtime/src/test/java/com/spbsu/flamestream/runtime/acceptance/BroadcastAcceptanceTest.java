@@ -29,7 +29,7 @@ public class BroadcastAcceptanceTest extends FlameAkkaSuite {
     final Source source = new Source();
     final FlameMap<String, String> broadcastFilterSource =
             new FlameMap.Builder<String, String>(Stream::of, String.class)
-                    .hashFunction(HashFunction.broadcastHash())
+                    .hashFunction(HashFunction.Broadcast.INSTANCE)
                     .build();
     final Grouping<String> grouping = new Grouping<>(
             HashFunction.uniformHash(HashFunction.objectHash(String.class)),
@@ -41,7 +41,7 @@ public class BroadcastAcceptanceTest extends FlameAkkaSuite {
             new FlameMap.Builder<List<String>, String>(strings -> Stream.of(strings.get(0)), List.class).build();
     final FlameMap<String, String> broadcastFilterSink =
             new FlameMap.Builder<String, String>(Stream::of, String.class)
-                    .hashFunction(HashFunction.broadcastHash())
+                    .hashFunction(HashFunction.Broadcast.INSTANCE)
                     .build();
     final Sink sink = new Sink();
 
