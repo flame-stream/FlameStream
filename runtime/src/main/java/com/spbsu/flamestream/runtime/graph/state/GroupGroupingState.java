@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.runtime.graph.state;
 
 import com.spbsu.flamestream.core.DataItem;
+import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.graph.Grouping;
 import com.spbsu.flamestream.core.graph.HashUnit;
@@ -27,6 +28,13 @@ public class GroupGroupingState {
   }
 
   public InvalidatingBucket bucketFor(DataItem item) {
-    return unitStates.get(grouping.hash().hash(item)).bucketFor(item);
+    final GroupingState groupingState;
+    if (grouping.hash() == HashFunction.PostBroadcast.INSTANCE) {
+      // hack for broadcast
+      groupingState = unitStates.first();
+    } else {
+      groupingState = unitStates.get(grouping.hash().hash(item));
+    }
+    return groupingState.bucketFor(item);
   }
 }

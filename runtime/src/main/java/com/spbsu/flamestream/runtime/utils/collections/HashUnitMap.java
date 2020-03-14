@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Set;
 
 public interface HashUnitMap<V> {
+  V first();
+
   V get(int key);
 
   void putAll(Map<HashUnit, V> map);
