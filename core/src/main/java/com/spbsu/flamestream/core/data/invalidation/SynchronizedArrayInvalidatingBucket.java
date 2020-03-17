@@ -47,13 +47,13 @@ public class SynchronizedArrayInvalidatingBucket extends ArrayInvalidatingBucket
   }
 
   @Override
-  public synchronized int higherBound(Meta meta) {
-    return super.higherBound(meta);
+  public synchronized int lowerBound(Meta meta) {
+    return super.lowerBound(meta);
   }
 
   @Override
   public synchronized InvalidatingBucket subBucket(Meta meta, int window) {
-    final int start = higherBound(meta);
+    final int start = lowerBound(meta);
     return new SynchronizedArrayInvalidatingBucket(new ArrayList<>(innerList.subList(Math.max(
             start - window + 1, 0), start)));
   }

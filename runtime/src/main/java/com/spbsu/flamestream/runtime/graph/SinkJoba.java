@@ -81,7 +81,7 @@ public class SinkJoba extends Joba {
   }
 
   private void tryEmmit(GlobalTime upTo) {
-    final int pos = invalidatingBucket.higherBound(new Meta(upTo));
+    final int pos = invalidatingBucket.lowerBound(new Meta(upTo));
 
     rears.forEach((rear, lastEmmit) -> {
       final List<DataItem> data = new ArrayList<>();
