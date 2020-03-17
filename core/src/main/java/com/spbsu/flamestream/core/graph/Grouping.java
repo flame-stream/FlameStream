@@ -2,7 +2,6 @@ package com.spbsu.flamestream.core.graph;
 
 import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.Equalz;
-import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.HashFunction;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
@@ -62,12 +61,12 @@ public class Grouping<T> extends HashingVertexStub {
       final Collection<DataItem> items = new ArrayList<>();
 
       if (!dataItem.meta().isTombstone()) {
-        final int positionToBeInserted = bucket.lowerBound(dataItem.meta());
+        final int positionToBeInserted = bucket.higherBound(dataItem.meta());
         items.addAll(replayAround(positionToBeInserted, bucket, true, false));
         bucket.insert(dataItem);
         items.addAll(replayAround(positionToBeInserted, bucket, false, true));
       } else {
-        final int positionToBeCleared = bucket.lowerBound(dataItem.meta()) - 1;
+        final int positionToBeCleared = bucket.higherBound(dataItem.meta()) - 1;
         items.addAll(replayAround(positionToBeCleared, bucket, true, true));
         bucket.insert(dataItem);
         items.addAll(replayAround(positionToBeCleared, bucket, false, false));

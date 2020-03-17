@@ -51,7 +51,7 @@ public interface InvalidatingBucket {
    * <p>
    * min i : a[i] >= x
    */
-  int lowerBound(Meta meta);
+  int higherBound(Meta meta);
 
   /**
    *
