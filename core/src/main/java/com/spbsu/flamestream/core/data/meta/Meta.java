@@ -10,7 +10,12 @@ public class Meta implements Comparable<Meta> {
   public static final Comparator<Meta> NATURAL_ORDER = Comparator
           .comparing(Meta::globalTime)
           .thenComparing(Meta::childIds, new ArrayComparator())
-          .thenComparing(Meta::trace)
+          .thenComparing((left, right) -> {
+            if (left.trace != right.trace) {
+              throw new IllegalArgumentException(left + " " + right);
+            }
+            return 0;
+          })
           .thenComparing(Meta::isTombstone);
 
 
