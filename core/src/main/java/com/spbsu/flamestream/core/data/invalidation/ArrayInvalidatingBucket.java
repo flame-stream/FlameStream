@@ -4,6 +4,7 @@ import com.spbsu.flamestream.core.DataItem;
 import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -25,10 +26,10 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
   @Override
   public void insert(DataItem insertee) {
     if (!insertee.meta().isTombstone()) {
-      final int position = lowerBound(insertee.meta());
+      final int position = higherBound(insertee.meta());
       innerList.add(position, insertee);
     } else {
-      final int position = lowerBound(insertee.meta()) - 1;
+      final int position = higherBound(insertee.meta()) - 1;
       if (!innerList.get(position).meta().isInvalidedBy(insertee.meta())) {
         throw new IllegalStateException("There is no invalidee");
       }
@@ -63,28 +64,15 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
     return innerList.isEmpty();
   }
 
-  /**
-   * Lower bound as Burunduk1 says
-   * <a href="http://acm.math.spbu.ru/~sk1/mm/cs-center/src/2015-09-24/bs.cpp.html"/>"/>
-   */
   @Override
-  public int lowerBound(Meta meta) {
-    int left = 0;
-    int right = innerList.size();
-    while (left != right) {
-      final int middle = left + (right - left) / 2;
-      if (innerList.get(middle).meta().compareTo(meta) >= 0) {
-        right = middle;
-      } else {
-        left = middle + 1;
-      }
-    }
-    return left;
+  public int higherBound(Meta meta) {
+    final int i = Collections.binarySearch(innerList, null, ((dataItem, __) -> dataItem.meta().compareTo(meta)));
+    return i < 0 ? -(i + 1) : i;
   }
 
   @Override
   public InvalidatingBucket subBucket(Meta meta, int window) {
-    final int start = lowerBound(meta);
+    final int start = higherBound(meta);
     return new ArrayInvalidatingBucket(new ArrayList<>(innerList.subList(Math.max(start - window + 1, 0), start)));
   }
 }
