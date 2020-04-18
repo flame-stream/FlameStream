@@ -10,6 +10,7 @@ import com.spbsu.flamestream.core.data.meta.Meta;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -18,12 +19,42 @@ public class Grouping<T> extends HashingVertexStub {
   private final Equalz equalz;
   private final int window;
   private final Class<?> clazz;
+  private final boolean undoPartialWindows;
+
+  public static class Builder {
+    private final HashFunction hash;
+    private final Equalz equalz;
+    private final int window;
+    private final Class<?> clazz;
+    private boolean undoPartialWindows = false;
+
+    public Builder(HashFunction hash, Equalz equalz, int window, Class<?> clazz) {
+      this.window = window;
+      this.hash = hash;
+      this.equalz = equalz;
+      this.clazz = clazz;
+    }
+
+    Builder undoPartialWindows(boolean undoPartialWindows) {
+      this.undoPartialWindows = undoPartialWindows;
+      return this;
+    }
+  }
 
   public Grouping(HashFunction hash, Equalz equalz, int window, Class<?> clazz) {
     this.window = window;
     this.hash = hash;
     this.equalz = equalz;
     this.clazz = clazz;
+    undoPartialWindows = false;
+  }
+
+  public Grouping(Builder builder) {
+    this.window = builder.window;
+    this.hash = builder.hash;
+    this.equalz = builder.equalz;
+    this.clazz = builder.clazz;
+    this.undoPartialWindows = builder.undoPartialWindows;
   }
 
   public HashFunction hash() {
@@ -77,16 +108,33 @@ public class Grouping<T> extends HashingVertexStub {
     }
 
     private List<DataItem> replayAround(int index, InvalidatingBucket bucket, boolean areTombs, boolean include) {
-      final List<DataItem> items = new ArrayList<>();
-      for (int right = index + 1; right <= Math.min(index + window - (include ? 0 : 1), bucket.size()); ++right) {
-        final int left = Math.max(right - window, 0);
-        final List<T> groupingResult = new ArrayList<>();
-        //noinspection unchecked
-        bucket.forRange(left, right, dataItem -> groupingResult.add(dataItem.payload((Class<T>) clazz)));
-        final Meta meta = new Meta(bucket.get(right - 1).meta(), physicalId, areTombs);
-        items.add(new PayloadDataItem(meta, groupingResult));
+      final int limit = (int) Math.min((long) index + window - (include ? 0 : 1), bucket.size());
+      if (undoPartialWindows) {
+        if (bucket.isEmpty()) {
+          return Collections.emptyList();
+        } else if (bucket.size() < window) {
+          return Collections.singletonList(bucketWindow(bucket, 0, bucket.size(), areTombs));
+        } else {
+          final List<DataItem> items = new ArrayList<>();
+          for (int right = Math.max(index + 1, window); right <= limit; ++right) {
+            items.add(bucketWindow(bucket, Math.max(right - window, 0), right, areTombs));
+          }
+          return items;
+        }
+      } else {
+        final List<DataItem> items = new ArrayList<>();
+        for (int right = index + 1; right <= limit; ++right) {
+          items.add(bucketWindow(bucket, Math.max(right - window, 0), right, areTombs));
+        }
+        return items;
       }
-      return items;
+    }
+
+    private PayloadDataItem bucketWindow(InvalidatingBucket bucket, int left, int right, boolean areTombs) {
+      final List<T> groupingResult = new ArrayList<>();
+      //noinspection unchecked
+      bucket.forRange(left, right, dataItem -> groupingResult.add(dataItem.payload((Class<T>) clazz)));
+      return new PayloadDataItem(new Meta(bucket.get(right - 1).meta(), physicalId, areTombs), groupingResult);
     }
   }
 }

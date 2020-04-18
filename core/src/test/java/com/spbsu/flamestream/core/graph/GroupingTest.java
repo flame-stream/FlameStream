@@ -9,6 +9,7 @@ import com.spbsu.flamestream.core.data.invalidation.InvalidatingBucket;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
+import org.jetbrains.annotations.NotNull;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -27,14 +28,17 @@ import java.util.stream.Stream;
 
 public final class GroupingTest extends FlameStreamSuite {
   private static Set<List<String>> groupMe(Stream<DataItem> input, int window) {
-    final Map<DataItem, InvalidatingBucket> state = new HashMap<>();
-    final Grouping<String> grouping = new Grouping<>(
+    return groupMe(input, new Grouping<>(
             HashFunction.constantHash(1),
             (t, t2) -> true,
             window,
             String.class
-    );
-    //noinspection unchecked
+    ));
+  }
+
+  @NotNull
+  private static Set<List<String>> groupMe(Stream<DataItem> input, Grouping<String> grouping) {
+    final Map<DataItem, InvalidatingBucket> state = new HashMap<>();
 
     final List<DataItem> toBeOutput = new ArrayList<>();
 
@@ -230,6 +234,128 @@ public final class GroupingTest extends FlameStreamSuite {
             GroupingTest.groupMe(shuffledInput.stream(), window),
             mustHave,
             "Result must contain expected elements"
+    );
+  }
+
+  @Test
+  public void undoPartialWindowsWithMaxSizeInOrder() {
+    Assert.assertEquals(
+            GroupingTest.groupMe(
+                    Stream.of(
+                            new PayloadDataItem(new Meta(new GlobalTime(1, EdgeId.MIN)), "1"),
+                            new PayloadDataItem(new Meta(new GlobalTime(2, EdgeId.MIN)), "2"),
+                            new PayloadDataItem(new Meta(new GlobalTime(3, EdgeId.MIN)), "3")
+                    ),
+                    new Grouping<>(new Grouping.Builder(
+                            HashFunction.constantHash(1),
+                            (t, t2) -> true,
+                            Integer.MAX_VALUE,
+                            String.class
+                    ).undoPartialWindows(true))
+            ),
+            Collections.singleton(Arrays.asList("1", "2", "3"))
+    );
+  }
+
+  @Test
+  public void undoPartialWindowsWithMaxSizeOutOfOrder() {
+    Assert.assertEquals(
+            GroupingTest.groupMe(
+                    Stream.of(
+                            new PayloadDataItem(new Meta(new GlobalTime(2, EdgeId.MIN)), "2"),
+                            new PayloadDataItem(new Meta(new GlobalTime(1, EdgeId.MIN)), "1"),
+                            new PayloadDataItem(new Meta(new GlobalTime(3, EdgeId.MIN)), "3")
+                    ),
+                    new Grouping<>(new Grouping.Builder(
+                            HashFunction.constantHash(1),
+                            (t, t2) -> true,
+                            Integer.MAX_VALUE,
+                            String.class
+                    ).undoPartialWindows(true))
+            ),
+            Collections.singleton(Arrays.asList("1", "2", "3"))
+    );
+  }
+
+  @Test
+  public void undoPartialWindowsWithSize2InOrder() {
+    Assert.assertEquals(
+            GroupingTest.groupMe(
+                    Stream.of(
+                            new PayloadDataItem(new Meta(new GlobalTime(1, EdgeId.MIN)), "1"),
+                            new PayloadDataItem(new Meta(new GlobalTime(2, EdgeId.MIN)), "2"),
+                            new PayloadDataItem(new Meta(new GlobalTime(3, EdgeId.MIN)), "3")
+                    ),
+                    new Grouping<>(new Grouping.Builder(
+                            HashFunction.constantHash(1),
+                            (t, t2) -> true,
+                            2,
+                            String.class
+                    ).undoPartialWindows(true))
+            ),
+            Stream.of(Arrays.asList("1", "2"), Arrays.asList("2", "3")).collect(Collectors.toSet())
+    );
+  }
+
+  @Test
+  public void undoPartialWindowsWithSize2OutOfOrder() {
+    Assert.assertEquals(
+            GroupingTest.groupMe(
+                    Stream.of(
+                            new PayloadDataItem(new Meta(new GlobalTime(3, EdgeId.MIN)), "3"),
+                            new PayloadDataItem(new Meta(new GlobalTime(2, EdgeId.MIN)), "2"),
+                            new PayloadDataItem(new Meta(new GlobalTime(1, EdgeId.MIN)), "1")
+                    ),
+                    new Grouping<>(new Grouping.Builder(
+                            HashFunction.constantHash(1),
+                            (t, t2) -> true,
+                            2,
+                            String.class
+                    ).undoPartialWindows(true))
+            ),
+            Stream.of(Arrays.asList("1", "2"), Arrays.asList("2", "3")).collect(Collectors.toSet())
+    );
+  }
+
+  @Test
+  public void undoPartialWindowsWithSize3InOrder() {
+    Assert.assertEquals(
+            GroupingTest.groupMe(
+                    Stream.of(
+                            new PayloadDataItem(new Meta(new GlobalTime(1, EdgeId.MIN)), "1"),
+                            new PayloadDataItem(new Meta(new GlobalTime(2, EdgeId.MIN)), "2"),
+                            new PayloadDataItem(new Meta(new GlobalTime(3, EdgeId.MIN)), "3"),
+                            new PayloadDataItem(new Meta(new GlobalTime(4, EdgeId.MIN)), "4")
+                    ),
+                    new Grouping<>(new Grouping.Builder(
+                            HashFunction.constantHash(1),
+                            (t, t2) -> true,
+                            3,
+                            String.class
+                    ).undoPartialWindows(true))
+            ),
+            Stream.of(Arrays.asList("1", "2", "3"), Arrays.asList("2", "3", "4")).collect(Collectors.toSet())
+    );
+  }
+
+  @Test
+  public void undoPartialWindowsWithSize3OutOfOrder() {
+    Assert.assertEquals(
+            GroupingTest.groupMe(
+                    Stream.of(
+                            new PayloadDataItem(new Meta(new GlobalTime(4, EdgeId.MIN)), "4"),
+                            new PayloadDataItem(new Meta(new GlobalTime(3, EdgeId.MIN)), "3"),
+                            new PayloadDataItem(new Meta(new GlobalTime(2, EdgeId.MIN)), "2"),
+                            new PayloadDataItem(new Meta(new GlobalTime(1, EdgeId.MIN)), "1")
+                    ),
+                    new Grouping<>(new Grouping.Builder(
+                            HashFunction.constantHash(1),
+                            (t, t2) -> true,
+                            3,
+                            String.class
+                    ).undoPartialWindows(true))
+            ),
+            Stream.of(Arrays.asList("1", "2", "3"), Arrays.asList("2", "3", "4")).collect(Collectors.toSet())
     );
   }
 
