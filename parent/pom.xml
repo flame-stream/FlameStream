@@ -21,13 +21,13 @@
         <maven-dependency-plugin.version>3.0.0</maven-dependency-plugin.version>
 
         <!-- java props -->
-        <java.source.level>1.8</java.source.level>
+        <java.source.level>11</java.source.level>
 
         <!-- lib versions -->
         <slf4j.version>1.7.24</slf4j.version>
         <logback.version>1.2.3</logback.version>
         <akka.version>2.5.16</akka.version>
-        <lang3.version>3.4</lang3.version>
+        <lang3.version>3.10</lang3.version>
         <guava.version>21.0</guava.version>
         <jool.version>0.9.12</jool.version>
         <joda.version>2.9.4</joda.version>
@@ -48,7 +48,7 @@
         <jedis.version>2.9.0</jedis.version>
         <rocksdb.version>5.5.1</rocksdb.version>
         <curator.version>4.0.1</curator.version>
-        <maven-surefire-plugin.version>2.20.1</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
         <jblas.version>1.2.4</jblas.version>
         <common-csv.version>1.4</common-csv.version>
     </properties>
