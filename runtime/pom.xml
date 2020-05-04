@@ -32,9 +32,9 @@
 
         <!--Fast serialization-->
         <dependency>
-            <groupId>com.github.romix.akka</groupId>
+            <groupId>io.altoo</groupId>
             <artifactId>akka-kryo-serialization_2.11</artifactId>
-            <version>0.5.0</version>
+            <version>1.0.0</version>
         </dependency>
 
         <!--Pretty serialization-->
