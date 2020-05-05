@@ -64,7 +64,7 @@
                     <artifactId>akka-stream_2.11</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.github.romix.akka</groupId>
+                    <groupId>io.altoo</groupId>
                     <artifactId>akka-kryo-serialization_2.11</artifactId>
                 </exclusion>
                 <exclusion>
