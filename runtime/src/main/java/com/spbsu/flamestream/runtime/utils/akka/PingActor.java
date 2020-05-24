@@ -86,8 +86,8 @@ public class PingActor extends LoggingActor {
   }
 
   private void handleInnerPing() {
-    actorToPing.tell(objectForPing, self());
     LockSupport.parkNanos(delayInNanos);
+    actorToPing.tell(objectForPing, self());
     self().tell(InnerPing.PING, self());
   }
 

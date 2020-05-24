@@ -162,16 +162,16 @@ public class Acker extends LoggingActor {
   }
 
   private void checkMinTime(TrackingComponent component) {
-    final long minHeartbeat =
+    final var sourceMinHeartbeat =
             maxHeartbeats.isEmpty() ? defaultMinimalTime : Collections.min(maxHeartbeats.values()).time();
     final TreeSet<TrackingComponent> componentsToRefresh = new TreeSet<>();
     componentsToRefresh.add(component);
     while ((component = componentsToRefresh.pollFirst()) != null) {
       final ComponentAckTable table = componentTable[component.index];
-      final long minTime = table.ackTable.tryPromote(
-              component.inbound.stream().mapToLong(inbound -> componentTable[inbound.index].lastMinTime)
-                      .reduce(minHeartbeat, Long::min)
-      );
+      final long minHeartbeat = component.inbound.stream().mapToLong(inbound ->
+              componentTable[inbound.index].lastMinTime
+      ).min().orElse(sourceMinHeartbeat);
+      final long minTime = table.ackTable.tryPromote(minHeartbeat);
       if (minTime == table.lastMinTime) {
         continue;
       }
