@@ -7,9 +7,8 @@ import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.FlameMap;
-import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.core.graph.HashGroup;
-import com.spbsu.flamestream.core.graph.HashUnit;
+import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.SystemConfig;
 import com.spbsu.flamestream.runtime.config.ZookeeperWorkersNode;
@@ -37,7 +36,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -251,6 +249,7 @@ public class ProcessingWatcher extends LoggingActor {
     public Receive createReceive() {
       return ReceiveBuilder.create()
               .match(Graph.class, graph -> {
+                graph.init(hashGroup);
                 graph.components().forEach(vertexStream -> vertexStream.forEach(vertex -> {
                   if (vertex instanceof FlameMap) {
                     ((FlameMap) vertex).init(hashGroup);
