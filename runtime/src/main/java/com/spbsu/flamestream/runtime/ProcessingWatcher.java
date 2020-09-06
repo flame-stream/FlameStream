@@ -204,7 +204,8 @@ public class ProcessingWatcher extends LoggingActor {
                     new ComputationProps(
                             new HashMap<>(ranges),
                             systemConfig.maxElementsInGraph(),
-                            systemConfig.barrierIsDisabled()
+                            systemConfig.barrierIsDisabled(),
+                            systemConfig.defaultMinimalTime()
                     ),
                     stateStorage
             ),

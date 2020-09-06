@@ -7,12 +7,19 @@ import java.util.Map;
 public class ComputationProps {
   private final int maxElementsInGraph;
   private final boolean barrierIsDisabled;
+  private final long defaultMinimalTime;
   private final Map<String, HashGroup> hashGroups;
 
-  public ComputationProps(Map<String, HashGroup> hashGroups, int maxElementsInGraph, boolean barrierIsDisabled) {
+  public ComputationProps(
+          Map<String, HashGroup> hashGroups,
+          int maxElementsInGraph,
+          boolean barrierIsDisabled,
+          long defaultMinimalTime
+  ) {
     this.hashGroups = hashGroups;
     this.maxElementsInGraph = maxElementsInGraph;
     this.barrierIsDisabled = barrierIsDisabled;
+    this.defaultMinimalTime = defaultMinimalTime;
   }
 
   public Map<String, HashGroup> hashGroups() {
@@ -32,5 +39,9 @@ public class ComputationProps {
 
   public boolean barrierIsDisabled() {
     return barrierIsDisabled;
+  }
+
+  public long defaultMinimalTime() {
+    return defaultMinimalTime;
   }
 }
