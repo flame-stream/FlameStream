@@ -148,7 +148,12 @@ class Cluster extends LoggingActor {
                       localAcker,
                       registryHolder,
                       committer,
-                      new ComputationProps(ranges, maxElementsInGraph, barrierDisabled),
+                      new ComputationProps(
+                              ranges,
+                              maxElementsInGraph,
+                              barrierDisabled,
+                              systemConfig.defaultMinimalTime()
+                      ),
                       stateStorage
               ), id)).collect(Collectors.toList());
             },
