@@ -150,13 +150,9 @@ public class ProcessingWatcher extends LoggingActor {
       throw new RuntimeException("Graph updating is not supported yet");
     }
     final ClusterConfig config = ClusterConfig.fromWorkers(zookeeperWorkersNode.workers());
-    final List<HashUnit> covering = HashUnit.covering(config.paths().size() - 1)
-            .collect(Collectors.toCollection(ArrayList::new));
-    final Map<String, HashGroup> ranges = new HashMap<>();
-    config.paths().keySet().forEach(s -> ranges.put(s, new HashGroup(Collections.singleton(
-            s.equals(config.masterLocation()) ? HashUnit.EMPTY : covering.remove(0)
-    ))));
-    assert covering.isEmpty();
+    final List<String> workerIds =
+            zookeeperWorkersNode.workers().stream().map(ZookeeperWorkersNode.Worker::id).collect(Collectors.toList());
+    final Map<String, HashGroup> ranges = systemConfig.workersResourcesDistributor.hashGroups(workerIds);
     try {
       PatternsCS.ask(context().actorOf(InitAgent.props(ranges.get(id))), graph, FlameConfig.config.bigTimeout())
               .toCompletableFuture()
@@ -165,9 +161,7 @@ public class ProcessingWatcher extends LoggingActor {
       throw new RuntimeException(e);
     }
     this.graph = graph;
-    final List<String> ackerIds = systemConfig.workersResourcesDistributor.ackers(
-            zookeeperWorkersNode.workers().stream().map(ZookeeperWorkersNode.Worker::id).collect(Collectors.toList())
-    );
+    final List<String> ackerIds = systemConfig.workersResourcesDistributor.ackers(workerIds);
     if (ackerIds.contains(id)) {
       context().actorOf(Acker.props(systemConfig.defaultMinimalTime(), ackerIds.size() < 2, graph), "acker");
     }
