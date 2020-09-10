@@ -29,6 +29,7 @@ import com.spbsu.flamestream.runtime.master.acker.api.registry.UnregisterFront;
 import com.spbsu.flamestream.runtime.utils.akka.LoggingActor;
 import com.spbsu.flamestream.runtime.utils.collections.HashUnitMap;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
@@ -40,7 +41,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class Component extends LoggingActor {
-  @org.jetbrains.annotations.NotNull
+  @NotNull
   private final Graph graph;
   private final ActorRef localAcker;
 
