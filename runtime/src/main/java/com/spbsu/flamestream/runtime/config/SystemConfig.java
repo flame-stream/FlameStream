@@ -6,6 +6,7 @@ import com.spbsu.flamestream.core.graph.HashGroup;
 import com.spbsu.flamestream.core.graph.HashUnit;
 import com.spbsu.flamestream.runtime.master.acker.LocalAcker;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,7 +25,28 @@ public class SystemConfig {
 
   public interface WorkersResourcesDistributor {
     WorkersResourcesDistributor DEFAULT_DISABLED = ids -> Collections.emptyList();
-    WorkersResourcesDistributor DEFAULT_CENTRALIZED = ids -> ids.subList(0, 1);
+    WorkersResourcesDistributor DEFAULT_CENTRALIZED = new SystemConfig.WorkersResourcesDistributor() {
+      @Override
+      public Map<String, HashGroup> hashGroups(Collection<String> ids) {
+        final List<HashUnit> covering = HashUnit.covering(ids.size() - 1)
+                .collect(Collectors.toCollection(ArrayList::new));
+        final Map<String, HashGroup> ranges = new HashMap<>();
+        int i = 0;
+        for (final String id : ids) {
+          ranges.put(id, new HashGroup(Collections.singleton(
+                  i == 0 ? HashUnit.EMPTY : covering.remove(0)
+          )));
+          i++;
+        }
+        assert covering.isEmpty();
+        return ranges;
+      }
+
+      @Override
+      public List<String> ackers(List<String> ids) {
+        return ids.subList(0, 1);
+      }
+    };
     WorkersResourcesDistributor DEFAULT_DISTRIBUTED = ids -> ids;
 
     default String master(List<String> ids) {
@@ -34,7 +56,7 @@ public class SystemConfig {
     List<String> ackers(List<String> ids);
 
     default Map<String, HashGroup> hashGroups(Collection<String> ids) {
-      final List<HashGroup> covering = HashUnit.covering((int) ids.stream().count())
+      final List<HashGroup> covering = HashUnit.covering(ids.size())
               .map(Collections::singleton)
               .map(HashGroup::new)
               .collect(Collectors.toList());
