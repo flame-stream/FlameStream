@@ -142,11 +142,12 @@ public class Acker extends LoggingActor {
 
   private void handleHeartBeat(Heartbeat heartbeat) {
     final GlobalTime time = heartbeat.time();
-    final GlobalTime previousHeartbeat = maxHeartbeats.get(heartbeat.time().frontId());
-    if (heartbeat.time().compareTo(previousHeartbeat) < 0) {
+    final GlobalTime previousHeartbeat =
+            maxHeartbeats.getOrDefault(time.frontId(), new GlobalTime(defaultMinimalTime, time.frontId()));
+    if (time.compareTo(previousHeartbeat) < 0) {
       throw new IllegalStateException("Non monotonic heartbeats");
     }
-    maxHeartbeats.put(time.frontId(), heartbeat.time());
+    maxHeartbeats.put(time.frontId(), time);
     checkMinTime();
   }
 
