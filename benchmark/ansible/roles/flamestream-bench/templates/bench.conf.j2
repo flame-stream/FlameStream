@@ -6,5 +6,6 @@ benchmark {
 
   wiki-dump-path = "{{ flamestream_dir }}/wiki.xml"
   sleep-between-docs-ms = {{ rate }}
+  worker-id = "{{ groups['worker'][0] }}"
   validator = com.spbsu.flamestream.example.benchmark.validators.{{ validator }}
 }

@@ -58,7 +58,7 @@ public class WikiBenchStand {
                     new SocketRearType(wikiBenchStand.benchHost, wikiBenchStand.rearPort, CLASSES_TO_REGISTER)
             )
     ) {
-      wikiBenchStand.run(graphDeployer, benchConfig.getString("worker-id-prefix") + "0");
+      wikiBenchStand.run(graphDeployer, benchConfig.getString("worker-id"));
     }
     System.exit(0);
   }
