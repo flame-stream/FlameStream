@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 public class AwaitCountConsumer implements Consumer<Object> {
   private final AtomicInteger counter = new AtomicInteger();
   private final int expectedSize;
+  private long acceptedAt = Long.MIN_VALUE;
 
   public AwaitCountConsumer(int expectedSize) {
     this.expectedSize = expectedSize;
@@ -18,6 +19,7 @@ public class AwaitCountConsumer implements Consumer<Object> {
 
   @Override
   public void accept(Object o) {
+    acceptedAt = System.currentTimeMillis();
     if (counter.incrementAndGet() == expectedSize) {
       synchronized (counter) {
         counter.notifyAll();
@@ -34,10 +36,12 @@ public class AwaitCountConsumer implements Consumer<Object> {
   }
 
   public void await(long timeout, TimeUnit unit) throws InterruptedException {
-    final long stop = System.currentTimeMillis() + unit.toMillis(timeout);
     synchronized (counter) {
-      while (counter.longValue() < expectedSize && System.currentTimeMillis() < stop) {
-        counter.wait(unit.toMillis(timeout));
+      acceptedAt = System.currentTimeMillis();
+      long millisToWait = unit.toMillis(timeout);
+      while (counter.get() < expectedSize && 0 < millisToWait) {
+        counter.wait(unit.toMillis(millisToWait));
+        millisToWait = acceptedAt + unit.toMillis(timeout) - System.currentTimeMillis();
       }
     }
   }
