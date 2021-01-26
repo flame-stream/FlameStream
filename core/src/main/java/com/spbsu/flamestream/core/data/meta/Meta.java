@@ -7,24 +7,72 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public class Meta implements Comparable<Meta> {
-  private static final int[] EMPTY_ARRAY = new int[0];
-
   public static final Comparator<Meta> NATURAL_ORDER = Comparator
           .comparing(Meta::globalTime)
-          .thenComparing(Meta::childIds, Arrays::compare)
+          .thenComparing(Meta::childIds)
           .thenComparing(Meta::trace)
           .thenComparing(Meta::isTombstone);
 
+  public static final class ChildIds implements Comparable<ChildIds> {
+    public static ChildIds EMPTY = new ChildIds();
+
+    private final int[] value;
+
+    private ChildIds() {this.value = new int[0];}
+
+    public ChildIds(ChildIds parent, int child) {
+      value = Arrays.copyOf(parent.value, parent.value.length + 1);
+      value[value.length - 1] = child;
+    }
+
+    public int length() {
+      return value.length;
+    }
+
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj instanceof ChildIds) {
+        return Arrays.equals(value, ((ChildIds) obj).value);
+      }
+      return false;
+    }
+
+    @Override
+    public String toString() {
+      return Arrays.toString(value);
+    }
+
+    public boolean arePrefixTo(ChildIds that) {
+      return Arrays.mismatch(value, that.value) == value.length;
+    }
+
+    public int comparePrefixed(int thisPrefix, ChildIds that, int thatPrefix) {
+      return Arrays.compare(value, 0, thisPrefix, that.value, 0, thatPrefix);
+    }
+
+    @Override
+    public int compareTo(@NotNull ChildIds that) {
+      return Arrays.compare(value, that.value);
+    }
+  }
 
   private final GlobalTime globalTime;
-  private final int[] childIds;
+  private final ChildIds childIds;
   private final long trace;
   private final boolean tombstone;
   private final Labels labels;
 
   public Meta(GlobalTime globalTime) {
     this.globalTime = globalTime;
-    this.childIds = EMPTY_ARRAY;
+    this.childIds = ChildIds.EMPTY;
     this.tombstone = false;
     this.trace = 0;
     labels = Labels.EMPTY;
@@ -44,8 +92,7 @@ public class Meta implements Comparable<Meta> {
 
   public Meta(Meta previous, long physicalId, int childId) {
     this.globalTime = previous.globalTime();
-    this.childIds = Arrays.copyOf(previous.childIds, previous.childIds.length + 1);
-    childIds[childIds.length - 1] = childId;
+    this.childIds = new ChildIds(previous.childIds, childId);
     this.tombstone = previous.tombstone;
     this.trace = previous.trace ^ physicalId;
     this.labels = previous.labels;
@@ -53,8 +100,7 @@ public class Meta implements Comparable<Meta> {
 
   public Meta(Meta previous, long physicalId, int childId, Labels labels) {
     this.globalTime = previous.globalTime();
-    this.childIds = Arrays.copyOf(previous.childIds, previous.childIds.length + 1);
-    childIds[childIds.length - 1] = childId;
+    this.childIds = new ChildIds(previous.childIds, childId);
     this.tombstone = previous.tombstone;
     this.trace = previous.trace ^ physicalId;
     this.labels = labels;
@@ -72,12 +118,8 @@ public class Meta implements Comparable<Meta> {
     return trace;
   }
 
-  int[] childIds() {
+  public ChildIds childIds() {
     return childIds;
-  }
-
-  public int childIdsLength() {
-    return childIds.length;
   }
 
   public Labels labels() {
@@ -89,23 +131,12 @@ public class Meta implements Comparable<Meta> {
     return NATURAL_ORDER.compare(this, that);
   }
 
-  public int comparePrefixedChildIds(int thisPrefix, Meta that, int thatPrefix) {
-    return Comparator.comparing(
-            Meta::childIds,
-            (a, b) -> Arrays.compare(a, 0, thisPrefix, b, 0, thatPrefix)
-    ).compare(this, that);
-  }
-
-  public boolean childIdsArePrefixTo(Meta that) {
-    return Arrays.mismatch(childIds, that.childIds) == childIds.length;
-  }
-
   public boolean isInvalidedBy(Meta that) {
     return !tombstone
             && that.tombstone
             && trace == that.trace
             && globalTime.equals(that.globalTime)
-            && Arrays.equals(childIds, that.childIds);
+            && childIds.equals(that.childIds);
   }
 
   @Override
@@ -120,18 +151,16 @@ public class Meta implements Comparable<Meta> {
     return trace == meta.trace &&
             tombstone == meta.tombstone &&
             Objects.equals(globalTime, meta.globalTime) &&
-            Arrays.equals(childIds, meta.childIds);
+            Objects.equals(childIds, meta.childIds);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(globalTime, trace, tombstone);
-    result = 31 * result + Arrays.hashCode(childIds);
-    return result;
+    return Objects.hash(globalTime, trace, tombstone, childIds);
   }
 
   @Override
   public String toString() {
-    return "(" + globalTime + ", " + Arrays.toString(childIds) + ", " + trace + (tombstone ? ", tombstone" : "") + ')';
+    return "(" + globalTime + ", " + childIds + ", " + trace + (tombstone ? ", tombstone" : "") + ')';
   }
 }

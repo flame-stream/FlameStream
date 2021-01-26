@@ -31,7 +31,6 @@ public class MetaMapTest extends FlameStreamSuite {
             .mapToObj(i -> new PayloadDataItem(new Meta(new GlobalTime(i, EdgeId.MIN)), i))
             .collect(Collectors.toList());
 
-    //noinspection ConstantConditions
     final List<DataItem> out = input.stream()
             .flatMap(dataItem -> map.operation(0).apply(dataItem))
             .collect(Collectors.toList());
@@ -39,9 +38,10 @@ public class MetaMapTest extends FlameStreamSuite {
     for (int i = 0; i < inputSize; i++) {
       for (int j = 0; j < flatNumber; j++) {
         Assert.assertEquals(out.get(i * flatNumber + j).payload(Integer.class).intValue(), i);
-        final Meta meta = out.get(i * flatNumber + j).meta();
-        final int[] trace = meta.childIds();
-        Assert.assertEquals(trace[0], j);
+        Assert.assertEquals(
+                new Meta.ChildIds(input.get(i).meta().childIds(), j),
+                out.get(i * flatNumber + j).meta().childIds()
+        );
       }
     }
   }

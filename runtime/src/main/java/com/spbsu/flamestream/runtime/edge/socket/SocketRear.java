@@ -47,6 +47,7 @@ public class SocketRear implements Rear {
       client.getKryo().register(Label[].class);
       client.getKryo().register(Labels.class);
       client.getKryo().register(Meta.class);
+      client.getKryo().register(Meta.ChildIds.class);
       client.getKryo().register(GlobalTime.class);
       client.getKryo().register(EdgeId.class);
       client.getKryo().register(int[].class);

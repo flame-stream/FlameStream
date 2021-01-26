@@ -118,6 +118,7 @@ public class BenchStandComponentFactory {
     }
     server.getKryo().register(PayloadDataItem.class);
     server.getKryo().register(Meta.class);
+    server.getKryo().register(Meta.ChildIds.class);
     server.getKryo().register(GlobalTime.class);
     server.getKryo().register(EdgeId.class);
     server.getKryo().register(int[].class);
