@@ -1,12 +1,11 @@
 package com.spbsu.flamestream.core.data.meta;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 public final class Label {
   public final int type;
   public final GlobalTime globalTime;
-  private final int[] childIds;
+  private final Meta.ChildIds childIds;
 
   public Label(int type, Meta meta) {
     this.type = type;
@@ -18,7 +17,7 @@ public final class Label {
   public int hashCode() {
     int hashCode = Integer.hashCode(type);
     hashCode = 31 * hashCode + Objects.hashCode(globalTime);
-    hashCode = 31 * hashCode + Arrays.hashCode(childIds);
+    hashCode = 31 * hashCode + Objects.hashCode(childIds);
     return hashCode;
   }
 
@@ -33,7 +32,7 @@ public final class Label {
     final Label label = (Label) obj;
     return type == label.type
             && Objects.equals(globalTime, label.globalTime)
-            && Arrays.equals(childIds, label.childIds);
+            && Objects.equals(childIds, label.childIds);
   }
 
   @Override

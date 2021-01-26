@@ -20,9 +20,9 @@ public interface DataItemIndexedParents {
     private static class Key implements Comparable<Key> {
       static final Comparator<Key> COMPARATOR =
               Comparator.<Key, GlobalTime>comparing(key -> key.meta.globalTime())
-                      .thenComparing((key1, key2) -> key1.meta.comparePrefixedChildIds(
+                      .thenComparing((key1, key2) -> key1.meta.childIds().comparePrefixed(
                               key1.childIdsPrefix,
-                              key2.meta,
+                              key2.meta.childIds(),
                               key2.childIdsPrefix
                       )).thenComparingLong(key -> key.trace);
 
@@ -30,7 +30,7 @@ public interface DataItemIndexedParents {
       final int childIdsPrefix;
       final long trace;
 
-      private Key(Meta meta) {this(meta, meta.childIdsLength(), meta.trace());}
+      private Key(Meta meta) {this(meta, meta.childIds().length(), meta.trace());}
 
       private Key(Meta meta, int childIdsPrefix, long trace) {
         this.meta = meta;
@@ -62,7 +62,7 @@ public interface DataItemIndexedParents {
 
     @Override
     public void forEachParent(DataItem dataItem, Consumer<DataItem> consumer) {
-      for (int prefix = 0; prefix < dataItem.meta().childIdsLength(); prefix++) {
+      for (int prefix = 0; prefix < dataItem.meta().childIds().length(); prefix++) {
         tree.subMap(
                 new Key(dataItem.meta(), prefix, Long.MIN_VALUE),
                 true,

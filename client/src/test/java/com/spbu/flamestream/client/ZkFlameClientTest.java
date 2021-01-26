@@ -146,6 +146,7 @@ public class ZkFlameClientTest {
     consumer.getKryo().register(Label[].class);
     consumer.getKryo().register(Labels.class);
     consumer.getKryo().register(Meta.class);
+    consumer.getKryo().register(Meta.ChildIds.class);
     consumer.getKryo().register(GlobalTime.class);
     consumer.getKryo().register(EdgeId.class);
     consumer.getKryo().register(int[].class);
