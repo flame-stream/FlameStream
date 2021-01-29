@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -76,7 +77,7 @@ public abstract class Operator<Type> {
     final SerializableFunction<Type, K> keyFunction;
     final Function<Type, O> order;
     private Set<LabelSpawn<?, ?>> keyLabels = Collections.emptySet();
-    private Hashing<? super K> hash = Object::hashCode;
+    private Hashing<? super K> hash = Objects::hashCode;
     private boolean orderedByProcessingTime = false;
 
     private KeyedBuilder(SerializableFunction<Type, K> key, SerializableFunction<Type, O> order) {
