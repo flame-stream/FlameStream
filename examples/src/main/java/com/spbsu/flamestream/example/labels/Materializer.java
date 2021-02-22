@@ -265,7 +265,7 @@ public class Materializer {
                     grouping.window,
                     typeClass
             ).order(SerializableComparator.comparing(dataItem -> keyed.order.apply(dataItem.payload(typeClass))))
-                    .undoPartialWindows(grouping.undoPartialWindows)
+                    .undoPartialWindows(grouping.undoPartialWindows).timed(keyed.timed)
     );
     cachedOperatorVertex.put(grouping, vertex);
     vertexTrackingComponent.put(vertex, operatorTrackingComponent.get(grouping));

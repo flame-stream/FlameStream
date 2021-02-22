@@ -32,6 +32,7 @@ public class AkkaRear implements Rear {
 
   @Override
   public CompletionStage<?> accept(Batch batch) {
+    System.out.println(batch);
     return PatternsCS.ask(innerActor, batch, FlameConfig.config.smallTimeout());
   }
 

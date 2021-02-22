@@ -121,6 +121,11 @@ public class SinkJoba extends Joba {
     }
 
     @Override
+    public String toString() {
+      return time + " " + items.size();
+    }
+
+    @Override
     public GlobalTime time() {
       return time;
     }

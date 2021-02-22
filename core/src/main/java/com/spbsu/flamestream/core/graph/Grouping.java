@@ -20,6 +20,7 @@ public class Grouping<T> extends HashingVertexStub {
   private final Class<?> clazz;
   private final boolean undoPartialWindows;
   private final SerializableComparator<DataItem> order;
+  public final boolean timed;
 
   public static class Builder {
     private final HashFunction hash;
@@ -28,6 +29,7 @@ public class Grouping<T> extends HashingVertexStub {
     private final Class<?> clazz;
     private boolean undoPartialWindows = false;
     private SerializableComparator<DataItem> order = (dataItem1, dataItem2) -> 0;
+    private boolean timed;
 
     public Builder(HashFunction hash, Equalz equalz, int window, Class<?> clazz) {
       this.window = window;
@@ -45,6 +47,11 @@ public class Grouping<T> extends HashingVertexStub {
       this.order = order;
       return this;
     }
+
+    public Builder timed(boolean timed) {
+      this.timed = timed;
+      return this;
+    }
   }
 
   public Grouping(HashFunction hash, Equalz equalz, int window, Class<?> clazz) {
@@ -54,6 +61,7 @@ public class Grouping<T> extends HashingVertexStub {
     this.clazz = clazz;
     undoPartialWindows = false;
     this.order = (dataItem1, dataItem2) -> 0;
+    timed = false;
   }
 
   public Grouping(Builder builder) {
@@ -63,6 +71,7 @@ public class Grouping<T> extends HashingVertexStub {
     this.clazz = builder.clazz;
     this.undoPartialWindows = builder.undoPartialWindows;
     this.order = builder.order;
+    timed = builder.timed;
   }
 
   public HashFunction hash() {

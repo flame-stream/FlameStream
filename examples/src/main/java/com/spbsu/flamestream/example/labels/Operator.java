@@ -4,6 +4,7 @@ import com.spbsu.flamestream.core.graph.SerializableBiFunction;
 import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.core.graph.SerializablePredicate;
 import com.spbsu.flamestream.core.graph.SerializableToIntFunction;
+import org.jetbrains.annotations.Nullable;
 import scala.Tuple2;
 import scala.util.Either;
 
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
 public abstract class Operator<Type> {
@@ -79,6 +81,7 @@ public abstract class Operator<Type> {
     private Set<LabelSpawn<?, ?>> keyLabels = Collections.emptySet();
     private Hashing<? super K> hash = Objects::hashCode;
     private boolean orderedByProcessingTime = false;
+    private boolean timed = false;
 
     private KeyedBuilder(SerializableFunction<Type, K> key, SerializableFunction<Type, O> order) {
       this.keyFunction = key;
@@ -101,6 +104,11 @@ public abstract class Operator<Type> {
 
     public KeyedBuilder<K, O> keyLabels(Set<LabelSpawn<?, ?>> keyLabels) {
       this.keyLabels = keyLabels;
+      return this;
+    }
+
+    public KeyedBuilder<K, O> timed(boolean timed) {
+      this.timed = timed;
       return this;
     }
 
@@ -162,6 +170,7 @@ public abstract class Operator<Type> {
     public final Key<SerializableFunction<Source, K>> key;
     public final Hashing<? super K> hash;
     public final boolean orderedByProcessingTime;
+    public final boolean timed;
 
     public Keyed(Operator<Source>.KeyedBuilder<K, O> builder) {
       source = builder.operator();
@@ -179,6 +188,7 @@ public abstract class Operator<Type> {
       };
       hash = builder.hash;
       orderedByProcessingTime = builder.orderedByProcessingTime;
+      timed = builder.timed;
     }
 
     public <S, Output> Operator<Output> statefulMap(

@@ -1,0 +1,4 @@
+[submodule "examples/nexmark"]
+	path = examples/nexmark
+	url = https://github.com/nexmark/nexmark/
+	branch = master
