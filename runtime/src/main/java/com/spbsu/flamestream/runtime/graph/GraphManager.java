@@ -60,7 +60,6 @@ public class GraphManager extends LoggingActor {
   private final Set<ActorRef> components = new HashSet<>();
 
   private final Map<HashUnit, Map<String, GroupingState>> unitStates = new HashMap<>();
-  private final TObjectIntMap<String> groupingWindows = new TObjectIntHashMap<>();
 
   private GraphManager(String nodeId,
                        Graph graph,
@@ -133,7 +132,6 @@ public class GraphManager extends LoggingActor {
                         .forEach(vertex -> {
                           final Grouping<?> grouping = (Grouping<?>) vertex;
                           unitState.computeIfAbsent(vertex.id(), __ -> new GroupingState(grouping));
-                          groupingWindows.put(vertex.id(), grouping.window());
                         });
                 unitState.forEach((vertexId, groupingState) ->
                         stateByVertex.computeIfAbsent(vertexId, __ -> new GroupGroupingState(groupingState.grouping))
@@ -215,8 +213,7 @@ public class GraphManager extends LoggingActor {
                       .stream()
                       .collect(Collectors.toMap(
                               Map.Entry::getKey,
-                              e -> e.getValue()
-                                      .subState(prepare.globalTime(), groupingWindows.get(e.getKey()))
+                              e -> e.getValue().subState(prepare.globalTime())
                       ))
       ));
       committer.tell(new Prepared(), self());
