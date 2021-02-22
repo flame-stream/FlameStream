@@ -95,9 +95,9 @@ public class GroupingState {
     }
   }
 
-  public GroupingState subState(GlobalTime ceil, int window) {
+  public GroupingState subState(GlobalTime ceil) {
     final ConcurrentMap<Key, SynchronizedInvalidatingBucket> subState = new ConcurrentHashMap<>();
-    buffers.forEach((key, bucket) -> subState.put(key, bucket.subBucket(ceil, window)));
+    buffers.forEach((key, bucket) -> subState.put(key, bucket.subBucket(ceil, grouping.window())));
     return new GroupingState(grouping, subState);
   }
 }
