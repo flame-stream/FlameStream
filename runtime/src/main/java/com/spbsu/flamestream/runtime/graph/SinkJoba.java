@@ -15,11 +15,14 @@ import com.spbsu.flamestream.runtime.master.acker.api.MinTimeUpdate;
 import com.spbsu.flamestream.runtime.utils.FlameConfig;
 import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -29,6 +32,7 @@ public class SinkJoba extends Joba {
   private final int sinkTrackingComponent;
   private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
   private final Map<ActorRef, GlobalTime> rears = new HashMap<>();
+  private NavigableMap<Long, Instant> lastGlobalTimeProcessedAt = new TreeMap<>();
 
   private final Tracing.Tracer barrierReceiveTracer = Tracing.TRACING.forEvent("barrier-receive");
   private final Tracing.Tracer barrierSendTracer = Tracing.TRACING.forEvent("barrier-send");
@@ -48,7 +52,7 @@ public class SinkJoba extends Joba {
     if (barrierDisabled) {
       rears.forEach((rear, lastEmmit) -> emmitRearBatch(
               rear,
-              new BatchImpl(item.meta().globalTime(), Collections.singletonList(item))
+              new BatchImpl(item.meta().globalTime(), Collections.singletonList(item), Collections.emptyMap())
       ));
     } else {
       invalidatingBucket.insert(item);
@@ -77,9 +81,14 @@ public class SinkJoba extends Joba {
     }
   }
 
+  public void touch(long time) {
+    lastGlobalTimeProcessedAt.put(time, Instant.now());
+  }
+
   private void tryEmmit(GlobalTime upTo) {
     final int pos = invalidatingBucket.lowerBound(upTo);
 
+    final var lastGlobalTimeProcessedAt = this.lastGlobalTimeProcessedAt.headMap(upTo.time());
     rears.forEach((rear, lastEmmit) -> {
       final List<DataItem> data = new ArrayList<>();
       invalidatingBucket.forRange(0, pos, item -> {
@@ -89,7 +98,7 @@ public class SinkJoba extends Joba {
       });
 
       if (!data.isEmpty() || barrierDisabled) {
-        emmitRearBatch(rear, new BatchImpl(upTo, data));
+        emmitRearBatch(rear, new BatchImpl(upTo, data, Map.copyOf(lastGlobalTimeProcessedAt)));
       }
     });
 
@@ -99,6 +108,7 @@ public class SinkJoba extends Joba {
     // https://github.com/flame-stream/FlameStream/issues/139
     if (!rears.isEmpty()) {
       invalidatingBucket.clearRange(0, pos);
+      lastGlobalTimeProcessedAt.clear();
     }
   }
 
@@ -114,10 +124,12 @@ public class SinkJoba extends Joba {
   public static class BatchImpl implements Batch {
     private final List<DataItem> items;
     private final GlobalTime time;
+    private final Map<Long, Instant> lastGlobalTimeProcessedAt;
 
-    private BatchImpl(GlobalTime time, List<DataItem> items) {
+    private BatchImpl(GlobalTime time, List<DataItem> items, Map<Long, Instant> lastGlobalTimeProcessedAt) {
       this.items = items;
       this.time = time;
+      this.lastGlobalTimeProcessedAt = lastGlobalTimeProcessedAt;
     }
 
     @Override
@@ -133,6 +145,11 @@ public class SinkJoba extends Joba {
     @Override
     public Stream<DataItem> payload() {
       return items.stream();
+    }
+
+    @Override
+    public Map<Long, Instant> lastGlobalTimeProcessedAt() {
+      return lastGlobalTimeProcessedAt;
     }
   }
 }

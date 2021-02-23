@@ -37,13 +37,16 @@ import com.spbsu.flamestream.runtime.utils.tracing.Tracing;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -381,6 +384,9 @@ public class Component extends LoggingActor {
     localCall(item, addressedItem.destination());
     ack(item, wrappedJobas.get(addressedItem.destination()).vertex);
     injectOutTracer.log(item.xor());
+    if (wrappedSinkJoba != null) {
+      wrappedSinkJoba.joba.touch(item.meta().globalTime().time());
+    }
   }
 
   private void ack(DataItem dataItem, Graph.Vertex to) {
@@ -410,6 +416,9 @@ public class Component extends LoggingActor {
       acceptOutTracer.log(item.xor());
     } else {
       throw new IllegalStateException("Source doesn't belong to this component");
+    }
+    if (wrappedSinkJoba != null) {
+      wrappedSinkJoba.joba.touch(item.meta().globalTime().time());
     }
   }
 

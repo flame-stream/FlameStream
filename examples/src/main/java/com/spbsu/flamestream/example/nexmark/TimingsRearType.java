@@ -3,15 +3,17 @@ package com.spbsu.flamestream.example.nexmark;
 import com.spbsu.flamestream.core.Batch;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
-import scala.Tuple2;
 
-import java.util.List;
+import java.text.NumberFormat;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-public class LatencyRearType implements FlameRuntime.RearType<LatencyRearType.Rear, LatencyRearType.Handle> {
+public class TimingsRearType implements FlameRuntime.RearType<TimingsRearType.Rear, TimingsRearType.Handle> {
   final ConcurrentHashMap<EdgeContext, CompletableFuture<?>> edgeContextDone = new ConcurrentHashMap<>();
 
   public class Instance implements FlameRuntime.RearInstance<Rear> {
@@ -22,15 +24,15 @@ public class LatencyRearType implements FlameRuntime.RearType<LatencyRearType.Re
 
     @Override
     public Object[] params() {
-      return new Object[]{LatencyRearType.this};
+      return new Object[]{TimingsRearType.this};
     }
   }
 
   public static class Rear implements com.spbsu.flamestream.runtime.edge.Rear {
     private final EdgeContext edgeContext;
-    private final LatencyRearType type;
+    private final TimingsRearType type;
 
-    public Rear(EdgeContext edgeContext, LatencyRearType type) {
+    public Rear(EdgeContext edgeContext, TimingsRearType type) {
       this.edgeContext = edgeContext;
       this.type = type;
     }
@@ -39,6 +41,17 @@ public class LatencyRearType implements FlameRuntime.RearType<LatencyRearType.Re
 
     @Override
     public CompletionStage<?> accept(Batch batch) {
+      final var now = Instant.now();
+      if (batch.time().time() < Long.MAX_VALUE) {
+        System.out.println(
+                withDigitSeparators(batch.time().time() - 10) + " seconds window timings"
+                        + ": processed = " + formattedLatencyNanos(
+                        batch.lastGlobalTimeProcessedAt().get(batch.time().time() - 10),
+                        now
+                )
+                        + ", notified = " + formattedLatencyNanos(Instant.ofEpochSecond(batch.time().time() - 10), now)
+        );
+      }
       last = batch;
       if (batch.time().time() == Long.MAX_VALUE) {
         type.edgeContextDone.computeIfAbsent(edgeContext, __ -> new CompletableFuture<>()).complete(null);
@@ -49,6 +62,14 @@ public class LatencyRearType implements FlameRuntime.RearType<LatencyRearType.Re
     @Override
     public Batch last() {
       return last;
+    }
+
+    private static String formattedLatencyNanos(Instant from, Instant to) {
+      return NumberFormat.getNumberInstance(Locale.US).format(from.until(to, ChronoUnit.NANOS));
+    }
+
+    private static String withDigitSeparators(long nanos) {
+      return NumberFormat.getNumberInstance(Locale.US).format(nanos);
     }
   }
 
