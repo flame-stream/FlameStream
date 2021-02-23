@@ -3,6 +3,7 @@ package com.spbsu.flamestream.example.nexmark;
 import com.github.nexmark.flink.model.Auction;
 import com.github.nexmark.flink.model.Event;
 import com.github.nexmark.flink.model.Person;
+import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.example.labels.Flow;
 import com.spbsu.flamestream.example.labels.Operator;
@@ -83,6 +84,33 @@ public class Query8 {
     }
   }
 
+  private static final class HashedId {
+    final long id;
+
+    private HashedId(long id) {this.id = id;}
+
+    @Override
+    public int hashCode() {
+      return Hashing.murmur3_32().hashLong(id).asInt();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj instanceof HashedId) {
+        return id == ((HashedId) obj).id;
+      }
+      return false;
+    }
+
+    @Override
+    public String toString() {
+      return "" + id;
+    }
+  }
+
   public static Flow<Event, ?> create(long interval) {
     final var inputs = new Operator.Input<>(Event.class);
     return new Flow<>(inputs, selectJoinOn(
@@ -96,8 +124,8 @@ public class Query8 {
                     auction -> new AuctionGroupingKey(auction.seller, tumbleStart(auction.dateTime, interval)),
                     inputs.flatMap(Auction.class, event -> Stream.ofNullable(event.newAuction))
             ),
-            p -> p.id,
-            a -> a.seller
+            p -> new HashedId(p.id),
+            a -> new HashedId(a.seller)
     ));
   }
 
