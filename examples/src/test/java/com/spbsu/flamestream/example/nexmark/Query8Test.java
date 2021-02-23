@@ -32,7 +32,7 @@ public class Query8Test extends FlameAkkaSuite {
             ))
             .build()) {
       try (final FlameRuntime.Flame flame = runtime.run(graph)) {
-        final var rears = flame.attachRear("rear", new LatencyRearType()).collect(Collectors.toList());
+        final var rears = flame.attachRear("rear", new TimingsRearType()).collect(Collectors.toList());
 
         final var handles = flame
                 .attachFront("front", new GeneratorFrontType(nexmarkConfiguration))
