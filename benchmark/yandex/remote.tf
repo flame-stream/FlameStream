@@ -11,8 +11,10 @@ provider "yandex" {
 }
 
 resource "yandex_compute_instance" "manager" {
+  name = "flamestream-manager"
   boot_disk {
     initialize_params {
+      name = "flamestream-manager"
       image_id = "fd8vmcue7aajpmeo39kk"
       size = 15
       type = "network-ssd"
@@ -38,8 +40,10 @@ resource "yandex_compute_instance" "manager" {
 
 resource "yandex_compute_instance" "worker" {
   count = 5
+  name = "flamestream-worker-${count.index}"
   boot_disk {
     initialize_params {
+      name = "flamestream-worker-${count.index}"
       image_id = "fd8vmcue7aajpmeo39kk"
       size = 15
       type = "network-ssd"
