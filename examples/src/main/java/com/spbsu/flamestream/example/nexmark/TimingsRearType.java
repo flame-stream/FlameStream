@@ -41,15 +41,14 @@ public class TimingsRearType implements FlameRuntime.RearType<TimingsRearType.Re
 
     @Override
     public CompletionStage<?> accept(Batch batch) {
-      final var now = Instant.now();
       if (batch.time().time() < Long.MAX_VALUE) {
+        final var window = batch.time().time() - 10;
+        final var processed = batch.lastGlobalTimeProcessedAt().get(window);
+        final var now = Instant.now();
         System.out.println(
-                withDigitSeparators(batch.time().time() - 10) + " seconds window timings"
-                        + ": processed = " + formattedLatencyNanos(
-                        batch.lastGlobalTimeProcessedAt().get(batch.time().time() - 10),
-                        now
-                )
-                        + ", notified = " + formattedLatencyNanos(Instant.ofEpochSecond(batch.time().time() - 10), now)
+                withDigitSeparators(window) + " seconds window timings " + edgeContext.edgeId()
+                        + ": processed = " + formattedLatencyNanos(Instant.ofEpochSecond(window), processed)
+                        + ", notified = " + formattedLatencyNanos(Instant.ofEpochSecond(window), now)
         );
       }
       last = batch;
