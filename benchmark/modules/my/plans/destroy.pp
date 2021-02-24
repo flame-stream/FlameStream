@@ -5,7 +5,7 @@ plan my::destroy() {
   'localhost'.apply_prep
   apply('localhost') {
     $all.each |Target $target| {
-      $pub = $target.facts['/etc/ssh/ssh_host_ecdsa_key.pub'].split(' ')
+      $pub = $target.facts['/etc/ssh/ssh_host_ecdsa_key_pub'].split(' ')
       sshkey { $target.uri:
         ensure => absent,
         type => $pub[0],

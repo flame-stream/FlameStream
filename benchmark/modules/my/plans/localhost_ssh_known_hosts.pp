@@ -4,7 +4,7 @@ plan my::localhost_ssh_known_hosts() {
   'localhost'.apply_prep
   apply('localhost') {
     $all.each |Target $target| {
-      $pub = $target.facts['/etc/ssh/ssh_host_ecdsa_key.pub'].split(' ')
+      $pub = $target.facts['/etc/ssh/ssh_host_ecdsa_key_pub'].split(' ')
       sshkey { $target.uri:
         type => $pub[0],
         key => $pub[1],
