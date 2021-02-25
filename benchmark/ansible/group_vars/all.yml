@@ -1,6 +1,6 @@
-rate: 400
+local_acker_flush_delay_in_millis: 10
 guarantees: AT_MOST_ONCE
-millis_between_commits: 50
+millis_between_commits: 0
 validator: Wiki1000Validator
 base_dir: "{{ ansible_env.HOME }}"
 
@@ -12,7 +12,7 @@ tarball_dir: "{{ base_dir }}/tarballs"
 
 results_dir: results/{{ lookup("pipe", "git rev-parse --short HEAD") }}/{{ groups['workers'] | length }}/{{ rate }}/{{ guarantees }}/{{ millis_between_commits }}
 
-zookeeper_version: 3.5.8
+zookeeper_version: 3.6.2
 zookeeper_client_port: 2181
 
 flamestream_worker_port: 5412
