@@ -4,7 +4,6 @@ import com.github.nexmark.flink.NexmarkConfiguration;
 import com.github.nexmark.flink.generator.GeneratorConfig;
 import com.github.nexmark.flink.generator.NexmarkGenerator;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
-import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.FlameRuntime;
@@ -20,18 +19,18 @@ import java.util.function.Consumer;
 
 public class GeneratorFrontType implements FlameRuntime.FrontType<GeneratorFrontType.Front, Void> {
   private final NexmarkConfiguration nexmarkConfiguration;
-  private final Map<EdgeId, Integer> edgePartition;
+  private final Map<String, Integer> nodePartition;
   private final long baseTime;
   private final long maxEvents;
 
   public GeneratorFrontType(
           NexmarkConfiguration nexmarkConfiguration,
-          Map<EdgeId, Integer> edgePartition,
+          Map<String, Integer> nodePartition,
           long baseTime,
           long maxEvents
   ) {
     this.nexmarkConfiguration = nexmarkConfiguration;
-    this.edgePartition = edgePartition;
+    this.nodePartition = nodePartition;
     this.baseTime = baseTime;
     this.maxEvents = maxEvents;
   }
@@ -57,7 +56,7 @@ public class GeneratorFrontType implements FlameRuntime.FrontType<GeneratorFront
     public Front(EdgeContext edgeContext, GeneratorFrontType type) {
       this.edgeContext = edgeContext;
       this.type = type;
-      partition = type.edgePartition.get(edgeContext.edgeId());
+      partition = type.nodePartition.get(edgeContext.edgeId().nodeId());
     }
 
     @Override
@@ -73,7 +72,7 @@ public class GeneratorFrontType implements FlameRuntime.FrontType<GeneratorFront
               1,
               type.maxEvents,
               1
-      ).split(type.edgePartition.size()).get(partition);
+      ).split(type.nodePartition.size()).get(partition);
       final var executor =
               Executors.newSingleThreadExecutor(runnable -> new Thread(runnable, edgeContext.edgeId().toString()));
       executor.submit(() -> {
