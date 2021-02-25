@@ -35,7 +35,7 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
   ) {
     this.innerList = innerList;
     this.customOrder = customOrder;
-    this.order = SerializableComparator.comparing((DataItem dataItem) -> dataItem.meta().globalTime())
+    this.order = SerializableComparator.comparingLong((DataItem dataItem) -> dataItem.meta().globalTime().time())
             .thenComparing(customOrder)
             .thenComparing(DataItem::meta);
     this.dataItemIndexedParents = dataItemIndexedParents;
@@ -93,12 +93,12 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
 
   @Override
   public int insertionPosition(DataItem dataItem) {
-    return lowerBound(listDataItem -> order.compare(listDataItem, dataItem));
+    return lowerBound(listDataItem -> order.compare(dataItem, listDataItem));
   }
 
   @Override
   public int lowerBound(GlobalTime globalTime) {
-    return lowerBound(dataItem -> dataItem.meta().globalTime().compareTo(globalTime));
+    return lowerBound(dataItem -> globalTime.compareTo(dataItem.meta().globalTime()));
   }
 
   @Override
@@ -124,7 +124,7 @@ public class ArrayInvalidatingBucket implements InvalidatingBucket {
     int right = innerList.size();
     while (left != right) {
       final int middle = left + (right - left) / 2;
-      if (comparator.applyAsInt(innerList.get(middle)) >= 0) {
+      if (comparator.applyAsInt(innerList.get(middle)) <= 0) {
         right = middle;
       } else {
         left = middle + 1;
