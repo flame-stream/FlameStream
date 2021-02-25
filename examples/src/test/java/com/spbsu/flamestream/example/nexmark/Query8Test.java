@@ -39,10 +39,10 @@ public class Query8Test extends FlameAkkaSuite {
                 flame.attachRear("rear", new TimingsRearType<>(new SimpleRearType(), 10)).collect(Collectors.toList());
 
         flame.attachFront("front", new GeneratorFrontType(nexmarkConfiguration, Map.ofEntries(
-                Map.entry(new EdgeId("front", "node-0"), 0),
-                Map.entry(new EdgeId("front", "node-1"), 1),
-                Map.entry(new EdgeId("front", "node-2"), 2),
-                Map.entry(new EdgeId("front", "node-3"), 3)
+                Map.entry("node-0", 0),
+                Map.entry("node-1", 1),
+                Map.entry("node-2", 2),
+                Map.entry("node-3", 3)
         ), currentTimeMillis, 10000));
         for (final var rear : rears) {
           rear.await();
