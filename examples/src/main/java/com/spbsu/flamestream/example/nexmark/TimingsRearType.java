@@ -1,70 +1,43 @@
 package com.spbsu.flamestream.example.nexmark;
 
 import com.spbsu.flamestream.core.Batch;
+import com.spbsu.flamestream.core.data.PayloadDataItem;
+import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.edge.EdgeContext;
+import com.spbsu.flamestream.runtime.graph.SinkJoba;
+import org.apache.commons.lang.ArrayUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
-public class TimingsRearType implements FlameRuntime.RearType<TimingsRearType.Rear, TimingsRearType.Handle> {
-  final ConcurrentHashMap<EdgeContext, CompletableFuture<?>> edgeContextDone = new ConcurrentHashMap<>();
+public class TimingsRearType<Wrapped extends com.spbsu.flamestream.runtime.edge.Rear, Handle>
+        implements FlameRuntime.RearType<TimingsRearType.Rear, Handle> {
+  public static class Timings {
+    public final long window;
+    public final String nodeId;
+    public final long processed;
+    public final long notified;
 
-  public class Instance implements FlameRuntime.RearInstance<Rear> {
-    @Override
-    public Class<Rear> clazz() {
-      return Rear.class;
+    public Timings(long window, String nodeId, long processed, long notified) {
+      this.window = window;
+      this.nodeId = nodeId;
+      this.processed = processed;
+      this.notified = notified;
     }
 
     @Override
-    public Object[] params() {
-      return new Object[]{TimingsRearType.this};
-    }
-  }
-
-  public static class Rear implements com.spbsu.flamestream.runtime.edge.Rear {
-    private final EdgeContext edgeContext;
-    private final TimingsRearType type;
-
-    public Rear(EdgeContext edgeContext, TimingsRearType type) {
-      this.edgeContext = edgeContext;
-      this.type = type;
-    }
-
-    Batch last = Batch.Default.EMPTY;
-
-    @Override
-    public CompletionStage<?> accept(Batch batch) {
-      if (batch.time().time() < Long.MAX_VALUE) {
-        final var window = batch.time().time() - 10;
-        final var processed = batch.lastGlobalTimeProcessedAt().get(window);
-        final var now = Instant.now();
-        System.out.println(
-                withDigitSeparators(window) + " seconds window timings " + edgeContext.edgeId()
-                        + ": processed = " + formattedLatencyNanos(Instant.ofEpochSecond(window), processed)
-                        + ", notified = " + formattedLatencyNanos(Instant.ofEpochSecond(window), now)
-        );
-      }
-      last = batch;
-      if (batch.time().time() == Long.MAX_VALUE) {
-        type.edgeContextDone.computeIfAbsent(edgeContext, __ -> new CompletableFuture<>()).complete(null);
-      }
-      return CompletableFuture.completedStage(null);
-    }
-
-    @Override
-    public Batch last() {
-      return last;
-    }
-
-    private static String formattedLatencyNanos(Instant from, Instant to) {
-      return NumberFormat.getNumberInstance(Locale.US).format(from.until(to, ChronoUnit.NANOS));
+    public String toString() {
+      return withDigitSeparators(window) + " seconds window timings " + nodeId
+              + ": processed = " + withDigitSeparators(processed)
+              + ", notified = " + withDigitSeparators(notified)
+              ;
     }
 
     private static String withDigitSeparators(long nanos) {
@@ -72,29 +45,82 @@ public class TimingsRearType implements FlameRuntime.RearType<TimingsRearType.Re
     }
   }
 
-  public class Handle {
-    private final EdgeContext context;
+  final FlameRuntime.RearType<Wrapped, Handle> wrapped;
+  final long windowSizeSec;
 
-    public Handle(EdgeContext context) {
-      this.context = context;
+  public TimingsRearType(FlameRuntime.RearType<Wrapped, Handle> wrapped, long windowSizeSec) {
+    this.wrapped = wrapped;
+    this.windowSizeSec = windowSizeSec;
+  }
+
+  public class Instance implements FlameRuntime.RearInstance<TimingsRearType.Rear> {
+    private final FlameRuntime.RearInstance<Wrapped> wrapped;
+    private final long windowSizeSec = TimingsRearType.this.windowSizeSec;
+
+    public Instance(FlameRuntime.RearInstance<Wrapped> wrapped) {this.wrapped = wrapped;}
+
+    @Override
+    public Class<TimingsRearType.Rear> clazz() {
+      return TimingsRearType.Rear.class;
     }
 
-    void await() throws InterruptedException {
-      try {
-        edgeContextDone.computeIfAbsent(context, __ -> new CompletableFuture<>()).get();
-      } catch (ExecutionException exception) {
-        throw new RuntimeException(exception);
+    @Override
+    public Object[] params() {
+      return new Object[]{this, wrapped.params()};
+    }
+  }
+
+  public static class Rear implements com.spbsu.flamestream.runtime.edge.Rear {
+    private final EdgeContext edgeContext;
+    @org.jetbrains.annotations.NotNull
+    private final TimingsRearType<?, ?>.Instance instance;
+    private final com.spbsu.flamestream.runtime.edge.Rear wrapped;
+
+    public Rear(
+            EdgeContext edgeContext, TimingsRearType<?, ?>.Instance instance, Object[] params
+    ) throws IllegalAccessException, InvocationTargetException, InstantiationException {
+      this.edgeContext = edgeContext;
+      this.instance = instance;
+      wrapped = (com.spbsu.flamestream.runtime.edge.Rear) instance.wrapped.clazz().getDeclaredConstructors()[0]
+              .newInstance(ArrayUtils.add(params, 0, edgeContext));
+    }
+
+    Batch last = Batch.Default.EMPTY;
+
+    @Override
+    public CompletionStage<?> accept(Batch batch) {
+      if (batch.time().time() < Long.MAX_VALUE) {
+        final var window = batch.time().time() - instance.windowSizeSec;
+        final var processed = batch.lastGlobalTimeProcessedAt().get(window);
+        final var now = Instant.now();
+        return wrapped.accept(new SinkJoba.BatchImpl(
+                batch.time(),
+                Collections.singletonList(new PayloadDataItem(new Meta(batch.time()), new Timings(
+                        window,
+                        edgeContext.edgeId().nodeId(),
+                        Instant.ofEpochSecond(window).until(processed, ChronoUnit.NANOS),
+                        Instant.ofEpochSecond(window).until(now, ChronoUnit.NANOS)
+                ))),
+                batch.lastGlobalTimeProcessedAt()
+        ));
       }
+      last = batch;
+      return CompletableFuture.completedStage(null);
+    }
+
+    @Override
+    public Batch last() {
+      return last;
     }
   }
 
   @Override
   public Instance instance() {
-    return new Instance();
+    return new Instance(wrapped.instance());
   }
 
   @Override
   public Handle handle(EdgeContext context) {
-    return new Handle(context);
+    return wrapped.handle(context);
   }
 }
