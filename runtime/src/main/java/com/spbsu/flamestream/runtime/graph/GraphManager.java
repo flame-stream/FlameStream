@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class GraphManager extends LoggingActor {
@@ -227,7 +228,7 @@ public class GraphManager extends LoggingActor {
   }
 
   public static class Destination {
-    private static final Map<String, Destination> cache = new HashMap<>();
+    private static final Map<String, Destination> cache = new ConcurrentHashMap<>();
     private final String vertexId;
 
     @Override
