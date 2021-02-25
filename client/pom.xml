@@ -21,7 +21,7 @@
         <!--Fast serialization-->
         <dependency>
             <groupId>io.altoo</groupId>
-            <artifactId>akka-kryo-serialization_2.12</artifactId>
+            <artifactId>akka-kryo-serialization_2.11</artifactId>
         </dependency>
 
         <!--Curator-->
