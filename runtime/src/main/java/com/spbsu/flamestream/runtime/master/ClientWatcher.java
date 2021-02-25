@@ -69,7 +69,7 @@ public class ClientWatcher extends LoggingActor {
   }
 
   @Override
-  public void postStop() throws Exception {
+  public void postStop() {
     try {
       jobsCache.close();
     } catch (IOException e) {
