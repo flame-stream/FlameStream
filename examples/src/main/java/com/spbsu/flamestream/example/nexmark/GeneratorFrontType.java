@@ -22,15 +22,18 @@ public class GeneratorFrontType implements FlameRuntime.FrontType<GeneratorFront
   private final NexmarkConfiguration nexmarkConfiguration;
   private final Map<EdgeId, Integer> edgePartition;
   private final long baseTime;
+  private final long maxEvents;
 
   public GeneratorFrontType(
           NexmarkConfiguration nexmarkConfiguration,
           Map<EdgeId, Integer> edgePartition,
-          long baseTime
+          long baseTime,
+          long maxEvents
   ) {
     this.nexmarkConfiguration = nexmarkConfiguration;
     this.edgePartition = edgePartition;
     this.baseTime = baseTime;
+    this.maxEvents = maxEvents;
   }
 
   public class Instance implements FlameRuntime.FrontInstance<Front> {
@@ -68,7 +71,7 @@ public class GeneratorFrontType implements FlameRuntime.FrontType<GeneratorFront
               nexmarkConfiguration,
               type.baseTime,
               1,
-              100000000,
+              type.maxEvents,
               1
       ).split(type.edgePartition.size()).get(partition);
       final var executor =

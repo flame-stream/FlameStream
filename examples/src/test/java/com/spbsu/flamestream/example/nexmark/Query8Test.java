@@ -1,13 +1,16 @@
 package com.spbsu.flamestream.example.nexmark;
 
 import com.github.nexmark.flink.NexmarkConfiguration;
+import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.example.labels.Materializer;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalRuntime;
 import com.spbsu.flamestream.runtime.acceptance.FlameAkkaSuite;
+import com.spbsu.flamestream.runtime.config.SystemConfig;
 import org.testng.annotations.Test;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Query8Test extends FlameAkkaSuite {
@@ -29,18 +32,18 @@ public class Query8Test extends FlameAkkaSuite {
             .defaultMinimalTime(Query8.tumbleStart(
                     Instant.ofEpochMilli(currentTimeMillis),
                     nexmarkConfiguration.windowSizeSec
-            ))
+            )).acking(SystemConfig.Acking.DISABLED)
             .build()) {
       try (final FlameRuntime.Flame flame = runtime.run(graph)) {
-        final var rears = flame.attachRear("rear", new TimingsRearType()).collect(Collectors.toList());
+        final var rears =
+                flame.attachRear("rear", new TimingsRearType<>(new SimpleRearType(), 10)).collect(Collectors.toList());
 
-        final var handles = flame
-                .attachFront("front", new GeneratorFrontType(nexmarkConfiguration))
-                .collect(Collectors.toList());
-        for (final var handle : handles.subList(1, handles.size())) {
-          handle.unregister();
-        }
-        handles.get(0).generate();
+        flame.attachFront("front", new GeneratorFrontType(nexmarkConfiguration, Map.ofEntries(
+                Map.entry(new EdgeId("front", "node-0"), 0),
+                Map.entry(new EdgeId("front", "node-1"), 1),
+                Map.entry(new EdgeId("front", "node-2"), 2),
+                Map.entry(new EdgeId("front", "node-3"), 3)
+        ), currentTimeMillis, 10000));
         for (final var rear : rears) {
           rear.await();
         }
