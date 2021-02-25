@@ -92,12 +92,14 @@ public class StartupWatcher extends LoggingActor {
             ),
             "processing-watcher"
     );
+    final File file = new File("/tmp/flame_stream");
     //noinspection ResultOfMethodCallIgnored
-    new File("/tmp/flame_stream").createNewFile();
+    file.createNewFile();
+    file.deleteOnExit();
   }
 
   @Override
-  public void postStop() {
+  public void postStop() throws Exception {
     //noinspection EmptyTryBlock,unused
     try (
             StateStorage s = stateStorage;

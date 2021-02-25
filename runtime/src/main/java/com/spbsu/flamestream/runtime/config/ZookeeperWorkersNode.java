@@ -7,6 +7,7 @@ import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
 
 import java.util.List;
@@ -39,8 +40,9 @@ public class ZookeeperWorkersNode {
   public ZookeeperWorkersNode(CuratorFramework curator, String path) {
     this.curator = curator;
     this.path = path;
-    this.pathChildrenCache = new PathChildrenCache(curator, path, true);
     try {
+      ZKPaths.mkdirs(curator.getZookeeperClient().getZooKeeper(), path);
+      this.pathChildrenCache = new PathChildrenCache(curator, path, true);
       pathChildrenCache.start();
     } catch (Exception e) {
       throw new RuntimeException(e);

@@ -1,27 +1,18 @@
 ---
-- name: Install Python
-  hosts: all
-  gather_facts: false
-  tasks:
-    - name: Install Python 2.x
-      raw: test -e /usr/bin/python || (apt update && apt install -y python-simplejson)
-      register: test
-      changed_when: test.stdout
-
-- name: Prepare cluster
+- name: Deliver flamestream artifacts
   hosts: all
   roles:
-    - { role: common-packages }
+    - { role: flamestream-common  }
+
+- name: Stop workers
+  hosts: workers
+  tasks:
+    - shell: "cd {{ flamestream_dir }} && bash entrypoint.sh stop"
 
 - name: Setup zookeeper
   hosts: manager
   roles:
     - { role: zookeeper  }
-
-- name: Deliver flamestream artifacts
-  hosts: all
-  roles:
-    - { role: flamestream-common  }
 
 - hosts: workers
   tasks:
@@ -47,7 +38,7 @@
 - name: Run the benchmark
   hosts: bench
   roles:
-    - { role: flamestream-bench , bench_class: com.spbsu.flamestream.example.benchmark.BenchStand }
+    - { role: flamestream-bench , bench_class: com.spbsu.flamestream.example.benchmark.WikiBenchStand }
 
 - name: Destroy flamestream
   hosts: workers
