@@ -12,6 +12,13 @@ public interface SerializableComparator<T> extends Serializable, Comparator<T> {
     return (c1, c2) -> keyExtractor.apply(c1).compareTo(keyExtractor.apply(c2));
   }
 
+  static <T> SerializableComparator<T> comparingLong(
+          SerializableToLongFunction<? super T> keyExtractor
+  ) {
+    Objects.requireNonNull(keyExtractor);
+    return (c1, c2) -> Long.compare(keyExtractor.applyAsLong(c1), keyExtractor.applyAsLong(c2));
+  }
+
   default SerializableComparator<T> thenComparing(SerializableComparator<? super T> other) {
     Objects.requireNonNull(other);
     return (c1, c2) -> {
