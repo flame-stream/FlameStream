@@ -161,7 +161,7 @@ public class SystemConfig {
   public static class Builder {
     private int maxElementsInGraph = 500;
     private int millisBetweenCommits = 100;
-    private int defaultMinimalTime = 0;
+    private long defaultMinimalTime = 0;
     private boolean barrierDisabled = false;
     private LocalAcker.Builder localAckerBuilder = new LocalAcker.Builder();
     private int ackerWindow = 1;
@@ -178,7 +178,7 @@ public class SystemConfig {
       return this;
     }
 
-    public Builder defaultMinimalTime(int defaultMinimalTime) {
+    public Builder defaultMinimalTime(long defaultMinimalTime) {
       this.defaultMinimalTime = defaultMinimalTime;
       return this;
     }
