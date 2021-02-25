@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 public class AwaitCountConsumer implements Consumer<Object> {
   private final AtomicInteger counter = new AtomicInteger();
   private final int expectedSize;
+  private long acceptedAt = Long.MIN_VALUE;
 
   public AwaitCountConsumer(int expectedSize) {
     this.expectedSize = expectedSize;
@@ -18,6 +19,7 @@ public class AwaitCountConsumer implements Consumer<Object> {
 
   @Override
   public void accept(Object o) {
+    acceptedAt = System.currentTimeMillis();
     if (counter.incrementAndGet() == expectedSize) {
       synchronized (counter) {
         counter.notifyAll();
