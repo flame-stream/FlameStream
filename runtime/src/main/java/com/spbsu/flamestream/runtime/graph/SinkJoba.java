@@ -30,7 +30,7 @@ public class SinkJoba extends Joba {
   private final LoggingAdapter log;
   private final boolean barrierDisabled;
   private final int sinkTrackingComponent;
-  private final InvalidatingBucket invalidatingBucket = new ArrayInvalidatingBucket();
+  private final TreeMap<Long, InvalidatingBucket> timeInvalidatingBucket = new TreeMap<>();
   private final Map<ActorRef, GlobalTime> rears = new HashMap<>();
   private NavigableMap<Long, Instant> lastGlobalTimeProcessedAt = new TreeMap<>();
 
@@ -55,7 +55,9 @@ public class SinkJoba extends Joba {
               new BatchImpl(item.meta().globalTime(), Collections.singletonList(item), Collections.emptyMap())
       ));
     } else {
-      invalidatingBucket.insert(item);
+      timeInvalidatingBucket
+              .computeIfAbsent(item.meta().globalTime().time(), __ -> new ArrayInvalidatingBucket((___, ____) -> 1))
+              .insert(item);
     }
   }
 
@@ -86,29 +88,38 @@ public class SinkJoba extends Joba {
   }
 
   private void tryEmmit(GlobalTime upTo) {
-    final int pos = invalidatingBucket.lowerBound(upTo);
+    final var iterator = timeInvalidatingBucket.entrySet().iterator();
+    while (iterator.hasNext()) {
+      final var invalidatingBucketEntry = iterator.next();
+      if (upTo.time() <= invalidatingBucketEntry.getKey()) {
+        return;
+      }
+      final var invalidatingBucket = invalidatingBucketEntry.getValue();
+      final int pos = invalidatingBucket.lowerBound(upTo);
 
-    final var lastGlobalTimeProcessedAt = this.lastGlobalTimeProcessedAt.headMap(upTo.time());
-    rears.forEach((rear, lastEmmit) -> {
-      final List<DataItem> data = new ArrayList<>();
-      invalidatingBucket.forRange(0, pos, item -> {
-        if (item.meta().globalTime().compareTo(lastEmmit) > 0) {
-          data.add(item);
-        }
+      final var lastGlobalTimeProcessedAt = this.lastGlobalTimeProcessedAt.headMap(upTo.time());
+      rears.forEach((rear, lastEmmit) -> {
+        final List<DataItem> data = new ArrayList<>();
+        invalidatingBucket.forRange(0, pos, item -> {
+          if (item.meta().globalTime().compareTo(lastEmmit) > 0) {
+            data.add(item);
+          }
+        });
+
+        emmitRearBatch(rear, new BatchImpl(upTo, data, Map.copyOf(lastGlobalTimeProcessedAt)));
       });
 
-      if (!data.isEmpty() || barrierDisabled) {
-        emmitRearBatch(rear, new BatchImpl(upTo, data, Map.copyOf(lastGlobalTimeProcessedAt)));
+      // Clearing barrier only if elements were emitted somewhere.
+      // It is temporary fix of the "sending elements to /dev/null" problem
+      //
+      // https://github.com/flame-stream/FlameStream/issues/139
+      if (!rears.isEmpty()) {
+        invalidatingBucket.clearRange(0, pos);
+        lastGlobalTimeProcessedAt.clear();
       }
-    });
-
-    // Clearing barrier only if elements were emitted somewhere.
-    // It is temporary fix of the "sending elements to /dev/null" problem
-    //
-    // https://github.com/flame-stream/FlameStream/issues/139
-    if (!rears.isEmpty()) {
-      invalidatingBucket.clearRange(0, pos);
-      lastGlobalTimeProcessedAt.clear();
+      if (invalidatingBucket.isEmpty()) {
+        iterator.remove();
+      }
     }
   }
 
@@ -126,7 +137,7 @@ public class SinkJoba extends Joba {
     private final GlobalTime time;
     private final Map<Long, Instant> lastGlobalTimeProcessedAt;
 
-    private BatchImpl(GlobalTime time, List<DataItem> items, Map<Long, Instant> lastGlobalTimeProcessedAt) {
+    public BatchImpl(GlobalTime time, List<DataItem> items, Map<Long, Instant> lastGlobalTimeProcessedAt) {
       this.items = items;
       this.time = time;
       this.lastGlobalTimeProcessedAt = lastGlobalTimeProcessedAt;

@@ -7,6 +7,7 @@ import com.google.common.hash.Hashing;
 import com.spbsu.flamestream.core.graph.SerializableFunction;
 import com.spbsu.flamestream.example.labels.Flow;
 import com.spbsu.flamestream.example.labels.Operator;
+import org.jetbrains.annotations.NotNull;
 import scala.Tuple2;
 import scala.runtime.AbstractFunction1;
 import scala.util.Either;
@@ -129,13 +130,26 @@ public class Query8 {
     ));
   }
 
+  private static final class ProcessingOrder implements Comparable<ProcessingOrder> {
+    public static final ProcessingOrder INSTANCE = new ProcessingOrder();
+
+    private ProcessingOrder() {
+    }
+
+    @Override
+    public int compareTo(@NotNull ProcessingOrder o) {
+      return 1;
+    }
+  }
+
   private static <Input, Output> Operator<Output> selectUniqueInWindow(
           Class<Output> outputClass,
           SerializableFunction<Input, Output> select,
           Operator<Input> from
   ) {
     return new Operator.Grouping<>(
-            from.map(outputClass, select).newKeyedBuilder(item -> item).timed(true).build(),
+            from.map(outputClass, select)
+                    .newKeyedBuilder(item -> item, __ -> ProcessingOrder.INSTANCE).timed(true).build(),
             2,
             false
     ).flatMap(outputClass, group -> group.size() == 1 ? Stream.of(group.get(0)) : Stream.empty());
@@ -152,7 +166,10 @@ public class Query8 {
             .link(leftFrom.map(eitherClass, scala.util.Left::new))
             .link(rightFrom.map(eitherClass, scala.util.Right::new));
     return new Operator.Grouping<>(
-            inputLabel.newKeyedBuilder(either -> either.fold(toScala(leftOn), toScala(rightOn))).timed(true).build(),
+            inputLabel.newKeyedBuilder(
+                    either -> either.fold(toScala(leftOn), toScala(rightOn)),
+                    __ -> ProcessingOrder.INSTANCE
+            ).timed(true).build(),
             Integer.MAX_VALUE,
             true
     ).flatMap((Class<Tuple2<List<Left>, List<Right>>>) (Class<?>) Tuple2.class, group ->
