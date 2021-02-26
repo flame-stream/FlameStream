@@ -14,6 +14,7 @@ import com.spbsu.flamestream.core.graph.HashGroup;
 import com.spbsu.flamestream.core.graph.HashUnit;
 import com.spbsu.flamestream.runtime.graph.api.AddressedItem;
 import com.spbsu.flamestream.runtime.graph.api.NewRear;
+import com.spbsu.flamestream.runtime.graph.api.Watermark;
 import com.spbsu.flamestream.runtime.graph.state.GroupGroupingState;
 import com.spbsu.flamestream.runtime.graph.state.GroupingState;
 import com.spbsu.flamestream.runtime.master.acker.api.Heartbeat;
@@ -40,6 +41,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class GraphManager extends LoggingActor {
@@ -194,6 +196,7 @@ public class GraphManager extends LoggingActor {
             .match(Commit.class, commit -> sourceComponent.forward(commit, context()))
             .match(NewRear.class, newRear -> sinkComponent.forward(newRear, context()))
             .match(Heartbeat.class, gt -> sourceComponent.forward(gt, context()))
+            .match(Watermark.class, watermark -> verticesComponents.get(watermark.to).forward(watermark, context()))
             .match(UnregisterFront.class, u -> sourceComponent.forward(u, context()))
             .build();
   }
@@ -225,7 +228,7 @@ public class GraphManager extends LoggingActor {
   }
 
   public static class Destination {
-    private static final Map<String, Destination> cache = new HashMap<>();
+    private static final Map<String, Destination> cache = new ConcurrentHashMap<>();
     private final String vertexId;
 
     @Override

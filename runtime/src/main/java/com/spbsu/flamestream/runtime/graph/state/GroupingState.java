@@ -34,6 +34,9 @@ public class GroupingState {
       }
       if (obj instanceof Key) {
         final Key key = (Key) obj;
+        if (grouping.timed && dataItem.meta().globalTime().time() != ((Key) obj).dataItem.meta().globalTime().time()) {
+          return false;
+        }
         return grouping.equalz().test(dataItem, key.dataItem);
       }
       return false;
@@ -47,9 +50,10 @@ public class GroupingState {
     this.grouping = grouping;
     map = new TimedMap<>(
             () -> new SynchronizedInvalidatingBucket(grouping.order()),
-            grouping.equalz().labels().isEmpty() ? null : key -> grouping.equalz().labels().stream().mapToLong(label ->
-                    key.dataItem.meta().labels().get(label).globalTime.time()
-            ).min().getAsLong()
+            grouping.equalz().labels().isEmpty() && !grouping.timed ? null : key ->
+                    grouping.equalz().labels().stream().mapToLong(label ->
+                            key.dataItem.meta().labels().get(label).globalTime.time()
+                    ).min().orElse(grouping.timed ? key.dataItem.meta().globalTime().time() : Long.MAX_VALUE)
     );
   }
 

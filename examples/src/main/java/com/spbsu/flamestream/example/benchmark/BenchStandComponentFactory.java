@@ -7,6 +7,8 @@ import com.esotericsoftware.kryonet.Server;
 import com.spbsu.flamestream.core.data.PayloadDataItem;
 import com.spbsu.flamestream.core.data.meta.EdgeId;
 import com.spbsu.flamestream.core.data.meta.GlobalTime;
+import com.spbsu.flamestream.core.data.meta.Label;
+import com.spbsu.flamestream.core.data.meta.Labels;
 import com.spbsu.flamestream.core.data.meta.Meta;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.LocalClusterRuntime;
@@ -29,8 +31,6 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Writer;
-import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +117,9 @@ public class BenchStandComponentFactory {
       server.getKryo().register(clazz);
     }
     server.getKryo().register(PayloadDataItem.class);
+    server.getKryo().register(Label.class);
+    server.getKryo().register(Label[].class);
+    server.getKryo().register(Labels.class);
     server.getKryo().register(Meta.class);
     server.getKryo().register(Meta.ChildIds.class);
     server.getKryo().register(GlobalTime.class);

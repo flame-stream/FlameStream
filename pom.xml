@@ -17,5 +17,6 @@
         <module>examples</module>
         <module>client</module>
         <module>benchmark/flink-benchmark</module>
+        <module>examples/nexmark/nexmark-flink</module>
     </modules>
 </project>

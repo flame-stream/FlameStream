@@ -61,7 +61,7 @@ public class WorkerApplication implements Runnable {
     configureFromEnv("BARRIER_DISABLED", Boolean::parseBoolean, systemConfigBuilder::barrierDisabled);
     configureFromEnv("ACKERS_NUMBER", (int ackersNumber) ->
             systemConfigBuilder.workersResourcesDistributor(new SystemConfig.WorkersResourcesDistributor.Enumerated(
-                    "flamestream-benchmarks-worker-",
+                    "worker-",
                     ackersNumber
             ))
     );
