@@ -27,11 +27,3 @@ Unlike common models, FlameStream has reduced set of operations: windowed groupi
 ## Benchmarking
 
 See details in [benchmarking readme](https://github.com/flame-stream/FlameStream/blob/master/benchmark/README.md).
-
-## Papers
-- [	Igor E. Kuralenok, Artem Trofimov, Nikita Marshalkin, Boris Novikov:
- *Deterministic Model for Distributed Speculative Stream Processing.* **ADBIS 2018**](https://link.springer.com/chapter/10.1007/978-3-319-98398-1_16)
-- [	Igor E. Kuralenok, Artem Trofimov, Nikita Marshalkin, Boris Novikov:
- *FlameStream: Model and Runtime for Distributed Stream Processing.* **BeyondMR@SIGMOD 2018**](https://dl.acm.org/citation.cfm?id=3209273)
- - [	Igor E. Kuralenok, Nikita Marshalkin, Artem Trofimov, Boris Novikov:
- *An optimistic approach to handle out-of-order events within analytical stream processing.* **SEIM 2018**](http://ceur-ws.org/Vol-2135/SEIM_2018_paper_16.pdf)
